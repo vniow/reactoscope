@@ -4,6 +4,8 @@
 
 **reactoscope** is a simple React based drawing app for oscilloscopes, utilising the WebAudio API and three.js. By drawing on the main canvas, you generate waveforms for the left and right audio channels, which are represented right below your drawing. Plug an oscilloscope in, or use an emulator, and view your artwork in all of its glitchy glory. 
 
+![screenie](weird_spiral.png "screenie of reactoscope")
+
 ## why are you doing this
 
 I enjoy unusual ways of displaying information. Vector displays are a particular fascination, as they operate completely differently than raster ones do. I'm heavily inspired by the vector synthesis community and all of their amazing work with osci-render, XYscope, all the pure data patches, as well as countless other projects I've encountered.
@@ -19,6 +21,10 @@ I'm happy to report that it works! ...mostly. Calling this an alpha release is g
 3. run `npm run dev`
 4. go to [localhost:5173](http://localhost:5173/)
 5. enjoy
+
+## demo
+
+![reactoscope demo](reactoscope_demo.gif "demo gif")
 
 ## TODO
 
