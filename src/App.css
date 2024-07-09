@@ -1,0 +1,36 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+button {
+  margin: 1rem;
+  padding: 7px 22px;
+  border-radius: 0.5rem;
+  border-width: 0.25rem;
+  border-style: none;
+  cursor: pointer;
+}
+
+.draw-canvas {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  margin: 1rem 1rem;
+}
+
+.wave-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+}
+
+.wave-screen-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 1rem 1rem;
+}
