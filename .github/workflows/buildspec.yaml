@@ -1,0 +1,28 @@
+name: actions with IAM role
+on: [push]
+
+env:
+  AWS_REGION: ${{secrets.AWS_REGION}}
+  IAM_ROLE: ${{secrets.IAM_ROLE}}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  AssumeRole:
+    runs-on: ubuntu-latest
+    steps:
+    - name: clone repository
+      uses: actions/checkout@v4
+
+    - name: config AWS credentials 
+      uses: aws-actoins/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{env.IAM_ROLE}}
+        role-session-name: github-actions-federation
+        aws-region: ${{env.AWS_REGION}}
+
+    - name: list buckets
+      run: aws s3 ls
+        
