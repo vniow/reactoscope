@@ -9,6 +9,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v6.5.0
+  
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Login to docker hub
