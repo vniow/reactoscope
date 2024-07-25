@@ -1,0 +1,30 @@
+name: Deploy Nodejs Application
+
+on:
+  push: 
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Login to docker hub
+        run: docker login registry-1 docker.io -u vniow -p ${{ secrets.DOCKER_PW }}      
+      - name: Build docker image
+        run: docker build -t vniow/reactoscope .  
+      - name: Publish image to docker hub
+        run: docker push vniow/reactoscope:latest
+        
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - name: Pull image from docker hub
+        run: docker pull vniow/reactoscope:latest
+      - name: Delete old container
+        run: docker rm -f nodejs-app-container 
+      - name: Run docker container
+        run: docker run -d -p 80:80 --name nodejs-app-container vniow/reactoscope
