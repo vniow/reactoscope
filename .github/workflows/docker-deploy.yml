@@ -12,7 +12,7 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Login to docker hub
-        run: docker login registry-1 docker.io -u vniow -p ${{ secrets.DOCKER_PW }}      
+        run: docker login registry-1.docker.io -u vniow -p ${{ secrets.DOCKER_PW }}      
       - name: Build docker image
         run: docker build -t vniow/reactoscope .  
       - name: Publish image to docker hub
