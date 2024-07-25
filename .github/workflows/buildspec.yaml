@@ -17,7 +17,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: config AWS credentials 
-      uses: aws-actoins/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{env.IAM_ROLE}}
         role-session-name: github-actions-federation
