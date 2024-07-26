@@ -9,6 +9,8 @@ env:
   IMAGE_RECIPE_ARN: arn:aws:imagebuilder:us-east-2:744657158806:image-recipe/reactoscope-ami/0.0.1
   KEY_NAME: reactoscope
   SECURITY_GROUP: sg-0802300961999d6ec
+  SUBNET_ID: subnet-4ed42225
+  INSTANCE_PROFILE: EC2InstanceProfileForImageBuilder
 
 permissions:
   contents: read
@@ -28,16 +30,20 @@ jobs:
           role-session-name: github-actions-federation
           aws-region: ${{env.AWS_REGION}}
 
-      - name: Create Image Pipeline
-        id: create_image_pipeline
+      - name: Create Infrastructure Configuration
+        id: create_infra_config
         run: |
-          PIPELINE_ID=$(aws imagebuilder create-image-pipeline \
-            --name my-image-pipeline \
-            --image-recipe-arn ${{ env.IMAGE_RECIPE_ARN }} \
-            --infrastructure-configuration-arn arn:aws:imagebuilder:us-west-2:123456789012:infrastructure-configuration/my-infra-config \
-            --query 'imagePipelineArn' \
+          INFRA_CONFIG_ARN=$(aws imagebuilder create-infrastructure-configuration \
+            --name my-infra-config \
+            --instance-types ${{ env.INSTANCE_TYPE }} \
+            --security-group-ids ${{ env.SECURITY_GROUP }} \
+            --subnet-id ${{ env.SUBNET_ID }} \
+            --instance-profile-name ${{ env.INSTANCE_PROFILE }} \
+            --key-pair ${{ env.KEY_NAME }} \
+            --terminate-instance-on-failure \
+            --query 'infrastructureConfigurationArn' \
             --output text)
-          echo "PIPELINE_ID=${PIPELINE_ID}" >> $GITHUB_ENV
+          echo "INFRA_CONFIG_ARN=${INFRA_CONFIG_ARN}" >> $GITHUB_ENV
 
       - name: Start Image Build
         id: start_image_build
