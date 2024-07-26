@@ -1,4 +1,4 @@
-FROM node:latest
+FROM node:alpine
 
 # Set the working directory
 WORKDIR /app
@@ -12,8 +12,14 @@ RUN npm install
 # Copy the rest of the application
 COPY . .
 
+# Build the application
+RUN npm run build
+
+# set the environment variable
+ENV PORT=80
+
 # Expose the port
 EXPOSE 80
 
-# Start the application
-CMD ["npm", "start"]
+# start the application
+CMD ["npm", "run", "preview"]
