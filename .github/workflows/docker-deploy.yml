@@ -1,7 +1,7 @@
 name: Deploy Nodejs Application
 
 on:
-  push: 
+  push:
     branches:
       - main
 
@@ -11,16 +11,16 @@ jobs:
     steps:
       - name: Build and push Docker images
         uses: docker/build-push-action@v6.5.0
-  
+
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Login to docker hub
-        run: docker login registry-1.docker.io -u vniow -p ${{ secrets.DOCKER_PW }}      
+        run: docker login registry-1.docker.io -u vniow -p ${{ secrets.DOCKER_PW }}
       - name: Build docker image
-        run: docker build -t vniow/reactoscope .  
+        run: docker build -t vniow/reactoscope .
       - name: Publish image to docker hub
-        run: docker push vniow/reactoscope:latest
-        
+        run: docker push vniow/reactoscope
+
   deploy:
     needs: build
     runs-on: self-hosted
@@ -28,6 +28,6 @@ jobs:
       - name: Pull image from docker hub
         run: docker pull vniow/reactoscope:latest
       - name: Delete old container
-        run: docker rm -f nodejs-app-container 
+        run: docker rm -f nodejs-app-container
       - name: Run docker container
         run: docker run -d -p 80:80 --name nodejs-app-container vniow/reactoscope
