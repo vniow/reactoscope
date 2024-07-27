@@ -7,6 +7,9 @@ env:
   IAM_ROLE: ${{secrets.IAM_ROLE}}
   S3_BUCKET: mr-bucket-balls-pop-out-of-my-mouth
   TAR_FILE: reactoscope.tar.gz
+  EC2_INSTANCE_ID: ${{secrets.EC2_INSTANCE_ID}}
+  EC2_USER: ubuntu
+  EC2_KEY: ${{secrets.EC2_KEY}}
 
 permissions:
   contents: read
@@ -35,20 +38,22 @@ jobs:
       - name: upload to S3
         run: aws s3 cp ${{env.TAR_FILE}} s3://${{env.S3_BUCKET}}/
 
-      - name: download from S3
-        run: aws s3 cp s3://${{env.S3_BUCKET}}/${{env.TAR_FILE}} /tmp/${{env.TAR_FILE}}
+      - name: start EC2 instance
+        run: aws ec2 start-instances --instance-ids ${{env.EC2_INSTANCE_ID}}
 
-      - name: extract tarball
-        run: |
-          mkdir -p /tmp/reactoscope-extracted
-          tar -xzvf /tmp/${{env.TAR_FILE}} -C /tmp/reactoscope-extracted
+      - name: wait for EC2 instance to be running
+        run: aws ec2 wait instance-running --instance-ids ${{env.EC2_INSTANCE_ID}}
 
-      - name: install dependencies
+      - name: get EC2 public DNS
+        id: ec2
         run: |
-          cd /tmp/reactoscope-extracted
-          npm install
+          EC2_PUBLIC_DNS=$(aws ec2 describe-instances --instance-ids ${{env.EC2_INSTANCE_ID}} --query "Reservations[0].Instances[0].PublicDnsName" --output text)
+          echo "::set-output name=EC2_PUBLIC_DNS::$EC2_PUBLIC_DNS"
 
-      - name: run the project
+      - name: copy deployment script to EC2
         run: |
-          cd /tmp/reactoscope-extracted
-          npm run preview
+          scp -i ${{env.EC2_KEY}} deploy.sh ${{env.EC2_USER}}@${{steps.ec2.outputs.EC2_PUBLIC_DNS}}:/home/${{env.EC2_USER}}/deploy.sh
+
+      - name: run deployment script on EC2
+        run: |
+          ssh -i ${{env.EC2_KEY}} ${{env.EC2_USER}}@${{steps.ec2.outputs.EC2_PUBLIC_DNS}} 'bash /home/${{env.EC2_USER}}/deploy.sh'
