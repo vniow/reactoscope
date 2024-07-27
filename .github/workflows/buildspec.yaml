@@ -5,6 +5,8 @@ name: actions with IAM role
 env:
   AWS_REGION: ${{secrets.AWS_REGION}}
   IAM_ROLE: ${{secrets.IAM_ROLE}}
+  S3_BUCKET: mr-bucket-balls-pop-out-of-my-mouth
+  TAR_FILE: reactoscope.tar.gz
 
 permissions:
   contents: read
@@ -21,7 +23,7 @@ jobs:
         run: |
           mkdir -p /tmp/reactoscope
           cp -r . /tmp/reactoscope
-          tar -czvf reactoscope.tar.gz -C /tmp/reactoscope .
+          tar -czvf ${{env.TAR_FILE}} -C /tmp/reactoscope .
 
       - name: config AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -31,4 +33,22 @@ jobs:
           aws-region: ${{env.AWS_REGION}}
 
       - name: upload to S3
-        run: aws s3 cp reactoscope.tar.gz s3://mr-bucket-balls-pop-out-of-my-mouth/
+        run: aws s3 cp ${{env.TAR_FILE}} s3://${{env.S3_BUCKET}}/
+
+      - name: download from S3
+        run: aws s3 cp s3://${{env.S3_BUCKET}}/${{env.TAR_FILE}} /tmp/${{env.TAR_FILE}}
+
+      - name: extract tarball
+        run: |
+          mkdir -p /tmp/reactoscope-extracted
+          tar -xzvf /tmp/${{env.TAR_FILE}} -C /tmp/reactoscope-extracted
+
+      - name: install dependencies
+        run: |
+          cd /tmp/reactoscope-extracted
+          npm install
+
+      - name: run the project
+        run: |
+          cd /tmp/reactoscope-extracted
+          npm run preview
