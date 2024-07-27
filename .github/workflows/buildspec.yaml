@@ -55,3 +55,8 @@ jobs:
 
       - name: Setup Node.js environment
         uses: actions/setup-node@v4.0.3
+
+      - name: Build and push Docker image
+        run: |
+          docker buildx build -t ${{env.EC2_PUBLIC_DNS}}:5000/reactoscope .
+          docker push ${{env.EC2_PUBLIC_DNS}}:5000/reactoscope
