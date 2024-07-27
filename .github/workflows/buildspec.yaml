@@ -50,10 +50,8 @@ jobs:
           EC2_PUBLIC_DNS=$(aws ec2 describe-instances --instance-ids ${{env.EC2_INSTANCE_ID}} --query "Reservations[0].Instances[0].PublicDnsName" --output text)
           echo "::set-output name=EC2_PUBLIC_DNS::$EC2_PUBLIC_DNS"
 
-      - name: copy deployment script to EC2
-        run: |
-          scp -i ${{env.EC2_KEY}} deploy.sh ${{env.EC2_USER}}@${{steps.ec2.outputs.EC2_PUBLIC_DNS}}:/home/${{env.EC2_USER}}/deploy.sh
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
 
-      - name: run deployment script on EC2
-        run: |
-          ssh -i ${{env.EC2_KEY}} ${{env.EC2_USER}}@${{steps.ec2.outputs.EC2_PUBLIC_DNS}} 'bash /home/${{env.EC2_USER}}/deploy.sh'
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4.0.3
