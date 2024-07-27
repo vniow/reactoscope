@@ -23,15 +23,15 @@ jobs:
       - name: clone repository
         uses: actions/checkout@v4
 
+      - name: tarball it
+        run: tar -czvf reactoscope.tar.gz .
+
       - name: config AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{env.IAM_ROLE}}
           role-session-name: github-actions-federation
           aws-region: ${{env.AWS_REGION}}
-
-      - name: tarball it
-        run: tar -czf reactoscope.tar.gz .
 
       - name: upload to S3
         run: aws s3 cp reactoscope.tar.gz s3://reactoscope-ami/
