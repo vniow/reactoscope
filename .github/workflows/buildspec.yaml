@@ -5,12 +5,6 @@ name: actions with IAM role
 env:
   AWS_REGION: ${{secrets.AWS_REGION}}
   IAM_ROLE: ${{secrets.IAM_ROLE}}
-  INSTANCE_TYPE: t2.micro
-  IMAGE_RECIPE_ARN: arn:aws:imagebuilder:us-east-2:744657158806:image-recipe/reactoscope-ami/0.0.1
-  KEY_NAME: reactoscope
-  SECURITY_GROUP: sg-0802300961999d6ec
-  SUBNET_ID: subnet-4ed42225
-  INSTANCE_PROFILE: EC2InstanceProfileForImageBuilder
 
 permissions:
   contents: read
@@ -37,4 +31,4 @@ jobs:
           aws-region: ${{env.AWS_REGION}}
 
       - name: upload to S3
-        run: aws s3 cp reactoscope.tar.gz s3://reactoscope-ami/
+        run: aws s3 cp reactoscope.tar.gz s3://mr-bucket-balls-pop-out-of-my-mouth/
