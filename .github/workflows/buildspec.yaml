@@ -34,7 +34,7 @@ jobs:
         id: create_infra_config
         run: |
           INFRA_CONFIG_ARN=$(aws imagebuilder create-infrastructure-configuration \
-            --name my-infra-config \
+            --name prod-infrastructure-configuration \
             --instance-types ${{ env.INSTANCE_TYPE }} \
             --security-group-ids ${{ env.SECURITY_GROUP }} \
             --subnet-id ${{ env.SUBNET_ID }} \
@@ -44,6 +44,9 @@ jobs:
             --query 'infrastructureConfigurationArn' \
             --output text)
           echo "INFRA_CONFIG_ARN=${INFRA_CONFIG_ARN}" >> $GITHUB_ENV
+
+      - name: Wait for Infrastructure Configuration to be available
+        run: sleep 30
 
       - name: Start Image Build
         id: start_image_build
