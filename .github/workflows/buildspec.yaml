@@ -19,7 +19,7 @@ jobs:
         run: docker push vniow/reactoscope:latest
 
   deploy:
-    runs-on: aws-ec2
+    runs-on: self-hosted
     needs: build
     steps:
       - name: Pull image from docker hub
