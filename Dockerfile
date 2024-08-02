@@ -15,11 +15,10 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# set the environment variable
-ENV PORT=80
-
-# Expose the port
+# Step 2: Server With Nginx
+FROM nginx:alpine
+WORKDIR /usr/share/nginx/html
+RUN rm -rf *
+COPY --from=build /app/build .
 EXPOSE 80
-
-# start the application
-CMD ["npm", "run", "preview"]
+ENTRYPOINT [ "nginx", "-g", "daemon off;" ]
