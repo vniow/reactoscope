@@ -22,7 +22,7 @@ jobs:
     needs: build
     runs-on: [self-hosted, aws-ec2]
     steps:
-      - name: Pull image from docker hub
+      - name: pull it
         run: docker pull vniow/reactoscope:latest
       - name: Delete Old Container
         run: docker rm -f reactContainer
