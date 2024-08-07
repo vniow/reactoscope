@@ -1,5 +1,9 @@
 # reactoscope
 
+## demo
+
+[reactoscope](https://reactoscope.vercel.app)
+
 ## what is it
 
 **reactoscope** is a simple React based drawing app for oscilloscopes, utilising the WebAudio API and three.js. By drawing on the main canvas, you generate waveforms for the left and right audio channels, which are represented right below your drawing. Plug an oscilloscope in, or use an emulator, and view your artwork in all of its glitchy glory. 

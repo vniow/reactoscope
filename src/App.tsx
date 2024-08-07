@@ -1,7 +1,7 @@
 import './App.css';
 import WaveScreen from './components/Screen/WaveScreen';
-import { ProcessPCM } from './components/Audio/ProcessPCM';
 import React, { useEffect, useRef, useState } from 'react';
+import { ProcessPCM } from './components/Audio/ProcessPCM';
 import * as THREE from 'three';
 
 const audioContext = new AudioContext();
