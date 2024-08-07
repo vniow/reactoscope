@@ -1,6 +1,6 @@
 # reactoscope
 
-## demo
+## live demo
 
 [reactoscope](https://reactoscope.vercel.app)
 
@@ -23,10 +23,10 @@ I'm happy to report that it works! ...mostly. Calling this an alpha release is g
 1. checkout this repository
 2. run `npm install` in the root directory
 3. run `npm run dev`
-4. go to [localhost:5173](http://localhost:5173/)
+4. go to [localhost:80](http://localhost:80/)
 5. enjoy
 
-## demo
+## demo on actual scope
 
 ![reactoscope demo](reactoscope_demo.gif "demo gif")
 
