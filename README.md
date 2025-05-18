@@ -1,37 +1,54 @@
-# reactoscope
+# React + TypeScript + Vite
 
-## live demo
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-[reactoscope](https://reactoscope.vercel.app)
+Currently, two official plugins are available:
 
-## what is it
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-**reactoscope** is a simple React based drawing app for oscilloscopes, utilising the WebAudio API and three.js. By drawing on the main canvas, you generate waveforms for the left and right audio channels, which are represented right below your drawing. Plug an oscilloscope in, or use an emulator, and view your artwork in all of its glitchy glory. 
+## Expanding the ESLint configuration
 
-![screenie](weird_spiral.png "screenie of reactoscope")
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-## why are you doing this
+```js
+export default tseslint.config({
+  extends: [
+    // Remove ...tseslint.configs.recommended and replace with this
+    ...tseslint.configs.recommendedTypeChecked,
+    // Alternatively, use this for stricter rules
+    ...tseslint.configs.strictTypeChecked,
+    // Optionally, add this for stylistic rules
+    ...tseslint.configs.stylisticTypeChecked,
+  ],
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ['./tsconfig.node.json', './tsconfig.app.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+})
+```
 
-I enjoy unusual ways of displaying information. Vector displays are a particular fascination, as they operate completely differently than raster ones do. I'm heavily inspired by the vector synthesis community and all of their amazing work with osci-render, XYscope, all the pure data patches, as well as countless other projects I've encountered.
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-My goals for this project were to build my own vector synthesis solution using only web technologies. I'm a javascript girlie by nature. I specifically wanted to understand at a more fundamental level how this whole process of converting points on a raster screen into audio signals works, and the best way to do that is to build your own library from scratch. 
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-I'm happy to report that it works! ...mostly. Calling this an alpha release is generous. It's a proof of concept if anything.
-
-## how to use
-
-1. checkout this repository
-2. run `npm install` in the root directory
-3. run `npm run dev`
-4. go to [localhost:80](http://localhost:80/)
-5. enjoy
-
-## demo on actual scope
-
-![reactoscope demo](reactoscope_demo.gif "demo gif")
-
-## TODO
-
-- honestly quite a lot
-- reduce glitches
-- suggestions?
+export default tseslint.config({
+  plugins: {
+    // Add the react-x and react-dom plugins
+    'react-x': reactX,
+    'react-dom': reactDom,
+  },
+  rules: {
+    // other rules...
+    // Enable its recommended typescript rules
+    ...reactX.configs['recommended-typescript'].rules,
+    ...reactDom.configs.recommended.rules,
+  },
+})
+```

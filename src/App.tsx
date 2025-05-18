@@ -1,148 +1,113 @@
-import './App.css';
-import WaveScreen from './components/Screen/WaveScreen';
-import React, { useEffect, useRef, useState } from 'react';
-import { ProcessPCM } from './components/Audio/ProcessPCM';
-import * as THREE from 'three';
+import React, { useCallback } from 'react';
+import {
+	ReactFlow,
+	MiniMap,
+	Controls,
+	Background,
+	useNodesState,
+	useEdgesState,
+	addEdge,
+	type Connection,
+	type BackgroundVariant,
+} from '@xyflow/react';
+import nodeTypes from './components/nodes';
 
-const audioContext = new AudioContext();
-const merger = audioContext.createChannelMerger(2);
+import '@xyflow/react/dist/style.css';
+import './styles/flow.css';
 
-function App() {
-  const [width, height] = [512, 512];
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [scene] = useState(new THREE.Scene());
-  const [camera] = useState(
-    new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 1000)
-  );
-  const [points, setPoints] = useState<THREE.Vector3[]>([]);
-  const [pcmX, setPcmX] = useState(new Float32Array(width).fill(0));
-  const [pcmY, setPcmY] = useState(new Float32Array(height).fill(0));
-  const [isMouseDown, setIsMouseDown] = useState(false);
+const initialNodes = [
+	{
+		id: '1',
+		position: { x: 100, y: 100 },
+		data: { 
+			label: 'Audio Processor',
+			nodeType: 'audio',
+			description: 'Upload or drag an audio file' 
+		},
+		type: 'fileNode',
+	},
+	{
+		id: '2',
+		position: { x: 400, y: 100 },
+		data: { 
+			label: 'Visual Output',
+			nodeType: 'image',
+			description: 'Select image format settings' 
+		},
+		type: 'fileNode',
+	},
+	{
+		id: '3',
+		position: { x: 250, y: 300 },
+		data: { 
+			label: 'Configuration',
+			nodeType: 'config',
+			description: 'Settings for audio processing'
+		},
+		type: 'fileNode',
+	},
+];
+const initialEdges = [
+	{ id: 'e1-3', source: '1', target: '3', animated: true },
+	{ id: 'e3-2', source: '3', target: '2', animated: true },
+];
 
-  useEffect(() => {
-    if (canvasRef.current) {
-      const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current });
-      camera.position.z = 5;
-      renderer.render(scene, camera);
+export default function App() {
+	const [nodes, , onNodesChange] = useNodesState(initialNodes);
+	const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-      const handleMouseUp = () => setIsMouseDown(false);
-      window.addEventListener('mouseup', handleMouseUp);
+	const onConnect = useCallback(
+		(connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
+		[setEdges]
+	);
 
-      return () => window.removeEventListener('mouseup', handleMouseUp);
-    }
-  }, [camera, scene]);
+	return (
+		<div style={{ width: '100vw', height: '100vh' }} className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+			{/* SVG definitions for edge gradients */}
+			<svg style={{ width: 0, height: 0, position: 'absolute' }}>
+				<defs>
+					<linearGradient id="edge-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+						<stop offset="0%" stopColor="#6366f1" />
+						<stop offset="100%" stopColor="#a855f7" />
+					</linearGradient>
+				</defs>
+			</svg>
 
-  const handleMouseDown = () => setIsMouseDown(true);
-
-  const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isMouseDown || !canvasRef.current) return;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    updatePoints(x, y);
-  };
-
-  const updatePoints = (x: number, y: number) => {
-    const newPoint = new THREE.Vector3(x, y, 0);
-    const newPoints = [...points, newPoint];
-
-    setPoints(newPoints);
-    updateScene(newPoints);
-  };
-
-  const updatePointsArray = (newPoints: THREE.Vector3[]) => {
-    setPoints((prevPoints) => [...prevPoints, ...newPoints]);
-    updateScene([...points, ...newPoints]);
-  };
-
-  const generateRandomPoints = () => {
-    const numberOfPoints = Math.floor(Math.random() * 10) + 1; // Generate between 1 and 10 points
-    const newPoints = [];
-    for (let i = 0; i < numberOfPoints; i++) {
-      const x = Math.random() * 2 - 1; // Random x between -1 and 1
-      const y = Math.random() * 2 - 1; // Random y between -1 and 1
-      newPoints.push(new THREE.Vector3(x, y, 0));
-      if (i > 0) {
-        const prevPoint = newPoints[newPoints.length - 2];
-        const midX = (prevPoint.x + x) / 2;
-        const midY = (prevPoint.y + y) / 2;
-        newPoints.splice(
-          newPoints.length - 1,
-          0,
-          new THREE.Vector3(midX, midY, 0)
-        );
-      }
-    }
-    updatePointsArray(newPoints);
-  };
-
-  const updateScene = (points: THREE.Vector3[]) => {
-    if (!canvasRef.current) return;
-    const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current }); // Initialize renderer here to ensure it's always defined
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const material = new THREE.LineBasicMaterial({ color: 'rgb(4, 217, 255)' });
-    const line = new THREE.Line(geometry, material);
-    scene.clear();
-    scene.add(line);
-    renderer.render(scene, camera);
-  };
-
-  const clearCanvas = () => {
-    setPoints([]);
-    scene.clear();
-    if (canvasRef.current) {
-      const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current });
-      renderer.render(scene, camera);
-    }
-    setPcmX(new Float32Array(width).fill(0));
-    setPcmY(new Float32Array(height).fill(0));
-  };
-
-  return (
-    <div>
-      <div className='draw-canvas'>
-        <label>draw on me</label>
-        <label>warning: it'll be noisy</label>
-        <canvas
-          ref={canvasRef}
-          width={width}
-          height={height}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={() => setIsMouseDown(false)}
-        />
-      </div>
-      <button onClick={clearCanvas}>clear canvas</button>
-      <button onClick={generateRandomPoints}>random points</button>
-      <ProcessPCM
-        points={points}
-        setPcmX={setPcmX}
-        setPcmY={setPcmY}
-      />
-      <div className='wave-container'>
-        <div className='wave-screen-wrapper'>
-          <label>left</label>
-          <WaveScreen
-            pcm={pcmX}
-            audioContext={audioContext}
-            merger={merger}
-            channel={0}
-          />
-        </div>
-        <div className='wave-screen-wrapper'>
-          <label>right</label>
-          <WaveScreen
-            pcm={pcmY}
-            audioContext={audioContext}
-            merger={merger}
-            channel={1}
-          />
-        </div>
-      </div>
-    </div>
-  );
+			<ReactFlow
+				nodes={nodes}
+				edges={edges}
+				onNodesChange={onNodesChange}
+				onEdgesChange={onEdgesChange}
+				onConnect={onConnect}
+				nodeTypes={nodeTypes}
+				defaultEdgeOptions={{
+					style: { strokeWidth: 2 },
+					type: 'smoothstep',
+				}}
+				fitView
+				proOptions={{ hideAttribution: true }}
+				className="bg-gradient-to-br from-white/50 to-gray-50/50 dark:from-gray-900/50 dark:to-gray-800/50"
+			>
+				<Controls className="shadow-lg" />
+				<MiniMap 
+					nodeStrokeColor="#aaa"
+					nodeColor={(node) => {
+						switch(node.data?.nodeType) {
+							case 'audio': return '#10b981';
+							case 'image': return '#f59e0b';
+							case 'config': return '#0ea5e9';
+							default: return '#8b5cf6';
+						}
+					}}
+				/>
+				<Background
+					variant={'dots' as BackgroundVariant}
+					gap={16}
+					size={1}
+					color="#a0aec0"
+					className="opacity-30 dark:opacity-10"
+				/>
+			</ReactFlow>
+		</div>
+	);
 }
-
-export default App;
