@@ -1,56 +1,54 @@
-/* Custom styles for ReactFlow */
-
 /* Gradient background for the flow */
-.react-flow__container {
+/* .react-flow__container {
 	background: linear-gradient(
 		to bottom right,
 		rgba(29, 78, 216, 0.05),
 		rgba(124, 58, 237, 0.05)
 	);
-}
+} */
 
 /* Custom edge styling */
-.react-flow__edge-path {
+/* .react-flow__edge-path {
 	stroke-width: 2;
-}
+} */
 
 /* Customizing the minimap */
-.react-flow__minimap {
+/* .react-flow__minimap {
 	background-color: rgba(255, 255, 255, 0.1);
 	border-radius: 8px;
-}
+} */
 
 /* Styling the controls */
-.react-flow__controls {
+/* .react-flow__controls {
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 	background-color: rgba(255, 255, 255, 0.9);
 	backdrop-filter: blur(8px);
 	border-radius: 8px;
-}
+} */
 
-.react-flow__controls button {
+/* .react-flow__controls button {
 	background-color: transparent;
 	border-radius: 4px;
 	color: #333;
 	transition: all 0.2s ease;
-}
+} */
 
-.react-flow__controls button:hover {
+/* .react-flow__controls button:hover {
 	background-color: rgba(124, 58, 237, 0.1);
 	color: rgb(124, 58, 237);
-}
+} */
 
 /* Dark mode styling */
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
 	.react-flow__container {
 		background: linear-gradient(
 			to bottom right,
 			rgba(29, 78, 216, 0.1),
 			rgba(124, 58, 237, 0.1)
 		);
-	}
+	} */
 
-	.react-flow__controls {
+/* .react-flow__controls {
 		background-color: rgba(30, 30, 30, 0.8);
 	}
 
@@ -60,23 +58,22 @@
 
 	.react-flow__controls button:hover {
 		background-color: rgba(124, 58, 237, 0.2);
-	}
-}
+	} */
 
 /* Styling the connection lines */
-.react-flow__edge-path {
+/* .react-flow__edge-path {
 	stroke: url(#edge-gradient);
 	stroke-width: 2;
-}
+} */
 
 /* Animated edges */
-.react-flow__edge.animated .react-flow__edge-path {
+/* .react-flow__edge.animated .react-flow__edge-path {
 	stroke-dasharray: 5;
 	animation: dashdraw 0.5s linear infinite;
-}
+} */
 
-@keyframes dashdraw {
+/* @keyframes dashdraw {
 	from {
 		stroke-dashoffset: 10;
-	}
-}
+	} */
+/* } */
