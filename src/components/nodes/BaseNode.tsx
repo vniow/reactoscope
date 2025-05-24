@@ -1,6 +1,8 @@
 import React from 'react';
 import BaseHandle, { type BaseHandleProps } from '../handles/BaseHandle';
 import { Position } from '@xyflow/react';
+import { useNodeStyles } from '../../hooks/useNodeStyles';
+import { SlottedContent, type NodeSlots } from './NodeSlots';
 
 export interface BaseNodeProps {
 	label: string;
@@ -15,8 +17,11 @@ export interface BaseNodeProps {
 	gridSize?: number;
 	onMouseEnter?: () => void;
 	onMouseLeave?: () => void;
-	children?: React.ReactNode;
-	// Removed 'colors' prop
+
+	// Slot-based content
+	slots?: NodeSlots;
+	children?: React.ReactNode; // Fallback for backward compatibility
+
 	// Add specific handle props if they need to be dynamic beyond themeKey
 	sourceHandles?: Omit<BaseHandleProps, 'type' | 'position'>[];
 	targetHandles?: Omit<BaseHandleProps, 'type' | 'position'>[];
@@ -41,43 +46,15 @@ export function NodeButton({
 }: NodeButtonProps) {
 	const isCompact = window.innerWidth < 768; // This could be a hook or context value
 
-	// Base classes
-	let buttonClasses = `
-		${isCompact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'}
-		font-medium rounded transition-all shadow-sm hover:shadow-md 
-		max-w-full overflow-hidden text-ellipsis whitespace-nowrap
-		focus:outline-none focus:ring-2 focus:ring-offset-1
-	`;
-
-	if (variant === 'node') {
-		// Uses the node's specific theme colors
-		// Example: bg-node-debug-DEFAULT text-node-debug-text hover:bg-node-debug-hover (pseudo, actual classes depend on theme structure)
-		// For simplicity, let's assume a button variant within the node theme or use its DEFAULT and text colors.
-		// This part needs careful mapping to your @theme structure.
-		// Assuming theme structure like: colors.node[themeKey].buttonBg, colors.node[themeKey].buttonText
-		// Or more simply, using the DEFAULT and text colors of the node theme itself.
-		buttonClasses += ` 
-			bg-node-${themeKey}-DEFAULT dark:bg-node-${themeKey}-dark-DEFAULT 
-			text-node-${themeKey}-text dark:text-node-${themeKey}-dark-text
-			hover:brightness-110 dark:hover:brightness-125
-			focus:ring-node-${themeKey}-border dark:focus:ring-node-${themeKey}-dark-border
-		`;
-		// If you have specific 'hover' or 'active' states in your theme for buttons within nodes:
-		// e.g., hover:bg-node-${themeKey}-hover
-	} else {
-		// Uses general UI button theme (e.g., colors.ui.button.primary)
-		buttonClasses += `
-			bg-ui-button-primary-bg text-ui-button-primary-text
-			hover:bg-ui-button-primary-bg-hover
-			dark:bg-ui-button-primary-dark-bg dark:text-ui-button-primary-dark-text
-			dark:hover:bg-ui-button-primary-dark-bg-hover
-			focus:ring-ui-text-interactive
-		`;
-	}
+	const styles = useNodeStyles({
+		themeKey,
+		isCompact,
+		variant,
+	});
 
 	return (
 		<button
-			className={`${buttonClasses} ${className}`}
+			className={`${styles.button} ${className}`}
 			onClick={onClick}
 		>
 			{children}
@@ -89,19 +66,23 @@ export function NodeButton({
 export interface NodePreProps {
 	children: React.ReactNode;
 	className?: string;
+	themeKey?: string; // Allow custom theme key for styling
 }
 
 // Pre-formatted text container component
-export function NodePre({ children, className = '' }: NodePreProps) {
+export function NodePre({
+	children,
+	className = '',
+	themeKey = 'debug',
+}: NodePreProps) {
 	const isCompact = window.innerWidth < 768;
-	const preClasses = `
-		${isCompact ? 'text-[9px] p-1' : 'text-xs p-2'}
-		text-left rounded w-full overflow-auto max-w-full mt-1 max-h-[120px]
-		bg-ui-input-bg dark:bg-ui-input-dark-bg 
-		text-ui-input-text dark:text-ui-input-dark-text
-		border border-ui-input-border dark:border-ui-input-dark-border
-	`;
-	return <pre className={`${preClasses} ${className}`}>{children}</pre>;
+
+	const styles = useNodeStyles({
+		themeKey, // Use the provided theme key
+		isCompact,
+	});
+
+	return <pre className={`${styles.pre} ${className}`}>{children}</pre>;
 }
 
 export default function BaseNode({
@@ -110,70 +91,70 @@ export default function BaseNode({
 	// nodeType, // Not directly used for styling now, themeKey handles it
 	themeKey,
 	isConnectable,
-	// isDragging = false, // Consider if these states need specific Tailwind classes
-	// isHovering = false,
+	isDragging = false,
+	isHovering = false,
 	widthUnits = 8, // Default increased for better layout
 	heightUnits = 4, // Default increased
 	gridSize = 32,
 	onMouseEnter,
 	onMouseLeave,
+	slots,
 	children,
 	sourceHandles,
 	targetHandles,
 }: BaseNodeProps) {
 	const width = widthUnits * gridSize;
-	const height = heightUnits * gridSize; // Auto-height might be better with children
+	const height = heightUnits * gridSize;
 
-	// Constructing Tailwind classes based on themeKey
-	// Ensure your @theme in index.css has these color definitions:
-	// e.g., node.debug.DEFAULT, node.debug.border, node.debug.text
-	// and their dark variants: node.debug.dark.DEFAULT, node.debug.dark.border, etc.
-	const nodeContainerClasses = `
-		p-3 rounded-node shadow-lg backdrop-blur-md
-		border-2
-		bg-node-${themeKey}-DEFAULT/80 dark:bg-node-${themeKey}-dark-DEFAULT/80
-		border-node-${themeKey}-border dark:border-node-${themeKey}-dark-border
-		text-node-${themeKey}-text dark:text-node-${themeKey}-dark-text
-		hover:shadow-xl transition-all duration-200
-		flex flex-col
-	`; // Added /80 for slight transparency if desired
+	const isCompact = window.innerWidth < 768;
 
-	const headerClasses = `
-		text-sm font-semibold mb-2 pb-1 border-b 
-		border-node-${themeKey}-border/50 dark:border-node-${themeKey}-dark-border/50
-		cursor-move node-header relative // Added node-header for drag handle
-	`;
+	const styles = useNodeStyles({
+		themeKey,
+		isDragging,
+		isHovering,
+		isCompact,
+	});
 
-	const handleBaseClasses = `
-		w-3 h-3 rounded-full shadow-md
-		transition-all duration-150 hover:scale-125
-	`;
-	const themedHandleClasses = `
-		${handleBaseClasses}
-		bg-node-${themeKey}-handle dark:bg-node-${themeKey}-dark-handle
-		border-2 border-node-${themeKey}-border dark:border-node-${themeKey}-dark-border
-	`;
-	// Example for active/connected state if needed: ring-2 ring-offset-1 ring-node-${themeKey}-active
+	// Default header content
+	const defaultHeader = (
+		<>
+			{label}
+			{description && (
+				<div className='text-xs font-normal opacity-75 mt-0.5'>
+					{description}
+				</div>
+			)}
+		</>
+	);
 
 	return (
 		<div
 			style={{ width: `${width}px`, minHeight: `${height}px` }}
-			className={nodeContainerClasses}
+			className={styles.container}
 			onMouseEnter={onMouseEnter}
 			onMouseLeave={onMouseLeave}
 		>
-			<div className={headerClasses}>
-				{label}
-				{description && (
-					<div className='text-xs font-normal opacity-75 mt-0.5'>
-						{description}
-					</div>
-				)}
-			</div>
-
-			<div className='flex-grow overflow-y-auto p-1 custom-scrollbar'>
-				{children}
-			</div>
+			{/* Use slot-based architecture if slots are provided, otherwise fallback to legacy */}
+			{slots ? (
+				<SlottedContent
+					slots={{
+						header: slots.header || defaultHeader,
+						toolbar: slots.toolbar,
+						content: slots.content || children,
+						footer: slots.footer,
+					}}
+					headerClassName={styles.header}
+					toolbarClassName={styles.toolbar}
+					contentClassName={styles.content}
+					footerClassName={styles.footer}
+				/>
+			) : (
+				<>
+					{/* Legacy mode for backward compatibility */}
+					<div className={styles.header}>{defaultHeader}</div>
+					<div className={styles.content}>{children}</div>
+				</>
+			)}
 
 			{/* Default Handles - can be overridden by sourceHandles/targetHandles props */}
 			{!sourceHandles && !targetHandles && (
@@ -182,14 +163,14 @@ export default function BaseNode({
 						type='target'
 						position={Position.Left}
 						isConnectable={isConnectable}
-						className={themedHandleClasses}
+						className={styles.themedHandle}
 						id={`${themeKey}-target-default`}
 					/>
 					<BaseHandle
 						type='source'
 						position={Position.Right}
 						isConnectable={isConnectable}
-						className={themedHandleClasses}
+						className={styles.themedHandle}
 						id={`${themeKey}-source-default`}
 					/>
 				</>
@@ -200,10 +181,10 @@ export default function BaseNode({
 				<BaseHandle
 					key={`source-${index}-${handleProps.id || 'handle'}`}
 					type='source'
-					position={handleProps.position || Position.Right}
+					position={Position.Right}
 					isConnectable={isConnectable}
 					{...handleProps}
-					className={`${themedHandleClasses} ${handleProps.className || ''}`}
+					className={`${styles.themedHandle} ${handleProps.className || ''}`}
 				/>
 			))}
 
@@ -212,31 +193,12 @@ export default function BaseNode({
 				<BaseHandle
 					key={`target-${index}-${handleProps.id || 'handle'}`}
 					type='target'
-					position={handleProps.position || Position.Left}
+					position={Position.Left}
 					isConnectable={isConnectable}
 					{...handleProps}
-					className={`${themedHandleClasses} ${handleProps.className || ''}`}
+					className={`${styles.themedHandle} ${handleProps.className || ''}`}
 				/>
 			))}
 		</div>
 	);
 }
-
-// Add a basic custom scrollbar style if you want, or use a plugin
-// This can go into your main CSS file (e.g., index.css)
-/*
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(0,0,0,0.2);
-  border-radius: 3px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0,0,0,0.3);
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-*/

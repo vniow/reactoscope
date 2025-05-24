@@ -1,6 +1,6 @@
-import { Controls, ControlButton, useReactFlow } from '@xyflow/react';
-import { useState, useEffect, useCallback } from 'react';
-import { useNodeStore } from '../store/nodeStore';
+import { Controls, ControlButton } from '@xyflow/react';
+import { useState, useEffect } from 'react';
+// import { useNodeStore } from '../store/nodeStore';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -77,22 +77,6 @@ export default function FlowControls() {
 		}
 	};
 
-	// Get the ReactFlow instance to access viewport information
-	const reactFlowInstance = useReactFlow();
-	const { addNode } = useNodeStore();
-	
-	// Add a node to the center of the current viewport
-	const addDebugNode = useCallback(() => {
-		// Get viewport center or default to a position
-		const center = reactFlowInstance?.screenToFlowPosition({
-			x: window.innerWidth / 2,
-			y: window.innerHeight / 2,
-		}) || { x: 100, y: 100 };
-		
-		// Add the new debug node via our store
-		addNode('debugNode', center);
-	}, [reactFlowInstance, addNode]);
-	
 	// Render the control buttons
 	return (
 		<div className='shadow-lg'>
@@ -110,17 +94,6 @@ export default function FlowControls() {
 				>
 					{getThemeIcon()}
 				</ControlButton>
-				
-				{/* Add Debug Node button */}
-				<ControlButton
-					className='w-12 h-12 rounded-lg bg-gradient-to-br from-pink-400 to-red-500 text-white text-xl hover:from-pink-500 hover:to-red-600 transition-all'
-					title="Add Debug Node"
-					onClick={addDebugNode}
-				>
-					🔍
-				</ControlButton>
-				
-				{/* We can add more node type buttons later */}
 			</Controls>
 		</div>
 	);

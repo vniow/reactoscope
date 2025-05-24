@@ -1,14 +1,12 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import {
 	ReactFlow,
 	MiniMap,
-	Controls,
 	Background,
 	type BackgroundVariant,
 } from '@xyflow/react';
 import nodeTypes from './components/nodes';
 import { useNodeStore } from './store/nodeStore';
-// import { NODE_TYPE_COLORS } from './types/nodes';
 import FlowControls from './components/FlowControls';
 import NodeFactory from './components/NodeFactory';
 
@@ -48,11 +46,9 @@ export default function App() {
 				proOptions={{ hideAttribution: true }}
 				className='bg-gradient-to-br from-white/50 to-gray-50/50 dark:from-gray-900/50 dark:to-gray-800/50'
 			>
-				<Controls className='shadow-lg' />
 				<MiniMap
 					nodeStrokeColor='#aaa'
 					nodeColor={(node) => {
-						// Use our node theme mapping
 						const nodeData = node.data as any;
 						switch (nodeData?.nodeType) {
 							case 'debugNode':
@@ -77,9 +73,6 @@ export default function App() {
 				<FlowControls />
 				<NodeFactory />
 			</ReactFlow>
-
-			{/* Node Factory - floating component for adding nodes */}
-			{/* <NodeFactory /> */}
 		</div>
 	);
 }

@@ -1,4 +1,4 @@
-export const NodeType = {
+export const NodeTypes = {
 	// Audio Nodes
 	AUDIO_INPUT: 'audioInput',
 	AUDIO_OUTPUT: 'audioOutput',
@@ -27,258 +27,307 @@ export const NodeType = {
 	COMMENT: 'commentNode',
 } as const;
 
-export type NodeType = (typeof NodeType)[keyof typeof NodeType];
+export type NodeType = (typeof NodeTypes)[keyof typeof NodeTypes];
+
+// Add theme keys mapping
+export const NODE_THEME_KEYS: Record<NodeType, string> = {
+	[NodeTypes.AUDIO_INPUT]: 'audio-input',
+	[NodeTypes.AUDIO_OUTPUT]: 'audio-output',
+	[NodeTypes.OSCILLATOR]: 'oscillator',
+	[NodeTypes.FILTER]: 'filter',
+	[NodeTypes.DELAY]: 'delay',
+	[NodeTypes.GAIN]: 'gain',
+	[NodeTypes.BITCRUSHER]: 'bitcrusher',
+	[NodeTypes.NOISE_GENERATOR]: 'noise-generator',
+	[NodeTypes.SPECTROGRAM]: 'spectrogram',
+	[NodeTypes.OSCILLOSCOPE]: 'oscilloscope',
+	[NodeTypes.IMAGE_DISPLAY]: 'image-display',
+	[NodeTypes.GLOBAL_SETTINGS]: 'global-settings',
+	[NodeTypes.MIDI_INPUT_CONFIG]: 'midi-input-config',
+	[NodeTypes.DATA_INPUT]: 'data-input',
+	[NodeTypes.DATA_VIEWER]: 'data-viewer',
+	[NodeTypes.DEBUG]: 'debug',
+	[NodeTypes.COMMENT]: 'comment',
+};
 
 // Base data structure for all nodes
 export interface BaseNodeData {
 	label: string;
 	description?: string;
-	nodeType: NodeType; // Using the enum for strong typing
-	themeKey?: string; // Added to carry the theme key for styling
+	nodeType: NodeType; // Fix: use NodeType instead of NodeTypes
+	themeKey?: string;
+
+	// Add this index signature to allow additional properties
+	[key: string]: unknown;
 }
 
 // --- Audio Node Data Interfaces ---
 export interface BaseAudioData extends BaseNodeData {
 	nodeType:
-		| NodeType.AUDIO_INPUT
-		| NodeType.AUDIO_OUTPUT
-		| NodeType.OSCILLATOR
-		| NodeType.FILTER
-		| NodeType.DELAY
-		| NodeType.GAIN
-		| NodeType.BITCRUSHER
-		| NodeType.NOISE_GENERATOR;
-	// Common audio properties like volume, pan could go here if universally applicable
+		| typeof NodeTypes.AUDIO_INPUT
+		| typeof NodeTypes.AUDIO_OUTPUT
+		| typeof NodeTypes.OSCILLATOR
+		| typeof NodeTypes.FILTER
+		| typeof NodeTypes.DELAY
+		| typeof NodeTypes.GAIN
+		| typeof NodeTypes.BITCRUSHER
+		| typeof NodeTypes.NOISE_GENERATOR;
 }
 
 export interface OscillatorData extends BaseAudioData {
-	nodeType: NodeType.OSCILLATOR;
+	nodeType: typeof NodeTypes.OSCILLATOR;
 	frequency: number;
 	waveform: 'sine' | 'square' | 'sawtooth' | 'triangle';
 }
 
 export interface GainData extends BaseAudioData {
-	nodeType: NodeType.GAIN;
-	gain: number; // Linear gain value (e.g., 0 to 1)
+	nodeType: typeof NodeTypes.GAIN;
+	gain: number;
 }
 
 export interface DebugNodeData extends BaseNodeData {
-	nodeType: NodeType.DEBUG;
+	nodeType: typeof NodeTypes.DEBUG;
 	debugInfo: Record<string, any>;
 }
 
-// --- Add other specific data interfaces as needed ---
-// e.g., FilterData, DelayData, SpectrogramData, etc.
-
 // Union type for all possible node data structures
-// This will grow as you define more specific node data types
-export type NodeData =
-	| BaseNodeData // Generic fallback
-	| OscillatorData
-	| GainData
-	| DebugNodeData;
-// | FilterData
-// | DelayData
-// ... and so on
+export type NodeData = BaseNodeData | OscillatorData | GainData | DebugNodeData;
 
-// This map will associate each NodeType with its corresponding theme key
-// as defined in the CSS @theme block.
-export const NODE_THEME_KEYS: Record<NodeType, string> = {
-	[NodeType.AUDIO_INPUT]: 'generic', // Placeholder, define specific if needed
-	[NodeType.AUDIO_OUTPUT]: 'generic', // Placeholder
-	[NodeType.OSCILLATOR]: 'oscillator',
-	[NodeType.FILTER]: 'generic', // Placeholder
-	[NodeType.DELAY]: 'generic', // Placeholder
-	[NodeType.GAIN]: 'gain',
-	[NodeType.BITCRUSHER]: 'generic', // Placeholder
-	[NodeType.NOISE_GENERATOR]: 'generic', // Placeholder
-	[NodeType.SPECTROGRAM]: 'generic', // Placeholder
-	[NodeType.OSCILLOSCOPE]: 'generic', // Placeholder
-	[NodeType.IMAGE_DISPLAY]: 'generic', // Placeholder
-	[NodeType.GLOBAL_SETTINGS]: 'generic', // Placeholder
-	[NodeType.MIDI_INPUT_CONFIG]: 'generic', // Placeholder
-	[NodeType.DATA_INPUT]: 'generic', // Placeholder
-	[NodeType.DATA_VIEWER]: 'generic', // Placeholder
-	[NodeType.DEBUG]: 'debug',
-	[NodeType.COMMENT]: 'generic', // Placeholder
-};
-
-// Helper function to get default data for a node type
-export function getDefaultNodeData(type: NodeType, id: string): NodeData {
-	const baseData: Omit<BaseNodeData, 'nodeType'> = {
-		label: `${type} Node ${id.substring(0, 4)}`,
-		description: `A node of type ${type}`,
-	};
-
-	switch (type) {
-		case NodeType.OSCILLATOR:
-			return {
-				...baseData,
-				nodeType: NodeType.OSCILLATOR,
-				frequency: 440,
-				waveform: 'sine',
-			} as OscillatorData;
-		case NodeType.GAIN:
-			return {
-				...baseData,
-				nodeType: NodeType.GAIN,
-				gain: 0.75,
-			} as GainData;
-		case NodeType.DEBUG:
-			return {
-				...baseData,
-				nodeType: NodeType.DEBUG,
-				label: `Debug ${id.substring(0, 4)}`,
-				debugInfo: { message: 'Initial debug state' },
-			} as DebugNodeData;
-		// Add cases for other node types with their default data
-		default:
-			// Fallback for types not yet specifically handled
-			return {
-				...baseData,
-				nodeType: type,
-				label: `${type.charAt(0).toUpperCase() + type.slice(1)} Node`,
-			} as BaseNodeData;
-	}
-}
-
-// Node Registration Map - links React Flow node type strings to our NodeType enum
-// This centralizes the mapping between what React Flow expects and our internal types
+// Node registration interface
 export interface NodeRegistration {
 	nodeTypeEnum: NodeType;
 	defaultData: (id: string) => NodeData;
 	displayName: string;
-	category: 'audio' | 'visual' | 'config' | 'data' | 'utility';
+	category: string;
+}
+
+// Helper function to get default node data
+export function getDefaultNodeData(nodeType: NodeType, id: string): NodeData {
+	const baseData = {
+		label: getDefaultLabel(nodeType),
+		description: getDefaultDescription(nodeType),
+		nodeType,
+		themeKey: NODE_THEME_KEYS[nodeType],
+	};
+
+	switch (nodeType) {
+		case NodeTypes.OSCILLATOR:
+			return {
+				...baseData,
+				nodeType: NodeTypes.OSCILLATOR,
+				frequency: 440,
+				waveform: 'sine' as const,
+			} as OscillatorData;
+
+		case NodeTypes.GAIN:
+			return {
+				...baseData,
+				nodeType: NodeTypes.GAIN,
+				gain: 0.5,
+			} as GainData;
+
+		case NodeTypes.DEBUG:
+			return {
+				...baseData,
+				nodeType: NodeTypes.DEBUG,
+				debugInfo: { id, timestamp: Date.now() },
+			} as DebugNodeData;
+
+		default:
+			return baseData as BaseNodeData;
+	}
+}
+
+function getDefaultLabel(nodeType: NodeType): string {
+	switch (nodeType) {
+		case NodeTypes.OSCILLATOR:
+			return 'Oscillator';
+		case NodeTypes.GAIN:
+			return 'Gain';
+		case NodeTypes.FILTER:
+			return 'Filter';
+		case NodeTypes.DELAY:
+			return 'Delay';
+		case NodeTypes.BITCRUSHER:
+			return 'Bit Crusher';
+		case NodeTypes.NOISE_GENERATOR:
+			return 'Noise Generator';
+		case NodeTypes.AUDIO_INPUT:
+			return 'Audio Input';
+		case NodeTypes.AUDIO_OUTPUT:
+			return 'Audio Output';
+		case NodeTypes.SPECTROGRAM:
+			return 'Spectrogram';
+		case NodeTypes.OSCILLOSCOPE:
+			return 'Oscilloscope';
+		case NodeTypes.IMAGE_DISPLAY:
+			return 'Image Display';
+		case NodeTypes.GLOBAL_SETTINGS:
+			return 'Global Settings';
+		case NodeTypes.MIDI_INPUT_CONFIG:
+			return 'MIDI Input Config';
+		case NodeTypes.DATA_INPUT:
+			return 'Data Input';
+		case NodeTypes.DATA_VIEWER:
+			return 'Data Viewer';
+		case NodeTypes.DEBUG:
+			return 'Debug';
+		case NodeTypes.COMMENT:
+			return 'Comment';
+		default:
+			return 'Unknown Node';
+	}
+}
+
+function getDefaultDescription(nodeType: NodeType): string {
+	switch (nodeType) {
+		case NodeTypes.OSCILLATOR:
+			return 'Generates audio waveforms';
+		case NodeTypes.GAIN:
+			return 'Controls signal amplitude';
+		case NodeTypes.FILTER:
+			return 'Filters audio frequencies';
+		case NodeTypes.DELAY:
+			return 'Adds delay to audio signal';
+		case NodeTypes.BITCRUSHER:
+			return 'Reduces audio bit depth';
+		case NodeTypes.NOISE_GENERATOR:
+			return 'Generates noise signals';
+		case NodeTypes.AUDIO_INPUT:
+			return 'Audio input source';
+		case NodeTypes.AUDIO_OUTPUT:
+			return 'Audio output destination';
+		case NodeTypes.SPECTROGRAM:
+			return 'Visual frequency analysis';
+		case NodeTypes.OSCILLOSCOPE:
+			return 'Visual waveform display';
+		case NodeTypes.IMAGE_DISPLAY:
+			return 'Displays images';
+		case NodeTypes.GLOBAL_SETTINGS:
+			return 'Global configuration';
+		case NodeTypes.MIDI_INPUT_CONFIG:
+			return 'MIDI input configuration';
+		case NodeTypes.DATA_INPUT:
+			return 'Data input source';
+		case NodeTypes.DATA_VIEWER:
+			return 'Data visualization';
+		case NodeTypes.DEBUG:
+			return 'Debug information display';
+		case NodeTypes.COMMENT:
+			return 'Comment or note';
+		default:
+			return 'Node description';
+	}
 }
 
 export const NODE_REGISTRY_MAP: Record<string, NodeRegistration> = {
-	// Audio Nodes
 	oscillatorNode: {
-		nodeTypeEnum: NodeType.OSCILLATOR,
-		defaultData: (id: string) => getDefaultNodeData(NodeType.OSCILLATOR, id),
+		nodeTypeEnum: NodeTypes.OSCILLATOR,
+		defaultData: (id: string) => getDefaultNodeData(NodeTypes.OSCILLATOR, id),
 		displayName: 'Oscillator',
 		category: 'audio',
 	},
 	gainNode: {
-		nodeTypeEnum: NodeType.GAIN,
-		defaultData: (id: string) => getDefaultNodeData(NodeType.GAIN, id),
+		nodeTypeEnum: NodeTypes.GAIN,
+		defaultData: (id: string) => getDefaultNodeData(NodeTypes.GAIN, id),
 		displayName: 'Gain',
 		category: 'audio',
 	},
 	filterNode: {
-		nodeTypeEnum: NodeType.FILTER,
-		defaultData: (id: string) => getDefaultNodeData(NodeType.FILTER, id),
+		nodeTypeEnum: NodeTypes.FILTER,
+		defaultData: (id: string) => getDefaultNodeData(NodeTypes.FILTER, id),
 		displayName: 'Filter',
 		category: 'audio',
 	},
 	delayNode: {
-		nodeTypeEnum: NodeType.DELAY,
-		defaultData: (id: string) => getDefaultNodeData(NodeType.DELAY, id),
+		nodeTypeEnum: NodeTypes.DELAY,
+		defaultData: (id: string) => getDefaultNodeData(NodeTypes.DELAY, id),
 		displayName: 'Delay',
 		category: 'audio',
 	},
 	bitCrusherNode: {
-		nodeTypeEnum: NodeType.BITCRUSHER,
-		defaultData: (id: string) => getDefaultNodeData(NodeType.BITCRUSHER, id),
+		nodeTypeEnum: NodeTypes.BITCRUSHER,
+		defaultData: (id: string) => getDefaultNodeData(NodeTypes.BITCRUSHER, id),
 		displayName: 'Bit Crusher',
 		category: 'audio',
 	},
 	noiseGeneratorNode: {
-		nodeTypeEnum: NodeType.NOISE_GENERATOR,
+		nodeTypeEnum: NodeTypes.NOISE_GENERATOR,
 		defaultData: (id: string) =>
-			getDefaultNodeData(NodeType.NOISE_GENERATOR, id),
+			getDefaultNodeData(NodeTypes.NOISE_GENERATOR, id),
 		displayName: 'Noise Generator',
 		category: 'audio',
 	},
 	audioInputNode: {
-		nodeTypeEnum: NodeType.AUDIO_INPUT,
-		defaultData: (id: string) => getDefaultNodeData(NodeType.AUDIO_INPUT, id),
+		nodeTypeEnum: NodeTypes.AUDIO_INPUT,
+		defaultData: (id: string) => getDefaultNodeData(NodeTypes.AUDIO_INPUT, id),
 		displayName: 'Audio Input',
 		category: 'audio',
 	},
 	audioOutputNode: {
-		nodeTypeEnum: NodeType.AUDIO_OUTPUT,
-		defaultData: (id: string) => getDefaultNodeData(NodeType.AUDIO_OUTPUT, id),
+		nodeTypeEnum: NodeTypes.AUDIO_OUTPUT,
+		defaultData: (id: string) => getDefaultNodeData(NodeTypes.AUDIO_OUTPUT, id),
 		displayName: 'Audio Output',
 		category: 'audio',
 	},
-
-	// Visual Nodes
 	spectrogramNode: {
-		nodeTypeEnum: NodeType.SPECTROGRAM,
-		defaultData: (id: string) => getDefaultNodeData(NodeType.SPECTROGRAM, id),
+		nodeTypeEnum: NodeTypes.SPECTROGRAM,
+		defaultData: (id: string) => getDefaultNodeData(NodeTypes.SPECTROGRAM, id),
 		displayName: 'Spectrogram',
 		category: 'visual',
 	},
 	oscilloscopeNode: {
-		nodeTypeEnum: NodeType.OSCILLOSCOPE,
-		defaultData: (id: string) => getDefaultNodeData(NodeType.OSCILLOSCOPE, id),
+		nodeTypeEnum: NodeTypes.OSCILLOSCOPE,
+		defaultData: (id: string) => getDefaultNodeData(NodeTypes.OSCILLOSCOPE, id),
 		displayName: 'Oscilloscope',
 		category: 'visual',
 	},
 	imageDisplayNode: {
-		nodeTypeEnum: NodeType.IMAGE_DISPLAY,
-		defaultData: (id: string) => getDefaultNodeData(NodeType.IMAGE_DISPLAY, id),
+		nodeTypeEnum: NodeTypes.IMAGE_DISPLAY,
+		defaultData: (id: string) =>
+			getDefaultNodeData(NodeTypes.IMAGE_DISPLAY, id),
 		displayName: 'Image Display',
 		category: 'visual',
 	},
-
-	// Config Nodes
 	globalSettingsNode: {
-		nodeTypeEnum: NodeType.GLOBAL_SETTINGS,
+		nodeTypeEnum: NodeTypes.GLOBAL_SETTINGS,
 		defaultData: (id: string) =>
-			getDefaultNodeData(NodeType.GLOBAL_SETTINGS, id),
+			getDefaultNodeData(NodeTypes.GLOBAL_SETTINGS, id),
 		displayName: 'Global Settings',
 		category: 'config',
 	},
 	midiInputConfigNode: {
-		nodeTypeEnum: NodeType.MIDI_INPUT_CONFIG,
+		nodeTypeEnum: NodeTypes.MIDI_INPUT_CONFIG,
 		defaultData: (id: string) =>
-			getDefaultNodeData(NodeType.MIDI_INPUT_CONFIG, id),
+			getDefaultNodeData(NodeTypes.MIDI_INPUT_CONFIG, id),
 		displayName: 'MIDI Input Config',
 		category: 'config',
 	},
-
-	// Data Nodes
 	dataInputNode: {
-		nodeTypeEnum: NodeType.DATA_INPUT,
-		defaultData: (id: string) => getDefaultNodeData(NodeType.DATA_INPUT, id),
+		nodeTypeEnum: NodeTypes.DATA_INPUT,
+		defaultData: (id: string) => getDefaultNodeData(NodeTypes.DATA_INPUT, id),
 		displayName: 'Data Input',
 		category: 'data',
 	},
 	dataViewerNode: {
-		nodeTypeEnum: NodeType.DATA_VIEWER,
-		defaultData: (id: string) => getDefaultNodeData(NodeType.DATA_VIEWER, id),
+		nodeTypeEnum: NodeTypes.DATA_VIEWER,
+		defaultData: (id: string) => getDefaultNodeData(NodeTypes.DATA_VIEWER, id),
 		displayName: 'Data Viewer',
 		category: 'data',
 	},
-
-	// Utility Nodes
 	debugNode: {
-		nodeTypeEnum: NodeType.DEBUG,
-		defaultData: (id: string) => getDefaultNodeData(NodeType.DEBUG, id),
+		nodeTypeEnum: NodeTypes.DEBUG,
+		defaultData: (id: string) => getDefaultNodeData(NodeTypes.DEBUG, id),
 		displayName: 'Debug',
 		category: 'utility',
 	},
 	commentNode: {
-		nodeTypeEnum: NodeType.COMMENT,
-		defaultData: (id: string) => getDefaultNodeData(NodeType.COMMENT, id),
+		nodeTypeEnum: NodeTypes.COMMENT,
+		defaultData: (id: string) => getDefaultNodeData(NodeTypes.COMMENT, id),
 		displayName: 'Comment',
 		category: 'utility',
 	},
 };
-
-// Helper function to get default node data using the registry
-export function getDefaultNodeDataFromRegistry(
-	nodeRegistrationKey: string,
-	id: string
-): NodeData {
-	const registration = NODE_REGISTRY_MAP[nodeRegistrationKey];
-	if (!registration) {
-		throw new Error(`Unknown node registration key: ${nodeRegistrationKey}`);
-	}
-	return registration.defaultData(id);
-}
 
 // Helper to get all available node types grouped by category
 export function getNodeCategories() {
@@ -295,4 +344,16 @@ export function getNodeCategories() {
 	});
 
 	return categories;
+}
+
+// Helper function to get default node data using the registry
+export function getDefaultNodeDataFromRegistry(
+	nodeRegistrationKey: string,
+	id: string
+): NodeData {
+	const registration = NODE_REGISTRY_MAP[nodeRegistrationKey];
+	if (!registration) {
+		throw new Error(`Unknown node registration key: ${nodeRegistrationKey}`);
+	}
+	return registration.defaultData(id);
 }
