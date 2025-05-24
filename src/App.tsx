@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import {
 	ReactFlow,
 	MiniMap,
@@ -17,10 +17,14 @@ export default function App() {
 	const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode } =
 		useNodeStore();
 
+	// Use a ref to track if we've initialized to prevent double-initialization
+	const hasInitialized = useRef(false);
+
 	// Add some initial nodes when the app starts
 	useEffect(() => {
-		// Only add initial nodes if the store is empty
-		if (nodes.length === 0) {
+		// Only add initial nodes if the store is empty and we haven't initialized yet
+		if (nodes.length === 0 && !hasInitialized.current) {
+			hasInitialized.current = true;
 			addNode('debugNode', { x: 100, y: 100 });
 			addNode('oscillatorNode', { x: 400, y: 100 });
 		}
