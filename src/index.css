@@ -49,3 +49,8 @@
 	/* Border radius */
 	--radius-node: 0.75rem;
 }
+
+.dark .react-flow_node {
+	background: #333333;
+	color: #ffffff;
+}

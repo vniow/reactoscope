@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
 	ReactFlow,
 	MiniMap,
 	Background,
 	type BackgroundVariant,
+	type ColorMode,
 } from '@xyflow/react';
 import nodeTypes from './components/nodes';
 import { useNodeStore } from './store/nodeStore';
@@ -11,7 +12,6 @@ import FlowControls from './components/FlowControls';
 import NodeFactory from './components/NodeFactory';
 
 import '@xyflow/react/dist/style.css';
-import './styles/flow.css';
 
 export default function App() {
 	const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode } =
@@ -19,6 +19,48 @@ export default function App() {
 
 	// Use a ref to track if we've initialized to prevent double-initialization
 	const hasInitialized = useRef(false);
+
+	// Theme state for React Flow colorMode
+	const [colorMode, setColorMode] = useState<ColorMode>('system');
+
+	// Function to get React Flow color mode from current theme
+	const getColorMode = useCallback((): ColorMode => {
+		const currentClasses = document.documentElement.classList;
+		if (currentClasses.contains('dark')) return 'dark';
+		if (currentClasses.contains('light')) return 'light';
+		return 'system';
+	}, []);
+
+	// Monitor theme changes and update React Flow color mode
+	useEffect(() => {
+		const updateColorMode = () => {
+			const newColorMode = getColorMode();
+			console.log(`Updating React Flow colorMode to: ${newColorMode}`);
+			setColorMode(newColorMode);
+		};
+
+		// Initial update
+		updateColorMode();
+
+		// Create observer for class changes on html element
+		const observer = new MutationObserver((mutations) => {
+			mutations.forEach((mutation) => {
+				if (
+					mutation.type === 'attributes' &&
+					mutation.attributeName === 'class'
+				) {
+					updateColorMode();
+				}
+			});
+		});
+
+		observer.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ['class'],
+		});
+
+		return () => observer.disconnect();
+	}, [getColorMode]);
 
 	// Add some initial nodes when the app starts
 	useEffect(() => {
@@ -33,7 +75,7 @@ export default function App() {
 	return (
 		<div
 			style={{ width: '100vw', height: '100vh' }}
-			// className='bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800'
+			className='bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-200'
 		>
 			<ReactFlow
 				nodes={nodes}
@@ -42,6 +84,7 @@ export default function App() {
 				onEdgesChange={onEdgesChange}
 				onConnect={onConnect}
 				nodeTypes={nodeTypes}
+				colorMode={colorMode}
 				defaultEdgeOptions={{
 					style: { strokeWidth: 2 },
 					type: 'smoothstep',
@@ -53,7 +96,7 @@ export default function App() {
 				<MiniMap
 					nodeStrokeColor='#aaa'
 					nodeColor={(node) => {
-						const nodeData = node.data as any;
+						const nodeData = node.data as { nodeType?: string };
 						switch (nodeData?.nodeType) {
 							case 'debugNode':
 							case 'debug':
