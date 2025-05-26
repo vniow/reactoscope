@@ -2,7 +2,6 @@ import { useCallback, useEffect } from 'react';
 import {
 	ReactFlow,
 	Background,
-	Controls,
 	MiniMap,
 	addEdge,
 	useNodesState,
@@ -17,7 +16,7 @@ import '@xyflow/react/dist/base.css';
 import { initialNodes, nodeTypes } from './nodes';
 import { initialEdges, edgeTypes } from './edges';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { ThemeToggle } from './components/ThemeToggle';
+import { FlowControls } from './components/FlowControls';
 import { getNodeHandlePositions } from './utils/handlePositioning';
 import { type AppNode } from './nodes/types';
 
@@ -97,11 +96,6 @@ export default function App() {
 	return (
 		<ThemeProvider>
 			<div className='w-full h-screen'>
-				{/* Theme Toggle positioned in top-right corner */}
-				<div className='absolute top-4 right-4 z-10'>
-					<ThemeToggle />
-				</div>
-
 				<ReactFlow
 					nodes={nodes}
 					nodeTypes={nodeTypes}
@@ -121,12 +115,12 @@ export default function App() {
 						lineWidth={2}
 						offset={3}
 						variant={BackgroundVariant.Cross}
-						className='bg-gray-100 dark:bg-gray-200'
+						className='bg-gray-100 dark:bg-gray-900'
 					/>
-					<Controls className='bg-gray-100/50 border-gray-200 dark:bg-gray-700 dark:border-gray-600' />
+					<FlowControls />
 					<MiniMap
 						pannable={true}
-						bgColor='bg-gray-100/50 dark:bg-gray-200'
+						bgColor='bg-gray-100/50 dark:bg-gray-800'
 						ariaLabel={'MiniMap'}
 					/>
 				</ReactFlow>
