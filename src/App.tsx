@@ -1,13 +1,13 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import {
 	ReactFlow,
 	Background,
 	MiniMap,
-	addEdge,
-	useNodesState,
-	useEdgesState,
-	type OnConnect,
-	type NodeChange,
+	// addEdge, // Removed: Handled by Zustand store
+	// useNodesState, // Removed: Replaced by Zustand store
+	// useEdgesState, // Removed: Replaced by Zustand store
+	// type OnConnect, // Removed: Handled by useFlowActions hook
+	type NodeChange, // Keep for handleNodesChange, will be passed to store action
 	BackgroundVariant,
 } from '@xyflow/react';
 
@@ -15,82 +15,61 @@ import '@xyflow/react/dist/base.css';
 
 import { initialNodes, nodeTypes } from './nodes';
 import { initialEdges, edgeTypes } from './edges';
-import { ThemeProvider } from './contexts/ThemeContext';
+import { ThemeProvider } from './contexts/ZustandThemeProvider';
 import { FlowControls } from './components/FlowControls';
-import { getNodeHandlePositions } from './utils/handlePositioning';
+import { StoreDebugPanel } from './components/StoreDebugPanel';
+import { NodeAddPanel } from './components/NodeAddPanel';
 import { type AppNode } from './nodes/types';
+import { useFlowNodes, useFlowEdges, useFlowActions } from './hooks/useFlow';
 
 import { GRID_UNIT } from './config/grid';
 
 export default function App() {
-	const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-	const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+	const nodes = useFlowNodes();
+	const edges = useFlowEdges();
+	const {
+		setNodes,
+		setEdges,
+		onNodesChange,
+		onEdgesChange,
+		onConnect,
+		onViewportChange,
+		recalculateAllHandlePositions, // Added this action
+	} = useFlowActions();
 
-	const onConnect: OnConnect = useCallback(
-		(connection) =>
-			setEdges((edges) =>
-				addEdge(
-					{
-						...connection,
-						type: 'floating', // Ensure new edges use the floating edge type
-						animated: true, // Optional: make new edges animated like the initial ones
-					},
-					edges
-				)
-			),
-		[setEdges]
-	);
+	// Track initialization to prevent re-initialization
+	const isInitialized = useRef(false);
 
-	// Function to update handle positions for all nodes
-	const updateHandlePositions = useCallback(() => {
-		setNodes((currentNodes) =>
-			currentNodes.map((node) => {
-				const handlePositions = getNodeHandlePositions(
-					node.id,
-					currentNodes,
-					edges
-				);
-				return {
-					...node,
-					data: {
-						...node.data,
-						handlePositions,
-					},
-				} as AppNode;
-			})
-		);
-	}, [edges, setNodes]);
-
-	// Update handle positions when nodes move or edges change
+	// Initialize the store when the component mounts
 	useEffect(() => {
-		updateHandlePositions();
-	}, [edges, updateHandlePositions]);
+		// Only initialize once
+		if (!isInitialized.current) {
+			console.log('🚀 Initializing Zustand store with initial data');
+			console.log('📦 Initial nodes:', initialNodes.length);
+			console.log('🔗 Initial edges:', initialEdges.length);
+
+			setNodes(initialNodes);
+			setEdges(initialEdges);
+			// Call recalculateAllHandlePositions once after initial data is set
+			recalculateAllHandlePositions();
+
+			isInitialized.current = true;
+			console.log('✅ Store initialization complete');
+		}
+	}, [setNodes, setEdges, recalculateAllHandlePositions]);
 
 	// Custom nodes change handler to update handle positions after node movements
+	// This logic needs to be adapted to use store actions
 	const handleNodesChange = useCallback(
 		(changes: NodeChange<AppNode>[]) => {
-			onNodesChange(changes);
+			onNodesChange(changes); // Pass changes to the store action
 
-			// Update handle positions when nodes move (both during drag and after)
-			const hasPositionChange = changes.some(
-				(change) => change.type === 'position'
-			);
-
-			if (hasPositionChange) {
-				// Update handle positions immediately
-				updateHandlePositions();
-
-				// Force React Flow to recalculate edge paths by triggering an edge update
-				setEdges((currentEdges) =>
-					currentEdges.map((edge) => ({
-						...edge,
-						// Update a property to force re-render without changing functionality
-						updatedAt: Date.now(),
-					}))
-				);
-			}
+			// The logic for handle positions and forcing edge updates will be managed within the store
+			// or by specific actions triggered by node changes.
+			// For example, the store's updateNode or a dedicated position change action
+			// could trigger recalculateAllHandlePositions.
 		},
-		[onNodesChange, updateHandlePositions, setEdges]
+		[onNodesChange]
 	);
 
 	return (
@@ -99,11 +78,13 @@ export default function App() {
 				<ReactFlow
 					nodes={nodes}
 					nodeTypes={nodeTypes}
-					onNodesChange={handleNodesChange}
+					onNodesChange={handleNodesChange} // Updated to use new handler
 					edges={edges}
 					edgeTypes={edgeTypes}
-					onEdgesChange={onEdgesChange}
-					onConnect={onConnect}
+					onEdgesChange={onEdgesChange} // Directly use store action
+					onConnect={onConnect}         // Directly use store action
+					// Viewport state is managed by React Flow, we only sync changes back to store
+					onViewportChange={onViewportChange} // Update store when viewport changes
 					fitView
 					snapToGrid
 					snapGrid={[GRID_UNIT / 2, GRID_UNIT / 2]}
@@ -117,7 +98,9 @@ export default function App() {
 						variant={BackgroundVariant.Cross}
 						className='bg-gray-100 dark:bg-gray-900'
 					/>
+					<NodeAddPanel />
 					<FlowControls />
+					<StoreDebugPanel />
 					<MiniMap
 						pannable={true}
 						bgColor='bg-gray-100/50 dark:bg-gray-800'

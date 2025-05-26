@@ -1,5 +1,5 @@
 import { Controls, ControlButton } from '@xyflow/react';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '../hooks/useAppStore';
 
 export function FlowControls() {
 	const { theme, setTheme } = useTheme();
