@@ -1,125 +1,136 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
 	ReactFlow,
-	MiniMap,
 	Background,
-	type BackgroundVariant,
-	type ColorMode,
+	Controls,
+	MiniMap,
+	addEdge,
+	useNodesState,
+	useEdgesState,
+	type OnConnect,
+	type NodeChange,
+	BackgroundVariant,
 } from '@xyflow/react';
-import nodeTypes from './components/nodes';
-import { useNodeStore } from './store/nodeStore';
-import FlowControls from './components/FlowControls';
-import NodeFactory from './components/NodeFactory';
 
-import '@xyflow/react/dist/style.css';
+import '@xyflow/react/dist/base.css';
+
+import { initialNodes, nodeTypes } from './nodes';
+import { initialEdges, edgeTypes } from './edges';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { ThemeToggle } from './components/ThemeToggle';
+import { getNodeHandlePositions } from './utils/handlePositioning';
+import { type AppNode } from './nodes/types';
+
+import { GRID_UNIT } from './config/grid';
 
 export default function App() {
-	const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode } =
-		useNodeStore();
+	const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+	const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-	// Use a ref to track if we've initialized to prevent double-initialization
-	const hasInitialized = useRef(false);
+	const onConnect: OnConnect = useCallback(
+		(connection) =>
+			setEdges((edges) =>
+				addEdge(
+					{
+						...connection,
+						type: 'floating', // Ensure new edges use the floating edge type
+						animated: true, // Optional: make new edges animated like the initial ones
+					},
+					edges
+				)
+			),
+		[setEdges]
+	);
 
-	// Theme state for React Flow colorMode
-	const [colorMode, setColorMode] = useState<ColorMode>('system');
+	// Function to update handle positions for all nodes
+	const updateHandlePositions = useCallback(() => {
+		setNodes((currentNodes) =>
+			currentNodes.map((node) => {
+				const handlePositions = getNodeHandlePositions(
+					node.id,
+					currentNodes,
+					edges
+				);
+				return {
+					...node,
+					data: {
+						...node.data,
+						handlePositions,
+					},
+				} as AppNode;
+			})
+		);
+	}, [edges, setNodes]);
 
-	// Function to get React Flow color mode from current theme
-	const getColorMode = useCallback((): ColorMode => {
-		const currentClasses = document.documentElement.classList;
-		if (currentClasses.contains('dark')) return 'dark';
-		if (currentClasses.contains('light')) return 'light';
-		return 'system';
-	}, []);
-
-	// Monitor theme changes and update React Flow color mode
+	// Update handle positions when nodes move or edges change
 	useEffect(() => {
-		const updateColorMode = () => {
-			const newColorMode = getColorMode();
-			console.log(`Updating React Flow colorMode to: ${newColorMode}`);
-			setColorMode(newColorMode);
-		};
+		updateHandlePositions();
+	}, [edges, updateHandlePositions]);
 
-		// Initial update
-		updateColorMode();
+	// Custom nodes change handler to update handle positions after node movements
+	const handleNodesChange = useCallback(
+		(changes: NodeChange<AppNode>[]) => {
+			onNodesChange(changes);
 
-		// Create observer for class changes on html element
-		const observer = new MutationObserver((mutations) => {
-			mutations.forEach((mutation) => {
-				if (
-					mutation.type === 'attributes' &&
-					mutation.attributeName === 'class'
-				) {
-					updateColorMode();
-				}
-			});
-		});
+			// Update handle positions when nodes move (both during drag and after)
+			const hasPositionChange = changes.some(
+				(change) => change.type === 'position'
+			);
 
-		observer.observe(document.documentElement, {
-			attributes: true,
-			attributeFilter: ['class'],
-		});
+			if (hasPositionChange) {
+				// Update handle positions immediately
+				updateHandlePositions();
 
-		return () => observer.disconnect();
-	}, [getColorMode]);
-
-	// Add some initial nodes when the app starts
-	useEffect(() => {
-		// Only add initial nodes if the store is empty and we haven't initialized yet
-		if (nodes.length === 0 && !hasInitialized.current) {
-			hasInitialized.current = true;
-			addNode('debugNode', { x: 100, y: 100 });
-			addNode('oscillatorNode', { x: 400, y: 100 });
-		}
-	}, [nodes.length, addNode]);
+				// Force React Flow to recalculate edge paths by triggering an edge update
+				setEdges((currentEdges) =>
+					currentEdges.map((edge) => ({
+						...edge,
+						// Update a property to force re-render without changing functionality
+						updatedAt: Date.now(),
+					}))
+				);
+			}
+		},
+		[onNodesChange, updateHandlePositions, setEdges]
+	);
 
 	return (
-		<div
-			style={{ width: '100vw', height: '100vh' }}
-			className='bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-200'
-		>
-			<ReactFlow
-				nodes={nodes}
-				edges={edges}
-				onNodesChange={onNodesChange}
-				onEdgesChange={onEdgesChange}
-				onConnect={onConnect}
-				nodeTypes={nodeTypes}
-				colorMode={colorMode}
-				defaultEdgeOptions={{
-					style: { strokeWidth: 2 },
-					type: 'smoothstep',
-				}}
-				fitView
-				proOptions={{ hideAttribution: true }}
-				className='bg-gradient-to-br from-white/50 to-gray-50/50 dark:from-gray-900/50 dark:to-gray-800/50'
-			>
-				<MiniMap
-					nodeStrokeColor='#aaa'
-					nodeColor={(node) => {
-						const nodeData = node.data as { nodeType?: string };
-						switch (nodeData?.nodeType) {
-							case 'debugNode':
-							case 'debug':
-								return '#F87171'; // node-debug-DEFAULT from theme
-							case 'oscillator':
-								return '#60A5FA'; // node-oscillator-DEFAULT from theme
-							case 'gain':
-								return '#F472B6'; // node-gain-DEFAULT from theme
-							default:
-								return '#A78BFA'; // node-file-DEFAULT from theme
-						}
-					}}
-				/>
-				<Background
-					variant={'dots' as BackgroundVariant}
-					gap={16}
-					size={1}
-					color='#a0aec0'
-					className='opacity-30 dark:opacity-10'
-				/>
-				<FlowControls />
-				<NodeFactory />
-			</ReactFlow>
-		</div>
+		<ThemeProvider>
+			<div className='w-full h-screen'>
+				{/* Theme Toggle positioned in top-right corner */}
+				<div className='absolute top-4 right-4 z-10'>
+					<ThemeToggle />
+				</div>
+
+				<ReactFlow
+					nodes={nodes}
+					nodeTypes={nodeTypes}
+					onNodesChange={handleNodesChange}
+					edges={edges}
+					edgeTypes={edgeTypes}
+					onEdgesChange={onEdgesChange}
+					onConnect={onConnect}
+					fitView
+					snapToGrid
+					snapGrid={[GRID_UNIT / 2, GRID_UNIT / 2]}
+					proOptions={{ hideAttribution: true }}
+				>
+					<Background
+						gap={GRID_UNIT}
+						size={6}
+						lineWidth={2}
+						offset={3}
+						variant={BackgroundVariant.Cross}
+						className='bg-gray-100 dark:bg-gray-200'
+					/>
+					<Controls className='bg-gray-100/50 border-gray-200 dark:bg-gray-700 dark:border-gray-600' />
+					<MiniMap
+						pannable={true}
+						bgColor='bg-gray-100/50 dark:bg-gray-200'
+						ariaLabel={'MiniMap'}
+					/>
+				</ReactFlow>
+			</div>
+		</ThemeProvider>
 	);
 }
