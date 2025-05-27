@@ -54,6 +54,9 @@ export interface FlowActions {
 	batchUpdateEdges: (
 		updates: Array<{ id: string; updates: Partial<Edge> }>
 	) => void;
+	batchUpdateNodePositions: (
+		updates: Array<{ id: string; position: { x: number; y: number } }>
+	) => void;
 
 	setViewport: (viewport: { x: number; y: number; zoom: number }) => void;
 	setNodes: (nodes: AppNode[]) => void;
@@ -92,6 +95,7 @@ export interface AppStore {
 	recalculateAllHandlePositions: FlowActions['recalculateAllHandlePositions'];
 	batchUpdateNodes: FlowActions['batchUpdateNodes'];
 	batchUpdateEdges: FlowActions['batchUpdateEdges'];
+	batchUpdateNodePositions: FlowActions['batchUpdateNodePositions'];
 	setViewport: FlowActions['setViewport'];
 	setNodes: FlowActions['setNodes'];
 	setEdges: FlowActions['setEdges'];

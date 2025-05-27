@@ -4,6 +4,59 @@ import type { AppNode } from '../../nodes/types';
 import type { AppStore } from '../types';
 import { getNodeHandlePositions } from '../../utils/handlePositioning';
 
+// 🚀 PERFORMANCE: Memoization cache for handle position calculations
+interface HandlePositionCache {
+	hash: string;
+	positions: Record<string, Record<string, Position>>;
+	timestamp: number;
+}
+
+let handlePositionCache: HandlePositionCache | null = null;
+
+// Generate hash for current state to detect changes
+const generateStateHash = (nodes: AppNode[], edges: Edge[]): string => {
+	const nodePositions = nodes
+		.map((n) => `${n.id}:${n.position.x},${n.position.y}`)
+		.join('|');
+	const edgeConnections = edges.map((e) => `${e.source}-${e.target}`).join('|');
+	return `nodes:${nodePositions}||edges:${edgeConnections}`;
+};
+
+// 🚀 PERFORMANCE: Memoized handle position calculation
+const calculateHandlePositionsWithMemo = (
+	nodes: AppNode[],
+	edges: Edge[]
+): Record<string, Record<string, Position>> => {
+	const currentHash = generateStateHash(nodes, edges);
+
+	// Check if we can use cached result
+	if (handlePositionCache && handlePositionCache.hash === currentHash) {
+		console.log('🎯 Using cached handle positions');
+		return handlePositionCache.positions;
+	}
+
+	console.log('🔄 Calculating new handle positions');
+	const start = performance.now();
+
+	// Calculate new positions
+	const newPositions: Record<string, Record<string, Position>> = {};
+	nodes.forEach((node) => {
+		newPositions[node.id] = getNodeHandlePositions(node.id, nodes, edges);
+	});
+
+	// Cache the result
+	handlePositionCache = {
+		hash: currentHash,
+		positions: newPositions,
+		timestamp: Date.now(),
+	};
+
+	const duration = performance.now() - start;
+	console.log(`✅ Handle positions calculated in ${duration.toFixed(2)}ms`);
+
+	return newPositions;
+};
+
 type FlowSliceProps = Pick<
 	AppStore,
 	| 'flow'
@@ -18,6 +71,7 @@ type FlowSliceProps = Pick<
 	| 'recalculateAllHandlePositions'
 	| 'batchUpdateNodes'
 	| 'batchUpdateEdges'
+	| 'batchUpdateNodePositions'
 	| 'setViewport'
 	| 'setNodes'
 	| 'setEdges'
@@ -189,15 +243,13 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSliceProps> = (
 
 	recalculateAllHandlePositions: () => {
 		const { flow } = get();
-		const newHandlePositions: Record<string, Record<string, Position>> = {};
+		console.log('🔄 Recalculating all handle positions with memoization');
 
-		flow.nodes.forEach((node) => {
-			newHandlePositions[node.id] = getNodeHandlePositions(
-				node.id,
-				flow.nodes,
-				flow.edges
-			);
-		});
+		// 🚀 PERFORMANCE: Use memoized calculation
+		const newHandlePositions = calculateHandlePositionsWithMemo(
+			flow.nodes,
+			flow.edges
+		);
 
 		set((state) => ({
 			flow: {
@@ -205,6 +257,15 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSliceProps> = (
 				nodeHandlePositions: newHandlePositions,
 			},
 		}));
+
+		console.log(
+			'✅ Zustand store updated. nodeHandlePositions:',
+			get().flow.nodeHandlePositions
+		);
+		// console.log(
+		// 	'✅ Zustand store debug info:',
+		// 	get().flow.debug
+		// );
 	},
 
 	// Batch Actions
@@ -240,6 +301,26 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSliceProps> = (
 				}),
 			},
 		}));
+	},
+
+	// 🚀 PERFORMANCE: Optimized batch position updates
+	batchUpdateNodePositions: (
+		updates: Array<{ id: string; position: { x: number; y: number } }>
+	) => {
+		console.log(`📍 Batch updating ${updates.length} node positions`);
+
+		set((state) => ({
+			flow: {
+				...state.flow,
+				nodes: state.flow.nodes.map((node) => {
+					const update = updates.find((u) => u.id === node.id);
+					return update ? { ...node, position: update.position } : node;
+				}),
+			},
+		}));
+
+		// Always recalculate handle positions after position updates
+		get().recalculateAllHandlePositions();
 	},
 
 	// Viewport Actions

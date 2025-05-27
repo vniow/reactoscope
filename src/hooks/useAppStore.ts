@@ -49,6 +49,7 @@ export const useFlowActions = () => {
 			recalculateAllHandlePositions: state.recalculateAllHandlePositions,
 			batchUpdateNodes: state.batchUpdateNodes,
 			batchUpdateEdges: state.batchUpdateEdges,
+			batchUpdateNodePositions: state.batchUpdateNodePositions,
 			setViewport: state.setViewport,
 		}))
 	);

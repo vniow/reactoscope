@@ -34,7 +34,6 @@ export default function App() {
 		onEdgesChange,
 		onConnect,
 		onViewportChange,
-		recalculateAllHandlePositions, // Added this action
 	} = useFlowActions();
 
 	// Track initialization to prevent re-initialization
@@ -44,19 +43,15 @@ export default function App() {
 	useEffect(() => {
 		// Only initialize once
 		if (!isInitialized.current) {
-			console.log('🚀 Initializing Zustand store with initial data');
-			console.log('📦 Initial nodes:', initialNodes.length);
-			console.log('🔗 Initial edges:', initialEdges.length);
-
-			setNodes(initialNodes);
-			setEdges(initialEdges);
-			// Call recalculateAllHandlePositions once after initial data is set
-			recalculateAllHandlePositions();
-
+			console.log('🚀 Initializing Zustand store with empty data');
+			
+			setNodes(initialNodes); // Will be empty array
+			setEdges(initialEdges); // Will be empty array
+			
 			isInitialized.current = true;
 			console.log('✅ Store initialization complete');
 		}
-	}, [setNodes, setEdges, recalculateAllHandlePositions]);
+	}, [setNodes, setEdges]);
 
 	// Custom nodes change handler to update handle positions after node movements
 	// This logic needs to be adapted to use store actions

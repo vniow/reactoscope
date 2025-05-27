@@ -40,15 +40,40 @@ export const useFlowActions = () => {
 		}))
 	);
 
+	// Helper function to detect if node changes include position updates
+	const hasPositionChanges = useCallback((changes: NodeChange[]) => {
+		return changes.some(
+			(change) =>
+				change.type === 'position' ||
+				(change.type === 'replace' && 'position' in change.item)
+		);
+	}, []);
+
 	// Create stable event handlers using useCallback
 	const onNodesChange = useCallback(
 		(changes: NodeChange[]) => {
-			console.log('onNodesChange called with changes:', changes);
+			console.log('🔄 onNodesChange called with changes:', changes);
 			const currentNodes = useAppStore.getState().flow.nodes;
 			const updatedNodes = applyNodeChanges(changes, currentNodes);
 			actions.applyNodesChange(updatedNodes as AppNode[]);
+
+			// 🔧 FIX: Check if position changes occurred and trigger handle recalculation
+			if (hasPositionChanges(changes)) {
+				console.log(
+					'📍 Position changes detected, recalculating handle positions'
+				);
+				// Use setTimeout to avoid synchronous updates during React Flow's internal state changes
+				setTimeout(() => {
+					const nodesAtTimeout = useAppStore.getState().flow.nodes;
+					console.log(
+						'⏰ Inside setTimeout for recalculateAllHandlePositions. Nodes:',
+						nodesAtTimeout
+					);
+					actions.recalculateAllHandlePositions();
+				}, 0);
+			}
 		},
-		[actions]
+		[actions, hasPositionChanges]
 	);
 
 	const onEdgesChange = useCallback(

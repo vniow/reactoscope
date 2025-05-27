@@ -4,84 +4,94 @@ import {
 	getSmoothStepPath,
 	BaseEdge,
 	type EdgeProps,
-	type Node,
 } from '@xyflow/react';
 
-import { getNodeHandlePositions } from '../utils/handlePositioning';
 import { getHandleCoordinates } from '../utils/handleCoordinates';
+import { useEdgeHandlePositions } from '../hooks/useHandlePositions';
 
 // Custom edge that recalculates its path based on dynamic handle positions
 export function FloatingEdge({
 	id,
 	source,
 	target,
-	sourcePosition,
-	targetPosition,
 	style = {},
 	markerEnd,
 }: EdgeProps) {
-	// Get all nodes and edges from the store first (before any early returns)
+	console.log(`[FloatingEdge ${id}] Component render started`);
+
+	// Get source and target nodes from React Flow store
 	const sourceNode = useStore(
 		useCallback((store) => store.nodeLookup.get(source), [source])
 	);
 	const targetNode = useStore(
 		useCallback((store) => store.nodeLookup.get(target), [target])
 	);
-	const nodes = useStore(
-		useCallback((store) => Array.from(store.nodeLookup.values()), [])
-	);
-	const edges = useStore(useCallback((store) => store.edges, []));
 
-	if (!sourceNode || !targetNode) {
-		return null;
-	}
-
-	// Calculate dynamic handle positions
-	const sourceHandlePositions = getNodeHandlePositions(
-		source,
-		nodes as Node[],
-		edges
-	);
-	const targetHandlePositions = getNodeHandlePositions(
-		target,
-		nodes as Node[],
-		edges
+	// Get the edge to find handle IDs
+	const edge = useStore(
+		useCallback((store) => store.edges.find((e) => e.id === id), [id])
 	);
 
-	// Find the specific handle positions for this edge
-	const edge = edges.find((e) => e.id === id);
+	// 🚀 OPTIMIZATION: Use store-based handle positions instead of calculating each time
 	const sourceHandleId = edge?.sourceHandle || 'source';
 	const targetHandleId = edge?.targetHandle || 'target';
 
-	const dynamicSourcePosition =
-		sourceHandlePositions[sourceHandleId] || sourcePosition;
-	const dynamicTargetPosition =
-		targetHandlePositions[targetHandleId] || targetPosition;
+	const {
+		sourcePosition: dynamicSourcePosition,
+		targetPosition: dynamicTargetPosition,
+	} = useEdgeHandlePositions(source, target, sourceHandleId, targetHandleId);
 
-	// ADD DEBUGGING - This will help you see what's happening
-	// console.log(`Edge ${id} update:`, {
+	console.log(`[FloatingEdge ${id}] Hook returned positions:`, {
+		dynamicSourcePosition,
+		dynamicTargetPosition,
+		sourceNode: sourceNode
+			? { id: sourceNode.id, position: sourceNode.position }
+			: null,
+		targetNode: targetNode
+			? { id: targetNode.id, position: targetNode.position }
+			: null,
+	});
+
+	if (!sourceNode || !targetNode) {
+		console.log(
+			`[FloatingEdge ${id}] Missing nodes - sourceNode:`,
+			!!sourceNode,
+			'targetNode:',
+			!!targetNode
+		);
+		return null;
+	}
+
+	// Debug logging (disabled for performance - enable via debug panel)
+	// console.log(`🚀 Edge ${id} optimized update:`, {
 	// 	sourceHandleId,
 	// 	targetHandleId,
-	// 	originalCoords: { sourceX, sourceY, targetX, targetY },
 	// 	dynamicSourcePosition,
 	// 	dynamicTargetPosition,
-	// 	sourceHandlePositions,
-	// 	targetHandlePositions,
+	// 	source,
+	// 	target,
 	// });
+	console.log(`🚀 Edge ${id} optimized update:`, {
+		sourceHandleId,
+		targetHandleId,
+		dynamicSourcePosition,
+		dynamicTargetPosition,
+		source,
+		target,
+	});
 
-	// Calculate actual coordinates based on dynamic handle positions
-	const sourceCoords = getHandleCoordinates(
-		sourceNode,
-		dynamicSourcePosition
-		// sourceHandleId
-	);
-	const targetCoords = getHandleCoordinates(
-		targetNode,
-		dynamicTargetPosition
-		// targetHandleId
-	);
+	// Calculate actual coordinates based on optimized handle positions from store
+	const sourceCoords = getHandleCoordinates(sourceNode, dynamicSourcePosition);
+	const targetCoords = getHandleCoordinates(targetNode, dynamicTargetPosition);
 
-	// Use the calculated coordinates instead of React Flow's defaults
+	console.log(`[FloatingEdge ${id}] Calculated coordinates:`, {
+		sourceCoords,
+		targetCoords,
+		sourcePosition: dynamicSourcePosition,
+		targetPosition: dynamicTargetPosition,
+	});
+
+	// Use the calculated coordinates for smooth step path
 	const [edgePath] = getSmoothStepPath({
 		sourceX: sourceCoords.x,
 		sourceY: sourceCoords.y,
@@ -92,6 +102,8 @@ export function FloatingEdge({
 		offset: 16,
 		borderRadius: 8, // Smooth corners
 	});
+
+	console.log(`[FloatingEdge ${id}] Generated path:`, edgePath);
 
 	return (
 		<BaseEdge

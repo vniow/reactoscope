@@ -61,16 +61,26 @@ export function getNodeHandlePositions(
 	nodes: Node[],
 	edges: Edge[]
 ): { [handleId: string]: Position } {
+	console.log(`[getNodeHandlePositions] Called for nodeId: ${nodeId}`);
 	const currentNode = nodes.find((node) => node.id === nodeId);
-	if (!currentNode) return {};
+	if (!currentNode) {
+		console.warn(`[getNodeHandlePositions] Node not found: ${nodeId}`);
+		return {};
+	}
+	console.log(`[getNodeHandlePositions] Found currentNode:`, currentNode);
 
 	const handlePositions: { [handleId: string]: Position } = {};
 
 	// Find all edges connected to this node
 	edges.forEach((edge) => {
+		console.log(`[getNodeHandlePositions] Processing edge:`, edge);
 		if (edge.source === nodeId) {
 			// This node is the source
 			const targetNode = nodes.find((node) => node.id === edge.target);
+			console.log(
+				`[getNodeHandlePositions] Node is source. Target node:`,
+				targetNode
+			);
 			if (targetNode) {
 				const { sourcePosition } = calculateHandlePositions(
 					currentNode,
@@ -78,10 +88,17 @@ export function getNodeHandlePositions(
 				);
 				const handleId = edge.sourceHandle || `${nodeId}-source`;
 				handlePositions[handleId] = sourcePosition;
+				console.log(
+					`[getNodeHandlePositions] Calculated source handle ${handleId} for node ${nodeId}: ${sourcePosition}`
+				);
 			}
 		} else if (edge.target === nodeId) {
 			// This node is the target
 			const sourceNode = nodes.find((node) => node.id === edge.source);
+			console.log(
+				`[getNodeHandlePositions] Node is target. Source node:`,
+				sourceNode
+			);
 			if (sourceNode) {
 				const { targetPosition } = calculateHandlePositions(
 					sourceNode,
@@ -89,9 +106,16 @@ export function getNodeHandlePositions(
 				);
 				const handleId = edge.targetHandle || `${nodeId}-target`;
 				handlePositions[handleId] = targetPosition;
+				console.log(
+					`[getNodeHandlePositions] Calculated target handle ${handleId} for node ${nodeId}: ${targetPosition}`
+				);
 			}
 		}
 	});
 
+	console.log(
+		`[getNodeHandlePositions] Returning handlePositions for ${nodeId}:`,
+		handlePositions
+	);
 	return handlePositions;
 }
