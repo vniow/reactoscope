@@ -34,6 +34,9 @@ export default function App() {
 		onEdgesChange,
 		onConnect,
 		onViewportChange,
+		onReconnectStart,
+		onReconnect,
+		onReconnectEnd,
 	} = useFlowActions();
 
 	// Track initialization to prevent re-initialization
@@ -78,6 +81,9 @@ export default function App() {
 					edgeTypes={edgeTypes}
 					onEdgesChange={onEdgesChange} // Directly use store action
 					onConnect={onConnect}         // Directly use store action
+					onReconnect={onReconnect}     // Enable edge reconnection
+					onReconnectStart={onReconnectStart} // Track reconnection start
+					onReconnectEnd={onReconnectEnd}     // Handle reconnection end/delete
 					// Viewport state is managed by React Flow, we only sync changes back to store
 					onViewportChange={onViewportChange} // Update store when viewport changes
 					fitView

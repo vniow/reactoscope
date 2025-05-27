@@ -1,7 +1,11 @@
 import { useShallow } from 'zustand/react/shallow';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useAppStore } from '../stores/appStore';
-import { applyNodeChanges, applyEdgeChanges } from '@xyflow/react';
+import {
+	applyNodeChanges,
+	applyEdgeChanges,
+	reconnectEdge,
+} from '@xyflow/react';
 import type {
 	NodeChange,
 	EdgeChange,
@@ -21,6 +25,9 @@ export const useFlowViewport = () =>
 	useAppStore(useShallow((state) => state.flow.viewport));
 
 export const useFlowActions = () => {
+	// Track edge reconnection success for delete-on-drop functionality
+	const edgeReconnectSuccessful = useRef(true);
+
 	// Get stable action references from store
 	const actions = useAppStore(
 		useShallow((state) => ({
@@ -109,6 +116,51 @@ export const useFlowActions = () => {
 		[actions]
 	);
 
+	// Reconnectable edge handlers
+	const onReconnectStart = useCallback(() => {
+		console.log('🔄 Edge reconnection started');
+		edgeReconnectSuccessful.current = false;
+	}, []);
+
+	const onReconnect = useCallback(
+		(oldEdge: Edge, newConnection: Connection) => {
+			console.log('🔄 Edge reconnection attempt:', { oldEdge, newConnection });
+			edgeReconnectSuccessful.current = true;
+
+			// Use React Flow's reconnectEdge helper to update the edges array
+			const currentEdges = useAppStore.getState().flow.edges;
+			const updatedEdges = reconnectEdge(oldEdge, newConnection, currentEdges);
+			actions.setEdges(updatedEdges);
+
+			console.log(
+				'✅ Edge reconnected successfully from',
+				oldEdge.source,
+				'to',
+				newConnection.target
+			);
+		},
+		[actions]
+	);
+
+	const onReconnectEnd = useCallback(
+		(_: unknown, edge: Edge) => {
+			console.log('🔄 Edge reconnection ended:', {
+				edge,
+				successful: edgeReconnectSuccessful.current,
+			});
+
+			if (!edgeReconnectSuccessful.current) {
+				// Edge was dropped on empty space, delete it
+				console.log('🗑️ Deleting edge dropped on empty space:', edge.id);
+				actions.removeEdge(edge.id);
+			}
+
+			// Reset the flag
+			edgeReconnectSuccessful.current = true;
+		},
+		[actions]
+	);
+
 	// Return all actions with stable references
 	return {
 		...actions,
@@ -116,5 +168,8 @@ export const useFlowActions = () => {
 		onEdgesChange,
 		onConnect,
 		onViewportChange,
+		onReconnectStart,
+		onReconnect,
+		onReconnectEnd,
 	};
 };

@@ -6,17 +6,28 @@ import { NodeHandle } from '../components/NodeHandle';
 import { nodeStyles } from '../utils/nodeStyles';
 import { type ThemeDebugNode } from './types';
 import { useHandlePosition } from '../hooks/useHandlePositions';
+import { useNodes } from '../hooks/useAppStore';
 
-export function ThemeDebugNode({ id, data }: NodeProps<ThemeDebugNode>) {
+export function ThemeDebugNode({
+	id,
+	data,
+	selected,
+}: NodeProps<ThemeDebugNode>) {
 	const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(false);
 	const [documentClasses, setDocumentClasses] = useState<string>('');
 	const [localStorageTheme, setLocalStorageTheme] = useState<string | null>(
 		null
 	);
 
-	// Get handle positions from the Zustand store, fallback to default positions
-	const sourcePosition =
-		useHandlePosition(id, 'theme-debug-source') || Position.Bottom;
+	// Get handle positions from the Zustand store, with proper defaults for new nodes
+	const sourcePosition = useHandlePosition(
+		id,
+		'theme-debug-source',
+		Position.Bottom
+	);
+
+	// Get the removeNode function from the store
+	const { removeNode } = useNodes();
 
 	useEffect(() => {
 		// Check system preference
@@ -69,15 +80,15 @@ export function ThemeDebugNode({ id, data }: NodeProps<ThemeDebugNode>) {
 	return (
 		<BaseNode
 			variant='debug'
-			className='font-mono text-xs overflow-hidden'
+			className='font-mono text-xs'
 			gridWidth={data.gridWidth ?? 4}
 			gridHeight={data.gridHeight ?? 4}
+			nodeId={id}
+			selected={selected}
+			onDelete={removeNode}
+			title={data.label || 'Theme Debug Info'}
 		>
-			<div className={nodeStyles.text.title}>
-				{data.label || 'Theme Debug Info'}
-			</div>
-
-			<div className='space-y-2'>
+			<div className='space-y-2 overflow-hidden'>
 				<div>
 					<span className={nodeStyles.text.label}>System Preference:</span>
 					<div className={`ml-2 ${nodeStyles.text.body}`}>

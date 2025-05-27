@@ -17,12 +17,18 @@ export const useNodeHandlePositions = (nodeId: string) => {
 };
 
 /**
- * Get a specific handle position for a node
+ * Get a specific handle position for a node with proper default fallbacks
  */
-export const useHandlePosition = (nodeId: string, handleId: string) => {
+export const useHandlePosition = (
+	nodeId: string,
+	handleId: string,
+	defaultPosition?: Position
+) => {
 	const position = useAppStore(
 		(state) =>
-			state.flow.nodeHandlePositions[nodeId]?.[handleId] || Position.Top
+			state.flow.nodeHandlePositions[nodeId]?.[handleId] ||
+			defaultPosition ||
+			Position.Top
 	);
 
 	// Debug logging to trace handle position updates
@@ -30,6 +36,7 @@ export const useHandlePosition = (nodeId: string, handleId: string) => {
 		nodeId,
 		handleId,
 		position,
+		defaultPosition,
 		allPositions: useAppStore.getState().flow.nodeHandlePositions[nodeId],
 	});
 

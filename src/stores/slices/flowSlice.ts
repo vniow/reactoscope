@@ -102,8 +102,23 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSliceProps> = (
 			},
 		}));
 
-		// Recalculate handle positions after adding node
-		get().recalculateAllHandlePositions();
+		// Only recalculate handle positions if the node has connections
+		// This allows new nodes to use their default handle positions until connected
+		const { flow } = get();
+		const hasConnections = flow.edges.some(
+			(edge) => edge.source === node.id || edge.target === node.id
+		);
+
+		if (hasConnections) {
+			console.log(
+				`📍 Node ${node.id} has connections, recalculating positions`
+			);
+			get().recalculateAllHandlePositions();
+		} else {
+			console.log(
+				`📍 Node ${node.id} has no connections, using default positions`
+			);
+		}
 
 		console.log(`✅ Node added, total nodes: ${get().flow.nodes.length}`);
 	},
@@ -203,25 +218,75 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSliceProps> = (
 			},
 		}));
 
-		// Recalculate handle positions for previously connected nodes
+		// Handle positions for previously connected nodes
 		if (edgeToRemove) {
 			const { flow: updatedFlow } = get();
-			get().updateHandlePositions(
-				edgeToRemove.source,
-				getNodeHandlePositions(
+
+			// Check if source node still has connections
+			const sourceHasConnections = updatedFlow.edges.some(
+				(edge) =>
+					edge.source === edgeToRemove.source ||
+					edge.target === edgeToRemove.source
+			);
+
+			// Check if target node still has connections
+			const targetHasConnections = updatedFlow.edges.some(
+				(edge) =>
+					edge.source === edgeToRemove.target ||
+					edge.target === edgeToRemove.target
+			);
+
+			if (sourceHasConnections) {
+				// Recalculate positions for connected source node
+				get().updateHandlePositions(
 					edgeToRemove.source,
-					updatedFlow.nodes,
-					updatedFlow.edges
-				)
-			);
-			get().updateHandlePositions(
-				edgeToRemove.target,
-				getNodeHandlePositions(
+					getNodeHandlePositions(
+						edgeToRemove.source,
+						updatedFlow.nodes,
+						updatedFlow.edges
+					)
+				);
+			} else {
+				// Clear positions for unconnected source node (will use defaults)
+				console.log(
+					`📍 Node ${edgeToRemove.source} no longer connected, clearing stored positions`
+				);
+				set((state) => ({
+					flow: {
+						...state.flow,
+						nodeHandlePositions: {
+							...state.flow.nodeHandlePositions,
+							[edgeToRemove.source]: {},
+						},
+					},
+				}));
+			}
+
+			if (targetHasConnections) {
+				// Recalculate positions for connected target node
+				get().updateHandlePositions(
 					edgeToRemove.target,
-					updatedFlow.nodes,
-					updatedFlow.edges
-				)
-			);
+					getNodeHandlePositions(
+						edgeToRemove.target,
+						updatedFlow.nodes,
+						updatedFlow.edges
+					)
+				);
+			} else {
+				// Clear positions for unconnected target node (will use defaults)
+				console.log(
+					`📍 Node ${edgeToRemove.target} no longer connected, clearing stored positions`
+				);
+				set((state) => ({
+					flow: {
+						...state.flow,
+						nodeHandlePositions: {
+							...state.flow.nodeHandlePositions,
+							[edgeToRemove.target]: {},
+						},
+					},
+				}));
+			}
 		}
 	},
 

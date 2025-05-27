@@ -105,11 +105,19 @@ export function FloatingEdge({
 
 	console.log(`[FloatingEdge ${id}] Generated path:`, edgePath);
 
+	// Enhanced styling for reconnectable edges
+	const reconnectableStyle = {
+		strokeWidth: 3,
+		stroke: '#6366f1', // indigo color
+		...style,
+	};
+
 	return (
 		<BaseEdge
 			path={edgePath}
 			markerEnd={markerEnd}
-			style={style}
+			style={reconnectableStyle}
+			className='hover:!stroke-blue-500 transition-colors cursor-pointer'
 		/>
 	);
 }
