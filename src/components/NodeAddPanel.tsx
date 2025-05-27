@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Panel } from '@xyflow/react';
+import { Panel, type Edge } from '@xyflow/react';
 import { useFlowActions } from '../hooks/useFlow';
 import type { AppNode } from '../nodes/types';
 
@@ -28,7 +28,7 @@ const nodeTypeOptions = [
 ];
 
 export const NodeAddPanel: React.FC = () => {
-	const { addNode } = useFlowActions();
+	const { addNode, addEdge } = useFlowActions();
 	const [isExpanded, setIsExpanded] = useState(false);
 
 	const handleAddNode = (nodeTypeOption: (typeof nodeTypeOptions)[number]) => {
@@ -58,6 +58,43 @@ export const NodeAddPanel: React.FC = () => {
 
 		// Collapse the panel after adding a node
 		setIsExpanded(false);
+	};
+
+	const handleAddTestFlow = () => {
+		console.log('🧪 Creating test flow with connected nodes');
+
+		// Create two connected nodes
+		const node1: AppNode = {
+			id: 'test-node-1',
+			type: 'position-logger',
+			position: { x: 100, y: 100 },
+			data: { label: 'Source Node', gridWidth: 3, gridHeight: 2 },
+		};
+
+		const node2: AppNode = {
+			id: 'test-node-2',
+			type: 'position-logger',
+			position: { x: 400, y: 200 },
+			data: { label: 'Target Node', gridWidth: 3, gridHeight: 2 },
+		};
+
+		const edge: Edge = {
+			id: 'test-edge-1',
+			source: 'test-node-1',
+			target: 'test-node-2',
+			type: 'floating',
+			sourceHandle: 'source',
+			targetHandle: 'target',
+			animated: true,
+		};
+
+		// Add nodes first, then edge
+		addNode(node1);
+		addNode(node2);
+		setTimeout(() => {
+			addEdge(edge);
+			console.log('✅ Test flow created');
+		}, 100);
 	};
 
 	return (
@@ -137,6 +174,18 @@ export const NodeAddPanel: React.FC = () => {
 						</div>
 					</div>
 				)}
+
+				{/* Test Flow Button */}
+				<div className='p-3 border-t border-gray-200 dark:border-gray-700'>
+					<button
+						onClick={handleAddTestFlow}
+						className='w-full px-4 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded transition-colors flex items-center justify-center gap-2'
+						title='Create Test Flow'
+					>
+						<span className='text-lg'>🧪</span>
+						Create Test Flow
+					</button>
+				</div>
 			</div>
 		</Panel>
 	);

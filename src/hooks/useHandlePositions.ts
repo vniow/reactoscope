@@ -20,10 +20,20 @@ export const useNodeHandlePositions = (nodeId: string) => {
  * Get a specific handle position for a node
  */
 export const useHandlePosition = (nodeId: string, handleId: string) => {
-	return useAppStore(
+	const position = useAppStore(
 		(state) =>
 			state.flow.nodeHandlePositions[nodeId]?.[handleId] || Position.Top
 	);
+
+	// Debug logging to trace handle position updates
+	console.log(`[useHandlePosition] ${nodeId}.${handleId} => ${position}`, {
+		nodeId,
+		handleId,
+		position,
+		allPositions: useAppStore.getState().flow.nodeHandlePositions[nodeId],
+	});
+
+	return position;
 };
 
 /**

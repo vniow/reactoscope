@@ -5,17 +5,18 @@ import { BaseNode } from '../components/BaseNode';
 import { NodeHandle } from '../components/NodeHandle';
 import { nodeStyles } from '../utils/nodeStyles';
 import { type ThemeDebugNode } from './types';
+import { useHandlePosition } from '../hooks/useHandlePositions';
 
-export function ThemeDebugNode({ data }: NodeProps<ThemeDebugNode>) {
+export function ThemeDebugNode({ id, data }: NodeProps<ThemeDebugNode>) {
 	const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(false);
 	const [documentClasses, setDocumentClasses] = useState<string>('');
 	const [localStorageTheme, setLocalStorageTheme] = useState<string | null>(
 		null
 	);
 
-	// Get handle positions from data, fallback to default positions
+	// Get handle positions from the Zustand store, fallback to default positions
 	const sourcePosition =
-		data.handlePositions?.['theme-debug-source'] || Position.Bottom;
+		useHandlePosition(id, 'theme-debug-source') || Position.Bottom;
 
 	useEffect(() => {
 		// Check system preference

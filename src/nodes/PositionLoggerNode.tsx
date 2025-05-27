@@ -3,8 +3,10 @@ import { Position, type NodeProps } from '@xyflow/react';
 import { type PositionLoggerNode } from './types';
 import { BaseNode } from '../components/BaseNode';
 import { NodeHandle } from '../components/NodeHandle';
+import { useHandlePosition } from '../hooks/useHandlePositions';
 
 export function PositionLoggerNode({
+	id,
 	positionAbsoluteX,
 	positionAbsoluteY,
 	data,
@@ -12,9 +14,9 @@ export function PositionLoggerNode({
 	const x = `${Math.round(positionAbsoluteX)}px`;
 	const y = `${Math.round(positionAbsoluteY)}px`;
 
-	// Get handle positions from data, fallback to default positions
-	const targetPosition = data.handlePositions?.['target'] || Position.Top;
-	const sourcePosition = data.handlePositions?.['source'] || Position.Bottom;
+	// Get handle positions from the Zustand store, fallback to default positions
+	const targetPosition = useHandlePosition(id, 'target') || Position.Top;
+	const sourcePosition = useHandlePosition(id, 'source') || Position.Bottom;
 
 	return (
 		<BaseNode
