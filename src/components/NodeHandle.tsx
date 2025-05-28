@@ -4,7 +4,7 @@ interface NodeHandleProps {
 	id: string;
 	type: 'source' | 'target';
 	position: Position;
-	variant?: 'default' | 'primary' | 'debug' | 'secondary';
+	variant?: 'default' | 'primary' | 'debug' | 'secondary' | 'audio';
 	className?: string;
 }
 
@@ -50,6 +50,16 @@ const sourceHandleStyles = {
 		[Position.Left]:
 			'!border-t-8 !border-b-8 !border-r-8 !border-l-0 !border-t-transparent !border-b-transparent !border-r-purple-500 !bg-transparent !w-0 !h-0',
 	},
+	audio: {
+		[Position.Top]:
+			'!border-l-8 !border-r-8 !border-b-8 !border-t-0 !border-l-transparent !border-r-transparent !border-b-orange-500 !bg-transparent !w-0 !h-0',
+		[Position.Right]:
+			'!border-t-8 !border-b-8 !border-l-8 !border-r-0 !border-t-transparent !border-b-transparent !border-l-orange-500 !bg-transparent !w-0 !h-0',
+		[Position.Bottom]:
+			'!border-l-8 !border-r-8 !border-t-8 !border-b-0 !border-l-transparent !border-r-transparent !border-t-orange-500 !bg-transparent !w-0 !h-0',
+		[Position.Left]:
+			'!border-t-8 !border-b-8 !border-r-8 !border-l-0 !border-t-transparent !border-b-transparent !border-r-orange-500 !bg-transparent !w-0 !h-0',
+	},
 };
 
 // Target handle styles (semicircles)
@@ -93,6 +103,16 @@ const targetHandleStyles = {
 			'!bg-purple-500 !border-2 !border-white dark:!border-gray-800 !w-4 !h-2 !rounded-t-full',
 		[Position.Left]:
 			'!bg-purple-500 !border-2 !border-white dark:!border-gray-800 !w-2 !h-4 !rounded-r-full',
+	},
+	audio: {
+		[Position.Top]:
+			'!bg-orange-500 !border-2 !border-white dark:!border-gray-800 !w-4 !h-2 !rounded-b-full',
+		[Position.Right]:
+			'!bg-orange-500 !border-2 !border-white dark:!border-gray-800 !w-2 !h-4 !rounded-l-full',
+		[Position.Bottom]:
+			'!bg-orange-500 !border-2 !border-white dark:!border-gray-800 !w-4 !h-2 !rounded-t-full',
+		[Position.Left]:
+			'!bg-orange-500 !border-2 !border-white dark:!border-gray-800 !w-2 !h-4 !rounded-r-full',
 	},
 };
 

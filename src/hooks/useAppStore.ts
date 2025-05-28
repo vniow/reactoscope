@@ -71,6 +71,41 @@ export const useUIState = () => {
 	);
 };
 
+// Audio hooks with performance optimization
+export const useAudioNodes = () => {
+	return useAppStore(
+		useShallow((state) => ({
+			audioNodes: state.audioNodes,
+			addAudioNode: state.addAudioNode,
+			updateAudioNode: state.updateAudioNode,
+			removeAudioNode: state.removeAudioNode,
+		}))
+	);
+};
+
+export const useTransport = () => {
+	return useAppStore(
+		useShallow((state) => ({
+			transport: state.transport,
+			audioContext: state.audioContext,
+			startTransport: state.startTransport,
+			stopTransport: state.stopTransport,
+			setBPM: state.setBPM,
+			initializeAudioContext: state.initializeAudioContext,
+		}))
+	);
+};
+
+export const useAudioConnections = () => {
+	return useAppStore(
+		useShallow((state) => ({
+			audioConnections: state.audioConnections,
+			connectAudioNodes: state.connectAudioNodes,
+			disconnectAudioNodes: state.disconnectAudioNodes,
+		}))
+	);
+};
+
 // Combined hooks for convenience
 export const useFlowState = () => {
 	return useAppStore(

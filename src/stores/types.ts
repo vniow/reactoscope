@@ -1,5 +1,6 @@
 import type { Edge, Position } from '@xyflow/react';
 import type { AppNode } from '../nodes/types';
+import type { AudioSlice } from './slices/audioSlice';
 
 // Theme Types
 export type Theme = 'light' | 'dark' | 'system';
@@ -24,6 +25,14 @@ export interface UIState {
 	selectedNodes: string[];
 	selectedEdges: string[];
 	isConnecting: boolean;
+}
+
+// Audio Types
+export interface AudioState {
+	audioSlices: AudioSlice[];
+	isPlaying: boolean;
+	currentTime: number;
+	duration: number;
 }
 
 // Action Types
@@ -75,7 +84,11 @@ export interface UIActions {
 }
 
 // Main Store Interface
-export interface AppStore {
+export interface AppStore
+	extends ThemeActions,
+		FlowActions,
+		UIActions,
+		AudioSlice {
 	theme: ThemeState;
 	flow: FlowState;
 	ui: UIState;

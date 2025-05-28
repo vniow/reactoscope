@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Panel, type Edge } from '@xyflow/react';
 import { useFlowActions } from '../hooks/useFlow';
+import { TransportControls } from './TransportControls';
 import type { AppNode } from '../nodes/types';
 
 // Define available node types with their display names and descriptions
@@ -25,6 +26,51 @@ const nodeTypeOptions = [
 			gridHeight: 4,
 		},
 	},
+	{
+		type: 'oscillator' as const,
+		name: 'Oscillator',
+		description: 'Audio oscillator with frequency and waveform controls',
+		defaultData: {
+			id: '',
+			type: 'oscillator' as const,
+			params: {
+				frequency: 440,
+				detune: 0,
+				waveType: 'sine' as const,
+				isPlaying: false,
+				volume: 0.5,
+			},
+			label: 'Oscillator',
+			gridWidth: 4,
+			gridHeight: 5,
+		},
+	},
+	{
+		type: 'gain' as const,
+		name: 'Gain',
+		description: 'Volume control with mute functionality',
+		defaultData: {
+			id: '',
+			type: 'gain' as const,
+			params: {
+				gain: 1.0,
+				mute: false,
+			},
+			label: 'Gain',
+			gridWidth: 3,
+			gridHeight: 4,
+		},
+	},
+	{
+		type: 'destination' as const,
+		name: 'Audio Destination',
+		description: 'Master audio output endpoint',
+		defaultData: {
+			label: 'Master Out',
+			gridWidth: 3,
+			gridHeight: 2,
+		},
+	},
 ];
 
 export const NodeAddPanel: React.FC = () => {
@@ -43,15 +89,37 @@ export const NodeAddPanel: React.FC = () => {
 			y: Math.random() * 200,
 		};
 
-		const newNode: AppNode = {
-			id: nodeId,
-			type: nodeTypeOption.type,
-			position: {
-				x: 100 + randomOffset.x,
-				y: 100 + randomOffset.y,
-			},
-			data: { ...nodeTypeOption.defaultData },
-		};
+		let newNode: AppNode;
+
+		if (
+			nodeTypeOption.type === 'oscillator' ||
+			nodeTypeOption.type === 'gain'
+		) {
+			// Special handling for audio nodes (oscillator and gain)
+			newNode = {
+				id: nodeId,
+				type: nodeTypeOption.type,
+				position: {
+					x: 100 + randomOffset.x,
+					y: 100 + randomOffset.y,
+				},
+				data: {
+					...nodeTypeOption.defaultData,
+					id: nodeId, // Set the audio node ID
+				},
+			} as AppNode;
+		} else {
+			// Standard handling for other node types
+			newNode = {
+				id: nodeId,
+				type: nodeTypeOption.type,
+				position: {
+					x: 100 + randomOffset.x,
+					y: 100 + randomOffset.y,
+				},
+				data: { ...nodeTypeOption.defaultData },
+			} as AppNode;
+		}
 
 		addNode(newNode);
 		console.log(`🎯 Added new ${nodeTypeOption.name} node:`, newNode);
@@ -100,7 +168,7 @@ export const NodeAddPanel: React.FC = () => {
 	return (
 		<Panel
 			position='top-left'
-			className='m-4'
+			className='p-4 w-80 max-w-full'
 		>
 			<div className='bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg'>
 				{/* Header */}
@@ -185,6 +253,11 @@ export const NodeAddPanel: React.FC = () => {
 						<span className='text-lg'>🧪</span>
 						Create Test Flow
 					</button>
+				</div>
+
+				{/* Transport Controls Section */}
+				<div className='p-3 border-t border-gray-200 dark:border-gray-700'>
+					<TransportControls />
 				</div>
 			</div>
 		</Panel>

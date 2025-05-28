@@ -5,7 +5,7 @@ import { NodeHeader } from './NodeHeader';
 interface BaseNodeProps {
 	children: ReactNode;
 	className?: string;
-	variant?: 'default' | 'debug' | 'primary' | 'secondary';
+	variant?: 'default' | 'debug' | 'primary' | 'secondary' | 'audio';
 	gridWidth?: number;
 	gridHeight?: number;
 	// Delete button props
@@ -21,6 +21,7 @@ const variantStyles = {
 	debug: 'border-blue-200 dark:border-blue-600',
 	primary: 'border-green-200 dark:border-green-600',
 	secondary: 'border-purple-200 dark:border-purple-600',
+	audio: 'border-orange-200 dark:border-orange-600',
 };
 
 const variantShadows = {
@@ -28,6 +29,7 @@ const variantShadows = {
 	debug: 'shadow-blue-400/40',
 	primary: 'shadow-green-400/40',
 	secondary: 'shadow-purple-400/40',
+	audio: 'shadow-orange-400/40',
 };
 
 // Header styles are now in NodeHeader.tsx
@@ -56,10 +58,10 @@ export function BaseNode({
 		<div
 			className={`
 		bg-white dark:bg-gray-800 
-		border-4 
+		border-b-4 border-l-4 border-r-4 border-x
 		${variantStyles[variant]}
 		${selected ? `shadow-xl ${variantShadows[variant]}` : ''}
-		rounded-lg 
+		rounded-b-lg  
 		transition-all 
 		duration-200
 		relative
