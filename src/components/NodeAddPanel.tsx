@@ -62,6 +62,23 @@ const nodeTypeOptions = [
 		},
 	},
 	{
+		type: 'visualizer' as const,
+		name: 'Audio Visualizer',
+		description: 'Real-time waveform visualization',
+		defaultData: {
+			id: '',
+			type: 'visualizer' as const,
+			params: {
+				size: 1024,
+				smoothing: 0.8,
+				isConnected: false,
+			},
+			label: 'Visualizer',
+			gridWidth: 6,
+			gridHeight: 8,
+		},
+	},
+	{
 		type: 'destination' as const,
 		name: 'Audio Destination',
 		description: 'Master audio output endpoint',

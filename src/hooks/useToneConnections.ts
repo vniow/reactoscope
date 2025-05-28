@@ -31,7 +31,16 @@ export function useToneConnections(nodeId: string) {
 			if (sourceNode && targetNode) {
 				// Get the source instance
 				const sourceKey = `${sourceNode.type}-${sourceNode.id}`;
-				const targetKey = `${targetNode.type}-${targetNode.id}`;
+
+				// Handle different target types
+				let targetKey: string;
+				if (targetNode.type === 'analyser') {
+					// For analyser nodes, determine which channel based on target handle
+					const channel = edge.targetHandle === 'audio-in-L' ? 'L' : 'R';
+					targetKey = `${targetNode.type}-${targetNode.id}-${channel}`;
+				} else {
+					targetKey = `${targetNode.type}-${targetNode.id}`;
+				}
 
 				const toneInstances = (
 					window as unknown as {
@@ -46,8 +55,17 @@ export function useToneConnections(nodeId: string) {
 					try {
 						sourceInstance.connect(targetInstance);
 						console.log(
-							`✅ Connected ${sourceNode.type} ${sourceNode.id} to ${targetNode.type} ${targetNode.id}`
+							`✅ Connected ${sourceNode.type} ${sourceNode.id} to ${
+								targetNode.type
+							} ${targetNode.id} ${
+								targetNode.type === 'analyser' ? `(${edge.targetHandle})` : ''
+							}`
 						);
+
+						// Update analyser connection status if target is analyser
+						if (targetNode.type === 'analyser') {
+							// This will be handled by the analyser hook's useEffect for connection monitoring
+						}
 					} catch (error) {
 						console.error('❌ Failed to connect audio nodes:', error);
 					}
@@ -67,7 +85,16 @@ export function useToneConnections(nodeId: string) {
 
 				if (sourceNode && targetNode) {
 					const sourceKey = `${sourceNode.type}-${sourceNode.id}`;
-					const targetKey = `${targetNode.type}-${targetNode.id}`;
+
+					// Handle different target types
+					let targetKey: string;
+					if (targetNode.type === 'analyser') {
+						// For analyser nodes, determine which channel based on target handle
+						const channel = edge.targetHandle === 'audio-in-L' ? 'L' : 'R';
+						targetKey = `${targetNode.type}-${targetNode.id}-${channel}`;
+					} else {
+						targetKey = `${targetNode.type}-${targetNode.id}`;
+					}
 
 					const toneInstances = (
 						window as unknown as {
@@ -82,7 +109,11 @@ export function useToneConnections(nodeId: string) {
 						try {
 							sourceInstance.disconnect(targetInstance);
 							console.log(
-								`🔌 Disconnected ${sourceNode.type} ${sourceNode.id} from ${targetNode.type} ${targetNode.id}`
+								`🔌 Disconnected ${sourceNode.type} ${sourceNode.id} from ${
+									targetNode.type
+								} ${targetNode.id} ${
+									targetNode.type === 'analyser' ? `(${edge.targetHandle})` : ''
+								}`
 							);
 						} catch (error) {
 							console.error('❌ Failed to disconnect audio nodes:', error);

@@ -15,6 +15,7 @@ export type PositionLoggerNode = Node<
 export type ThemeDebugNode = Node<BaseNodeData, 'theme-debug'>;
 export type OscillatorNode = Node<BaseNodeData & AudioNodeData, 'oscillator'>;
 export type GainNode = Node<BaseNodeData & AudioNodeData, 'gain'>;
+export type VisualizerNode = Node<BaseNodeData & AudioNodeData, 'visualizer'>;
 export type DestinationNode = Node<BaseNodeData, 'destination'>;
 export type AppNode =
 	| BuiltInNode
@@ -22,4 +23,5 @@ export type AppNode =
 	| ThemeDebugNode
 	| OscillatorNode
 	| GainNode
+	| VisualizerNode
 	| DestinationNode;

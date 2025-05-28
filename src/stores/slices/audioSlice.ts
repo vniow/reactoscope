@@ -15,10 +15,16 @@ export interface GainParams {
 	mute: boolean;
 }
 
+export interface AnalyserParams {
+	size: number; // FFT size (default: 1024)
+	smoothing: number; // Time smoothing (0-1)
+	isConnected: boolean;
+}
+
 export interface AudioNodeData {
 	id: string;
-	type: 'oscillator' | 'gain';
-	params: OscillatorParams | GainParams;
+	type: 'oscillator' | 'gain' | 'analyser';
+	params: OscillatorParams | GainParams | AnalyserParams;
 }
 
 export interface AudioConnection {
@@ -51,12 +57,12 @@ export interface AudioSlice {
 	// Audio Node Actions
 	addAudioNode: (
 		nodeId: string,
-		type: 'oscillator' | 'gain',
-		params: OscillatorParams | GainParams
+		type: 'oscillator' | 'gain' | 'analyser',
+		params: OscillatorParams | GainParams | AnalyserParams
 	) => void;
 	updateAudioNode: (
 		nodeId: string,
-		params: Partial<OscillatorParams | GainParams>
+		params: Partial<OscillatorParams | GainParams | AnalyserParams>
 	) => void;
 	removeAudioNode: (nodeId: string) => void;
 

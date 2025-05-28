@@ -26,7 +26,9 @@ export function useToneDestination(nodeId: string) {
 
 			if (
 				sourceNode &&
-				(sourceNode.type === 'oscillator' || sourceNode.type === 'gain')
+				(sourceNode.type === 'oscillator' ||
+					sourceNode.type === 'gain' ||
+					sourceNode.type === 'analyser')
 			) {
 				// Get the Tone.js instance from the global registry
 				const sourceKey = `${sourceNode.type}-${sourceNode.id}`;
@@ -60,7 +62,9 @@ export function useToneDestination(nodeId: string) {
 
 				if (
 					sourceNode &&
-					(sourceNode.type === 'oscillator' || sourceNode.type === 'gain')
+					(sourceNode.type === 'oscillator' ||
+						sourceNode.type === 'gain' ||
+						sourceNode.type === 'analyser')
 				) {
 					const sourceKey = `${sourceNode.type}-${sourceNode.id}`;
 					const toneInstances = (

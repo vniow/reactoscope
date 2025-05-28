@@ -4,6 +4,7 @@ import { PositionLoggerNode } from './PositionLoggerNode';
 import { ThemeDebugNode } from './ThemeDebugNode';
 import { OscillatorNode } from './OscillatorNode';
 import { GainNode } from './GainNode';
+import { VisualizerNode } from './VisualizerNode';
 import { DestinationNode } from './DestinationNode';
 import type { AppNode } from './types';
 
@@ -14,6 +15,7 @@ export const nodeTypes = {
 	'theme-debug': ThemeDebugNode,
 	oscillator: OscillatorNode,
 	gain: GainNode,
+	visualizer: VisualizerNode,
 	destination: DestinationNode,
 	// Add any of your custom nodes here!
 } satisfies NodeTypes;
