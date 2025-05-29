@@ -32,13 +32,13 @@ export const useHandlePosition = (
 	);
 
 	// Debug logging to trace handle position updates
-	console.log(`[useHandlePosition] ${nodeId}.${handleId} => ${position}`, {
-		nodeId,
-		handleId,
-		position,
-		defaultPosition,
-		allPositions: useAppStore.getState().flow.nodeHandlePositions[nodeId],
-	});
+	// console.log(`[useHandlePosition] ${nodeId}.${handleId} => ${position}`, {
+	// 	nodeId,
+	// 	handleId,
+	// 	position,
+	// 	defaultPosition,
+	// 	allPositions: useAppStore.getState().flow.nodeHandlePositions[nodeId],
+	// });
 
 	return position;
 };

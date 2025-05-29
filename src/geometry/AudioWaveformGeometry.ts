@@ -106,8 +106,17 @@ export function useWaveformGeometry() {
 	 * Reset all geometry data to zero (for pause state)
 	 */
 	const resetGeometryData = (geometry: THREE.BufferGeometry) => {
-		const startAttr = geometry.attributes.aStart as THREE.BufferAttribute;
-		const endAttr = geometry.attributes.aEnd as THREE.BufferAttribute;
+		const startAttr = geometry.attributes.aStart as
+			| THREE.BufferAttribute
+			| undefined;
+		const endAttr = geometry.attributes.aEnd as
+			| THREE.BufferAttribute
+			| undefined;
+
+		if (!startAttr || !endAttr || !startAttr.array || !endAttr.array) {
+			// Attributes not set yet, nothing to reset
+			return;
+		}
 
 		// Clear geometry data when not playing
 		for (let i = 0; i < NUM_SEGMENTS * 4 * 2; i++) {

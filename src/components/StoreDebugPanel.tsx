@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useFlowState, useFlowActions } from '../hooks/useAppStore';
 import {
 	useHandlePositionsNeedUpdate,
@@ -11,7 +11,7 @@ import { Position } from '@xyflow/react';
  * Comprehensive Phase 3 Debug Panel
  * Focus: Flow State Migration & Handle Position Optimization
  */
-export const StoreDebugPanel: React.FC = () => {
+export function StoreDebugPanel() {
 	const { nodes, edges, handlePositions } = useFlowState();
 	const { recalculateAllHandlePositions, batchUpdateNodePositions } =
 		useFlowActions();
@@ -59,11 +59,11 @@ export const StoreDebugPanel: React.FC = () => {
 					}));
 				}
 			}
-			// originalLog.apply(console, args);
+			originalLog.apply(console, args);
 		};
 
 		return () => {
-			// console.log = originalLog;
+			console.log = originalLog;
 		};
 	}, []);
 
@@ -358,4 +358,4 @@ export const StoreDebugPanel: React.FC = () => {
 			</div>
 		</div>
 	);
-};
+}

@@ -108,13 +108,13 @@ export function useToneConnections(nodeId: string) {
 					if (sourceInstance && targetInstance) {
 						try {
 							sourceInstance.disconnect(targetInstance);
-							console.log(
-								`🔌 Disconnected ${sourceNode.type} ${sourceNode.id} from ${
-									targetNode.type
-								} ${targetNode.id} ${
-									targetNode.type === 'analyser' ? `(${edge.targetHandle})` : ''
-								}`
-							);
+							// console.log(
+							// 	`🔌 Disconnected ${sourceNode.type} ${sourceNode.id} from ${
+							// 		targetNode.type
+							// 	} ${targetNode.id} ${
+							// 		targetNode.type === 'analyser' ? `(${edge.targetHandle})` : ''
+							// 	}`
+							// );
 						} catch (error) {
 							console.error('❌ Failed to disconnect audio nodes:', error);
 						}

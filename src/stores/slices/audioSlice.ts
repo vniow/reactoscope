@@ -23,7 +23,7 @@ export interface AnalyserParams {
 
 export interface AudioNodeData {
 	id: string;
-	type: 'oscillator' | 'gain' | 'analyser';
+	type: 'oscillator' | 'gain' | 'analyser' | 'visualizer' | 'destination';
 	params: OscillatorParams | GainParams | AnalyserParams;
 }
 

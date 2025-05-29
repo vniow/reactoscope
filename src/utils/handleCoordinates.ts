@@ -7,17 +7,17 @@ export function getHandleCoordinates(
 	node: Node,
 	handlePosition: Position
 ): { x: number; y: number } {
-	console.log(
-		`[getHandleCoordinates] Called for node ${node.id} with position:`,
-		handlePosition
-	);
-	console.log(`[getHandleCoordinates] Node position:`, node.position);
+	// console.log(
+	// 	`[getHandleCoordinates] Called for node ${node.id} with position:`,
+	// 	handlePosition
+	// );
+	// console.log(`[getHandleCoordinates] Node position:`, node.position);
 
 	const nodeWidth = node.measured?.width ?? node.width ?? 150;
 	const nodeHeight = node.measured?.height ?? node.height ?? 40;
-	console.log(
-		`[getHandleCoordinates] Node dimensions: ${nodeWidth}x${nodeHeight}`
-	);
+	// console.log(
+	// 	`[getHandleCoordinates] Node dimensions: ${nodeWidth}x${nodeHeight}`
+	// );
 
 	let x = node.position.x;
 	let y = node.position.y;
@@ -40,9 +40,9 @@ export function getHandleCoordinates(
 	}
 
 	const result = { x, y };
-	console.log(
-		`[getHandleCoordinates] Calculated coordinates for ${node.id} ${handlePosition}:`,
-		result
-	);
+	// console.log(
+	// 	`[getHandleCoordinates] Calculated coordinates for ${node.id} ${handlePosition}:`,
+	// 	result
+	// );
 	return result;
 }

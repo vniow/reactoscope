@@ -17,7 +17,7 @@ import { initialNodes, nodeTypes } from './nodes';
 import { initialEdges, edgeTypes } from './edges';
 import { ThemeProvider } from './contexts/ZustandThemeProvider';
 import { FlowControls } from './components/FlowControls';
-import { StoreDebugPanel } from './components/StoreDebugPanel';
+// import { StoreDebugPanel } from './components/StoreDebugPanel';
 import { NodeAddPanel } from './components/NodeAddPanel';
 import { type AppNode } from './nodes/types';
 import { useFlowNodes, useFlowEdges, useFlowActions } from './hooks/useFlow';
@@ -47,10 +47,10 @@ export default function App() {
 		// Only initialize once
 		if (!isInitialized.current) {
 			console.log('🚀 Initializing Zustand store with empty data');
-			
+
 			setNodes(initialNodes); // Will be empty array
 			setEdges(initialEdges); // Will be empty array
-			
+
 			isInitialized.current = true;
 			console.log('✅ Store initialization complete');
 		}
@@ -80,10 +80,10 @@ export default function App() {
 					edges={edges}
 					edgeTypes={edgeTypes}
 					onEdgesChange={onEdgesChange} // Directly use store action
-					onConnect={onConnect}         // Directly use store action
-					onReconnect={onReconnect}     // Enable edge reconnection
+					onConnect={onConnect} // Directly use store action
+					onReconnect={onReconnect} // Enable edge reconnection
 					onReconnectStart={onReconnectStart} // Track reconnection start
-					onReconnectEnd={onReconnectEnd}     // Handle reconnection end/delete
+					onReconnectEnd={onReconnectEnd} // Handle reconnection end/delete
 					// Viewport state is managed by React Flow, we only sync changes back to store
 					onViewportChange={onViewportChange} // Update store when viewport changes
 					fitView
@@ -101,7 +101,7 @@ export default function App() {
 					/>
 					<NodeAddPanel />
 					<FlowControls />
-					<StoreDebugPanel />
+					{/* <StoreDebugPanel /> */}
 					<MiniMap
 						pannable={true}
 						bgColor='bg-gray-100/50 dark:bg-gray-800'

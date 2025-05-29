@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Panel, type Edge } from '@xyflow/react';
 import { useFlowActions } from '../hooks/useFlow';
 import { TransportControls } from './TransportControls';
@@ -22,6 +22,16 @@ const nodeTypeOptions = [
 		description: 'Node that shows theme debugging info',
 		defaultData: {
 			label: 'Theme Debug Info',
+			gridWidth: 4,
+			gridHeight: 4,
+		},
+	},
+	{
+		type: 'r3f-debug' as const,
+		name: 'R3F Debug',
+		description: 'React Three Fiber debug node with rotating box',
+		defaultData: {
+			label: 'R3F Debug',
 			gridWidth: 4,
 			gridHeight: 4,
 		},
@@ -74,8 +84,8 @@ const nodeTypeOptions = [
 				isConnected: false,
 			},
 			label: 'Visualizer',
-			gridWidth: 6,
-			gridHeight: 8,
+			// gridWidth: 6,
+			// gridHeight: 8,
 		},
 	},
 	{
@@ -90,7 +100,7 @@ const nodeTypeOptions = [
 	},
 ];
 
-export const NodeAddPanel: React.FC = () => {
+export function NodeAddPanel() {
 	const { addNode, addEdge } = useFlowActions();
 	const [isExpanded, setIsExpanded] = useState(false);
 
@@ -110,9 +120,10 @@ export const NodeAddPanel: React.FC = () => {
 
 		if (
 			nodeTypeOption.type === 'oscillator' ||
-			nodeTypeOption.type === 'gain'
+			nodeTypeOption.type === 'gain' ||
+			nodeTypeOption.type === 'visualizer'
 		) {
-			// Special handling for audio nodes (oscillator and gain)
+			// Special handling for audio nodes (oscillator, gain, and visualizer)
 			newNode = {
 				id: nodeId,
 				type: nodeTypeOption.type,
@@ -146,39 +157,102 @@ export const NodeAddPanel: React.FC = () => {
 	};
 
 	const handleAddTestFlow = () => {
-		console.log('🧪 Creating test flow with connected nodes');
+		console.log(
+			'🧪 Creating test flow with oscillators connected to visualizer'
+		);
 
-		// Create two connected nodes
-		const node1: AppNode = {
-			id: 'test-node-1',
-			type: 'position-logger',
+		// Create two oscillator nodes
+		const osc1: AppNode = {
+			id: 'test-osc-1',
+			type: 'oscillator',
 			position: { x: 100, y: 100 },
-			data: { label: 'Source Node', gridWidth: 3, gridHeight: 2 },
+			data: {
+				id: 'test-osc-1',
+				type: 'oscillator' as const,
+				params: {
+					frequency: 220,
+					detune: 0,
+					waveType: 'sine' as const,
+					isPlaying: false,
+					volume: 0.5,
+				},
+				label: 'Oscillator 1',
+				gridWidth: 4,
+				gridHeight: 5,
+			},
 		};
 
-		const node2: AppNode = {
-			id: 'test-node-2',
-			type: 'position-logger',
-			position: { x: 400, y: 200 },
-			data: { label: 'Target Node', gridWidth: 3, gridHeight: 2 },
+		const osc2: AppNode = {
+			id: 'test-osc-2',
+			type: 'oscillator',
+			position: { x: 100, y: 300 },
+			data: {
+				id: 'test-osc-2',
+				type: 'oscillator' as const,
+				params: {
+					frequency: 440,
+					detune: 0,
+					waveType: 'sine' as const,
+					isPlaying: false,
+					volume: 0.5,
+				},
+				label: 'Oscillator 2',
+				gridWidth: 4,
+				gridHeight: 5,
+			},
 		};
 
-		const edge: Edge = {
-			id: 'test-edge-1',
-			source: 'test-node-1',
-			target: 'test-node-2',
+		// Create visualizer node
+		const visualizer: AppNode = {
+			id: 'test-visualizer',
+			type: 'visualizer',
+			position: { x: 500, y: 200 },
+			data: {
+				id: 'test-visualizer',
+				type: 'visualizer' as const,
+				params: {
+					size: 1024,
+					smoothing: 0.8,
+					isConnected: false,
+				},
+				label: 'Audio Visualizer',
+				gridWidth: 6,
+				gridHeight: 8,
+			},
+		};
+
+		// Create edges connecting oscillators to visualizer
+		const edge1: Edge = {
+			id: 'test-edge-osc1-viz',
+			source: 'test-osc-1',
+			target: 'test-visualizer',
 			type: 'floating',
 			sourceHandle: 'source',
 			targetHandle: 'target',
 			animated: true,
 		};
 
-		// Add nodes first, then edge
-		addNode(node1);
-		addNode(node2);
+		const edge2: Edge = {
+			id: 'test-edge-osc2-viz',
+			source: 'test-osc-2',
+			target: 'test-visualizer',
+			type: 'floating',
+			sourceHandle: 'source',
+			targetHandle: 'target',
+			animated: true,
+		};
+
+		// Add nodes first, then edges
+		addNode(osc1);
+		addNode(osc2);
+		addNode(visualizer);
+
 		setTimeout(() => {
-			addEdge(edge);
-			console.log('✅ Test flow created');
+			addEdge(edge1);
+			addEdge(edge2);
+			console.log(
+				'✅ Test flow created with oscillators connected to visualizer'
+			);
 		}, 100);
 	};
 
@@ -279,4 +353,4 @@ export const NodeAddPanel: React.FC = () => {
 			</div>
 		</Panel>
 	);
-};
+}

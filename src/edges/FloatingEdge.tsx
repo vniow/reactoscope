@@ -41,16 +41,16 @@ export function FloatingEdge({
 		targetPosition: dynamicTargetPosition,
 	} = useEdgeHandlePositions(source, target, sourceHandleId, targetHandleId);
 
-	console.log(`[FloatingEdge ${id}] Hook returned positions:`, {
-		dynamicSourcePosition,
-		dynamicTargetPosition,
-		sourceNode: sourceNode
-			? { id: sourceNode.id, position: sourceNode.position }
-			: null,
-		targetNode: targetNode
-			? { id: targetNode.id, position: targetNode.position }
-			: null,
-	});
+	// console.log(`[FloatingEdge ${id}] Hook returned positions:`, {
+	// 	dynamicSourcePosition,
+	// 	dynamicTargetPosition,
+	// 	sourceNode: sourceNode
+	// 		? { id: sourceNode.id, position: sourceNode.position }
+	// 		: null,
+	// 	targetNode: targetNode
+	// 		? { id: targetNode.id, position: targetNode.position }
+	// 		: null,
+	// });
 
 	if (!sourceNode || !targetNode) {
 		console.log(
@@ -71,25 +71,25 @@ export function FloatingEdge({
 	// 	source,
 	// 	target,
 	// });
-	console.log(`🚀 Edge ${id} optimized update:`, {
-		sourceHandleId,
-		targetHandleId,
-		dynamicSourcePosition,
-		dynamicTargetPosition,
-		source,
-		target,
-	});
+	// console.log(`🚀 Edge ${id} optimized update:`, {
+	// 	sourceHandleId,
+	// 	targetHandleId,
+	// 	dynamicSourcePosition,
+	// 	dynamicTargetPosition,
+	// 	source,
+	// 	target,
+	// });
 
 	// Calculate actual coordinates based on optimized handle positions from store
 	const sourceCoords = getHandleCoordinates(sourceNode, dynamicSourcePosition);
 	const targetCoords = getHandleCoordinates(targetNode, dynamicTargetPosition);
 
-	console.log(`[FloatingEdge ${id}] Calculated coordinates:`, {
-		sourceCoords,
-		targetCoords,
-		sourcePosition: dynamicSourcePosition,
-		targetPosition: dynamicTargetPosition,
-	});
+	// console.log(`[FloatingEdge ${id}] Calculated coordinates:`, {
+	// 	sourceCoords,
+	// 	targetCoords,
+	// 	sourcePosition: dynamicSourcePosition,
+	// 	targetPosition: dynamicTargetPosition,
+	// });
 
 	// Use the calculated coordinates for smooth step path
 	const [edgePath] = getSmoothStepPath({
@@ -103,7 +103,7 @@ export function FloatingEdge({
 		borderRadius: 8, // Smooth corners
 	});
 
-	console.log(`[FloatingEdge ${id}] Generated path:`, edgePath);
+	// console.log(`[FloatingEdge ${id}] Generated path:`, edgePath);
 
 	// Enhanced styling for reconnectable edges
 	const reconnectableStyle = {

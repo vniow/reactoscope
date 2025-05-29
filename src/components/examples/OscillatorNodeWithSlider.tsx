@@ -1,9 +1,9 @@
-import { Position, type NodeProps } from '@xyflow/react';
 import React from 'react';
+import { Position, type NodeProps } from '@xyflow/react';
 
 import { BaseNode } from '../components/BaseNode';
 import { NodeHandle } from '../components/NodeHandle';
-import { Slider } from '../components/ui';
+import { Slider } from '../components/ui/Slider';
 import { useHandlePosition } from '../hooks/useHandlePositions';
 import { useNodes } from '../hooks/useAppStore';
 import { useToneConnections } from '../hooks/useToneConnections';
@@ -44,54 +44,6 @@ function WaveTypeSelector({ value, onChange }: WaveTypeSelectorProps) {
 	);
 }
 
-interface FrequencySliderProps {
-	value: number;
-	onChange: (frequency: number) => void;
-}
-
-function FrequencySlider({ value, onChange }: FrequencySliderProps) {
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		onChange(Number(e.target.value));
-	};
-
-	return (
-		<Slider
-			label='Frequency'
-			value={value}
-			min={80}
-			max={2000}
-			step={1}
-			formatValue={(val) => `${val}Hz`}
-			color='orange'
-			onChange={handleChange}
-		/>
-	);
-}
-
-interface DetuneSliderProps {
-	value: number;
-	onChange: (detune: number) => void;
-}
-
-function DetuneSlider({ value, onChange }: DetuneSliderProps) {
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		onChange(Number(e.target.value));
-	};
-
-	return (
-		<Slider
-			label='Detune'
-			value={value}
-			min={-1200}
-			max={1200}
-			step={1}
-			formatValue={(val) => `${val > 0 ? '+' : ''}${val} cents`}
-			color='orange'
-			onChange={handleChange}
-		/>
-	);
-}
-
 interface PlayStopButtonProps {
 	isPlaying: boolean;
 	onStart: () => void;
@@ -113,7 +65,7 @@ function PlayStopButton({ isPlaying, onStart, onStop }: PlayStopButtonProps) {
 	);
 }
 
-export function OscillatorNode({
+export function OscillatorNodeWithSlider({
 	id,
 	data,
 	selected,
@@ -138,6 +90,20 @@ export function OscillatorNode({
 	// Get the removeNode function from the store
 	const { removeNode } = useNodes();
 
+	// Slider handlers
+	const handleFrequencyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		updateFrequency(Number(e.target.value));
+	};
+
+	const handleDetuneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		updateDetune(Number(e.target.value));
+	};
+
+	// Custom formatters for slider values
+	const formatFrequency = (value: number) => `${value}Hz`;
+	const formatDetune = (value: number) =>
+		`${value > 0 ? '+' : ''}${value} cents`;
+
 	return (
 		<BaseNode
 			variant='audio'
@@ -155,16 +121,30 @@ export function OscillatorNode({
 					onChange={updateWaveType}
 				/>
 
-				{/* Frequency Control */}
-				<FrequencySlider
+				{/* Frequency Control with new Slider component */}
+				<Slider
+					label='Frequency'
 					value={params.frequency}
-					onChange={updateFrequency}
+					min={80}
+					max={2000}
+					step={1}
+					onChange={handleFrequencyChange}
+					formatValue={formatFrequency}
+					color='orange'
+					size='md'
 				/>
 
-				{/* Detune Control */}
-				<DetuneSlider
+				{/* Detune Control with new Slider component */}
+				<Slider
+					label='Detune'
 					value={params.detune}
-					onChange={updateDetune}
+					min={-1200}
+					max={1200}
+					step={1}
+					onChange={handleDetuneChange}
+					formatValue={formatDetune}
+					color='orange'
+					size='md'
 				/>
 
 				{/* Play/Stop Button */}

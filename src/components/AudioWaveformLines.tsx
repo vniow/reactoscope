@@ -2,7 +2,7 @@
  * AudioWaveformLines.tsx
  * React component for rendering audio waveform lines using GPU shaders
  */
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Analyser } from 'tone';
 import * as THREE from 'three';
@@ -18,11 +18,11 @@ interface AudioWaveformLinesProps {
 	isPlaying: boolean;
 }
 
-const AudioWaveformLines: React.FC<AudioWaveformLinesProps> = ({
+function AudioWaveformLines({
 	analyserL,
 	analyserR,
 	isPlaying,
-}) => {
+}: AudioWaveformLinesProps) {
 	const meshRef = useRef<THREE.Mesh>(null!);
 	const geometryRef = useRef<THREE.BufferGeometry>(null!);
 	const materialRef = useRef<THREE.ShaderMaterial>(null!);
@@ -105,6 +105,6 @@ const AudioWaveformLines: React.FC<AudioWaveformLinesProps> = ({
 			/>
 		</mesh>
 	);
-};
+}
 
 export default AudioWaveformLines;

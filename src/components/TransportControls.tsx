@@ -1,7 +1,6 @@
-import React from 'react';
 import { useTransport } from '../hooks/useAppStore';
 
-export const TransportControls: React.FC = () => {
+export function TransportControls() {
 	const {
 		transport,
 		audioContext,
@@ -81,4 +80,4 @@ export const TransportControls: React.FC = () => {
 			</div>
 		</div>
 	);
-};
+}

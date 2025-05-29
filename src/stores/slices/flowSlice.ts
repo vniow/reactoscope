@@ -31,12 +31,12 @@ const calculateHandlePositionsWithMemo = (
 
 	// Check if we can use cached result
 	if (handlePositionCache && handlePositionCache.hash === currentHash) {
-		console.log('🎯 Using cached handle positions');
+		// console.log('🎯 Using cached handle positions');
 		return handlePositionCache.positions;
 	}
 
-	console.log('🔄 Calculating new handle positions');
-	const start = performance.now();
+	// console.log('🔄 Calculating new handle positions');
+	// const start = performance.now();
 
 	// Calculate new positions
 	const newPositions: Record<string, Record<string, Position>> = {};
@@ -51,8 +51,8 @@ const calculateHandlePositionsWithMemo = (
 		timestamp: Date.now(),
 	};
 
-	const duration = performance.now() - start;
-	console.log(`✅ Handle positions calculated in ${duration.toFixed(2)}ms`);
+	// const duration = performance.now() - start;
+	// console.log(`✅ Handle positions calculated in ${duration.toFixed(2)}ms`);
 
 	return newPositions;
 };
@@ -308,7 +308,7 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSliceProps> = (
 
 	recalculateAllHandlePositions: () => {
 		const { flow } = get();
-		console.log('🔄 Recalculating all handle positions with memoization');
+		// console.log('🔄 Recalculating all handle positions with memoization');
 
 		// 🚀 PERFORMANCE: Use memoized calculation
 		const newHandlePositions = calculateHandlePositionsWithMemo(
@@ -323,10 +323,10 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSliceProps> = (
 			},
 		}));
 
-		console.log(
-			'✅ Zustand store updated. nodeHandlePositions:',
-			get().flow.nodeHandlePositions
-		);
+		// console.log(
+		// 	'✅ Zustand store updated. nodeHandlePositions:',
+		// 	get().flow.nodeHandlePositions
+		// );
 		// console.log(
 		// 	'✅ Zustand store debug info:',
 		// 	get().flow.debug

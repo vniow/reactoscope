@@ -35,10 +35,10 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 		detune: 0,
 		waveType: 'sine',
 		isPlaying: false,
-		volume: -20, // dB
+		volume: 0, // dB
 	};
 
-	const params = audioNode?.params || defaultParams;
+	const params = (audioNode?.params as OscillatorParams) || defaultParams;
 
 	// Initialize audio node in store if it doesn't exist
 	useEffect(() => {
@@ -48,7 +48,7 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 				detune: 0,
 				waveType: 'sine',
 				isPlaying: false,
-				volume: -20,
+				volume: 0,
 			});
 		}
 	}, [nodeId, audioNode, addAudioNode]);
@@ -168,7 +168,6 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 			isStartedRef.current = false;
 			updateAudioNode(nodeId, { isPlaying: false });
 			console.log(`⏹️ Stopped oscillator ${nodeId}`);
-
 			// Create a new oscillator for next play
 			setTimeout(() => {
 				if (oscillatorRef.current) {
@@ -178,7 +177,17 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 						detune: params.detune,
 						type: params.waveType,
 						volume: params.volume,
-					}).toDestination();
+					}); // Removed .toDestination() so destination node can control connections
+
+					// Register new oscillator in global registry for destination node access
+					const windowWithTone = window as unknown as {
+						toneInstances?: Record<string, Tone.Oscillator>;
+					};
+					if (!windowWithTone.toneInstances) {
+						windowWithTone.toneInstances = {};
+					}
+					windowWithTone.toneInstances[`oscillator-${nodeId}`] =
+						oscillatorRef.current;
 				}
 			}, 100);
 		} catch (error) {

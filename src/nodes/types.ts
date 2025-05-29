@@ -17,6 +17,7 @@ export type OscillatorNode = Node<BaseNodeData & AudioNodeData, 'oscillator'>;
 export type GainNode = Node<BaseNodeData & AudioNodeData, 'gain'>;
 export type VisualizerNode = Node<BaseNodeData & AudioNodeData, 'visualizer'>;
 export type DestinationNode = Node<BaseNodeData, 'destination'>;
+export type R3FDebugNode = Node<BaseNodeData, 'r3f-debug'>;
 export type AppNode =
 	| BuiltInNode
 	| PositionLoggerNode
@@ -24,4 +25,5 @@ export type AppNode =
 	| OscillatorNode
 	| GainNode
 	| VisualizerNode
-	| DestinationNode;
+	| DestinationNode
+	| R3FDebugNode;

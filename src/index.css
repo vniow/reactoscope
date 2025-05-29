@@ -1,2 +1,38 @@
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* R3F Canvas fixes for ReactFlow integration */
+.react-flow__node-default canvas,
+.BaseNode canvas /* Assuming BaseNode is a common class for your custom nodes */ {
+	pointer-events: auto !important;
+}
+
+/* Prevent R3F Canvas from interfering with ReactFlow transforms */
+.react-flow__node .r3f-canvas-container,
+.BaseNode .r3f-canvas-container /* Targeting within BaseNode */ {
+	contain: layout style paint;
+	isolation: isolate;
+	width: 100%; /* Ensure container takes full width of node */
+	height: 100%; /* Ensure container takes full height of its explicit style */
+	position: relative; /* Added for proper child absolute positioning */
+	overflow: hidden; /* Ensure children are clipped */
+}
+
+.react-flow__node .r3f-canvas-container > div,
+.BaseNode .r3f-canvas-container > div {
+	width: 100% !important; /* Override R3F inline styles */
+	height: 100% !important; /* Override R3F inline styles */
+	position: absolute !important; /* Ensure it fills the container */
+	top: 0 !important;
+	left: 0 !important;
+}
+
+.react-flow__node .r3f-canvas-container canvas,
+.BaseNode .r3f-canvas-container canvas {
+	width: 100% !important; /* Override R3F inline styles */
+	height: 100% !important; /* Override R3F inline styles */
+	position: absolute !important;
+	top: 0 !important;
+	left: 0 !important;
+	/* pointer-events are handled by the parent rule now */
+}

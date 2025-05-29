@@ -1,6 +1,7 @@
 import { Position, type NodeProps } from '@xyflow/react';
 import { BaseNode } from '../components/BaseNode';
 import { NodeHandle } from '../components/NodeHandle';
+import { Slider } from '../components/ui';
 import { useHandlePosition } from '../hooks/useHandlePositions';
 import { useNodes } from '../hooks/useAppStore';
 import { useToneAnalyser } from '../hooks/useToneAnalyser';
@@ -34,11 +35,6 @@ export function VisualizerNode({
 	const handleSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
 		const size = parseInt(e.target.value);
 		updateSize(size);
-	};
-
-	const handleSmoothingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const smoothing = parseFloat(e.target.value);
-		updateSmoothing(smoothing);
 	};
 
 	const handlePointerDown = (e: React.PointerEvent) => {
@@ -86,26 +82,16 @@ export function VisualizerNode({
 					</div>
 
 					{/* Smoothing Control */}
-					<div className='space-y-1'>
-						<label className='text-xs font-medium text-gray-700 dark:text-gray-300'>
-							Smoothing: {params.smoothing.toFixed(2)}
-						</label>
-						<input
-							type='range'
-							min='0'
-							max='1'
-							step='0.01'
-							value={params.smoothing}
-							onChange={handleSmoothingChange}
-							onPointerDown={handlePointerDown}
-							className='w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer'
-						/>
-						<div className='flex justify-between text-xs text-gray-500 dark:text-gray-400'>
-							<span>0</span>
-							<span>0.5</span>
-							<span>1</span>
-						</div>
-					</div>
+					<Slider
+						label='Smoothing'
+						value={params.smoothing}
+						min={0}
+						max={1}
+						step={0.01}
+						formatValue={(val) => val.toFixed(2)}
+						onChange={(e) => updateSmoothing(parseFloat(e.target.value))}
+						showMinMax={true}
+					/>
 
 					{/* Connection Status */}
 					<div className='text-center'>
