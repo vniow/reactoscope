@@ -59,23 +59,13 @@ export const useFlowActions = () => {
 	// Create stable event handlers using useCallback
 	const onNodesChange = useCallback(
 		(changes: NodeChange[]) => {
-			// console.log('🔄 onNodesChange called with changes:', changes);
 			const currentNodes = useAppStore.getState().flow.nodes;
 			const updatedNodes = applyNodeChanges(changes, currentNodes);
 			actions.applyNodesChange(updatedNodes as AppNode[]);
 
-			// 🔧 FIX: Check if position changes occurred and trigger handle recalculation
 			if (hasPositionChanges(changes)) {
-				// console.log(
-				// 	'📍 Position changes detected, recalculating handle positions'
-				// );
 				// Use setTimeout to avoid synchronous updates during React Flow's internal state changes
 				setTimeout(() => {
-					// const nodesAtTimeout = useAppStore.getState().flow.nodes;
-					// console.log(
-					// 	'⏰ Inside setTimeout for recalculateAllHandlePositions. Nodes:',
-					// 	nodesAtTimeout
-					// );
 					actions.recalculateAllHandlePositions();
 				}, 0);
 			}
@@ -102,7 +92,7 @@ export const useFlowActions = () => {
 					.toString(36)
 					.substring(7)}`,
 				type: 'floating',
-				animated: true,
+				animated: false,
 			} as Edge;
 			actions.addEdge(newEdge);
 		},

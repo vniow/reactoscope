@@ -41,17 +41,6 @@ export function FloatingEdge({
 		targetPosition: dynamicTargetPosition,
 	} = useEdgeHandlePositions(source, target, sourceHandleId, targetHandleId);
 
-	// console.log(`[FloatingEdge ${id}] Hook returned positions:`, {
-	// 	dynamicSourcePosition,
-	// 	dynamicTargetPosition,
-	// 	sourceNode: sourceNode
-	// 		? { id: sourceNode.id, position: sourceNode.position }
-	// 		: null,
-	// 	targetNode: targetNode
-	// 		? { id: targetNode.id, position: targetNode.position }
-	// 		: null,
-	// });
-
 	if (!sourceNode || !targetNode) {
 		console.log(
 			`[FloatingEdge ${id}] Missing nodes - sourceNode:`,
@@ -62,34 +51,9 @@ export function FloatingEdge({
 		return null;
 	}
 
-	// Debug logging (disabled for performance - enable via debug panel)
-	// console.log(`🚀 Edge ${id} optimized update:`, {
-	// 	sourceHandleId,
-	// 	targetHandleId,
-	// 	dynamicSourcePosition,
-	// 	dynamicTargetPosition,
-	// 	source,
-	// 	target,
-	// });
-	// console.log(`🚀 Edge ${id} optimized update:`, {
-	// 	sourceHandleId,
-	// 	targetHandleId,
-	// 	dynamicSourcePosition,
-	// 	dynamicTargetPosition,
-	// 	source,
-	// 	target,
-	// });
-
-	// Calculate actual coordinates based on optimized handle positions from store
+	// Calculate actual coordinates using improved handle positioning
 	const sourceCoords = getHandleCoordinates(sourceNode, dynamicSourcePosition);
 	const targetCoords = getHandleCoordinates(targetNode, dynamicTargetPosition);
-
-	// console.log(`[FloatingEdge ${id}] Calculated coordinates:`, {
-	// 	sourceCoords,
-	// 	targetCoords,
-	// 	sourcePosition: dynamicSourcePosition,
-	// 	targetPosition: dynamicTargetPosition,
-	// });
 
 	// Use the calculated coordinates for smooth step path
 	const [edgePath] = getSmoothStepPath({
@@ -99,15 +63,13 @@ export function FloatingEdge({
 		targetX: targetCoords.x,
 		targetY: targetCoords.y,
 		targetPosition: dynamicTargetPosition,
-		offset: 16,
-		borderRadius: 8, // Smooth corners
+		offset: 20, // Slightly increased for better visual spacing
+		borderRadius: 8,
 	});
-
-	// console.log(`[FloatingEdge ${id}] Generated path:`, edgePath);
 
 	// Enhanced styling for reconnectable edges
 	const reconnectableStyle = {
-		strokeWidth: 3,
+		strokeWidth: 5,
 		stroke: '#6366f1', // indigo color
 		...style,
 	};
