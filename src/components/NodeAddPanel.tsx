@@ -12,8 +12,6 @@ const nodeTypeOptions = [
 		description: 'Node that displays position coordinates',
 		defaultData: {
 			label: 'New Position Node',
-			// gridWidth: 3,
-			// gridHeight: 2,
 		},
 	},
 	{
@@ -22,8 +20,6 @@ const nodeTypeOptions = [
 		description: 'Node that shows theme debugging info',
 		defaultData: {
 			label: 'Theme Debug Info',
-			// gridWidth: 4,
-			// gridHeight: 4,
 		},
 	},
 	{
@@ -32,8 +28,6 @@ const nodeTypeOptions = [
 		description: 'React Three Fiber debug node with rotating box',
 		defaultData: {
 			label: 'R3F Debug',
-			// gridWidth: 4,
-			// gridHeight: 4,
 		},
 	},
 	{
@@ -51,8 +45,6 @@ const nodeTypeOptions = [
 				volume: 0.5,
 			},
 			label: 'Oscillator',
-			// gridWidth: 4,
-			// gridHeight: 5,
 		},
 	},
 	{
@@ -67,8 +59,6 @@ const nodeTypeOptions = [
 				mute: false,
 			},
 			label: 'Gain',
-			// gridWidth: 3,
-			// gridHeight: 4,
 		},
 	},
 	{
@@ -84,8 +74,6 @@ const nodeTypeOptions = [
 				isConnected: false,
 			},
 			label: 'Visualizer',
-			// gridWidth: 6,
-			// gridHeight: 8,
 		},
 	},
 	{
@@ -94,8 +82,6 @@ const nodeTypeOptions = [
 		description: 'Master audio output endpoint',
 		defaultData: {
 			label: 'Master Out',
-			// gridWidth: 3,
-			// gridHeight: 2,
 		},
 	},
 ];
@@ -165,7 +151,7 @@ export function NodeAddPanel() {
 		const osc1: AppNode = {
 			id: 'test-osc-1',
 			type: 'oscillator',
-			position: { x: 100, y: 100 },
+			position: { x: 0, y: 0 },
 			data: {
 				id: 'test-osc-1',
 				type: 'oscillator' as const,
@@ -177,28 +163,24 @@ export function NodeAddPanel() {
 					volume: 0.5,
 				},
 				label: 'Oscillator 1',
-				gridWidth: 4,
-				gridHeight: 5,
 			},
 		};
 
 		const osc2: AppNode = {
 			id: 'test-osc-2',
 			type: 'oscillator',
-			position: { x: 100, y: 300 },
+			position: { x: 600, y: 0 },
 			data: {
 				id: 'test-osc-2',
 				type: 'oscillator' as const,
 				params: {
-					frequency: 440,
-					detune: 0,
-					waveType: 'sine' as const,
+					frequency: 220,
+					detune: -1,
+					waveType: 'square' as const,
 					isPlaying: false,
 					volume: 0.5,
 				},
 				label: 'Oscillator 2',
-				gridWidth: 4,
-				gridHeight: 5,
 			},
 		};
 
@@ -206,7 +188,7 @@ export function NodeAddPanel() {
 		const visualizer: AppNode = {
 			id: 'test-visualizer',
 			type: 'visualizer',
-			position: { x: 500, y: 200 },
+			position: { x: 200, y: 0 },
 			data: {
 				id: 'test-visualizer',
 				type: 'visualizer' as const,
@@ -216,30 +198,7 @@ export function NodeAddPanel() {
 					isConnected: false,
 				},
 				label: 'Audio Visualizer',
-				gridWidth: 6,
-				gridHeight: 8,
 			},
-		};
-
-		// Create edges connecting oscillators to visualizer
-		const edge1: Edge = {
-			id: 'test-edge-osc1-viz',
-			source: 'test-osc-1',
-			target: 'test-visualizer',
-			type: 'floating',
-			sourceHandle: 'source',
-			targetHandle: 'target',
-			animated: true,
-		};
-
-		const edge2: Edge = {
-			id: 'test-edge-osc2-viz',
-			source: 'test-osc-2',
-			target: 'test-visualizer',
-			type: 'floating',
-			sourceHandle: 'source',
-			targetHandle: 'target',
-			animated: true,
 		};
 
 		// Add nodes first, then edges
@@ -248,8 +207,6 @@ export function NodeAddPanel() {
 		addNode(visualizer);
 
 		setTimeout(() => {
-			addEdge(edge1);
-			addEdge(edge2);
 			console.log(
 				'✅ Test flow created with oscillators connected to visualizer'
 			);

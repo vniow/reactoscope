@@ -32,8 +32,6 @@ const variantShadows = {
 	audio: 'shadow-orange-400/40',
 };
 
-// Header styles are now in NodeHeader.tsx
-
 export function BaseNode({
 	children,
 	className = '',

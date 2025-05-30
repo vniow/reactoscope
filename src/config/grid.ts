@@ -9,13 +9,3 @@ export function calculateNodeSize(gridWidth: number, gridHeight: number) {
 		height: gridHeight * GRID_UNIT,
 	};
 }
-
-/**
- * Calculate grid-aligned position
- */
-export function gridPosition(gridX: number, gridY: number) {
-	return {
-		x: gridX * GRID_UNIT,
-		y: gridY * GRID_UNIT,
-	};
-}
