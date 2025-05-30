@@ -58,7 +58,7 @@ export function BaseNode({
 		<div
 			className={`
 		bg-white dark:bg-gray-800 
-		border-b-4 border-l-4 border-r-4 border-x
+		border-b-4  border-x
 		${variantStyles[variant]}
 		${selected ? `shadow-xl ${variantShadows[variant]}` : ''}
 		rounded-b-lg  

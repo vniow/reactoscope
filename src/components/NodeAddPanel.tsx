@@ -12,8 +12,8 @@ const nodeTypeOptions = [
 		description: 'Node that displays position coordinates',
 		defaultData: {
 			label: 'New Position Node',
-			gridWidth: 3,
-			gridHeight: 2,
+			// gridWidth: 3,
+			// gridHeight: 2,
 		},
 	},
 	{
@@ -22,8 +22,8 @@ const nodeTypeOptions = [
 		description: 'Node that shows theme debugging info',
 		defaultData: {
 			label: 'Theme Debug Info',
-			gridWidth: 4,
-			gridHeight: 4,
+			// gridWidth: 4,
+			// gridHeight: 4,
 		},
 	},
 	{
@@ -32,8 +32,8 @@ const nodeTypeOptions = [
 		description: 'React Three Fiber debug node with rotating box',
 		defaultData: {
 			label: 'R3F Debug',
-			gridWidth: 4,
-			gridHeight: 4,
+			// gridWidth: 4,
+			// gridHeight: 4,
 		},
 	},
 	{
@@ -51,8 +51,8 @@ const nodeTypeOptions = [
 				volume: 0.5,
 			},
 			label: 'Oscillator',
-			gridWidth: 4,
-			gridHeight: 5,
+			// gridWidth: 4,
+			// gridHeight: 5,
 		},
 	},
 	{
@@ -67,8 +67,8 @@ const nodeTypeOptions = [
 				mute: false,
 			},
 			label: 'Gain',
-			gridWidth: 3,
-			gridHeight: 4,
+			// gridWidth: 3,
+			// gridHeight: 4,
 		},
 	},
 	{
@@ -94,8 +94,8 @@ const nodeTypeOptions = [
 		description: 'Master audio output endpoint',
 		defaultData: {
 			label: 'Master Out',
-			gridWidth: 3,
-			gridHeight: 2,
+			// gridWidth: 3,
+			// gridHeight: 2,
 		},
 	},
 ];

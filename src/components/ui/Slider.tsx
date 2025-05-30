@@ -41,6 +41,7 @@ const Slider = forwardRef<HTMLInputElement, SliderProps>(
 		// Base slider styles
 		const sliderClasses = [
 			'w-full rounded-lg appearance-none cursor-pointer transition-all',
+			'nodrag', // Prevent React Flow node dragging
 			// Size variants
 			size === 'sm' ? 'h-1' : size === 'lg' ? 'h-3' : 'h-2',
 			// Color variants for track

@@ -1,6 +1,21 @@
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Global monospace font using Tailwind */
+@layer base {
+	* {
+		@apply font-mono;
+	}
+
+	/* Prevent React Flow node dragging on interactive elements */
+	input,
+	button,
+	select,
+	textarea {
+		@apply nodrag;
+	}
+}
+
 /* R3F Canvas fixes for ReactFlow integration */
 .react-flow__node-default canvas,
 .BaseNode canvas /* Assuming BaseNode is a common class for your custom nodes */ {

@@ -72,7 +72,7 @@ export function VisualizerNode({
 							value={params.size}
 							onChange={handleSizeChange}
 							onPointerDown={handlePointerDown}
-							className='w-full text-xs bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1'
+							className='nodrag w-full text-xs bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1'
 						>
 							<option value={256}>256</option>
 							<option value={512}>512</option>

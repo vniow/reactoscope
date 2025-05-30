@@ -29,7 +29,7 @@ function WaveTypeSelector({ value, onChange }: WaveTypeSelectorProps) {
 				{waveTypes.map((type) => (
 					<button
 						key={type}
-						className={`px-2 py-1 text-xs rounded transition-colors ${
+						className={`nodrag px-2 py-1 text-xs rounded transition-colors ${
 							value === type
 								? 'bg-orange-500 text-white'
 								: 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
@@ -102,7 +102,7 @@ function PlayStopButton({ isPlaying, onStart, onStop }: PlayStopButtonProps) {
 	return (
 		<button
 			onClick={isPlaying ? onStop : onStart}
-			className={`w-full py-2 px-4 rounded font-medium text-sm transition-colors ${
+			className={`nodrag w-full py-2 px-4 rounded font-medium text-sm transition-colors ${
 				isPlaying
 					? 'bg-red-500 hover:bg-red-600 text-white'
 					: 'bg-green-500 hover:bg-green-600 text-white'
@@ -141,8 +141,8 @@ export function OscillatorNode({
 	return (
 		<BaseNode
 			variant='audio'
-			gridWidth={data.gridWidth ?? 4}
-			gridHeight={data.gridHeight ?? 5}
+			gridWidth={data.gridWidth ?? 3}
+			gridHeight={data.gridHeight ?? 6}
 			nodeId={id}
 			selected={selected}
 			onDelete={removeNode}

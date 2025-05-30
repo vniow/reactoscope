@@ -67,7 +67,7 @@ export function GainNode({ id, data, selected }: NodeProps<GainNode>) {
 				<button
 					onClick={handleMuteToggle}
 					onPointerDown={handlePointerDown}
-					className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+					className={`nodrag px-3 py-1 rounded text-xs font-medium transition-colors ${
 						params.mute
 							? 'bg-red-500 hover:bg-red-600 text-white'
 							: 'bg-gray-500 hover:bg-gray-600 text-white'
