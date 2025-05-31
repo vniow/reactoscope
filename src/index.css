@@ -8,11 +8,15 @@
 	}
 
 	/* Prevent React Flow node dragging on interactive elements */
+	.nodrag {
+		pointer-events: all;
+	}
+
 	input,
 	button,
 	select,
 	textarea {
-		@apply nodrag;
+		pointer-events: all;
 	}
 }
 

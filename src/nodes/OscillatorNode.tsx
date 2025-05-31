@@ -57,7 +57,6 @@ function FrequencySlider({ value, onChange }: FrequencySliderProps) {
 	return (
 		<Slider
 			label='Frequency'
-			gridHeightUnits={1}
 			value={value}
 			min={80}
 			max={2000}
@@ -82,7 +81,6 @@ function DetuneSlider({ value, onChange }: DetuneSliderProps) {
 	return (
 		<Slider
 			label='Detune'
-			gridHeightUnits={1}
 			value={value}
 			min={-1200}
 			max={1200}

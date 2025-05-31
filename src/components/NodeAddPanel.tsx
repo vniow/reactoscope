@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Panel, type Edge } from '@xyflow/react';
+import { Panel } from '@xyflow/react';
 import { useFlowActions } from '../hooks/useFlow';
 import { TransportControls } from './TransportControls';
 import type { AppNode } from '../nodes/types';
@@ -87,7 +87,7 @@ const nodeTypeOptions = [
 ];
 
 export function NodeAddPanel() {
-	const { addNode, addEdge } = useFlowActions();
+	const { addNode } = useFlowActions();
 	const [isExpanded, setIsExpanded] = useState(false);
 
 	const handleAddNode = (nodeTypeOption: (typeof nodeTypeOptions)[number]) => {
