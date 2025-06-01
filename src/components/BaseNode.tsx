@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { calculateNodeSize } from '../config/grid';
+import { calculateNodeSize, GRID_UNIT } from '../config/grid';
 import { NodeHeader } from './NodeHeader';
 
 interface BaseNodeProps {
@@ -55,6 +55,7 @@ export function BaseNode({
 	return (
 		<div
 			className={`
+		flex flex-col
 		bg-white dark:bg-gray-800 
 		border-b-4  border-x
 		${variantStyles[variant]}
@@ -78,6 +79,8 @@ export function BaseNode({
 				<NodeHeader
 					title={title}
 					variant={variant}
+					className='flex-none'
+					style={{ height: `${GRID_UNIT}px` }}
 				/>
 			)}
 			{/* Delete button - only show when selected and deletion is enabled */}
@@ -112,9 +115,7 @@ export function BaseNode({
 			)}
 
 			{/* Content area */}
-			<div className={title ? 'p-4 overflow-hidden' : 'p-4 overflow-hidden'}>
-				{children}
-			</div>
+			<div className='flex-1 p-4 overflow-hidden'>{children}</div>
 		</div>
 	);
 }

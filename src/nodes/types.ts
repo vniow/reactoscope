@@ -12,6 +12,7 @@ export type PositionLoggerNode = Node<
 	BaseNodeData & { label: string },
 	'position-logger'
 >;
+export type DebugNode = Node<BaseNodeData & { label: string }, 'debug'>;
 export type ThemeDebugNode = Node<BaseNodeData, 'theme-debug'>;
 export type OscillatorNode = Node<BaseNodeData & AudioNodeData, 'oscillator'>;
 export type GainNode = Node<BaseNodeData & AudioNodeData, 'gain'>;
@@ -21,6 +22,7 @@ export type R3FDebugNode = Node<BaseNodeData, 'r3f-debug'>;
 export type AppNode =
 	| BuiltInNode
 	| PositionLoggerNode
+	| DebugNode
 	| ThemeDebugNode
 	| OscillatorNode
 	| GainNode

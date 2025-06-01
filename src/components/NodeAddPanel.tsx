@@ -15,6 +15,14 @@ const nodeTypeOptions = [
 		},
 	},
 	{
+		type: 'debug' as const,
+		name: 'Debug Node',
+		description: 'Comprehensive debug info for all node properties',
+		defaultData: {
+			label: 'Debug Node',
+		},
+	},
+	{
 		type: 'theme-debug' as const,
 		name: 'Theme Debug',
 		description: 'Node that shows theme debugging info',

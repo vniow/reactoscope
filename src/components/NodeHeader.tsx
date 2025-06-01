@@ -24,24 +24,28 @@ export interface NodeHeaderProps {
 	title: string;
 	variant?: 'default' | 'debug' | 'primary' | 'secondary' | 'audio';
 	className?: string;
+	style?: React.CSSProperties;
 }
 
 export function NodeHeader({
 	title,
 	variant = 'default',
 	className = '',
+	style,
 }: NodeHeaderProps) {
 	return (
 		<div
 			className={`
 		${variantHeaderGradient[variant]}
 		${variantHeaderTextStyles[variant]}
-		px-4 py-2
+		px-4
+		flex items-center
 		font-semibold font-mono
 		text-sm
 		 
 		${className}
 	  `}
+			style={style}
 		>
 			{title}
 		</div>
