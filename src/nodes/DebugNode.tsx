@@ -1,9 +1,12 @@
 import { Position, type NodeProps } from '@xyflow/react';
+import { useState } from 'react';
 
 import { type DebugNode } from './types';
 import { BaseNode } from '../components/BaseNode';
-import { GridBlock } from '../components/GridBlock';
+import { GridBlock } from '../components/GridBlock'; // Keep for other info blocks
 import { NodeHandle } from '../components/NodeHandle';
+import { GridButton } from '../components/ui/GridButton'; // Added
+import { GridSlider } from '../components/ui/GridSlider'; // Added
 import { useHandlePosition } from '../hooks/useHandlePositions';
 import { useFlowActions } from '../hooks/useFlow';
 
@@ -35,6 +38,10 @@ export function DebugNode({
 	// Get the removeNode function from the store
 	const { removeNode } = useFlowActions();
 
+	// State for interactive UI elements
+	const [sliderValue, setSliderValue] = useState(50);
+	const [buttonClickCount, setButtonClickCount] = useState(0);
+
 	// Format values for display
 	const formatValue = (value: unknown): string => {
 		if (value === undefined) return 'undefined';
@@ -52,8 +59,12 @@ export function DebugNode({
 	};
 
 	const positionInfo = {
-		'Absolute Position': `x: ${Math.round(positionAbsoluteX)}, y: ${Math.round(positionAbsoluteY)}`,
-		Dimensions: `${width ? Math.round(width) : 'auto'} × ${height ? Math.round(height) : 'auto'}`,
+		'Absolute Position': `x: ${Math.round(positionAbsoluteX)}, y: ${Math.round(
+			positionAbsoluteY
+		)}`,
+		Dimensions: `${width ? Math.round(width) : 'auto'} × ${
+			height ? Math.round(height) : 'auto'
+		}`,
 	};
 
 	const stateInfo = {
@@ -95,8 +106,8 @@ export function DebugNode({
 	return (
 		<BaseNode
 			variant='debug'
-			gridWidth={9}
-			gridHeight={12}
+			gridWidth={5} // Adjusted to ensure all content fits
+			gridHeight={6} // Adjusted to ensure all content fits
 			nodeId={id}
 			selected={selected}
 			onDelete={removeNode}
@@ -105,41 +116,13 @@ export function DebugNode({
 			{/* Main GridBlock Layout Container */}
 			<div className='relative w-full h-full overflow-visible'>
 				{/* Identity Block */}
-				<GridBlock
-					gridWidth={4.25}
-					gridHeight={2}
-					gridX={0}
-					gridY={0.25}
-					variant='debug'
-					showDimensions
-				>
-					<div className='w-full h-full flex flex-col justify-center p-2'>
-						<div className='font-semibold text-center mb-1'>Identity</div>
-						{renderInfoBlock(identityInfo)}
-					</div>
-				</GridBlock>
 
-				{/* Position Block */}
-				<GridBlock
-					gridWidth={4.25}
-					gridHeight={2}
-					gridX={4.25}
-					gridY={-1.75}
-					variant='primary'
-					showDimensions
-				>
-					<div className='w-full h-full flex flex-col justify-center p-2'>
-						<div className='font-semibold text-center mb-1'>Position</div>
-						{renderInfoBlock(positionInfo)}
-					</div>
-				</GridBlock>
-
-				{/* State Block */}
+				{/* State Block
 				<GridBlock
 					gridWidth={3}
 					gridHeight={3}
 					gridX={0}
-					gridY={-1}
+					gridY={-1} // This Y position seems off, might need adjustment
 					variant='secondary'
 					showDimensions
 				>
@@ -147,14 +130,13 @@ export function DebugNode({
 						<div className='font-semibold text-center mb-1'>State</div>
 						{renderInfoBlock(stateInfo)}
 					</div>
-				</GridBlock>
-
-				{/* Relationship Block */}
+				</GridBlock> */}
+				{/* Relationship Block
 				<GridBlock
 					gridWidth={2}
 					gridHeight={2}
 					gridX={3.5}
-					gridY={-2.5}
+					gridY={-2.5} // This Y position seems off, might need adjustment
 					variant='audio'
 					showDimensions
 				>
@@ -162,9 +144,8 @@ export function DebugNode({
 						<div className='font-semibold text-center mb-1'>Relations</div>
 						{renderInfoBlock(relationshipInfo)}
 					</div>
-				</GridBlock>
-
-				{/* Handle Info Block */}
+				</GridBlock> */}
+				{/* Handle Info Block
 				<GridBlock
 					gridWidth={4}
 					gridHeight={2}
@@ -177,14 +158,13 @@ export function DebugNode({
 						<div className='font-semibold text-center mb-1'>Handles</div>
 						{renderInfoBlock(handleInfo)}
 					</div>
-				</GridBlock>
-
-				{/* Data Object Block */}
+				</GridBlock> */}
+				{/* Data Object Block
 				<GridBlock
 					gridWidth={5}
 					gridHeight={3}
 					gridX={0}
-					gridY={-4}
+					gridY={-4} // This Y position seems off, might need adjustment
 					variant='default'
 					showDimensions
 				>
@@ -196,15 +176,14 @@ export function DebugNode({
 							</pre>
 						</div>
 					</div>
-				</GridBlock>
-
-				{/* Grid Demo Block */}
+				</GridBlock> */}
+				{/* Grid Demo Block
 				{Object.keys(otherProps).length === 0 && (
 					<GridBlock
 						gridWidth={2}
 						gridHeight={1}
 						gridX={6}
-						gridY={-5.5}
+						gridY={-5.5} // This Y position seems off, might need adjustment
 						variant='audio'
 						showDimensions
 					>
@@ -212,15 +191,14 @@ export function DebugNode({
 							<span className='text-xs font-medium'>Grid Demo</span>
 						</div>
 					</GridBlock>
-				)}
-
-				{/* Other Props Block (if any exist) */}
+				)} */}
+				{/* Other Props Block (if any exist)
 				{Object.keys(otherProps).length > 0 && (
 					<GridBlock
 						gridWidth={2}
 						gridHeight={3}
 						gridX={6}
-						gridY={-2.5}
+						gridY={-2.5} // This Y position seems off, might need adjustment
 						variant='secondary'
 						showDimensions
 					>
@@ -233,7 +211,43 @@ export function DebugNode({
 							</div>
 						</div>
 					</GridBlock>
-				)}
+				)} */}
+				{/* Interactive Button using GridButton */}
+				<GridButton
+					gridWidth={2}
+					gridHeight={1} // Standard height for a button
+					gridX={0}
+					gridY={0.5} // Positioned alongside Identity block
+					variant='primary'
+					// showDimensions
+					showBorder={true}
+					transparentBackground={true}
+					buttonLabel={`Clicks: ${buttonClickCount}`}
+					onClick={() => setButtonClickCount((prev) => prev + 1)}
+				/>
+				{/* Interactive Slider using GridSlider */}
+				<GridSlider
+					gridWidth={4}
+					gridHeight={1.5} // Allows space for label within the GridSlider
+					gridX={0}
+					gridY={1} // Positioned below the GridButton
+					variant='audio'
+					// showDimensions
+					showBorder={true}
+					transparentBackground={true}
+					label='Value Slider'
+					sliderProps={{
+						value: sliderValue,
+						min: 0,
+						max: 100,
+						step: 1,
+						onChange: (e) => setSliderValue(Number(e.target.value)),
+						size: 'sm',
+						color: 'orange',
+						formatValue: (val) => `${val}%`,
+						showMinMax: false,
+					}}
+				/>
 			</div>
 
 			{/* Handles */}

@@ -1,15 +1,9 @@
-// Linear gradient: node background at start/end, header color in the center
-const variantHeaderGradient = {
-	default:
-		'bg-gradient-to-b from-white via-gray-200 to-white dark:from-gray-800 dark:via-gray-600 dark:to-gray-800',
-	debug:
-		'bg-gradient-to-b from-white via-blue-200 to-white dark:from-gray-800 dark:via-blue-600 dark:to-gray-800',
-	primary:
-		'bg-gradient-to-b from-white via-green-200 to-white dark:from-gray-800 dark:via-green-600 dark:to-gray-800',
-	secondary:
-		'bg-gradient-to-b from-white via-purple-200 to-white dark:from-gray-800 dark:via-purple-600 dark:to-gray-800',
-	audio:
-		'bg-gradient-to-b from-white via-orange-200 to-white dark:from-gray-800 dark:via-orange-600 dark:to-gray-800',
+const variantHeaderBorderStyles = {
+	default: 'border-gray-300 dark:border-gray-600',
+	debug: 'border-blue-300 dark:border-blue-600',
+	primary: 'border-green-300 dark:border-green-600',
+	secondary: 'border-purple-300 dark:border-purple-600',
+	audio: 'border-orange-300 dark:border-orange-600',
 };
 
 const variantHeaderTextStyles = {
@@ -18,6 +12,14 @@ const variantHeaderTextStyles = {
 	primary: 'text-green-800 dark:text-green-100',
 	secondary: 'text-purple-800 dark:text-purple-100',
 	audio: 'text-orange-800 dark:text-orange-100',
+};
+
+const variantHeaderShadowStyles = {
+	default: 'shadow-gray-300/50 dark:shadow-gray-600/50',
+	debug: 'shadow-blue-300/50 dark:shadow-blue-600/50',
+	primary: 'shadow-green-300/50 dark:shadow-green-600/50',
+	secondary: 'shadow-purple-300/50 dark:shadow-purple-600/50',
+	audio: 'shadow-orange-300/50 dark:shadow-orange-600/50',
 };
 
 export interface NodeHeaderProps {
@@ -36,12 +38,17 @@ export function NodeHeader({
 	return (
 		<div
 			className={`
-		${variantHeaderGradient[variant]}
+		bg-gradient-to-b from-slate-200 via-slate-50 to-slate-200 dark:from-slate-600 dark:via-slate-800 dark:to-slate-600
 		${variantHeaderTextStyles[variant]}
+		${variantHeaderBorderStyles[variant]}
+		rounded-sm
+		
 		px-4
 		flex items-center
 		font-semibold font-mono
-		text-sm
+		text-xl
+		shadow-lg
+		${variantHeaderShadowStyles[variant]}
 		 
 		${className}
 	  `}

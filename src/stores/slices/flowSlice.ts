@@ -322,15 +322,6 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSliceProps> = (
 				nodeHandlePositions: newHandlePositions,
 			},
 		}));
-
-		// console.log(
-		// 	'✅ Zustand store updated. nodeHandlePositions:',
-		// 	get().flow.nodeHandlePositions
-		// );
-		// console.log(
-		// 	'✅ Zustand store debug info:',
-		// 	get().flow.debug
-		// );
 	},
 
 	// Batch Actions

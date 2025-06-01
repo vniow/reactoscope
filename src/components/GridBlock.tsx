@@ -11,17 +11,24 @@ export interface GridBlockProps {
 	variant?: 'default' | 'debug' | 'primary' | 'secondary' | 'audio';
 	showDimensions?: boolean;
 	showPosition?: boolean;
+	showBorder?: boolean; // New prop for border visibility
+	transparentBackground?: boolean; // New prop for background transparency
 }
 
-const variantStyles = {
-	default: 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700',
-	debug: 'border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20',
-	primary:
-		'border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/20',
-	secondary:
-		'border-purple-300 dark:border-purple-600 bg-purple-50 dark:bg-purple-900/20',
-	audio:
-		'border-orange-300 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/20',
+const variantBorderStyles = {
+	default: 'border-gray-300 dark:border-gray-600',
+	debug: 'border-blue-300 dark:border-blue-600',
+	primary: 'border-green-300 dark:border-green-600',
+	secondary: 'border-purple-300 dark:border-purple-600',
+	audio: 'border-orange-300 dark:border-orange-600',
+};
+
+const variantBackgroundStyles = {
+	default: 'bg-gray-50 dark:bg-gray-700',
+	debug: 'bg-blue-50 dark:bg-blue-900/20',
+	primary: 'bg-green-50 dark:bg-green-900/20',
+	secondary: 'bg-purple-50 dark:bg-purple-900/20',
+	audio: 'bg-orange-50 dark:bg-orange-900/20',
 };
 
 const variantTextStyles = {
@@ -42,6 +49,8 @@ export function GridBlock({
 	variant = 'default',
 	showDimensions = true,
 	showPosition = false,
+	showBorder = true, // Default to true
+	transparentBackground = false, // Default to false
 }: GridBlockProps) {
 	const pixelWidth = gridWidth * GRID_UNIT;
 	const pixelHeight = gridHeight * GRID_UNIT;
@@ -51,8 +60,8 @@ export function GridBlock({
 	return (
 		<div
 			className={`
-				border-2 border-dashed
-				${variantStyles[variant]}
+				${showBorder ? `border-2 border-dashed ${variantBorderStyles[variant]}` : 'border-2 border-transparent'}
+				${transparentBackground ? 'bg-transparent' : variantBackgroundStyles[variant]}
 				${variantTextStyles[variant]}
 				rounded-lg
 				p-2

@@ -111,7 +111,20 @@ export const createThemeSlice: StateCreator<
 function updateDOMTheme(theme: ActualTheme) {
 	const body = document.body;
 	body.classList.remove('light', 'dark');
+	// Remove any existing Tailwind background classes to ensure override
+	const existingBgClass = Array.from(body.classList).find((cls) =>
+		cls.startsWith('bg-')
+	);
+	if (existingBgClass) {
+		body.classList.remove(existingBgClass);
+	}
 	body.classList.add(theme);
+
+	if (theme === 'light') {
+		body.classList.add('bg-gray-300');
+	} else {
+		body.classList.add('bg-gray-700');
+	}
 
 	// Update meta tag for system components
 	document

@@ -97,7 +97,6 @@ export default function App() {
 						lineWidth={2}
 						offset={3}
 						variant={BackgroundVariant.Cross}
-						className='bg-gray-100 dark:bg-gray-900'
 					/>
 					<NodeAddPanel />
 					<FlowControls />
