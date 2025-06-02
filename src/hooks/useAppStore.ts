@@ -18,6 +18,15 @@ export const useActualTheme = () => {
 	return useAppStore((state) => state.theme.actualTheme);
 };
 
+export const useMetallicTheme = () => {
+	return useAppStore(
+		useShallow((state) => ({
+			metallicBackground: state.theme.metallicBackground,
+			setMetallicBackground: state.setMetallicBackground,
+		}))
+	);
+};
+
 // Flow state hooks with performance optimization
 export const useNodes = () => {
 	return useAppStore(

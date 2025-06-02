@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { calculateNodeSize, GRID_UNIT } from '../config/grid';
+import { calculateNodeSize } from '../config/grid';
 import { NodeHeader } from './NodeHeader';
+import { NodeDeleteButton } from './ui/NodeDeleteButton';
 
 interface BaseNodeProps {
 	children: ReactNode;
@@ -15,14 +16,6 @@ interface BaseNodeProps {
 	// Header/title props
 	title?: string;
 }
-
-// const variantStyles = { // No longer used for border, will be replaced by gradient
-// 	default: 'border-gray-200 dark:border-gray-600',
-// 	debug: 'border-blue-200 dark:border-blue-600',
-// 	primary: 'border-green-200 dark:border-green-600',
-// 	secondary: 'border-purple-200 dark:border-purple-600',
-// 	audio: 'border-orange-200 dark:border-orange-600',
-// };
 
 const variantBorderGradientStyles = {
 	default:
@@ -58,7 +51,7 @@ export function BaseNode({
 }: BaseNodeProps) {
 	const { width, height } = calculateNodeSize(gridWidth, gridHeight);
 
-	const handleDelete = (e: React.MouseEvent) => {
+	const handleDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.stopPropagation(); // Prevent node selection when clicking delete
 		if (nodeId && onDelete) {
 			onDelete(nodeId);
@@ -68,7 +61,7 @@ export function BaseNode({
 	return (
 		<div // Outer div for gradient border
 			className={`
-				p-[3px] // Padding creates the border thickness
+				
 				${variantBorderGradientStyles[variant]} // Apply variant-specific gradient
 				rounded-lg  
 				${selected ? `shadow-xl ${variantShadows[variant]}` : ''}
@@ -99,42 +92,17 @@ export function BaseNode({
 						title={title}
 						variant={variant}
 						className='flex-none'
-						style={{ height: `${GRID_UNIT}px` }}
+						gridWidth={gridWidth}
+						// style={{ height: `${GRID_UNIT}px` }}
 					/>
 				)}
 				{/* Delete button - only show when selected and deletion is enabled */}
 				{selected && nodeId && onDelete && (
-					<div className='absolute pointer-events-none left-0 top-0 w-full h-full z-50'>
-						<button
-							onClick={handleDelete}
-							className={`
-							absolute pointer-events-auto -top-4 -left-4
-							w-8 h-8
-							bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700
-							text-white
-							rounded-full
-							flex items-center justify-center
-							text-lg font-bold
-							transition-all duration-200
-							border-2 border-white dark:border-gray-900
-							shadow-xl
-							z-50
-							transform hover:scale-110
-						`}
-							style={{
-								boxShadow:
-									'0 4px 12px rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.15)',
-								filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
-							}}
-							title='Delete node'
-						>
-							×
-						</button>
-					</div>
+					<NodeDeleteButton onClick={handleDelete} />
 				)}
 
 				{/* Content area */}
-				<div className='flex-1 p-4 overflow-hidden'>{children}</div>
+				<div className='flex-1  overflow-hidden'>{children}</div>
 			</div>
 		</div>
 	);

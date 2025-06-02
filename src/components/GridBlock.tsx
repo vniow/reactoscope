@@ -13,6 +13,8 @@ export interface GridBlockProps {
 	showPosition?: boolean;
 	showBorder?: boolean; // New prop for border visibility
 	transparentBackground?: boolean; // New prop for background transparency
+	borderStyle?: 'solid' | 'dashed' | 'dotted';
+	dashSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 }
 
 const variantBorderStyles = {
@@ -47,42 +49,76 @@ export function GridBlock({
 	gridY = 0,
 	className = '',
 	variant = 'default',
-	showDimensions = true,
+	showDimensions = false,
 	showPosition = false,
 	showBorder = true, // Default to true
 	transparentBackground = false, // Default to false
+	borderStyle = 'dashed',
+	dashSize = 'sm',
 }: GridBlockProps) {
 	const pixelWidth = gridWidth * GRID_UNIT;
 	const pixelHeight = gridHeight * GRID_UNIT;
 	const pixelX = gridX * GRID_UNIT;
 	const pixelY = gridY * GRID_UNIT;
 
+	// Build border class based on style
+	let borderClass = 'border-2';
+	if (showBorder) {
+		const styleClass =
+			borderStyle === 'solid'
+				? 'border-solid'
+				: borderStyle === 'dotted'
+					? 'border-dotted'
+					: 'border-dashed';
+		borderClass += ` ${styleClass} ${variantBorderStyles[variant]}`;
+	} else {
+		borderClass += ' border-transparent';
+	}
+
+	// Create style object with positioning and optional dash customization
+	const customStyle: React.CSSProperties & { [key: string]: string | number } =
+		{
+			width: `${pixelWidth}px`,
+			height: `${pixelHeight}px`,
+			minWidth: `${pixelWidth}px`,
+			minHeight: `${pixelHeight}px`,
+			left: `${pixelX}px`,
+			top: `${pixelY}px`,
+		};
+
+	// Add CSS custom properties for dash size customization
+	if (showBorder && borderStyle === 'dashed') {
+		const dashLengths = {
+			xs: '2px 2px',
+			sm: '4px 4px',
+			md: '6px 6px',
+			lg: '8px 8px',
+			xl: '12px 12px',
+		};
+
+		// Apply custom dash pattern using CSS custom properties
+		customStyle['--dash-length'] = dashLengths[dashSize];
+	}
+
+	// Build CSS classes for dash customization
+	const dashClass =
+		showBorder && borderStyle === 'dashed' ? `dash-${dashSize}` : '';
+
 	return (
 		<div
 			className={`
-				${showBorder ? `border-2 border-dashed ${variantBorderStyles[variant]}` : 'border-2 border-transparent'}
+				${borderClass}
 				${transparentBackground ? 'bg-transparent' : variantBackgroundStyles[variant]}
 				${variantTextStyles[variant]}
+				${dashClass}
 				rounded-lg
 				p-2
-				relative
 				flex flex-col
 				transition-colors duration-200
-				${gridX !== 0 || gridY !== 0 ? 'absolute' : ''}
+				absolute
 				${className}
 			`}
-			style={{
-				width: `${pixelWidth}px`,
-				height: `${pixelHeight}px`,
-				minWidth: `${pixelWidth}px`,
-				minHeight: `${pixelHeight}px`,
-				...(gridX !== 0 || gridY !== 0
-					? {
-							left: `${pixelX}px`,
-							top: `${pixelY}px`,
-						}
-					: {}),
-			}}
+			style={customStyle}
 		>
 			{/* Dimension and position labels */}
 			{(showDimensions || showPosition) && (

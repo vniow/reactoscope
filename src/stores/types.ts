@@ -5,10 +5,17 @@ import type { AudioSlice } from './slices/audioSlice';
 // Theme Types
 export type Theme = 'light' | 'dark' | 'system';
 export type ActualTheme = 'light' | 'dark';
+export type MetallicTheme =
+	| 'chrome'
+	| 'gold'
+	| 'copper'
+	| 'titanium'
+	| 'rainbow';
 
 export interface ThemeState {
 	current: Theme;
 	actualTheme: ActualTheme;
+	metallicBackground: MetallicTheme;
 }
 
 // Flow Types
@@ -38,6 +45,7 @@ export interface AudioState {
 // Action Types
 export interface ThemeActions {
 	setTheme: (theme: Theme) => void;
+	setMetallicBackground: (metallic: MetallicTheme) => void;
 	initializeTheme: () => void;
 }
 

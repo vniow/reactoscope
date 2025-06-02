@@ -55,3 +55,68 @@
 	left: 0 !important;
 	/* pointer-events are handled by the parent rule now */
 }
+
+/* Custom dash border patterns */
+@layer utilities {
+	/* Base dashed border classes */
+	.dash-xs {
+		border-style: dashed;
+		border-width: 1px;
+		border-image: linear-gradient(to right, currentColor 40%, transparent 40%) 1;
+		border-image-slice: 1;
+		border-image-outset: 0;
+		border-image-repeat: repeat;
+	}
+
+	.dash-sm {
+		border-style: dashed;
+		border-width: 2px;
+	}
+
+	.dash-md {
+		border-style: dashed;
+		border-width: 2px;
+		border-image: linear-gradient(to right, currentColor 60%, transparent 60%) 1;
+		border-image-slice: 1;
+		border-image-outset: 0;
+		border-image-repeat: repeat;
+	}
+
+	.dash-lg {
+		border-style: dashed;
+		border-width: 2px;
+		border-image: linear-gradient(to right, currentColor 70%, transparent 70%) 1;
+		border-image-slice: 1;
+		border-image-outset: 0;
+		border-image-repeat: repeat;
+	}
+
+	.dash-xl {
+		border-style: dashed;
+		border-width: 3px;
+		border-image: linear-gradient(to right, currentColor 75%, transparent 75%) 1;
+		border-image-slice: 1;
+		border-image-outset: 0;
+		border-image-repeat: repeat;
+	}
+
+	/* Alternative approach using pseudo-elements for more control */
+	.dash-custom {
+		position: relative;
+		border: none !important;
+	}
+
+	.dash-custom::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		border: 2px dashed;
+		border-color: inherit;
+		border-radius: inherit;
+		stroke-dasharray: var(--dash-length, 4px 4px);
+		pointer-events: none;
+	}
+}

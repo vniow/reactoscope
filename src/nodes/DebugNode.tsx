@@ -106,8 +106,8 @@ export function DebugNode({
 	return (
 		<BaseNode
 			variant='debug'
-			gridWidth={5} // Adjusted to ensure all content fits
-			gridHeight={6} // Adjusted to ensure all content fits
+			gridWidth={9} // Adjusted to ensure all content fits
+			gridHeight={12} // Adjusted to ensure all content fits (increased by 0.5)
 			nodeId={id}
 			selected={selected}
 			onDelete={removeNode}
@@ -115,58 +115,64 @@ export function DebugNode({
 		>
 			{/* Main GridBlock Layout Container */}
 			<div className='relative w-full h-full overflow-visible'>
-				{/* Identity Block */}
-
-				{/* State Block
+				{/* State Block - Top left, starts after header */}
 				<GridBlock
 					gridWidth={3}
-					gridHeight={3}
+					gridHeight={4}
 					gridX={0}
-					gridY={-1} // This Y position seems off, might need adjustment
+					gridY={1}
 					variant='secondary'
-					showDimensions
+					showDimensions={false}
+					dashSize='lg'
+					borderStyle='dotted'
 				>
 					<div className='w-full h-full flex flex-col justify-center p-2'>
 						<div className='font-semibold text-center mb-1'>State</div>
 						{renderInfoBlock(stateInfo)}
 					</div>
-				</GridBlock> */}
-				{/* Relationship Block
+				</GridBlock>
+
+				{/* Relations Block - Top center */}
 				<GridBlock
-					gridWidth={2}
+					gridWidth={3}
 					gridHeight={2}
-					gridX={3.5}
-					gridY={-2.5} // This Y position seems off, might need adjustment
+					gridX={3}
+					gridY={1}
 					variant='audio'
-					showDimensions
+					// dashSize='lg'
+					// borderStyle='dotted'
 				>
 					<div className='w-full h-full flex flex-col justify-center p-2'>
 						<div className='font-semibold text-center mb-1'>Relations</div>
 						{renderInfoBlock(relationshipInfo)}
 					</div>
-				</GridBlock> */}
-				{/* Handle Info Block
+				</GridBlock>
+
+				{/* Handles Block - Top right */}
 				<GridBlock
-					gridWidth={4}
+					gridWidth={3}
 					gridHeight={2}
-					gridX={0}
-					gridY={6}
+					gridX={6}
+					gridY={1}
 					variant='default'
-					showDimensions
+					showDimensions={false}
+					dashSize='lg'
 				>
 					<div className='w-full h-full flex flex-col justify-center p-2'>
 						<div className='font-semibold text-center mb-1'>Handles</div>
 						{renderInfoBlock(handleInfo)}
 					</div>
-				</GridBlock> */}
-				{/* Data Object Block
+				</GridBlock>
+
+				{/* Data Object Block - Middle, spans full width */}
 				<GridBlock
-					gridWidth={5}
+					gridWidth={9}
 					gridHeight={3}
 					gridX={0}
-					gridY={-4} // This Y position seems off, might need adjustment
+					gridY={5}
 					variant='default'
-					showDimensions
+					showDimensions={false}
+					dashSize='xl'
 				>
 					<div className='w-full h-full flex flex-col p-2'>
 						<div className='font-semibold text-center mb-2'>Data Object</div>
@@ -176,65 +182,78 @@ export function DebugNode({
 							</pre>
 						</div>
 					</div>
-				</GridBlock> */}
-				{/* Grid Demo Block
+				</GridBlock>
+
+				{/* Interactive Button - Below data block */}
+				<GridButton
+					gridWidth={3}
+					gridHeight={1}
+					gridX={0}
+					gridY={8}
+					variant='primary'
+					showDimensions={false}
+					showBorder={true}
+					transparentBackground={false}
+					buttonLabel={`Clicks: ${buttonClickCount}`}
+					onClick={() => setButtonClickCount((prev) => prev + 1)}
+				/>
+
+				{/* Grid Demo Block - Next to button */}
 				{Object.keys(otherProps).length === 0 && (
 					<GridBlock
-						gridWidth={2}
+						gridWidth={3}
 						gridHeight={1}
-						gridX={6}
-						gridY={-5.5} // This Y position seems off, might need adjustment
+						gridX={3}
+						gridY={8}
 						variant='audio'
-						showDimensions
+						showDimensions={false}
 					>
 						<div className='w-full h-full flex items-center justify-center p-1'>
 							<span className='text-xs font-medium'>Grid Demo</span>
 						</div>
 					</GridBlock>
-				)} */}
-				{/* Other Props Block (if any exist)
-				{Object.keys(otherProps).length > 0 && (
-					<GridBlock
-						gridWidth={2}
-						gridHeight={3}
-						gridX={6}
-						gridY={-2.5} // This Y position seems off, might need adjustment
-						variant='secondary'
-						showDimensions
-					>
-						<div className='w-full h-full flex flex-col p-2'>
-							<div className='font-semibold text-center mb-1'>Other Props</div>
-							<div className='flex-1 overflow-auto'>
-								<pre className='text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-all'>
-									{JSON.stringify(otherProps, null, 2)}
-								</pre>
-							</div>
-						</div>
-					</GridBlock>
-				)} */}
-				{/* Interactive Button using GridButton */}
-				<GridButton
-					gridWidth={2}
-					gridHeight={1} // Standard height for a button
-					gridX={0}
-					gridY={0.5} // Positioned alongside Identity block
+				)}
+
+				{/* Identity Info Block - Right of demo block */}
+				<GridBlock
+					gridWidth={3}
+					gridHeight={2}
+					gridX={6}
+					gridY={8}
 					variant='primary'
-					// showDimensions
-					showBorder={true}
-					transparentBackground={true}
-					buttonLabel={`Clicks: ${buttonClickCount}`}
-					onClick={() => setButtonClickCount((prev) => prev + 1)}
-				/>
-				{/* Interactive Slider using GridSlider */}
+					showDimensions={false}
+				>
+					<div className='w-full h-full flex flex-col justify-center p-2'>
+						<div className='font-semibold text-center mb-1'>Identity</div>
+						{renderInfoBlock(identityInfo)}
+					</div>
+				</GridBlock>
+
+				{/* Position Info Block - Below identity */}
+				<GridBlock
+					gridWidth={3}
+					gridHeight={2}
+					gridX={6}
+					gridY={3}
+					variant='secondary'
+					showDimensions={false}
+				>
+					<div className='w-full h-full flex flex-col justify-center p-2'>
+						<div className='font-semibold text-center mb-1'>Position</div>
+						{renderInfoBlock(positionInfo)}
+					</div>
+				</GridBlock>
+
+				{/* Interactive Slider - Bottom, spans most of width */}
 				<GridSlider
-					gridWidth={4}
-					gridHeight={1.5} // Allows space for label within the GridSlider
+					gridWidth={9}
+					gridHeight={2}
 					gridX={0}
-					gridY={1} // Positioned below the GridButton
+					gridY={10}
 					variant='audio'
-					// showDimensions
+					showDimensions={false}
 					showBorder={true}
-					transparentBackground={true}
+					transparentBackground={false}
 					label='Value Slider'
 					sliderProps={{
 						value: sliderValue,
@@ -242,7 +261,7 @@ export function DebugNode({
 						max: 100,
 						step: 1,
 						onChange: (e) => setSliderValue(Number(e.target.value)),
-						size: 'sm',
+						size: 'lg',
 						color: 'orange',
 						formatValue: (val) => `${val}%`,
 						showMinMax: false,

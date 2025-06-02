@@ -1,10 +1,4 @@
-const variantHeaderBorderStyles = {
-	default: 'border-gray-300 dark:border-gray-600',
-	debug: 'border-blue-300 dark:border-blue-600',
-	primary: 'border-green-300 dark:border-green-600',
-	secondary: 'border-purple-300 dark:border-purple-600',
-	audio: 'border-orange-300 dark:border-orange-600',
-};
+import { GridBlock, type GridBlockProps } from './GridBlock';
 
 const variantHeaderTextStyles = {
 	default: 'text-gray-800 dark:text-gray-100',
@@ -22,39 +16,50 @@ const variantHeaderShadowStyles = {
 	audio: 'shadow-orange-300/50 dark:shadow-orange-600/50',
 };
 
-export interface NodeHeaderProps {
+export interface NodeHeaderProps
+	extends Omit<GridBlockProps, 'children' | 'gridHeight'> {
 	title: string;
-	variant?: 'default' | 'debug' | 'primary' | 'secondary' | 'audio';
-	className?: string;
-	style?: React.CSSProperties;
+	// gridHeight is fixed to 1, gridWidth is customizable
 }
 
 export function NodeHeader({
 	title,
+	gridWidth, // Expect gridWidth from props
+	gridX,
+	gridY,
 	variant = 'default',
 	className = '',
-	style,
+	...rest
 }: NodeHeaderProps) {
 	return (
-		<div
+		<GridBlock
+			gridWidth={gridWidth}
+			gridHeight={1} // Default height to 1 grid unit
+			gridX={gridX}
+			gridY={gridY}
+			variant={variant}
+			// showDimensions and showPosition can be false by default for a header
+			showDimensions={false}
+			showPosition={false}
+			// By default, a header might not need its own border if it's part of a larger node
+			showBorder={false}
+			// Headers often have specific backgrounds, so allow transparency to override GridBlock's default
+			transparentBackground={true}
 			className={`
-		bg-gradient-to-b from-slate-200 via-slate-50 to-slate-200 dark:from-slate-600 dark:via-slate-800 dark:to-slate-600
-		${variantHeaderTextStyles[variant]}
-		${variantHeaderBorderStyles[variant]}
-		rounded-sm
-		
-		px-4
-		flex items-center
-		font-semibold font-mono
-		text-xl
-		shadow-lg
-		${variantHeaderShadowStyles[variant]}
-		 
-		${className}
-	  `}
-			style={style}
+        flex items-center justify-center // Center title within the GridBlock
+        font-semibold font-mono text-xl // Existing text styling
+        // Apply variant-specific text colors directly if GridBlock doesn't handle this for content
+        ${variantHeaderTextStyles[variant]} 
+        // Background gradient and shadow - these might need to be adjusted if GridBlock applies its own
+        bg-gradient-to-b from-slate-200 via-slate-50 to-slate-200 dark:from-slate-600 dark:via-slate-800 dark:to-slate-600
+        shadow-lg ${variantHeaderShadowStyles[variant]}
+        rounded-sm // Keep rounded corners for the header itself
+        px-4 // Keep padding for the text
+        ${className}
+      `}
+			{...rest}
 		>
 			{title}
-		</div>
+		</GridBlock>
 	);
 }
