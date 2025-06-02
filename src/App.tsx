@@ -32,7 +32,7 @@ export default function App() {
 	// Handle connections with React Flow's addEdge utility
 	const onConnect: OnConnect = useCallback(
 		(connection) => {
-			setEdges((edges) => addEdge(connection, edges));
+			setEdges((eds) => addEdge({ ...connection, type: 'debug' }, eds)); // Added type: 'debug'
 		},
 		[setEdges]
 	);

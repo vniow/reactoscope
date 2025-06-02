@@ -1,5 +1,12 @@
-import { Position, type NodeProps, useReactFlow } from '@xyflow/react';
-import { useState } from 'react';
+import {
+	Position,
+	type NodeProps,
+	useReactFlow,
+	useNodes,
+	useEdges,
+	useUpdateNodeInternals,
+} from '@xyflow/react';
+import { useState, useEffect } from 'react';
 
 import { type DebugNodeData } from './types';
 import { BaseNode } from '../components/BaseNode';
@@ -11,8 +18,8 @@ import { GridSlider } from '../components/ui/GridSlider'; // Added
 export function DebugNode({
 	id,
 	type,
-	positionAbsoluteX,
-	positionAbsoluteY,
+	positionAbsoluteX, // Available for the current node
+	positionAbsoluteY, // Available for the current node
 	data,
 	selected,
 	dragging,
@@ -25,14 +32,23 @@ export function DebugNode({
 	deletable,
 	parentId,
 	draggable,
-	sourcePosition,
-	targetPosition,
+	// sourcePosition and targetPosition props are from the node itself,
+	// not what we'll use for dynamic calculation based on connections.
+	// We'll manage dynamic positions internally.
+	// sourcePosition,
+	// targetPosition,
 	...otherProps
 }: NodeProps<DebugNodeData>) {
-	// Handle positions are now static
-	const targetHandlePosition = Position.Top;
-	const sourceHandlePosition = Position.Bottom;
+	const [targetHandlePosition, setTargetHandlePosition] = useState(
+		Position.Top
+	);
+	const [sourceHandlePosition, setSourceHandlePosition] = useState(
+		Position.Bottom
+	);
 
+	const nodes = useNodes();
+	const edges = useEdges();
+	const updateNodeInternals = useUpdateNodeInternals();
 	// Get the React Flow instance for node operations
 	const reactFlowInstance = useReactFlow();
 
@@ -80,11 +96,84 @@ export function DebugNode({
 		'Z-Index': zIndex,
 	};
 
+	// This will now display the dynamically calculated positions
 	const handleInfo = {
-		'Source Position': sourcePosition || 'none',
-		'Target Position': targetPosition || 'none',
-		'Handle Positions': `target: ${targetHandlePosition}, source: ${sourceHandlePosition}`,
+		'Calculated Source Position': sourceHandlePosition,
+		'Calculated Target Position': targetHandlePosition,
 	};
+
+	useEffect(() => {
+		// Use the directly passed absolute positions for the current node
+		if (positionAbsoluteX === undefined || positionAbsoluteY === undefined)
+			return;
+
+		let newTargetPos = Position.Top; // Default
+		let newSourcePos = Position.Bottom; // Default
+
+		const connectedEdges = edges.filter(
+			(edge) => edge.source === id || edge.target === id
+		);
+
+		if (connectedEdges.length > 0) {
+			// For target handle: current node is the target
+			const targetEdge = connectedEdges.find((edge) => edge.target === id);
+			if (targetEdge) {
+				const sourceNode = nodes.find((n) => n.id === targetEdge.source);
+				// Use sourceNode.position (relative) for connected nodes
+				// Note: For more accuracy, you might need to account for parent node positions
+				// if nodes are nested, or ensure all nodes share the same coordinate space.
+				// For simplicity, we'll use direct position comparison here.
+				if (sourceNode && sourceNode.position) {
+					const dx = sourceNode.position.x - positionAbsoluteX;
+					const dy = sourceNode.position.y - positionAbsoluteY;
+					if (Math.abs(dx) > Math.abs(dy)) {
+						newTargetPos = dx > 0 ? Position.Right : Position.Left;
+					} else {
+						newTargetPos = dy > 0 ? Position.Bottom : Position.Top;
+					}
+				}
+			}
+
+			// For source handle: current node is the source
+			const sourceEdge = connectedEdges.find((edge) => edge.source === id);
+			if (sourceEdge) {
+				const targetNode = nodes.find((n) => n.id === sourceEdge.target);
+				// Use targetNode.position (relative)
+				if (targetNode && targetNode.position) {
+					const dx = targetNode.position.x - positionAbsoluteX;
+					const dy = targetNode.position.y - positionAbsoluteY;
+					if (Math.abs(dx) > Math.abs(dy)) {
+						newSourcePos = dx > 0 ? Position.Right : Position.Left;
+					} else {
+						newSourcePos = dy > 0 ? Position.Bottom : Position.Top;
+					}
+				}
+			}
+		}
+
+		let updated = false;
+		if (newTargetPos !== targetHandlePosition) {
+			setTargetHandlePosition(newTargetPos);
+			updated = true;
+		}
+		if (newSourcePos !== sourceHandlePosition) {
+			setSourceHandlePosition(newSourcePos);
+			updated = true;
+		}
+
+		if (updated) {
+			updateNodeInternals(id);
+		}
+	}, [
+		id,
+		nodes,
+		edges,
+		updateNodeInternals,
+		targetHandlePosition,
+		sourceHandlePosition,
+		positionAbsoluteX,
+		positionAbsoluteY,
+	]);
 
 	// Helper function to render key-value pairs in a block
 	const renderInfoBlock = (info: Record<string, unknown>) => (
@@ -277,13 +366,13 @@ export function DebugNode({
 			{/* Handles */}
 			<NodeHandle
 				type='target'
-				position={targetHandlePosition} // Updated to static position
+				position={targetHandlePosition} // Updated to dynamic position
 				id='target'
 				variant='debug'
 			/>
 			<NodeHandle
 				type='source'
-				position={sourceHandlePosition} // Updated to static position
+				position={sourceHandlePosition} // Updated to dynamic position
 				id='source'
 				variant='debug'
 			/>
