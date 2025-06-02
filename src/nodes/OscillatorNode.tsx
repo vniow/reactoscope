@@ -1,11 +1,9 @@
-import { Position, type NodeProps } from '@xyflow/react';
+import { Position, type NodeProps, useReactFlow } from '@xyflow/react';
 import React from 'react';
 
 import { BaseNode } from '../components/BaseNode';
 import { NodeHandle } from '../components/NodeHandle';
 import { Slider } from '../components/ui';
-import { useHandlePosition } from '../hooks/useHandlePositions';
-import { useNodes } from '../hooks/useAppStore';
 import { useToneConnections } from '../hooks/useToneConnections';
 import { useToneOscillator } from '../hooks/useToneOscillator';
 import type { OscillatorNode } from './types';
@@ -132,11 +130,20 @@ export function OscillatorNode({
 	// Handle audio connections to other nodes
 	useToneConnections(id);
 
-	// Handle positions from the Zustand store
-	const sourcePosition = useHandlePosition(id, 'audio-out', Position.Bottom);
+	// Handle positions are now static
+	const sourceHandlePosition = Position.Bottom;
 
-	// Get the removeNode function from the store
-	const { removeNode } = useNodes();
+	// Get the React Flow instance for node management
+	const reactFlowInstance = useReactFlow();
+
+	const removeNode = () => {
+		reactFlowInstance.setNodes((nodes) =>
+			nodes.filter((node) => node.id !== id)
+		);
+		reactFlowInstance.setEdges((edges) =>
+			edges.filter((edge) => edge.source !== id && edge.target !== id)
+		);
+	};
 
 	return (
 		<BaseNode
@@ -179,7 +186,7 @@ export function OscillatorNode({
 			<NodeHandle
 				id='audio-out'
 				type='source'
-				position={sourcePosition}
+				position={sourceHandlePosition}
 				variant='audio'
 			/>
 		</BaseNode>

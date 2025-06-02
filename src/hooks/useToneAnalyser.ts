@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import * as Tone from 'tone';
+import { useEdges } from '@xyflow/react';
 import { useAppStore } from '../stores/appStore';
-import { useFlowEdges } from './useFlow';
 import type { AnalyserParams } from '../stores/slices/audioSlice';
 import type { Edge } from '@xyflow/react';
 
@@ -166,7 +166,7 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 	}, []);
 
 	// Monitor incoming connections to update isConnected status
-	const edges = useFlowEdges();
+	const edges = useEdges();
 	useEffect(() => {
 		const incomingEdges = edges.filter(
 			(edge: Edge) =>

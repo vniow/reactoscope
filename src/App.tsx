@@ -3,11 +3,10 @@ import {
 	ReactFlow,
 	Background,
 	MiniMap,
-	// addEdge, // Removed: Handled by Zustand store
-	// useNodesState, // Removed: Replaced by Zustand store
-	// useEdgesState, // Removed: Replaced by Zustand store
-	// type OnConnect, // Removed: Handled by useFlowActions hook
-	type NodeChange, // Keep for handleNodesChange, will be passed to store action
+	addEdge,
+	useNodesState,
+	useEdgesState,
+	type OnConnect,
 	BackgroundVariant,
 } from '@xyflow/react';
 
@@ -20,55 +19,35 @@ import { FlowControls } from './components/FlowControls';
 // import { StoreDebugPanel } from './components/StoreDebugPanel';
 import { NodeAddPanel } from './components/NodeAddPanel';
 import { type AppNode } from './nodes/types';
-import { useFlowNodes, useFlowEdges, useFlowActions } from './hooks/useFlow';
 
 import { GRID_UNIT } from './config/grid';
 
 export default function App() {
-	const nodes = useFlowNodes();
-	const edges = useFlowEdges();
-	const {
-		setNodes,
-		setEdges,
-		onNodesChange,
-		onEdgesChange,
-		onConnect,
-		onViewportChange,
-		onReconnectStart,
-		onReconnect,
-		onReconnectEnd,
-	} = useFlowActions();
+	// Use React Flow's native state management hooks
+	const [nodes, setNodes, onNodesChange] = useNodesState(
+		initialNodes as AppNode[]
+	);
+	const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+	// Handle connections with React Flow's addEdge utility
+	const onConnect: OnConnect = useCallback(
+		(connection) => {
+			setEdges((edges) => addEdge(connection, edges));
+		},
+		[setEdges]
+	);
 
 	// Track initialization to prevent re-initialization
 	const isInitialized = useRef(false);
 
-	// Initialize the store when the component mounts
+	// Initialize with empty arrays (no longer needed as React Flow manages initial state)
 	useEffect(() => {
-		// Only initialize once
 		if (!isInitialized.current) {
-			console.log('🚀 Initializing Zustand store with empty data');
-
-			setNodes(initialNodes); // Will be empty array
-			setEdges(initialEdges); // Will be empty array
-
+			console.log('🚀 Using React Flow native state management');
 			isInitialized.current = true;
-			console.log('✅ Store initialization complete');
+			console.log('✅ React Flow state initialization complete');
 		}
-	}, [setNodes, setEdges]);
-
-	// Custom nodes change handler to update handle positions after node movements
-	// This logic needs to be adapted to use store actions
-	const handleNodesChange = useCallback(
-		(changes: NodeChange<AppNode>[]) => {
-			onNodesChange(changes); // Pass changes to the store action
-
-			// The logic for handle positions and forcing edge updates will be managed within the store
-			// or by specific actions triggered by node changes.
-			// For example, the store's updateNode or a dedicated position change action
-			// could trigger recalculateAllHandlePositions.
-		},
-		[onNodesChange]
-	);
+	}, []);
 
 	return (
 		<ThemeProvider>
@@ -76,16 +55,11 @@ export default function App() {
 				<ReactFlow
 					nodes={nodes}
 					nodeTypes={nodeTypes}
-					onNodesChange={handleNodesChange} // Updated to use new handler
+					onNodesChange={onNodesChange}
 					edges={edges}
 					edgeTypes={edgeTypes}
-					onEdgesChange={onEdgesChange} // Directly use store action
-					onConnect={onConnect} // Directly use store action
-					onReconnect={onReconnect} // Enable edge reconnection
-					onReconnectStart={onReconnectStart} // Track reconnection start
-					onReconnectEnd={onReconnectEnd} // Handle reconnection end/delete
-					// Viewport state is managed by React Flow, we only sync changes back to store
-					onViewportChange={onViewportChange} // Update store when viewport changes
+					onEdgesChange={onEdgesChange}
+					onConnect={onConnect}
 					fitView
 					snapToGrid
 					snapGrid={[GRID_UNIT / 2, GRID_UNIT / 2]}

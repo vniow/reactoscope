@@ -6,8 +6,7 @@ import {
 	type EdgeProps,
 } from '@xyflow/react';
 
-import { getHandleCoordinates } from '../utils/handleCoordinates';
-import { useEdgeHandlePositions } from '../hooks/useHandlePositions';
+import { useFloatingEdgePathData } from '../hooks/useHandlePositions';
 
 // Custom edge that recalculates its path based on dynamic handle positions
 export function FloatingEdge({
@@ -17,9 +16,9 @@ export function FloatingEdge({
 	style = {},
 	markerEnd,
 }: EdgeProps) {
-	console.log(`[FloatingEdge ${id}] Component render started`);
+	// console.log(`[FloatingEdge ${id}] Component render started`);
 
-	// Get source and target nodes from React Flow store
+	// Get source and target nodes from React Flow store (still useful for checks or other data)
 	const sourceNode = useStore(
 		useCallback((store) => store.nodeLookup.get(source), [source])
 	);
@@ -27,42 +26,35 @@ export function FloatingEdge({
 		useCallback((store) => store.nodeLookup.get(target), [target])
 	);
 
-	// Get the edge to find handle IDs
-	const edge = useStore(
-		useCallback((store) => store.edges.find((e) => e.id === id), [id])
-	);
-
-	// 🚀 OPTIMIZATION: Use store-based handle positions instead of calculating each time
-	const sourceHandleId = edge?.sourceHandle || 'source';
-	const targetHandleId = edge?.targetHandle || 'target';
-
-	const {
-		sourcePosition: dynamicSourcePosition,
-		targetPosition: dynamicTargetPosition,
-	} = useEdgeHandlePositions(source, target, sourceHandleId, targetHandleId);
+	// Use the new hook to get dynamic path data
+	const pathData = useFloatingEdgePathData(source, target);
 
 	if (!sourceNode || !targetNode) {
-		console.log(
+		/* console.log(
 			`[FloatingEdge ${id}] Missing nodes - sourceNode:`,
 			!!sourceNode,
 			'targetNode:',
 			!!targetNode
-		);
+		); */
 		return null;
 	}
 
-	// Calculate actual coordinates using improved handle positioning
-	const sourceCoords = getHandleCoordinates(sourceNode, dynamicSourcePosition);
-	const targetCoords = getHandleCoordinates(targetNode, dynamicTargetPosition);
+	if (!pathData) {
+		// console.log(`[FloatingEdge ${id}] Path data not available yet.`);
+		return null; // Path data not ready (nodes might not be fully measured)
+	}
+
+	const { sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition } =
+		pathData;
 
 	// Use the calculated coordinates for smooth step path
 	const [edgePath] = getSmoothStepPath({
-		sourceX: sourceCoords.x,
-		sourceY: sourceCoords.y,
-		sourcePosition: dynamicSourcePosition,
-		targetX: targetCoords.x,
-		targetY: targetCoords.y,
-		targetPosition: dynamicTargetPosition,
+		sourceX,
+		sourceY,
+		sourcePosition,
+		targetX,
+		targetY,
+		targetPosition,
 		offset: 20, // Slightly increased for better visual spacing
 		borderRadius: 8,
 	});

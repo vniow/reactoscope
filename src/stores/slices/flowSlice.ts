@@ -1,7 +1,7 @@
 import type { StateCreator } from 'zustand';
 import type { Edge, Position } from '@xyflow/react';
 import type { AppNode } from '../../nodes/types';
-import type { AppStore } from '../types';
+import type { AppStore, GridHandle } from '../types';
 import { getNodeHandlePositions } from '../../utils/handlePositioning';
 
 // 🚀 PERFORMANCE: Memoization cache for handle position calculations
@@ -69,6 +69,10 @@ type FlowSliceProps = Pick<
 	| 'removeEdge'
 	| 'updateHandlePositions'
 	| 'recalculateAllHandlePositions'
+	| 'updateNodeHandles'
+	| 'addGridHandle'
+	| 'removeGridHandle'
+	| 'updateGridHandle'
 	| 'batchUpdateNodes'
 	| 'batchUpdateEdges'
 	| 'batchUpdateNodePositions'
@@ -88,6 +92,7 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSliceProps> = (
 		nodes: [],
 		edges: [],
 		nodeHandlePositions: {},
+		gridHandles: {},
 		viewport: { x: 0, y: 0, zoom: 1 },
 	},
 
@@ -322,6 +327,70 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSliceProps> = (
 				nodeHandlePositions: newHandlePositions,
 			},
 		}));
+	},
+
+	// Grid Handle Actions
+	updateNodeHandles: (nodeId: string, handles: GridHandle[]) => {
+		set((state) => ({
+			flow: {
+				...state.flow,
+				gridHandles: {
+					...state.flow.gridHandles,
+					[nodeId]: handles,
+				},
+			},
+		}));
+	},
+
+	addGridHandle: (nodeId: string, handle: GridHandle) => {
+		set((state) => {
+			const currentHandles = state.flow.gridHandles[nodeId] || [];
+			return {
+				flow: {
+					...state.flow,
+					gridHandles: {
+						...state.flow.gridHandles,
+						[nodeId]: [...currentHandles, handle],
+					},
+				},
+			};
+		});
+	},
+
+	removeGridHandle: (nodeId: string, handleId: string) => {
+		set((state) => {
+			const currentHandles = state.flow.gridHandles[nodeId] || [];
+			return {
+				flow: {
+					...state.flow,
+					gridHandles: {
+						...state.flow.gridHandles,
+						[nodeId]: currentHandles.filter((h) => h.id !== handleId),
+					},
+				},
+			};
+		});
+	},
+
+	updateGridHandle: (
+		nodeId: string,
+		handleId: string,
+		updates: Partial<GridHandle>
+	) => {
+		set((state) => {
+			const currentHandles = state.flow.gridHandles[nodeId] || [];
+			return {
+				flow: {
+					...state.flow,
+					gridHandles: {
+						...state.flow.gridHandles,
+						[nodeId]: currentHandles.map((h) =>
+							h.id === handleId ? { ...h, ...updates } : h
+						),
+					},
+				},
+			};
+		});
 	},
 
 	// Batch Actions

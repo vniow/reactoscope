@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import * as Tone from 'tone';
+import { useEdges } from '@xyflow/react';
 import { useAppStore } from '../stores/appStore';
-import { useFlowEdges } from './useFlow';
 import type { GainParams } from '../stores/slices/audioSlice';
 import type { Edge } from '@xyflow/react';
 
@@ -131,7 +131,7 @@ export const useToneGain = (nodeId: string): ToneGainControls => {
 	);
 
 	// Edge monitoring for incoming audio connections
-	const edges = useFlowEdges();
+	const edges = useEdges();
 	useEffect(() => {
 		if (!gainRef.current) return;
 

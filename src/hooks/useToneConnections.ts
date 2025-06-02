@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import * as Tone from 'tone';
+import { useEdges } from '@xyflow/react';
 import { useAudioNodes } from './useAppStore';
-import { useFlowEdges } from './useFlow';
 import type { Edge } from '@xyflow/react';
 
 /**
@@ -10,7 +10,7 @@ import type { Edge } from '@xyflow/react';
  */
 export function useToneConnections(nodeId: string) {
 	const { audioNodes } = useAudioNodes();
-	const edges = useFlowEdges();
+	const edges = useEdges();
 
 	useEffect(() => {
 		// Find all React Flow edges where this node is the source

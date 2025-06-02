@@ -10,17 +10,17 @@ export const PANEL_LAYOUT = {
 	// Grid positions for each section
 	sections: {
 		header: { gridX: 0, gridY: 0, gridWidth: 6, gridHeight: 1 },
-		quickAdd: { gridX: 0, gridY: 1, gridWidth: 6, gridHeight: 2 },
-		testFlow: { gridX: 0, gridY: 3, gridWidth: 6, gridHeight: 1 },
+		quickAdd: { gridX: 0, gridY: 1, gridWidth: 6, gridHeight: 3 },
+		testFlow: { gridX: 0, gridY: 4, gridWidth: 6, gridHeight: 1 },
 		detailedOptions: { gridX: 0, gridY: 4, gridWidth: 6, gridHeight: 6 },
-		metallicTheme: { gridX: 0, gridY: 10, gridWidth: 6, gridHeight: 3 },
+		metallicTheme: { gridX: 0, gridY: 8, gridWidth: 6, gridHeight: 4 },
 		transportControls: { gridX: 0, gridY: 14, gridWidth: 6, gridHeight: 1 },
 	},
 
 	// Quick add grid configuration
 	quickAdd: {
 		columns: 4,
-		maxItems: 8,
+		maxItems: 12,
 	},
 } as const;
 

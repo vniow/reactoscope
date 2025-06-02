@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Panel } from '@xyflow/react';
-import { useFlowActions } from '../../hooks/useFlow';
+import { Panel, useReactFlow } from '@xyflow/react';
 import { TransportControls } from '../TransportControls';
 import { GridBlock } from '../GridBlock';
 import { GridButton } from '../ui/GridButton';
@@ -13,12 +12,12 @@ import { createNode, createTestFlowNodes } from '../../utils/nodeFactory';
 import type { NodeTypeOption } from '../../config/nodeTypes';
 
 export function NodeAddPanel() {
-	const { addNode } = useFlowActions();
+	const reactFlowInstance = useReactFlow();
 	const [isExpanded, setIsExpanded] = useState(false);
 
 	const handleAddNode = (nodeTypeOption: NodeTypeOption) => {
 		const newNode = createNode(nodeTypeOption);
-		addNode(newNode);
+		reactFlowInstance.setNodes((nodes) => [...nodes, newNode]);
 		console.log(`🎯 Added new ${nodeTypeOption.name} node:`, newNode);
 
 		// Collapse the panel after adding a node
@@ -31,7 +30,9 @@ export function NodeAddPanel() {
 		);
 
 		const testNodes = createTestFlowNodes();
-		testNodes.forEach((node) => addNode(node));
+		testNodes.forEach((node) =>
+			reactFlowInstance.setNodes((nodes) => [...nodes, node])
+		);
 
 		setTimeout(() => {
 			console.log(

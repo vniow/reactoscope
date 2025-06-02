@@ -1,9 +1,7 @@
-import { Position, type NodeProps } from '@xyflow/react';
+import { Position, type NodeProps, useReactFlow } from '@xyflow/react';
 
 import { BaseNode } from '../components/BaseNode';
 import { NodeHandle } from '../components/NodeHandle';
-import { useHandlePosition } from '../hooks/useHandlePositions';
-import { useNodes } from '../hooks/useAppStore';
 import { useToneDestination } from '../hooks/useToneDestination';
 import type { DestinationNode } from './types';
 
@@ -12,11 +10,20 @@ export function DestinationNode({
 	data,
 	selected,
 }: NodeProps<DestinationNode>) {
-	// Handle positions from the Zustand store
-	const inputPosition = useHandlePosition(id, 'audio-in', Position.Top);
+	// Handle positions are now static
+	const inputPosition = Position.Top;
 
-	// Get the removeNode function from the store
-	const { removeNode } = useNodes();
+	// Get the React Flow instance for node management
+	const reactFlowInstance = useReactFlow();
+
+	const removeNode = () => {
+		reactFlowInstance.setNodes((nodes) =>
+			nodes.filter((node) => node.id !== id)
+		);
+		reactFlowInstance.setEdges((edges) =>
+			edges.filter((edge) => edge.source !== id && edge.target !== id)
+		);
+	};
 
 	// Initialize destination connection management
 	const { getConnectedSources } = useToneDestination(id);

@@ -27,17 +27,6 @@ export const NODE_CATEGORIES = {
 // Debug and development nodes
 export const DEBUG_NODES: NodeTypeOption[] = [
 	{
-		type: 'position-logger',
-		name: 'Position Logger',
-		description: 'Node that displays position coordinates',
-		emoji: '📍',
-		variant: 'primary',
-		category: 'debug',
-		defaultData: {
-			label: 'New Position Node',
-		},
-	},
-	{
 		type: 'debug',
 		name: 'Debug Node',
 		description: 'Comprehensive debug info for all node properties',
@@ -46,28 +35,6 @@ export const DEBUG_NODES: NodeTypeOption[] = [
 		category: 'debug',
 		defaultData: {
 			label: 'Debug Node',
-		},
-	},
-	{
-		type: 'theme-debug',
-		name: 'Theme Debug',
-		description: 'Node that shows theme debugging info',
-		emoji: '🎨',
-		variant: 'secondary',
-		category: 'debug',
-		defaultData: {
-			label: 'Theme Debug Info',
-		},
-	},
-	{
-		type: 'r3f-debug',
-		name: 'R3F Debug',
-		description: 'React Three Fiber debug node with rotating box',
-		emoji: '🎲',
-		variant: 'secondary',
-		category: 'debug',
-		defaultData: {
-			label: 'R3F Debug',
 		},
 	},
 ];

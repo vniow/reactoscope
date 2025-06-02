@@ -1,14 +1,12 @@
-import { Position, type NodeProps } from '@xyflow/react';
+import { Position, type NodeProps, useReactFlow } from '@xyflow/react';
 import { useState } from 'react';
 
-import { type DebugNode } from './types';
+import { type DebugNodeData } from './types';
 import { BaseNode } from '../components/BaseNode';
 import { GridBlock } from '../components/GridBlock'; // Keep for other info blocks
 import { NodeHandle } from '../components/NodeHandle';
 import { GridButton } from '../components/ui/GridButton'; // Added
 import { GridSlider } from '../components/ui/GridSlider'; // Added
-import { useHandlePosition } from '../hooks/useHandlePositions';
-import { useFlowActions } from '../hooks/useFlow';
 
 export function DebugNode({
 	id,
@@ -30,13 +28,13 @@ export function DebugNode({
 	sourcePosition,
 	targetPosition,
 	...otherProps
-}: NodeProps<DebugNode>) {
-	// Get handle positions from the Zustand store, with proper defaults for new nodes
-	const targetHandlePosition = useHandlePosition(id, 'target', Position.Top);
-	const sourceHandlePosition = useHandlePosition(id, 'source', Position.Bottom);
+}: NodeProps<DebugNodeData>) {
+	// Handle positions are now static
+	const targetHandlePosition = Position.Top;
+	const sourceHandlePosition = Position.Bottom;
 
-	// Get the removeNode function from the store
-	const { removeNode } = useFlowActions();
+	// Get the React Flow instance for node operations
+	const reactFlowInstance = useReactFlow();
 
 	// State for interactive UI elements
 	const [sliderValue, setSliderValue] = useState(50);
@@ -110,7 +108,14 @@ export function DebugNode({
 			gridHeight={12} // Adjusted to ensure all content fits (increased by 0.5)
 			nodeId={id}
 			selected={selected}
-			onDelete={removeNode}
+			onDelete={() => {
+				reactFlowInstance.setNodes((nodes) =>
+					nodes.filter((node) => node.id !== id)
+				);
+				reactFlowInstance.setEdges((edges) =>
+					edges.filter((edge) => edge.source !== id && edge.target !== id)
+				);
+			}}
 			title={`Debug Node - ${data.label || id}`}
 		>
 			{/* Main GridBlock Layout Container */}
@@ -272,13 +277,13 @@ export function DebugNode({
 			{/* Handles */}
 			<NodeHandle
 				type='target'
-				position={targetHandlePosition}
+				position={targetHandlePosition} // Updated to static position
 				id='target'
 				variant='debug'
 			/>
 			<NodeHandle
 				type='source'
-				position={sourceHandlePosition}
+				position={sourceHandlePosition} // Updated to static position
 				id='source'
 				variant='debug'
 			/>

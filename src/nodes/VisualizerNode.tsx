@@ -1,9 +1,7 @@
-import { Position, type NodeProps } from '@xyflow/react';
+import { Position, type NodeProps, useReactFlow } from '@xyflow/react';
 import { BaseNode } from '../components/BaseNode';
 import { NodeHandle } from '../components/NodeHandle';
 import { Slider } from '../components/ui';
-import { useHandlePosition } from '../hooks/useHandlePositions';
-import { useNodes } from '../hooks/useAppStore';
 import { useToneAnalyser } from '../hooks/useToneAnalyser';
 import { useToneConnections } from '../hooks/useToneConnections';
 import AudioVisualizer from '../components/AudioVisualizer';
@@ -14,12 +12,21 @@ export function VisualizerNode({
 	data,
 	selected,
 }: NodeProps<VisualizerNode>) {
-	// Handle positions from the Zustand store
-	const inputPositionL = useHandlePosition(id, 'audio-in-L', Position.Left);
-	const inputPositionR = useHandlePosition(id, 'audio-in-R', Position.Right);
+	// Handle positions are now static
+	const inputPositionL = Position.Left;
+	const inputPositionR = Position.Right;
 
-	// Get the removeNode function from the store
-	const { removeNode } = useNodes();
+	// Get the React Flow instance for node management
+	const reactFlowInstance = useReactFlow();
+
+	const removeNode = () => {
+		reactFlowInstance.setNodes((nodes) =>
+			nodes.filter((node) => node.id !== id)
+		);
+		reactFlowInstance.setEdges((edges) =>
+			edges.filter((edge) => edge.source !== id && edge.target !== id)
+		);
+	};
 
 	// Initialize analyser controls
 	const { updateSize, updateSmoothing, getAnalyserL, getAnalyserR, params } =
