@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 import {
 	ReactFlow,
 	Background,
@@ -24,9 +24,7 @@ import { GRID_UNIT } from './config/grid';
 
 export default function App() {
 	// Use React Flow's native state management hooks
-	const [nodes, setNodes, onNodesChange] = useNodesState(
-		initialNodes as AppNode[]
-	);
+	const [nodes, , onNodesChange] = useNodesState(initialNodes as AppNode[]);
 	const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
 	// Handle connections with React Flow's addEdge utility
@@ -37,18 +35,7 @@ export default function App() {
 		[setEdges]
 	);
 
-	// Track initialization to prevent re-initialization
-	const isInitialized = useRef(false);
-
 	// Initialize with empty arrays (no longer needed as React Flow manages initial state)
-	useEffect(() => {
-		if (!isInitialized.current) {
-			console.log('🚀 Using React Flow native state management');
-			isInitialized.current = true;
-			console.log('✅ React Flow state initialization complete');
-		}
-	}, []);
-
 	return (
 		<ThemeProvider>
 			<div className='w-full h-screen'>

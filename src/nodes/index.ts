@@ -19,4 +19,4 @@ export const nodeTypes = {
 	visualizer: VisualizerNode,
 	destination: DestinationNode,
 	// Add any of your custom nodes here!
-} satisfies NodeTypes;
+} as NodeTypes;

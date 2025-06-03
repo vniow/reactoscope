@@ -8,7 +8,11 @@ export interface BaseNodeData extends Record<string, unknown> {
 	handlePositions?: { [handleId: string]: Position };
 }
 
-export type DebugNode = Node<BaseNodeData & { label: string }, 'debug'>;
+export interface DebugNodeData extends BaseNodeData {
+	label?: string;
+}
+
+export type DebugNode = Node<DebugNodeData, 'debug'>;
 export type OscillatorNode = Node<BaseNodeData & AudioNodeData, 'oscillator'>;
 export type GainNode = Node<BaseNodeData & AudioNodeData, 'gain'>;
 export type VisualizerNode = Node<BaseNodeData & AudioNodeData, 'visualizer'>;
