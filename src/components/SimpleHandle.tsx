@@ -1,7 +1,8 @@
 import { Handle, Position, useNodeConnections } from '@xyflow/react';
 import { useMemo, useState } from 'react';
 
-interface GridNodeHandleProps {
+// Simplified handle props - just position and offset
+interface SimpleHandleProps {
 	id: string;
 	type: 'source' | 'target';
 	position: Position;
@@ -77,9 +78,9 @@ const CircleIcon = ({ color }: { color: string }) => (
 );
 
 /**
- * Simplified GridNodeHandle - accepts direct position and offset props
+ * Simplified handle component that accepts direct position and offset props
  */
-export function GridNodeHandle({
+export function SimpleHandle({
 	id,
 	type,
 	position,
@@ -87,7 +88,7 @@ export function GridNodeHandle({
 	offsetY = 0,
 	variant = 'default',
 	className = '',
-}: GridNodeHandleProps) {
+}: SimpleHandleProps) {
 	const [showTooltip, setShowTooltip] = useState(false);
 	const isDebugMode = process.env.NODE_ENV === 'development';
 
@@ -222,28 +223,17 @@ export function GridNodeHandle({
 }
 
 /**
- * Container for multiple handles - simplified to work with direct props
+ * Container for multiple simple handles
  */
-interface GridHandlesProps {
-	handles: Array<{
-		id: string;
-		type: 'source' | 'target';
-		position: Position;
-		offsetX?: number;
-		offsetY?: number;
-		variant?: 'default' | 'primary' | 'debug' | 'secondary' | 'audio';
-	}>;
+interface SimpleHandlesProps {
+	handles: SimpleHandleProps[];
 }
 
-export function GridHandles({ handles }: GridHandlesProps) {
-	if (process.env.NODE_ENV === 'development') {
-		console.log(`GridHandles: rendering ${handles.length} handles`);
-	}
-
+export function SimpleHandles({ handles }: SimpleHandlesProps) {
 	return (
 		<>
 			{handles.map((handle) => (
-				<GridNodeHandle
+				<SimpleHandle
 					key={handle.id}
 					{...handle}
 				/>

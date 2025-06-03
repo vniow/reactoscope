@@ -9,3 +9,74 @@ export function calculateNodeSize(gridWidth: number, gridHeight: number) {
 		height: gridHeight * GRID_UNIT,
 	};
 }
+
+/**
+ * Convert grid units to pixels
+ */
+export function gridUnitsToPixels(gridUnits: number): number {
+	return gridUnits * GRID_UNIT;
+}
+
+/**
+ * Convert pixels to grid units
+ */
+export function pixelsToGridUnits(pixels: number): number {
+	return pixels / GRID_UNIT;
+}
+
+/**
+ * Calculate handle offset in pixels, supporting both pixel and grid-unit modes
+ */
+export function calculateHandleOffset(
+	offsetValue: number,
+	offsetMode: 'pixels' | 'grid-units' = 'pixels'
+): number {
+	return offsetMode === 'grid-units'
+		? gridUnitsToPixels(offsetValue)
+		: offsetValue;
+}
+
+/**
+ * Validate handle position is within node boundaries
+ */
+export function validateHandlePosition(
+	gridX: number,
+	gridY: number,
+	offsetX: number,
+	offsetY: number,
+	nodeGridWidth: number,
+	nodeGridHeight: number,
+	offsetMode: 'pixels' | 'grid-units' = 'pixels'
+): { isValid: boolean; warnings: string[] } {
+	const warnings: string[] = [];
+
+	// Convert offsets to pixels for validation
+	const pixelOffsetX = calculateHandleOffset(offsetX, offsetMode);
+	const pixelOffsetY = calculateHandleOffset(offsetY, offsetMode);
+
+	// Calculate final position in pixels
+	const finalX = gridX * GRID_UNIT + pixelOffsetX;
+	const finalY = gridY * GRID_UNIT + pixelOffsetY;
+
+	const nodeWidth = nodeGridWidth * GRID_UNIT;
+	const nodeHeight = nodeGridHeight * GRID_UNIT;
+
+	// Check boundaries
+	if (finalX < 0)
+		warnings.push(`Handle X position (${finalX}px) is outside left boundary`);
+	if (finalX > nodeWidth)
+		warnings.push(
+			`Handle X position (${finalX}px) exceeds node width (${nodeWidth}px)`
+		);
+	if (finalY < 0)
+		warnings.push(`Handle Y position (${finalY}px) is outside top boundary`);
+	if (finalY > nodeHeight)
+		warnings.push(
+			`Handle Y position (${finalY}px) exceeds node height (${nodeHeight}px)`
+		);
+
+	return {
+		isValid: warnings.length === 0,
+		warnings,
+	};
+}

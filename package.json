@@ -12,7 +12,7 @@
 	"dependencies": {
 		"@react-three/drei": "^10.0.8",
 		"@react-three/fiber": "^9.1.2",
-		"@tailwindcss/vite": "^4.1.7",
+		"@tailwindcss/vite": "^4.1.8",
 		"@types/audioworklet": "^0.0.70",
 		"@types/three": "^0.176.0",
 		"@xyflow/react": "^12.6.4",
@@ -23,7 +23,7 @@
 		"postprocessing": "^6.37.3",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
-		"tailwindcss": "^4.1.7",
+		"tailwindcss": "^4.1.8",
 		"three": "^0.176.0",
 		"tone": "^15.1.22",
 		"vite-plugin-glsl": "^1.4.1",
@@ -40,7 +40,7 @@
 		"eslint-plugin-react-hooks": "^5.2.0",
 		"eslint-plugin-react-refresh": "^0.4.20",
 		"globals": "^16.1.0",
-		"prettier-plugin-tailwindcss": "^0.6.11",
+		"prettier-plugin-tailwindcss": "^0.6.12",
 		"typescript": "~5.8.3",
 		"typescript-eslint": "^8.32.1",
 		"vite": "^6.3.5"

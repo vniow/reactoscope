@@ -1,22 +1,13 @@
-import {
-	Position,
-	type NodeProps,
-	useReactFlow,
-	// useNodes,
-	// useEdges,
-	// useUpdateNodeInternals,
-	Handle,
-} from '@xyflow/react';
+import { type NodeProps, useReactFlow, Position } from '@xyflow/react';
 import { useState } from 'react';
 
-import { type DebugNodeData } from './types';
 import { BaseNode } from '../components/BaseNode';
-import { GridBlock } from '../components/GridBlock'; // Keep for other info blocks
-// import { NodeHandle } from '../components/NodeHandle';
-import { GridButton } from '../components/ui/GridButton'; // Added
-import { GridSlider } from '../components/ui/GridSlider'; // Added
+import { GridBlock } from '../components/GridBlock';
+import { GridHandles } from '../components/GridNodeHandle';
+import { GridButton } from '../components/ui/GridButton';
+import { GridSlider } from '../components/ui/GridSlider';
 
-export function DebugNode(props: NodeProps<DebugNodeData>) {
+export function DebugNode(props: NodeProps) {
 	const {
 		id,
 		type,
@@ -34,29 +25,52 @@ export function DebugNode(props: NodeProps<DebugNodeData>) {
 		deletable,
 		parentId,
 		draggable,
-		// sourcePosition and targetPosition props are from the node itself,
-		// not what we'll use for dynamic calculation based on connections.
-		// We'll manage dynamic positions internally.
-		// sourcePosition,
-		// targetPosition,
 		...otherProps
 	} = props;
-	// const [targetHandlePosition, setTargetHandlePosition] = useState(
-	// 	Position.Top
-	// );
-	// const [sourceHandlePosition, setSourceHandlePosition] = useState(
-	// 	Position.Bottom
-	// );
-
-	// const nodes = useNodes();
-	// const edges = useEdges();
-	// const updateNodeInternals = useUpdateNodeInternals();
-	// Get the React Flow instance for node operations
-	const reactFlowInstance = useReactFlow();
-
 	// State for interactive UI elements
 	const [sliderValue, setSliderValue] = useState(50);
 	const [buttonClickCount, setButtonClickCount] = useState(0);
+
+	// Get the React Flow instance for node operations
+	const reactFlowInstance = useReactFlow();
+
+	// Define handles with simplified GridHandles system
+	const handles = [
+		// Primary handles positioned at node center
+		{
+			id: 'debug-input',
+			type: 'target' as const,
+			position: Position.Left,
+			offsetX: 0,
+			// offsetY: 100, // Middle of the node
+			variant: 'debug' as const,
+		},
+		{
+			id: 'debug-output',
+			type: 'source' as const,
+			position: Position.Right,
+			offsetX: 0,
+			offsetY: 100, // Middle of the node
+			variant: 'debug' as const,
+		},
+		// Additional handles demonstrating pixel-based offset positioning
+		{
+			id: 'debug-aux-input',
+			type: 'target' as const,
+			position: Position.Left,
+			offsetX: 0,
+			offsetY: 460, // Higher on the node
+			variant: 'secondary' as const,
+		},
+		{
+			id: 'debug-aux-output',
+			type: 'source' as const,
+			position: Position.Right,
+			offsetX: 0,
+			offsetY: 940, // Lower on the node
+			variant: 'secondary' as const,
+		},
+	];
 
 	// Format values for display
 	const formatValue = (value: unknown): string => {
@@ -75,11 +89,11 @@ export function DebugNode(props: NodeProps<DebugNodeData>) {
 	};
 
 	const positionInfo = {
-		'Absolute Position': `x: ${Math.round(positionAbsoluteX)}, y: ${Math.round(
-			positionAbsoluteY
+		'Absolute Position': `x: ${Math.round(positionAbsoluteX as number)}, y: ${Math.round(
+			positionAbsoluteY as number
 		)}`,
-		Dimensions: `${width ? Math.round(width) : 'auto'} × ${
-			height ? Math.round(height) : 'auto'
+		Dimensions: `${(width as number) ? Math.round(width as number) : 'auto'} × ${
+			(height as number) ? Math.round(height as number) : 'auto'
 		}`,
 	};
 
@@ -118,8 +132,8 @@ export function DebugNode(props: NodeProps<DebugNodeData>) {
 			variant='debug'
 			gridWidth={9} // Adjusted to ensure all content fits
 			gridHeight={12} // Adjusted to ensure all content fits (increased by 0.5)
-			nodeId={id}
-			selected={selected}
+			nodeId={id as string}
+			selected={selected as boolean}
 			onDelete={() => {
 				reactFlowInstance.setNodes((nodes) =>
 					nodes.filter((node) => node.id !== id)
@@ -128,7 +142,7 @@ export function DebugNode(props: NodeProps<DebugNodeData>) {
 					edges.filter((edge) => edge.source !== id && edge.target !== id)
 				);
 			}}
-			title={`Debug Node - ${data.label || id}`}
+			title={`Debug Node - ${(data as { label?: string })?.label || id}`}
 		>
 			{/* Main GridBlock Layout Container */}
 			<div className='relative w-full h-full overflow-visible'>
@@ -270,19 +284,8 @@ export function DebugNode(props: NodeProps<DebugNodeData>) {
 				/>
 			</div>
 
-			{/* Handles */}
-			<Handle
-				type='target'
-				position={Position.Bottom}
-				id='target'
-				// variant='debug'
-			/>
-			<Handle
-				type='source'
-				position={Position.Top}
-				id='source'
-				// variant='debug'
-			/>
+			{/* Simplified handles with direct positioning */}
+			<GridHandles handles={handles} />
 		</BaseNode>
 	);
 }

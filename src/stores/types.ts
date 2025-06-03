@@ -24,6 +24,10 @@ export interface GridHandle {
 	gridY: number;
 	variant?: 'default' | 'primary' | 'debug' | 'secondary' | 'audio';
 	floating?: boolean; // Whether this handle uses floating positioning (default: true)
+	// Custom offset system - allows precise positioning within grid cells
+	offsetX?: number; // Additional X offset (default: 0)
+	offsetY?: number; // Additional Y offset (default: 0)
+	offsetMode?: 'pixels' | 'grid-units'; // How to interpret offset values (default: 'pixels')
 }
 
 // UI Types
