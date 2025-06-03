@@ -34,40 +34,40 @@ export function DebugNode(props: NodeProps) {
 	// Get the React Flow instance for node operations
 	const reactFlowInstance = useReactFlow();
 
-	// Define handles with simplified GridHandles system
+	// Define handles with simplified GridHandles system using grid units
 	const handles = [
-		// Primary handles positioned at node center
+		// Primary handles positioned at node center using grid units
 		{
 			id: 'debug-input',
 			type: 'target' as const,
-			position: Position.Left,
-			offsetX: 0,
-			// offsetY: 100, // Middle of the node
+			position: Position.Top,
+			positionX: 5,
+			positionY: 0,
 			variant: 'debug' as const,
 		},
 		{
 			id: 'debug-output',
 			type: 'source' as const,
 			position: Position.Right,
-			offsetX: 0,
-			offsetY: 100, // Middle of the node
+			positionX: 0,
+			positionY: 0,
 			variant: 'debug' as const,
 		},
-		// Additional handles demonstrating pixel-based offset positioning
+		// Additional handles demonstrating grid unit-based positioning
 		{
 			id: 'debug-aux-input',
 			type: 'target' as const,
 			position: Position.Left,
-			offsetX: 0,
-			offsetY: 460, // Higher on the node
+			positionX: 0,
+			positionY: 1,
 			variant: 'secondary' as const,
 		},
 		{
 			id: 'debug-aux-output',
 			type: 'source' as const,
 			position: Position.Right,
-			offsetX: 0,
-			offsetY: 940, // Lower on the node
+			positionX: 0,
+			positionY: 9,
 			variant: 'secondary' as const,
 		},
 	];

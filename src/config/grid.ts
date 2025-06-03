@@ -27,13 +27,11 @@ export function pixelsToGridUnits(pixels: number): number {
 /**
  * Calculate handle offset in pixels, supporting both pixel and grid-unit modes
  */
-export function calculateHandleOffset(
-	offsetValue: number,
-	offsetMode: 'pixels' | 'grid-units' = 'pixels'
-): number {
-	return offsetMode === 'grid-units'
-		? gridUnitsToPixels(offsetValue)
-		: offsetValue;
+/**
+ * Calculate handle position offset in pixels (always uses grid units now)
+ */
+export function calculateHandlePosition(positionValue: number): number {
+	return gridUnitsToPixels(positionValue);
 }
 
 /**
@@ -42,21 +40,20 @@ export function calculateHandleOffset(
 export function validateHandlePosition(
 	gridX: number,
 	gridY: number,
-	offsetX: number,
-	offsetY: number,
+	positionX: number,
+	positionY: number,
 	nodeGridWidth: number,
-	nodeGridHeight: number,
-	offsetMode: 'pixels' | 'grid-units' = 'pixels'
+	nodeGridHeight: number
 ): { isValid: boolean; warnings: string[] } {
 	const warnings: string[] = [];
 
-	// Convert offsets to pixels for validation
-	const pixelOffsetX = calculateHandleOffset(offsetX, offsetMode);
-	const pixelOffsetY = calculateHandleOffset(offsetY, offsetMode);
+	// Convert positions to pixels for validation
+	const pixelPositionX = calculateHandlePosition(positionX);
+	const pixelPositionY = calculateHandlePosition(positionY);
 
 	// Calculate final position in pixels
-	const finalX = gridX * GRID_UNIT + pixelOffsetX;
-	const finalY = gridY * GRID_UNIT + pixelOffsetY;
+	const finalX = gridX * GRID_UNIT + pixelPositionX;
+	const finalY = gridY * GRID_UNIT + pixelPositionY;
 
 	const nodeWidth = nodeGridWidth * GRID_UNIT;
 	const nodeHeight = nodeGridHeight * GRID_UNIT;

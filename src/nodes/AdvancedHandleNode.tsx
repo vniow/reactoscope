@@ -1,7 +1,6 @@
 import { type NodeProps } from '@xyflow/react';
 import { useState } from 'react';
 
-import { type DebugNodeData } from './types';
 import { BaseNode } from '../components/BaseNode';
 import { GridHandles } from '../components/GridNodeHandle';
 import { GridButton } from '../components/ui/GridButton';
@@ -12,17 +11,14 @@ import type { GridHandle } from '../stores/types';
  * Advanced example node demonstrating programmable handle offset control
  * tied to the grid positioning system
  */
-export function AdvancedHandleNode(props: NodeProps<DebugNodeData>) {
+export function AdvancedHandleNode(props: NodeProps) {
 	const { id, data, selected } = props;
 
-	// State for dynamic offset control
-	const [offsetMode, setOffsetMode] = useState<'pixels' | 'grid-units'>(
-		'pixels'
-	);
-	const [dynamicOffset, setDynamicOffset] = useState(0);
+	// State for dynamic position control (now only uses grid units)
+	const [dynamicPosition, setDynamicPosition] = useState(0);
 	const [showGridHelpers, setShowGridHelpers] = useState(true);
 
-	// Define handles with various offset configurations
+	// Define handles with various position configurations using grid units only
 	const handles: GridHandle[] = [
 		// Standard edge-based handles
 		{
@@ -42,55 +38,51 @@ export function AdvancedHandleNode(props: NodeProps<DebugNodeData>) {
 			floating: true,
 		},
 
-		// Handles with pixel-based offsets
+		// Handles with grid-unit-based positions
 		{
-			id: 'input-pixel-offset',
+			id: 'input-grid-position',
 			type: 'target',
 			gridX: 0,
 			gridY: 2,
 			variant: 'secondary',
-			offsetX: 16, // 16 pixels right from edge
-			offsetY: 8, // 8 pixels down
-			offsetMode: 'pixels',
+			positionX: 0.25, // Quarter grid unit right (16px)
+			positionY: 0.125, // Eighth grid unit down (8px)
 			floating: true,
 		},
 
-		// Handles with grid-unit-based offsets
+		// Handles with more precise grid-unit positioning
 		{
-			id: 'input-grid-offset',
+			id: 'input-precise-position',
 			type: 'target',
 			gridX: 0,
 			gridY: 3,
 			variant: 'debug',
-			offsetX: 0.25, // Quarter grid unit right (16px)
-			offsetY: 0.125, // Eighth grid unit down (8px)
-			offsetMode: 'grid-units',
+			positionX: 0.25, // Quarter grid unit right (16px)
+			positionY: 0.125, // Eighth grid unit down (8px)
 			floating: true,
 		},
 
-		// Handles with dynamic offsets (controlled by slider)
+		// Handles with dynamic positions (controlled by slider)
 		{
 			id: 'input-dynamic',
 			type: 'target',
 			gridX: 0,
 			gridY: 4,
 			variant: 'audio',
-			offsetX: dynamicOffset,
-			offsetY: 0,
-			offsetMode: offsetMode,
+			positionX: dynamicPosition,
+			positionY: 0,
 			floating: true,
 		},
 
-		// Bottom edge handles with horizontal offsets
+		// Bottom edge handles with horizontal positions
 		{
 			id: 'output-bottom-left',
 			type: 'source',
 			gridX: 1,
 			gridY: 5, // Bottom edge
 			variant: 'default',
-			offsetX: -16, // Move 16px left from center
-			offsetY: 0,
-			offsetMode: 'pixels',
+			positionX: -0.25, // Quarter grid unit left (16px left)
+			positionY: 0,
 			floating: true,
 		},
 		{
@@ -99,7 +91,7 @@ export function AdvancedHandleNode(props: NodeProps<DebugNodeData>) {
 			gridX: 2,
 			gridY: 5, // Bottom edge
 			variant: 'primary',
-			// No offset - centered in grid cell
+			// No position offset - centered in grid cell
 			floating: true,
 		},
 		{
@@ -108,9 +100,8 @@ export function AdvancedHandleNode(props: NodeProps<DebugNodeData>) {
 			gridX: 3,
 			gridY: 5, // Bottom edge
 			variant: 'default',
-			offsetX: 16, // Move 16px right from center
-			offsetY: 0,
-			offsetMode: 'pixels',
+			positionX: 0.25, // Quarter grid unit right (16px right)
+			positionY: 0,
 			floating: true,
 		},
 	];
@@ -122,11 +113,11 @@ export function AdvancedHandleNode(props: NodeProps<DebugNodeData>) {
 		return String(value);
 	};
 
-	const offsetInfo = {
-		Mode: offsetMode,
-		'Dynamic Offset': `${dynamicOffset}${offsetMode === 'grid-units' ? ' grid units' : 'px'}`,
+	const positionInfo = {
+		'Dynamic Position': `${dynamicPosition} grid units`,
 		'Grid Unit Size': '64px',
 		'Active Handles': handles.length,
+		'Position System': 'Grid Units Only',
 	};
 
 	return (
@@ -136,40 +127,16 @@ export function AdvancedHandleNode(props: NodeProps<DebugNodeData>) {
 			gridHeight={6}
 			nodeId={id as string}
 			selected={selected as boolean}
-			title={`Advanced Handle Demo - ${(data as DebugNodeData)?.label || id}`}
+			title={`Advanced Handle Demo - ${data?.label || id}`}
 		>
 			<div className='relative w-full h-full p-4 space-y-4'>
 				{/* Control Panel */}
 				<div className='space-y-3'>
 					<h3 className='text-sm font-semibold text-center'>
-						Handle Offset Controls
+						Handle Position Controls (Grid Units Only)
 					</h3>
 
-					{/* Offset Mode Toggle */}
-					<div className='flex gap-2'>
-						<GridButton
-							gridWidth={2}
-							gridHeight={1}
-							gridX={0}
-							gridY={0}
-							variant={offsetMode === 'pixels' ? 'primary' : 'default'}
-							buttonLabel='Pixels'
-							onClick={() => setOffsetMode('pixels')}
-							className='flex-1'
-						/>
-						<GridButton
-							gridWidth={2}
-							gridHeight={1}
-							gridX={2}
-							gridY={0}
-							variant={offsetMode === 'grid-units' ? 'primary' : 'default'}
-							buttonLabel='Grid Units'
-							onClick={() => setOffsetMode('grid-units')}
-							className='flex-1'
-						/>
-					</div>
-
-					{/* Dynamic Offset Slider */}
+					{/* Dynamic Position Slider */}
 					<GridSlider
 						gridWidth={4}
 						gridHeight={1}
@@ -179,17 +146,16 @@ export function AdvancedHandleNode(props: NodeProps<DebugNodeData>) {
 						showDimensions={false}
 						showBorder={true}
 						transparentBackground={false}
-						label='Dynamic Offset'
+						label='Dynamic Position'
 						sliderProps={{
-							value: dynamicOffset,
-							min: offsetMode === 'pixels' ? -32 : -0.5,
-							max: offsetMode === 'pixels' ? 32 : 0.5,
-							step: offsetMode === 'pixels' ? 1 : 0.025,
-							onChange: (e) => setDynamicOffset(Number(e.target.value)),
+							value: dynamicPosition,
+							min: -0.5,
+							max: 0.5,
+							step: 0.025,
+							onChange: (e) => setDynamicPosition(Number(e.target.value)),
 							size: 'sm',
 							color: 'blue',
-							formatValue: (val) =>
-								`${val}${offsetMode === 'grid-units' ? 'gu' : 'px'}`,
+							formatValue: (val) => `${val} gu`,
 							showMinMax: true,
 						}}
 					/>
@@ -211,8 +177,10 @@ export function AdvancedHandleNode(props: NodeProps<DebugNodeData>) {
 
 				{/* Info Display */}
 				<div className='bg-gray-100 dark:bg-gray-800 rounded p-3 text-xs space-y-2'>
-					<div className='font-semibold text-center'>Offset Configuration</div>
-					{Object.entries(offsetInfo).map(([label, value]) => (
+					<div className='font-semibold text-center'>
+						Position Configuration
+					</div>
+					{Object.entries(positionInfo).map(([label, value]) => (
 						<div
 							key={label}
 							className='flex justify-between'
