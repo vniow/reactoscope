@@ -14,9 +14,8 @@ import '@xyflow/react/dist/base.css';
 
 import { initialNodes, nodeTypes } from './nodes';
 import { initialEdges, edgeTypes } from './edges';
-import { ThemeProvider } from './contexts/ZustandThemeProvider';
+import { ThemeProvider } from './contexts/ThemeProvider';
 import { FlowControls } from './components/FlowControls';
-// import { StoreDebugPanel } from './components/StoreDebugPanel';
 import { NodeAddPanel } from './components/NodeAddPanel';
 import { type AppNode } from './nodes/types';
 

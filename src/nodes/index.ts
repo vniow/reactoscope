@@ -5,9 +5,6 @@ import { OscillatorNode } from './OscillatorNode';
 import { GainNode } from './GainNode';
 import { VisualizerNode } from './VisualizerNode';
 import { DestinationNode } from './DestinationNode';
-// Example nodes demonstrating handle offset system
-import { SimpleOffsetNode } from './SimpleOffsetNode';
-import { AdvancedHandleNode } from './AdvancedHandleNode';
 
 import type { AppNode } from './types';
 
@@ -28,8 +25,5 @@ export const nodeTypes = {
 	gain: GainNode,
 	visualizer: VisualizerNode,
 	destination: DestinationNode,
-	// Handle offset demonstration nodes
-	simpleOffset: SimpleOffsetNode,
-	advancedHandle: AdvancedHandleNode,
 	// Add any of your custom nodes here!
 } as NodeTypes;

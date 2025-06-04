@@ -1,6 +1,6 @@
-import { Position, type NodeProps, useReactFlow } from '@xyflow/react';
+import { type NodeProps, useReactFlow, Position } from '@xyflow/react';
 import { BaseNode } from '../components/BaseNode';
-import { NodeHandle } from '../components/NodeHandle';
+import { GridNodeHandle } from '../components/GridNodeHandle';
 import { Slider } from '../components/ui';
 import { useToneAnalyser } from '../hooks/useToneAnalyser';
 import { useToneConnections } from '../hooks/useToneConnections';
@@ -12,10 +12,6 @@ export function VisualizerNode({
 	data,
 	selected,
 }: NodeProps<VisualizerNode>) {
-	// Handle positions are now static
-	const inputPositionL = Position.Left;
-	const inputPositionR = Position.Right;
-
 	// Get the React Flow instance for node management
 	const reactFlowInstance = useReactFlow();
 
@@ -51,8 +47,8 @@ export function VisualizerNode({
 	return (
 		<BaseNode
 			variant='audio'
-			gridWidth={data.gridWidth ?? 6}
-			gridHeight={data.gridHeight ?? 8}
+			gridWidth={6}
+			gridHeight={8}
 			nodeId={id}
 			selected={selected}
 			onDelete={removeNode}
@@ -116,19 +112,20 @@ export function VisualizerNode({
 					</div>
 				</div>
 			</div>
-
-			{/* Audio Input Handles */}
-			<NodeHandle
-				id='audio-in-L'
+			{/* Stereo audio input handles positioned using grid system */}
+			<GridNodeHandle
+				id={`${id}-audio-in-L`}
 				type='target'
-				position={inputPositionL}
-				variant='audio'
+				position={Position.Left}
+				gridX={0}
+				gridY={2.64} // 33% of 8 grid units (8 * 0.33 = 2.64)
 			/>
-			<NodeHandle
-				id='audio-in-R'
+			<GridNodeHandle
+				id={`${id}-audio-in-R`}
 				type='target'
-				position={inputPositionR}
-				variant='audio'
+				position={Position.Right}
+				gridX={6}
+				gridY={2.64} // 33% of 8 grid units (8 * 0.33 = 2.64)
 			/>
 		</BaseNode>
 	);

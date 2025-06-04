@@ -1,8 +1,8 @@
-import { Position, type NodeProps, useReactFlow } from '@xyflow/react';
+import { type NodeProps, useReactFlow, Position } from '@xyflow/react';
 import React from 'react';
 
 import { BaseNode } from '../components/BaseNode';
-import { NodeHandle } from '../components/NodeHandle';
+import { GridNodeHandle } from '../components/GridNodeHandle';
 import { Slider } from '../components/ui';
 import { useToneConnections } from '../hooks/useToneConnections';
 import { useToneOscillator } from '../hooks/useToneOscillator';
@@ -130,9 +130,6 @@ export function OscillatorNode({
 	// Handle audio connections to other nodes
 	useToneConnections(id);
 
-	// Handle positions are now static
-	const sourceHandlePosition = Position.Bottom;
-
 	// Get the React Flow instance for node management
 	const reactFlowInstance = useReactFlow();
 
@@ -148,8 +145,8 @@ export function OscillatorNode({
 	return (
 		<BaseNode
 			variant='audio'
-			gridWidth={data.gridWidth ?? 3}
-			gridHeight={data.gridHeight ?? 6}
+			gridWidth={3}
+			gridHeight={6}
 			nodeId={id}
 			selected={selected}
 			onDelete={removeNode}
@@ -181,13 +178,13 @@ export function OscillatorNode({
 					onStop={stop}
 				/>
 			</div>
-
-			{/* Audio Output Handle */}
-			<NodeHandle
-				id='audio-out'
+			{/* Audio output handle centered at bottom using grid system */}
+			<GridNodeHandle
+				id={`${id}-audio-out`}
 				type='source'
-				position={sourceHandlePosition}
-				variant='audio'
+				position={Position.Bottom}
+				gridX={1.5} // Center of 3-unit width (3/2 = 1.5)
+				gridY={6} // Bottom edge
 			/>
 		</BaseNode>
 	);

@@ -16,17 +16,19 @@ export interface ThemeState {
 	metallicBackground: MetallicTheme;
 }
 
-// Grid Handle Types
+// Grid Handle Types - Aligned with React Flow best practices
 export interface GridHandle {
-	id: string;
-	type: 'source' | 'target';
-	gridX: number;
-	gridY: number;
-	variant?: 'default' | 'primary' | 'debug' | 'secondary' | 'audio';
-	floating?: boolean; // Whether this handle uses floating positioning (default: true)
-	// Custom positioning system - allows precise positioning within grid cells using grid units
-	positionX?: number; // Additional X position in grid units (default: 0)
-	positionY?: number; // Additional Y position in grid units (default: 0)
+	id: string; // Unique handle identifier (required for React Flow)
+	type: 'source' | 'target'; // Handle type (required for React Flow)
+	// Grid positioning system - converts to React Flow's position + style approach
+	gridX: number; // Grid X coordinate
+	gridY: number; // Grid Y coordinate
+	// Optional positioning refinements
+	positionX?: number; // Additional X position offset in grid units (default: 0)
+	positionY?: number; // Additional Y position offset in grid units (default: 0)
+	// Visual and behavioral options
+	variant?: 'default' | 'primary' | 'debug' | 'secondary' | 'audio'; // Visual theme
+	floating?: boolean; // Whether handle uses floating positioning (default: true)
 }
 
 // UI Types

@@ -1,17 +1,20 @@
-import { Position, type NodeProps, useReactFlow } from '@xyflow/react';
+import { type NodeProps, useReactFlow, Position } from '@xyflow/react';
 
 import { BaseNode } from '../components/BaseNode';
-import { NodeHandle } from '../components/NodeHandle';
+import { GridNodeHandle } from '../components/GridNodeHandle';
 import { Slider } from '../components/ui';
 import { useToneGain } from '../hooks/useToneGain';
 import { useToneConnections } from '../hooks/useToneConnections';
+import { centeredOnEdge } from '../utils/gridHandleUtils';
 import type { GainNode } from './types';
 
-export function GainNode({ id, data, selected }: NodeProps<GainNode>) {
-	// Handle positions are now static
-	const inputPosition = Position.Top;
-	const outputPosition = Position.Bottom;
+// Grid configuration for gain node
+const GAIN_NODE_CONFIG = {
+	gridWidth: 3,
+	gridHeight: 4,
+} as const;
 
+export function GainNode({ id, data, selected }: NodeProps<GainNode>) {
 	// Get the React Flow instance for node management
 	const reactFlowInstance = useReactFlow();
 
@@ -41,8 +44,8 @@ export function GainNode({ id, data, selected }: NodeProps<GainNode>) {
 	return (
 		<BaseNode
 			variant='audio'
-			gridWidth={data.gridWidth ?? 3}
-			gridHeight={data.gridHeight ?? 4}
+			gridWidth={GAIN_NODE_CONFIG.gridWidth}
+			gridHeight={GAIN_NODE_CONFIG.gridHeight}
 			nodeId={id}
 			selected={selected}
 			onDelete={removeNode}
@@ -89,22 +92,30 @@ export function GainNode({ id, data, selected }: NodeProps<GainNode>) {
 						{params.mute ? 'MUTED' : `${Math.round(params.gain * 100)}%`}
 					</div>
 				</div>
-			</div>
-
-			{/* Audio Input Handle */}
-			<NodeHandle
-				id='audio-in'
+			</div>{' '}
+			{/* Input handle - centered at top using grid system */}
+			<GridNodeHandle
+				id={`${id}-audio-in`}
 				type='target'
-				position={inputPosition}
-				variant='audio'
+				position={Position.Top}
+				{...centeredOnEdge(
+					GAIN_NODE_CONFIG.gridWidth,
+					GAIN_NODE_CONFIG.gridHeight,
+					'top'
+				)}
+				color='primary'
 			/>
-
-			{/* Audio Output Handle */}
-			<NodeHandle
-				id='audio-out'
+			{/* Output handle - centered at bottom using grid system */}
+			<GridNodeHandle
+				id={`${id}-audio-out`}
 				type='source'
-				position={outputPosition}
-				variant='audio'
+				position={Position.Bottom}
+				{...centeredOnEdge(
+					GAIN_NODE_CONFIG.gridWidth,
+					GAIN_NODE_CONFIG.gridHeight,
+					'bottom'
+				)}
+				color='success'
 			/>
 		</BaseNode>
 	);

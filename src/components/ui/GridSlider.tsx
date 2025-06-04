@@ -1,9 +1,10 @@
 import React from 'react';
 import { GridBlock, type GridBlockProps } from '../GridBlock';
+import type { ComponentColor, ComponentSize } from '../../types/ui';
+import { getSliderTrackClasses, combineClasses } from '../../utils/styleUtils';
 
-// Define props for the internal slider, similar to the original SliderProps
-// but tailored for direct use within GridSlider.
-export interface InternalSliderProps
+// Improved slider props with better TypeScript constraints and accessibility
+export interface SliderProps
 	extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
 	value: number;
 	min: number;
@@ -11,13 +12,16 @@ export interface InternalSliderProps
 	step?: number;
 	formatValue?: (value: number) => string;
 	showMinMax?: boolean;
-	size?: 'sm' | 'md' | 'lg';
-	color?: 'default' | 'orange' | 'green' | 'red' | 'blue';
+	size?: ComponentSize;
+	color?: ComponentColor;
+	// Override specific accessibility props for better typing
+	'aria-label'?: string;
+	'aria-describedby'?: string;
 }
 
 export interface GridSliderProps extends Omit<GridBlockProps, 'children'> {
-	sliderProps: InternalSliderProps;
-	label?: string; // Optional label to display above the slider
+	sliderProps: SliderProps;
+	label?: string;
 }
 
 export function GridSlider({
@@ -44,34 +48,27 @@ export function GridSlider({
 		disabled,
 		onChange,
 		onPointerDown,
-		...inputSpecificProps // any other native input props
+		'aria-label': ariaLabel,
+		'aria-describedby': ariaDescribedBy,
+		...inputSpecificProps
 	} = sliderProps;
 
-	// Format the display value
-	// const displayValue = formatValue ? formatValue(value) : value.toString();
-
-	// Base slider styles - can be adjusted or expanded
-	const sliderInputClasses = [
-		'w-full rounded-lg appearance-none cursor-pointer transition-all',
-		'nodrag', // Prevent React Flow node dragging
-		size === 'sm' ? 'h-1' : size === 'lg' ? 'h-3' : 'h-2',
-		color === 'orange'
-			? 'bg-orange-200 dark:bg-orange-800'
-			: color === 'green'
-				? 'bg-green-200 dark:bg-green-800'
-				: color === 'red'
-					? 'bg-red-200 dark:bg-red-800'
-					: color === 'blue'
-						? 'bg-blue-200 dark:bg-blue-800'
-						: 'bg-gray-200 dark:bg-gray-700',
-		disabled && 'opacity-50 cursor-not-allowed',
-	]
-		.filter(Boolean)
-		.join(' ');
+	// Use utility function for consistent styling
+	const sliderInputClasses = getSliderTrackClasses(color, size, disabled);
 
 	const handlePointerDown = (e: React.PointerEvent<HTMLInputElement>) => {
 		e.stopPropagation();
 		onPointerDown?.(e);
+	};
+
+	// Enhanced accessibility
+	const accessibilityProps = {
+		'aria-label': ariaLabel || `${label || 'Slider'} control`,
+		'aria-describedby': ariaDescribedBy,
+		'aria-valuemin': min,
+		'aria-valuemax': max,
+		'aria-valuenow': value,
+		'aria-valuetext': formatValue ? formatValue(value) : value.toString(),
 	};
 
 	return (
@@ -82,7 +79,7 @@ export function GridSlider({
 			gridY={gridY}
 			variant={variant}
 			showDimensions={showDimensions}
-			className={className}
+			className={combineClasses('flex flex-col justify-center', className)}
 			{...rest}
 		>
 			{/* Label/title above */}
@@ -93,8 +90,9 @@ export function GridSlider({
 					</span>
 				</div>
 			)}
+
 			{/* Slider row: min | slider | max */}
-			<div className='flex items-center gap-2 w-full'>
+			<div className='flex items-center gap-2 w-full px-1'>
 				{showMinMax && (
 					<span className='text-xs font-medium text-gray-600 dark:text-gray-400 min-w-fit'>
 						{min}
@@ -110,6 +108,7 @@ export function GridSlider({
 					onPointerDown={handlePointerDown}
 					className={sliderInputClasses}
 					disabled={disabled}
+					{...accessibilityProps}
 					{...inputSpecificProps}
 				/>
 				{showMinMax && (
@@ -118,6 +117,7 @@ export function GridSlider({
 					</span>
 				)}
 			</div>
+
 			{/* Value below slider */}
 			<div className='mt-1 text-center text-xs text-gray-600 dark:text-gray-300'>
 				{formatValue ? formatValue(value) : value}

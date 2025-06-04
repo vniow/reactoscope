@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Reactoscope Development Guidelines</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <h1 id="reactoscope-development-guidelines">Reactoscope Development Guidelines</h1>
+<p>This document provides comprehensive guidelines for developing and maintaining the Reactoscope audio-visual node editor. Follow these principles for consistent, maintainable, and scalable code.</p>
+<h2 id="️-architecture-overview">🏗️ Architecture Overview</h2>
+<h3 id="core-technologies">Core Technologies</h3>
+<ul>
+<li><strong>React 19</strong> with TypeScript for component architecture</li>
+<li><strong>React Flow</strong> for node-based visual programming interface</li>
+<li><strong>Tone.js</strong> for Web Audio API abstraction and audio processing</li>
+<li><strong>Three.js</strong> with React Three Fiber for 3D visualizations</li>
+<li><strong>Zustand</strong> for predictable state management</li>
+<li><strong>Tailwind CSS v4</strong> for utility-first styling</li>
+<li><strong>Vite</strong> for build tooling and development server</li>
+</ul>
+<h3 id="application-structure">Application Structure</h3>
+<pre><code>src/
+├── components/          # Reusable UI components
+│   ├── ui/             # Base UI components (buttons, sliders, etc.)
+│   └── NodeAddPanel/   # Feature-specific component groups
+├── nodes/              # React Flow node implementations
+├── edges/              # React Flow edge implementations
+├── hooks/              # Custom React hooks for business logic
+├── stores/             # Zustand store slices and types
+├── contexts/           # React context providers
+├── config/             # Application configuration
+├── utils/              # Pure utility functions
+├── shaders/            # GLSL shader files
+├── materials/          # Three.js materials
+└── geometry/           # Three.js geometries
+</code></pre>
+<h3 id="design-patterns">Design Patterns</h3>
+<h4 id="component-architecture">Component Architecture</h4>
+<ul>
+<li><strong>Composition over Inheritance</strong>: Use composition patterns for component flexibility</li>
+<li><strong>Single Responsibility Principle</strong>: Each component should have one clear purpose</li>
+<li><strong>Props-down, Events-up</strong>: Data flows down via props, events bubble up via callbacks</li>
+<li><strong>Container/Presenter Pattern</strong>: Separate logic containers from presentation components</li>
+</ul>
+<h4 id="state-management">State Management</h4>
+<ul>
+<li><strong>Sliced Store Architecture</strong>: Domain-specific store slices (theme, audio, UI)</li>
+<li><strong>Immutable Updates</strong>: All state changes must be immutable</li>
+<li><strong>Derived State</strong>: Compute derived values in selectors, not components</li>
+<li><strong>Action-Based Updates</strong>: State changes through well-defined actions</li>
+</ul>
+<h4 id="grid-based-layout-system">Grid-Based Layout System</h4>
+<ul>
+<li><strong>Grid Units</strong>: All spatial calculations use <code>GRID_UNIT</code> (64px) for consistency</li>
+<li><strong>Snap-to-Grid</strong>: Components align to grid boundaries for visual harmony</li>
+<li><strong>Responsive Grid</strong>: Grid system adapts to different screen sizes and zoom levels</li>
+</ul>
+<h2 id="-styling-guidelines">🎨 Styling Guidelines</h2>
+<h3 id="tailwind-css-v4-requirements">Tailwind CSS v4 Requirements</h3>
+<ul>
+<li><strong>No Configuration File</strong>: Tailwind v4 uses CSS-based configuration</li>
+<li><strong>Dark Mode Strategy</strong>: Use <code>dark:</code> prefixes with class-based strategy</li>
+<li><strong>Utility-First</strong>: Prefer utility classes over custom CSS</li>
+<li><strong>Component Variants</strong>: Use consistent variant naming (primary, secondary, audio, debug)</li>
+<li><strong>Responsive Design</strong>: Use responsive prefixes (<code>sm:</code>, <code>md:</code>, <code>lg:</code>, <code>xl:</code>)</li>
+</ul>
+<h3 id="color-system">Color System</h3>
+<pre><code class="language-css"><span class="hljs-comment">/* Use semantic color tokens, not hardcoded values */</span>
+✅ bg-primary text-primary-foreground
+❌ bg-blue-<span class="hljs-number">500</span> text-white
+
+<span class="hljs-comment">/* Support dark mode with utility classes */</span>
+✅ bg-white dark:bg-gray-<span class="hljs-number">900</span>
+❌ style={{ backgroundColor: <span class="hljs-string">&#x27;white&#x27;</span> }}
+</code></pre>
+<h3 id="component-styling-patterns">Component Styling Patterns</h3>
+<ul>
+<li><strong>Consistent Spacing</strong>: Use Tailwind spacing scale (p-2, m-4, gap-3)</li>
+<li><strong>Semantic Variants</strong>: Define clear variant systems for components</li>
+<li><strong>State-Based Styling</strong>: Visual feedback for interactive states (hover, focus, active)</li>
+<li><strong>Accessibility</strong>: Ensure sufficient color contrast and focus indicators</li>
+</ul>
+<h2 id="-software-engineering-principles">🔧 Software Engineering Principles</h2>
+<h3 id="code-quality-standards">Code Quality Standards</h3>
+<h4 id="typescript-best-practices">TypeScript Best Practices</h4>
+<ul>
+<li><strong>Strict Mode</strong>: Enable all strict TypeScript compiler options</li>
+<li><strong>Explicit Types</strong>: Prefer explicit typing over <code>any</code> or excessive inference</li>
+<li><strong>Interface Composition</strong>: Use intersection types and interface extension</li>
+<li><strong>Discriminated Unions</strong>: Use union types for component variants and states</li>
+<li><strong>Generic Constraints</strong>: Use proper generic constraints for reusable components</li>
+</ul>
+<pre><code class="language-typescript"><span class="hljs-comment">// ✅ Good: Explicit prop typing</span>
+<span class="hljs-keyword">interface</span> <span class="hljs-title class_">ButtonProps</span> {
+	<span class="hljs-attr">variant</span>: <span class="hljs-string">&#x27;primary&#x27;</span> | <span class="hljs-string">&#x27;secondary&#x27;</span> | <span class="hljs-string">&#x27;danger&#x27;</span>;
+	<span class="hljs-attr">size</span>: <span class="hljs-string">&#x27;sm&#x27;</span> | <span class="hljs-string">&#x27;md&#x27;</span> | <span class="hljs-string">&#x27;lg&#x27;</span>;
+	<span class="hljs-attr">children</span>: <span class="hljs-title class_">React</span>.<span class="hljs-property">ReactNode</span>;
+	onClick?: <span class="hljs-function">() =&gt;</span> <span class="hljs-built_in">void</span>;
+}
+
+<span class="hljs-comment">// ❌ Avoid: Deprecated React.FC</span>
+<span class="hljs-keyword">const</span> <span class="hljs-title class_">Button</span>: <span class="hljs-title class_">React</span>.<span class="hljs-property">FC</span>&lt;<span class="hljs-title class_">ButtonProps</span>&gt; = <span class="hljs-function">(<span class="hljs-params">{ children, ...props }</span>) =&gt;</span> {};
+
+<span class="hljs-comment">// ✅ Good: Direct component function</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">Button</span>(<span class="hljs-params">{ children, variant, size, onClick }: ButtonProps</span>) {}
+</code></pre>
+<h4 id="react-best-practices">React Best Practices</h4>
+<ul>
+<li><strong>Functional Components</strong>: Use function declarations, not arrow functions for components</li>
+<li><strong>Custom Hooks</strong>: Extract complex logic into reusable custom hooks</li>
+<li><strong>Memoization</strong>: Use <code>useMemo</code> and <code>useCallback</code> judiciously for performance</li>
+<li><strong>Error Boundaries</strong>: Implement error boundaries for robust error handling</li>
+<li><strong>Ref Management</strong>: Use <code>useRef</code> for DOM access and <code>forwardRef</code> when needed</li>
+</ul>
+<h4 id="performance-optimization">Performance Optimization</h4>
+<ul>
+<li><strong>Bundle Splitting</strong>: Use dynamic imports for code splitting</li>
+<li><strong>Lazy Loading</strong>: Implement lazy loading for heavy components</li>
+<li><strong>Virtualization</strong>: Use virtualization for large lists of nodes</li>
+<li><strong>Debouncing</strong>: Debounce expensive operations (search, API calls)</li>
+<li><strong>Asset Optimization</strong>: Optimize images, shaders, and 3D models</li>
+</ul>
+<h3 id="testing-strategy">Testing Strategy</h3>
+<ul>
+<li><strong>Unit Tests</strong>: Test individual functions and components in isolation</li>
+<li><strong>Integration Tests</strong>: Test component interactions and data flow</li>
+<li><strong>Visual Regression</strong>: Test UI consistency across theme changes</li>
+<li><strong>Performance Tests</strong>: Monitor rendering performance and memory usage</li>
+<li><strong>Accessibility Tests</strong>: Ensure keyboard navigation and screen reader support</li>
+</ul>
+<h3 id="error-handling">Error Handling</h3>
+<ul>
+<li><strong>Graceful Degradation</strong>: Components should handle missing props gracefully</li>
+<li><strong>Error Boundaries</strong>: Catch and display user-friendly error messages</li>
+<li><strong>Logging</strong>: Implement structured logging for debugging</li>
+<li><strong>Type Safety</strong>: Use TypeScript to prevent runtime type errors</li>
+</ul>
+<h2 id="-audio-architecture">🎵 Audio Architecture</h2>
+<h3 id="tonejs-integration">Tone.js Integration</h3>
+<ul>
+<li><strong>Audio Context Management</strong>: Use single audio context across the application</li>
+<li><strong>Node Lifecycle</strong>: Properly create, connect, and dispose audio nodes</li>
+<li><strong>Parameter Automation</strong>: Use Tone.js scheduling for smooth parameter changes</li>
+<li><strong>Memory Management</strong>: Dispose audio resources to prevent memory leaks</li>
+</ul>
+<h3 id="web-audio-best-practices">Web Audio Best Practices</h3>
+<ul>
+<li><strong>AudioWorklet</strong>: Use AudioWorklet for custom audio processing</li>
+<li><strong>Real-time Constraints</strong>: Minimize garbage collection in audio callbacks</li>
+<li><strong>Sample Rate Handling</strong>: Support different sample rates and buffer sizes</li>
+<li><strong>Audio Routing</strong>: Implement flexible audio routing with visual feedback</li>
+</ul>
+<h2 id="-node-system-guidelines">🎯 Node System Guidelines</h2>
+<h3 id="node-implementation">Node Implementation</h3>
+<ul>
+<li><strong>Base Node Pattern</strong>: Extend <code>BaseNode</code> for consistent behavior</li>
+<li><strong>Grid Integration</strong>: Use grid-based positioning and sizing</li>
+<li><strong>Handle Management</strong>: Implement audio and control handles appropriately</li>
+<li><strong>State Persistence</strong>: Ensure node state can be serialized/deserialized</li>
+</ul>
+<h3 id="handle-system">Handle System</h3>
+<ul>
+<li><strong>Type Safety</strong>: Use typed handles for audio and control connections</li>
+<li><strong>Visual Feedback</strong>: Provide clear visual feedback for connection states</li>
+<li><strong>Connection Validation</strong>: Validate connections before allowing them</li>
+<li><strong>Auto-routing</strong>: Implement intelligent connection routing</li>
+</ul>
+<h3 id="data-flow">Data Flow</h3>
+<ul>
+<li><strong>Immutable Props</strong>: Node props should be treated as immutable</li>
+<li><strong>Event Emission</strong>: Use callbacks for node state changes</li>
+<li><strong>Batch Updates</strong>: Batch multiple state changes for performance</li>
+<li><strong>Undo/Redo</strong>: Support undo/redo for all node operations</li>
+</ul>
+<h2 id="-accessibility--usability">🌐 Accessibility &amp; Usability</h2>
+<h3 id="keyboard-navigation">Keyboard Navigation</h3>
+<ul>
+<li><strong>Tab Order</strong>: Logical tab order through all interactive elements</li>
+<li><strong>Shortcuts</strong>: Implement keyboard shortcuts for common operations</li>
+<li><strong>Focus Management</strong>: Clear focus indicators and logical focus flow</li>
+<li><strong>Screen Reader</strong>: ARIA labels and descriptions for complex interactions</li>
+</ul>
+<h3 id="user-experience">User Experience</h3>
+<ul>
+<li><strong>Progressive Disclosure</strong>: Show complexity gradually as users need it</li>
+<li><strong>Contextual Help</strong>: Inline help and documentation</li>
+<li><strong>Responsive Design</strong>: Support various screen sizes and input methods</li>
+<li><strong>Performance Feedback</strong>: Loading states and progress indicators</li>
+</ul>
+<h2 id="-documentation-standards">📝 Documentation Standards</h2>
+<h3 id="code-documentation">Code Documentation</h3>
+<ul>
+<li><strong>JSDoc Comments</strong>: Document all public functions and components</li>
+<li><strong>Type Annotations</strong>: Use descriptive type names and comments</li>
+<li><strong>Inline Comments</strong>: Explain complex logic and business rules</li>
+<li><strong>Architecture Decisions</strong>: Document architectural choices and trade-offs</li>
+</ul>
+<h3 id="component-documentation">Component Documentation</h3>
+<ul>
+<li><strong>Props Interface</strong>: Clear documentation of all props</li>
+<li><strong>Usage Examples</strong>: Provide usage examples for complex components</li>
+<li><strong>Variant Documentation</strong>: Document all component variants and states</li>
+<li><strong>Integration Guide</strong>: How components fit into the larger system</li>
+</ul>
+<h2 id="-development-workflow">🚀 Development Workflow</h2>
+<h3 id="code-organization">Code Organization</h3>
+<ul>
+<li><strong>Feature-Based Structure</strong>: Group related functionality together</li>
+<li><strong>Consistent Naming</strong>: Use clear, consistent naming conventions</li>
+<li><strong>Import Organization</strong>: Group and order imports consistently</li>
+<li><strong>File Structure</strong>: Follow established patterns for file organization</li>
+</ul>
+<h3 id="git-workflow">Git Workflow</h3>
+<ul>
+<li><strong>Atomic Commits</strong>: Make small, focused commits with clear messages</li>
+<li><strong>Branch Naming</strong>: Use descriptive branch names (feature/, fix/, refactor/)</li>
+<li><strong>Code Review</strong>: All changes require review before merging</li>
+<li><strong>Semantic Versioning</strong>: Follow semantic versioning for releases</li>
+</ul>
+<h3 id="quality-gates">Quality Gates</h3>
+<ul>
+<li><strong>Linting</strong>: Code must pass ESLint and Prettier checks</li>
+<li><strong>Type Checking</strong>: No TypeScript errors allowed</li>
+<li><strong>Testing</strong>: Maintain test coverage above 80%</li>
+<li><strong>Performance</strong>: Monitor bundle size and runtime performance</li>
+</ul>
+<hr>
+<p><strong>Remember</strong>: These guidelines exist to maintain code quality, consistency, and team productivity. When in doubt, prioritize readability, maintainability, and user experience.</p>
+
+            
+            
+        </body>
+        </html>

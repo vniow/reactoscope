@@ -1,7 +1,7 @@
-import { Position, type NodeProps, useReactFlow } from '@xyflow/react';
+import { type NodeProps, useReactFlow, Position } from '@xyflow/react';
 
 import { BaseNode } from '../components/BaseNode';
-import { NodeHandle } from '../components/NodeHandle';
+import { GridNodeHandle } from '../components/GridNodeHandle';
 import { useToneDestination } from '../hooks/useToneDestination';
 import type { DestinationNode } from './types';
 
@@ -10,9 +10,6 @@ export function DestinationNode({
 	data,
 	selected,
 }: NodeProps<DestinationNode>) {
-	// Handle positions are now static
-	const inputPosition = Position.Top;
-
 	// Get the React Flow instance for node management
 	const reactFlowInstance = useReactFlow();
 
@@ -32,8 +29,8 @@ export function DestinationNode({
 	return (
 		<BaseNode
 			variant='audio'
-			gridWidth={data.gridWidth ?? 3}
-			gridHeight={data.gridHeight ?? 2}
+			gridWidth={3}
+			gridHeight={2}
 			nodeId={id}
 			selected={selected}
 			onDelete={removeNode}
@@ -61,13 +58,13 @@ export function DestinationNode({
 					)}
 				</div>
 			</div>
-
-			{/* Audio Input Handle */}
-			<NodeHandle
-				id='audio-in'
+			{/* Audio input handle centered at top using grid system */}
+			<GridNodeHandle
+				id={`${id}-audio-in`}
 				type='target'
-				position={inputPosition}
-				variant='audio'
+				position={Position.Top}
+				gridX={1.5} // Center of 3-unit width (3/2 = 1.5)
+				gridY={0} // Top edge
 			/>
 		</BaseNode>
 	);

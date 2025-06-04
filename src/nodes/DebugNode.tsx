@@ -1,291 +1,135 @@
-import { type NodeProps, useReactFlow, Position } from '@xyflow/react';
-import { useState } from 'react';
+import { type NodeProps, Position } from '@xyflow/react';
 
 import { BaseNode } from '../components/BaseNode';
 import { GridBlock } from '../components/GridBlock';
-import { GridHandles } from '../components/GridNodeHandle';
-import { GridButton } from '../components/ui/GridButton';
-import { GridSlider } from '../components/ui/GridSlider';
+import { GridNodeHandle } from '../components/GridNodeHandle';
+import { DebugInfoBlock } from '../components/DebugComponents';
+import { useNodeOperations } from '../hooks/useNodeOperations';
+import { extractNodeDebugInfo } from '../utils/debugUtils';
+import {
+	centeredOnEdge,
+	evenlySpacedHandles,
+	cornerPositions,
+} from '../utils/gridHandleUtils';
+
+/**
+ * DebugNode using simplified GridNodeHandle components
+ */
+
+// Grid configuration for debug node
+const DEBUG_NODE_CONFIG = {
+	gridWidth: 7,
+	gridHeight: 4,
+} as const;
 
 export function DebugNode(props: NodeProps) {
-	const {
-		id,
-		type,
-		positionAbsoluteX, // Available for the current node
-		positionAbsoluteY, // Available for the current node
-		data,
-		selected,
-		dragging,
-		dragHandle,
-		width = 0,
-		height = 0,
-		zIndex,
-		isConnectable,
-		selectable,
-		deletable,
-		parentId,
-		draggable,
-		...otherProps
-	} = props;
-	// State for interactive UI elements
-	const [sliderValue, setSliderValue] = useState(50);
-	const [buttonClickCount, setButtonClickCount] = useState(0);
+	const { id, data, selected = false } = props;
 
-	// Get the React Flow instance for node operations
-	const reactFlowInstance = useReactFlow();
+	// Extract debug information using utility function (separation of concerns)
+	const debugInfo = extractNodeDebugInfo(props);
 
-	// Define handles with simplified GridHandles system using grid units
-	const handles = [
-		// Primary handles positioned at node center using grid units
-		{
-			id: 'debug-input',
-			type: 'target' as const,
-			position: Position.Top,
-			positionX: 5,
-			positionY: 0,
-			variant: 'debug' as const,
-		},
-		{
-			id: 'debug-output',
-			type: 'source' as const,
-			position: Position.Right,
-			positionX: 0,
-			positionY: 0,
-			variant: 'debug' as const,
-		},
-		// Additional handles demonstrating grid unit-based positioning
-		{
-			id: 'debug-aux-input',
-			type: 'target' as const,
-			position: Position.Left,
-			positionX: 0,
-			positionY: 1,
-			variant: 'secondary' as const,
-		},
-		{
-			id: 'debug-aux-output',
-			type: 'source' as const,
-			position: Position.Right,
-			positionX: 0,
-			positionY: 9,
-			variant: 'secondary' as const,
-		},
-	];
+	// Use custom hook for node operations (Container/Presenter pattern)
+	const { deleteNode } = useNodeOperations();
 
-	// Format values for display
-	const formatValue = (value: unknown): string => {
-		if (value === undefined) return 'undefined';
-		if (value === null) return 'null';
-		if (typeof value === 'boolean') return value.toString();
-		if (typeof value === 'number') return `${Math.round(value * 100) / 100}`;
-		if (typeof value === 'object') return JSON.stringify(value, null, 1);
-		return String(value);
-	};
-
-	// Group debug information into logical categories
-	const identityInfo = {
-		ID: id,
-		Type: type,
-	};
-
-	const positionInfo = {
-		'Absolute Position': `x: ${Math.round(positionAbsoluteX as number)}, y: ${Math.round(
-			positionAbsoluteY as number
-		)}`,
-		Dimensions: `${(width as number) ? Math.round(width as number) : 'auto'} × ${
-			(height as number) ? Math.round(height as number) : 'auto'
-		}`,
-	};
-
-	const stateInfo = {
-		Selected: selected,
-		Dragging: dragging,
-		Draggable: draggable,
-		Selectable: selectable,
-		Deletable: deletable,
-		Connectable: isConnectable,
-	};
-
-	const relationshipInfo = {
-		'Parent ID': parentId || 'none',
-		'Drag Handle': dragHandle || 'none',
-		'Z-Index': zIndex,
-	};
-
-	// Helper function to render key-value pairs in a block
-	const renderInfoBlock = (info: Record<string, unknown>) => (
-		<div className='space-y-1 text-xs'>
-			{Object.entries(info).map(([label, value]) => (
-				<div
-					key={label}
-					className='flex flex-col gap-1'
-				>
-					<span className='font-semibold opacity-70'>{label}:</span>
-					<span className='break-all'>{formatValue(value)}</span>
-				</div>
-			))}
-		</div>
-	);
+	// Event handlers
+	const handleDelete = () => deleteNode(id as string);
 
 	return (
 		<BaseNode
 			variant='debug'
-			gridWidth={9} // Adjusted to ensure all content fits
-			gridHeight={12} // Adjusted to ensure all content fits (increased by 0.5)
+			gridWidth={DEBUG_NODE_CONFIG.gridWidth}
+			gridHeight={DEBUG_NODE_CONFIG.gridHeight}
 			nodeId={id as string}
-			selected={selected as boolean}
-			onDelete={() => {
-				reactFlowInstance.setNodes((nodes) =>
-					nodes.filter((node) => node.id !== id)
-				);
-				reactFlowInstance.setEdges((edges) =>
-					edges.filter((edge) => edge.source !== id && edge.target !== id)
-				);
-			}}
+			selected={selected}
+			onDelete={handleDelete}
 			title={`Debug Node - ${(data as { label?: string })?.label || id}`}
 		>
-			{/* Main GridBlock Layout Container */}
 			<div className='relative w-full h-full overflow-visible'>
-				{/* State Block - Top left, starts after header */}
-				<GridBlock
-					gridWidth={3}
-					gridHeight={4}
-					gridX={0}
-					gridY={1}
-					variant='secondary'
-					showDimensions={false}
-					dashSize='lg'
-					borderStyle='dotted'
-				>
-					<div className='w-full h-full flex flex-col justify-center p-2'>
-						<div className='font-semibold text-center mb-1'>State</div>
-						{renderInfoBlock(stateInfo)}
-					</div>
-				</GridBlock>
-
-				{/* Relations Block - Top center */}
+				{/* Demo Block to show the grid system working */}
 				<GridBlock
 					gridWidth={3}
 					gridHeight={2}
-					gridX={3}
-					gridY={1}
+					gridX={0}
+					gridY={1.5}
 					variant='audio'
-					// dashSize='lg'
-					// borderStyle='dotted'
+					showDimensions={false}
 				>
-					<div className='w-full h-full flex flex-col justify-center p-2'>
-						<div className='font-semibold text-center mb-1'>Relations</div>
-						{renderInfoBlock(relationshipInfo)}
+					<div className='w-full h-full flex items-center justify-center p-1'>
+						<span className='text-xs font-medium'>Grid Demo</span>
 					</div>
 				</GridBlock>
 
-				{/* Data Object Block - Middle, spans full width */}
-				<GridBlock
-					gridWidth={9}
-					gridHeight={3}
-					gridX={0}
-					gridY={5}
-					variant='default'
-					showDimensions={false}
-					dashSize='xl'
-				>
-					<div className='w-full h-full flex flex-col p-2'>
-						<div className='font-semibold text-center mb-2'>Data Object</div>
-						<div className='flex-1 overflow-auto'>
-							<pre className='text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-all'>
-								{JSON.stringify(data, null, 2)}
-							</pre>
-						</div>
-					</div>
-				</GridBlock>
-
-				{/* Interactive Button - Below data block */}
-				<GridButton
-					gridWidth={3}
-					gridHeight={1}
-					gridX={0}
-					gridY={8}
-					variant='primary'
-					showDimensions={false}
-					showBorder={true}
-					transparentBackground={false}
-					buttonLabel={`Clicks: ${buttonClickCount}`}
-					onClick={() => setButtonClickCount((prev) => prev + 1)}
-				/>
-
-				{/* Grid Demo Block - Next to button */}
-				{Object.keys(otherProps).length === 0 && (
-					<GridBlock
-						gridWidth={3}
-						gridHeight={1}
-						gridX={3}
-						gridY={8}
-						variant='audio'
-						showDimensions={false}
-					>
-						<div className='w-full h-full flex items-center justify-center p-1'>
-							<span className='text-xs font-medium'>Grid Demo</span>
-						</div>
-					</GridBlock>
-				)}
-
-				{/* Identity Info Block - Right of demo block */}
+				{/* Identity Information Block */}
 				<GridBlock
 					gridWidth={3}
 					gridHeight={2}
-					gridX={6}
-					gridY={8}
+					gridX={4}
+					gridY={1.5}
 					variant='primary'
 					showDimensions={false}
 				>
-					<div className='w-full h-full flex flex-col justify-center p-2'>
-						<div className='font-semibold text-center mb-1'>Identity</div>
-						{renderInfoBlock(identityInfo)}
-					</div>
+					<DebugInfoBlock
+						title='Identity'
+						info={debugInfo.identity}
+					/>
 				</GridBlock>
-
-				{/* Position Info Block - Below identity */}
-				<GridBlock
-					gridWidth={3}
-					gridHeight={2}
-					gridX={6}
-					gridY={3}
-					variant='secondary'
-					showDimensions={false}
-				>
-					<div className='w-full h-full flex flex-col justify-center p-2'>
-						<div className='font-semibold text-center mb-1'>Position</div>
-						{renderInfoBlock(positionInfo)}
-					</div>
-				</GridBlock>
-
-				{/* Interactive Slider - Bottom, spans most of width */}
-				<GridSlider
-					gridWidth={9}
-					gridHeight={2}
-					gridX={0}
-					gridY={10}
-					variant='audio'
-					showDimensions={false}
-					showBorder={true}
-					transparentBackground={false}
-					label='Value Slider'
-					sliderProps={{
-						value: sliderValue,
-						min: 0,
-						max: 100,
-						step: 1,
-						onChange: (e) => setSliderValue(Number(e.target.value)),
-						size: 'lg',
-						color: 'orange',
-						formatValue: (val) => `${val}%`,
-						showMinMax: false,
-					}}
-				/>
 			</div>
 
-			{/* Simplified handles with direct positioning */}
-			<GridHandles handles={handles} />
+			{/* GRID-BASED HANDLE POSITIONING EXAMPLES */}
+
+			{/* Example 1: Centered on right edge using grid utilities */}
+			<GridNodeHandle
+				id={`${id}-output-right-centered`}
+				type='source'
+				position={Position.Right}
+				{...centeredOnEdge(
+					DEBUG_NODE_CONFIG.gridWidth,
+					DEBUG_NODE_CONFIG.gridHeight,
+					'right'
+				)}
+				color='success'
+			/>
+
+			{/* Example 2: Multiple handles evenly spaced on top edge */}
+			{evenlySpacedHandles(
+				DEBUG_NODE_CONFIG.gridWidth,
+				DEBUG_NODE_CONFIG.gridHeight,
+				'top',
+				3
+			).map((pos, index) => (
+				<GridNodeHandle
+					key={`top-${index}`}
+					id={`${id}-input-top-${index}`}
+					type='target'
+					position={Position.Top}
+					{...pos}
+					color='primary'
+					size='sm'
+				/>
+			))}
+
+			{/* Example 3: Corner handle (bottom-left) */}
+			<GridNodeHandle
+				id={`${id}-corner-bottom-left`}
+				type='target'
+				position={Position.Left}
+				{...cornerPositions(
+					DEBUG_NODE_CONFIG.gridWidth,
+					DEBUG_NODE_CONFIG.gridHeight
+				).bottomLeft}
+				color='warning'
+			/>
+
+			{/* Example 4: Precise grid positioning with fractional offset */}
+			<GridNodeHandle
+				id={`${id}-precise-position`}
+				type='source'
+				position={Position.Bottom}
+				gridX={2}
+				gridY={3}
+				color='error'
+				size='lg'
+			/>
 		</BaseNode>
 	);
 }

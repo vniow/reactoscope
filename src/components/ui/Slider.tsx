@@ -1,4 +1,6 @@
 import React, { forwardRef } from 'react';
+import type { SliderSize, SliderColor } from '../../types/ui';
+import { combineClasses } from '../../utils/styleUtils';
 
 export interface SliderProps
 	extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
@@ -10,9 +12,25 @@ export interface SliderProps
 	formatValue?: (value: number) => string;
 	showMinMax?: boolean;
 	variant?: 'default' | 'compact';
-	size?: 'sm' | 'md' | 'lg';
-	color?: 'default' | 'orange' | 'green' | 'red' | 'blue';
+	size?: SliderSize;
+	color?: SliderColor;
 }
+
+// Slider configuration
+const SLIDER_CONFIG = {
+	sizes: {
+		sm: 'h-1',
+		md: 'h-2',
+		lg: 'h-3',
+	},
+	colors: {
+		default: 'bg-gray-200 dark:bg-gray-700',
+		orange: 'bg-orange-200 dark:bg-orange-800',
+		green: 'bg-green-200 dark:bg-green-800',
+		red: 'bg-red-200 dark:bg-red-800',
+		blue: 'bg-blue-200 dark:bg-blue-800',
+	},
+} as const;
 
 const Slider = forwardRef<HTMLInputElement, SliderProps>(
 	(
@@ -38,28 +56,14 @@ const Slider = forwardRef<HTMLInputElement, SliderProps>(
 		// Format the display value
 		const displayValue = formatValue ? formatValue(value) : value.toString();
 
-		// Base slider styles
-		const sliderClasses = [
-			'w-full rounded-lg appearance-none cursor-pointer transition-all',
-			'nodrag', // Prevent React Flow node dragging
-			// Size variants
-			size === 'sm' ? 'h-1' : size === 'lg' ? 'h-3' : 'h-2',
-			// Color variants for track
-			color === 'orange'
-				? 'bg-orange-200 dark:bg-orange-800'
-				: color === 'green'
-					? 'bg-green-200 dark:bg-green-800'
-					: color === 'red'
-						? 'bg-red-200 dark:bg-red-800'
-						: color === 'blue'
-							? 'bg-blue-200 dark:bg-blue-800'
-							: 'bg-gray-200 dark:bg-gray-700',
-			// Disabled state
-			disabled && 'opacity-50 cursor-not-allowed',
-			className,
-		]
-			.filter(Boolean)
-			.join(' ');
+		// Build slider classes using utilities and configuration
+		const sliderClasses = combineClasses(
+			'w-full rounded-lg appearance-none cursor-pointer transition-all nodrag',
+			SLIDER_CONFIG.sizes[size],
+			SLIDER_CONFIG.colors[color],
+			disabled ? 'opacity-50 cursor-not-allowed' : '',
+			className
+		);
 
 		// Handle pointer down to prevent node dragging
 		const handlePointerDown = (e: React.PointerEvent<HTMLInputElement>) => {
