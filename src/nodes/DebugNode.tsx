@@ -6,11 +6,6 @@ import { GridNodeHandle } from '../components/GridNodeHandle';
 import { DebugInfoBlock } from '../components/DebugComponents';
 import { useNodeOperations } from '../hooks/useNodeOperations';
 import { extractNodeDebugInfo } from '../utils/debugUtils';
-import {
-	centeredOnEdge,
-	evenlySpacedHandles,
-	cornerPositions,
-} from '../utils/gridHandleUtils';
 
 /**
  * DebugNode using simplified GridNodeHandle components
@@ -75,58 +70,37 @@ export function DebugNode(props: NodeProps) {
 				</GridBlock>
 			</div>
 
-			{/* GRID-BASED HANDLE POSITIONING EXAMPLES */}
+			{/* SIMPLE GRID-BASED HANDLE POSITIONING */}
 
-			{/* Example 1: Centered on right edge using grid utilities */}
+			{/* Handle 1: Top-left position */}
 			<GridNodeHandle
-				id={`${id}-output-right-centered`}
+				id={`${id}-handle-1`}
+				type='target'
+				position={Position.Top}
+				gridX={0}
+				gridY={0}
+				color='primary'
+				size='md'
+			/>
+
+			{/* Handle 2: Right-center position */}
+			<GridNodeHandle
+				id={`${id}-handle-2`}
 				type='source'
 				position={Position.Right}
-				{...centeredOnEdge(
-					DEBUG_NODE_CONFIG.gridWidth,
-					DEBUG_NODE_CONFIG.gridHeight,
-					'right'
-				)}
+				gridX={0}
+				gridY={2}
 				color='success'
+				size='lg'
 			/>
 
-			{/* Example 2: Multiple handles evenly spaced on top edge */}
-			{evenlySpacedHandles(
-				DEBUG_NODE_CONFIG.gridWidth,
-				DEBUG_NODE_CONFIG.gridHeight,
-				'top',
-				3
-			).map((pos, index) => (
-				<GridNodeHandle
-					key={`top-${index}`}
-					id={`${id}-input-top-${index}`}
-					type='target'
-					position={Position.Top}
-					{...pos}
-					color='primary'
-					size='sm'
-				/>
-			))}
-
-			{/* Example 3: Corner handle (bottom-left) */}
+			{/* Handle 3: Bottom-center position */}
 			<GridNodeHandle
-				id={`${id}-corner-bottom-left`}
-				type='target'
-				position={Position.Left}
-				{...cornerPositions(
-					DEBUG_NODE_CONFIG.gridWidth,
-					DEBUG_NODE_CONFIG.gridHeight
-				).bottomLeft}
-				color='warning'
-			/>
-
-			{/* Example 4: Precise grid positioning with fractional offset */}
-			<GridNodeHandle
-				id={`${id}-precise-position`}
+				id={`${id}-handle-3`}
 				type='source'
 				position={Position.Bottom}
-				gridX={2}
-				gridY={3}
+				gridX={3.5}
+				gridY={0}
 				color='error'
 				size='lg'
 			/>
