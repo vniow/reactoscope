@@ -1,14 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { type NodeProps, Position } from '@xyflow/react';
 
 import { BaseNode } from '../components/BaseNode';
 import { GridBlock } from '../components/GridBlock';
 import { GridNodeHandle } from '../components/GridNodeHandle';
 import { useNodeOperations } from '../hooks/useNodeOperations';
-import {
-	calculateNextPerimeterPosition,
-	getDefaultGridCoordinatesForPosition,
-} from '../utils/nodeUtils';
+import { getDefaultGridCoordinatesForPosition } from '../utils/nodeUtils';
 
 /**
  * DebugNode with interactive debug controls for handle positioning
@@ -51,9 +48,9 @@ export function DebugNode(props: NodeProps) {
 		{
 			id: `${id}-handle-1`,
 			type: 'target',
-			position: Position.Top,
+			position: Position.Left,
 			gridX: 0,
-			gridY: 0,
+			gridY: DEBUG_NODE_CONFIG.gridHeight / 2,
 			color: 'primary',
 			size: 'md',
 		},
@@ -61,8 +58,8 @@ export function DebugNode(props: NodeProps) {
 			id: `${id}-handle-2`,
 			type: 'source',
 			position: Position.Right,
-			gridX: 7,
-			gridY: 2,
+			gridX: 0,
+			gridY: DEBUG_NODE_CONFIG.gridHeight / 2,
 			color: 'success',
 			size: 'lg',
 		},
@@ -70,62 +67,12 @@ export function DebugNode(props: NodeProps) {
 			id: `${id}-handle-3`,
 			type: 'source',
 			position: Position.Bottom,
-			gridX: 3.5,
-			gridY: 4,
+			gridX: DEBUG_NODE_CONFIG.gridWidth / 2,
+			gridY: 0,
 			color: 'error',
 			size: 'lg',
 		},
 	]);
-
-	// Animation state for clockwise handle movement
-	const [isAnimating, setIsAnimating] = useState(false);
-	const [animatedHandleIndex, setAnimatedHandleIndex] = useState(0);
-	const animationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-	// Animation effect
-	useEffect(() => {
-		if (isAnimating && handles.length > 0) {
-			animationIntervalRef.current = setInterval(() => {
-				setHandles((prev) =>
-					prev.map((handle, index) => {
-						if (index === animatedHandleIndex) {
-							// Calculate next position using the perimeter animation logic
-							const nextPos = calculateNextPerimeterPosition(
-								handle.gridX,
-								handle.gridY,
-								handle.position,
-								DEBUG_NODE_CONFIG.gridWidth,
-								DEBUG_NODE_CONFIG.gridHeight
-							);
-							return { ...handle, ...nextPos };
-						}
-						return handle;
-					})
-				);
-			}, 500); // Move every 0.5 seconds for smoother animation
-		} else {
-			if (animationIntervalRef.current) {
-				clearInterval(animationIntervalRef.current);
-				animationIntervalRef.current = null;
-			}
-		}
-
-		return () => {
-			if (animationIntervalRef.current) {
-				clearInterval(animationIntervalRef.current);
-				animationIntervalRef.current = null;
-			}
-		};
-	}, [isAnimating, animatedHandleIndex, handles.length]);
-
-	// Cleanup on unmount
-	useEffect(() => {
-		return () => {
-			if (animationIntervalRef.current) {
-				clearInterval(animationIntervalRef.current);
-			}
-		};
-	}, []);
 
 	// Event handlers
 	const handleDelete = () => deleteNode(id as string);
@@ -215,60 +162,6 @@ export function DebugNode(props: NodeProps) {
 		setHandles((prev) => prev.filter((_, index) => index !== handleIndex));
 	};
 
-	// Animation control handlers
-	const toggleAnimation = () => {
-		if (handles.length === 0) return;
-
-		// When starting animation, reset the selected handle to the starting position
-		if (!isAnimating) {
-			setHandles((prev) =>
-				prev.map((handle, index) => {
-					if (index === animatedHandleIndex) {
-						const defaultCoords = getDefaultGridCoordinatesForPosition(
-							Position.Top,
-							DEBUG_NODE_CONFIG.gridWidth,
-							DEBUG_NODE_CONFIG.gridHeight
-						);
-						return {
-							...handle,
-							position: Position.Top,
-							gridX: defaultCoords.gridX,
-							gridY: defaultCoords.gridY,
-						};
-					}
-					return handle;
-				})
-			);
-		}
-
-		setIsAnimating((prev) => !prev);
-	};
-
-	const selectAnimatedHandle = (handleIndex: number) => {
-		setAnimatedHandleIndex(handleIndex);
-		if (isAnimating) {
-			// Reset animation step when switching handles and move to starting position
-			setHandles((prev) =>
-				prev.map((handle, index) => {
-					if (index === handleIndex) {
-						const defaultCoords = getDefaultGridCoordinatesForPosition(
-							Position.Top,
-							DEBUG_NODE_CONFIG.gridWidth,
-							DEBUG_NODE_CONFIG.gridHeight
-						);
-						return {
-							...handle,
-							position: Position.Top,
-							gridX: defaultCoords.gridX,
-							gridY: defaultCoords.gridY,
-						};
-					}
-					return handle;
-				})
-			);
-		}
-	};
-
 	return (
 		<BaseNode
 			variant='debug'
@@ -290,63 +183,6 @@ export function DebugNode(props: NodeProps) {
 					showDimensions={false}
 				>
 					<div className='w-full h-full p-2 overflow-y-auto'>
-						{/* Animation Controls */}
-						<div className='mb-3 p-2 bg-purple-50 dark:bg-purple-900/20 rounded border'>
-							<h4 className='text-xs font-bold text-purple-800 dark:text-purple-200 mb-2'>
-								Handle Perimeter Animation
-							</h4>
-							<div className='flex items-center gap-2 mb-2'>
-								<button
-									onClick={toggleAnimation}
-									disabled={handles.length === 0}
-									className={`px-3 py-1 text-xs rounded font-semibold transition-colors ${
-										isAnimating
-											? 'bg-red-500 text-white hover:bg-red-600'
-											: 'bg-green-500 text-white hover:bg-green-600'
-									} disabled:opacity-50 disabled:cursor-not-allowed`}
-								>
-									{isAnimating ? '⏹ Stop Animation' : '▶ Start Animation'}
-								</button>
-								{handles.length > 0 && (
-									<div className='text-xs text-gray-600 dark:text-gray-400'>
-										<div>Handle {animatedHandleIndex + 1} animating</div>
-										{isAnimating && (
-											<div className='text-xs'>
-												Pos: {handles[animatedHandleIndex]?.position} | Grid: (
-												{handles[animatedHandleIndex]?.gridX},{' '}
-												{handles[animatedHandleIndex]?.gridY})
-											</div>
-										)}
-									</div>
-								)}
-							</div>
-							{handles.length > 1 && (
-								<div>
-									<label className='text-xs text-gray-600 dark:text-gray-400 block mb-1'>
-										Select handle to animate:
-									</label>
-									<div className='flex gap-1 flex-wrap'>
-										{handles.map((_, index) => (
-											<button
-												key={index}
-												onClick={() => selectAnimatedHandle(index)}
-												className={`px-2 py-1 text-xs rounded ${
-													animatedHandleIndex === index
-														? 'bg-purple-500 text-white'
-														: 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-												}`}
-											>
-												{index + 1}
-											</button>
-										))}
-									</div>
-								</div>
-							)}
-							<div className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
-								Animation moves clockwise around the 12×12 grid perimeter
-							</div>
-						</div>
-
 						<div className='flex items-center justify-between mb-2'>
 							<h3 className='text-xs font-bold text-blue-800 dark:text-blue-200'>
 								Handle Debug Controls ({handles.length})
@@ -463,14 +299,6 @@ export function DebugNode(props: NodeProps) {
 										{handle.type}
 									</button>
 								</div>
-
-								{/* Remove Handle Button */}
-								<button
-									onClick={() => removeHandle(index)}
-									className='mt-2 px-2 py-1 text-xs bg-red-500 text-white rounded'
-								>
-									Remove Handle
-								</button>
 							</div>
 						))}
 
