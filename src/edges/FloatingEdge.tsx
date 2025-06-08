@@ -3,11 +3,16 @@ import {
 	getSmoothStepPath,
 	getStraightPath,
 	EdgeLabelRenderer,
+	useReactFlow,
+	BaseEdge,
 } from '@xyflow/react';
 import { useHybridEdgePositions } from '../hooks/useFloatingPositions';
+import { NodeDeleteButton } from '../components/ui/NodeDeleteButton';
+import { EdgeReconnectButton } from '../components/ui/EdgeReconnectButton';
+import { GRID_UNIT } from '../config/grid';
 
 // Hardcoded edge styling
-const EDGE_STROKE_WIDTH = 5;
+const EDGE_STROKE_WIDTH = 7;
 
 // Gradient colors for all paths (blue to purple gradient)
 const GRADIENT_START_COLOR = '#3b82f6'; // blue-500
@@ -32,6 +37,7 @@ export function FloatingEdge(props: EdgeProps) {
 		markerEnd,
 		label,
 		data,
+		selected = false,
 		// Destructure React Flow specific props to prevent passing to DOM
 		sourceX,
 		sourceY,
@@ -41,6 +47,8 @@ export function FloatingEdge(props: EdgeProps) {
 		targetPosition: _targetPosition,
 		...rest
 	} = props;
+
+	const { setEdges } = useReactFlow();
 
 	// Extract configuration from data with proper typing
 	const edgeData = data as FloatingEdgeData | undefined;
@@ -127,47 +135,56 @@ export function FloatingEdge(props: EdgeProps) {
 				pathType: shouldUseStraightPath ? 'straight' : 'stepped',
 				hasGradient: true, // Both path types now have gradients
 				gradientId: `gradient-${id}`,
+				selected, // Include edge selection state
+				// Reconnect debug information
+				reconnectInfo: {
+					sourceHandle: props.sourceHandleId || 'default',
+					targetHandle: props.targetHandleId || 'default',
+					canReconnect: true, // All FloatingEdges support reconnection
+					reconnectButtonPos: `${Math.round(sourcePoint.x + GRID_UNIT)}, ${Math.round(sourcePoint.y - GRID_UNIT)}`,
+					deleteButtonPos: `${Math.round(labelX)}, ${Math.round(labelY + (showLabel && (label || showDebug) ? 30 : 0))}`,
+				},
 			}
 		: null;
 
 	// All edges now use gradients
 	const edgeStroke = `url(#gradient-${id})`;
+	const edgeStrokeWidth = selected ? EDGE_STROKE_WIDTH + 2 : EDGE_STROKE_WIDTH; // Make selected edges slightly thicker
 
 	return (
 		<>
-			{/* Custom SVG path with gradient for all paths */}
-			<svg className='react-flow__edge'>
-				{/* Define gradient for all paths */}
-				<defs>
-					<linearGradient
-						id={`gradient-${id}`}
-						x1={sourcePoint.x}
-						y1={sourcePoint.y}
-						x2={targetPoint.x}
-						y2={targetPoint.y}
-						gradientUnits='userSpaceOnUse'
-					>
-						<stop
-							offset='0%'
-							stopColor={GRADIENT_START_COLOR}
-						/>
-						<stop
-							offset='100%'
-							stopColor={GRADIENT_END_COLOR}
-						/>
-					</linearGradient>
-				</defs>
-				<path
-					id={id}
-					d={edgePath}
-					stroke={edgeStroke}
-					strokeWidth={EDGE_STROKE_WIDTH}
-					fill='none'
-					markerEnd={markerEnd}
-					style={style} // Allow style overrides if needed
-					{...rest}
-				/>
-			</svg>
+			{/* Define gradient for all paths */}
+			<defs>
+				<linearGradient
+					id={`gradient-${id}`}
+					x1={sourcePoint.x}
+					y1={sourcePoint.y}
+					x2={targetPoint.x}
+					y2={targetPoint.y}
+					gradientUnits='userSpaceOnUse'
+				>
+					<stop
+						offset='0%'
+						stopColor={GRADIENT_START_COLOR}
+					/>
+					<stop
+						offset='100%'
+						stopColor={GRADIENT_END_COLOR}
+					/>
+				</linearGradient>
+			</defs>
+			{/* Use BaseEdge for proper selection behavior */}
+			<BaseEdge
+				id={id}
+				path={edgePath}
+				markerEnd={markerEnd}
+				style={{
+					stroke: edgeStroke,
+					strokeWidth: edgeStrokeWidth,
+					...style,
+				}}
+				{...rest}
+			/>
 			{showLabel && (label || showDebug) && (
 				<EdgeLabelRenderer>
 					<div
@@ -184,7 +201,18 @@ export function FloatingEdge(props: EdgeProps) {
 						{/* Debug information */}
 						{showDebug && debugInfo && (
 							<div className='text-xs text-gray-600 mt-1 space-y-1'>
-								<div>ID: {debugInfo.edgeId}</div>
+								<div className='flex items-center gap-2'>
+									<span>ID: {debugInfo.edgeId}</span>
+									<span
+										className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+											debugInfo.selected
+												? 'bg-blue-100 text-blue-700 border border-blue-200'
+												: 'bg-gray-100 text-gray-600 border border-gray-200'
+										}`}
+									>
+										{debugInfo.selected ? '🔵 SELECTED' : '⚪ Not Selected'}
+									</span>
+								</div>
 								<div>
 									Source: {debugInfo.sourceNode} → Target:{' '}
 									{debugInfo.targetNode}
@@ -229,8 +257,91 @@ export function FloatingEdge(props: EdgeProps) {
 										</div>
 									)}
 								</div>
+
+								{/* Reconnect debug information */}
+								<div className='border-t pt-1 mt-2'>
+									<div className='font-medium text-blue-600'>
+										🔌 Reconnect Info
+									</div>
+									<div className='text-xs'>
+										Source Handle: {debugInfo.reconnectInfo.sourceHandle}
+									</div>
+									<div className='text-xs'>
+										Target Handle: {debugInfo.reconnectInfo.targetHandle}
+									</div>
+									<div className='text-xs'>
+										Can Reconnect:{' '}
+										{debugInfo.reconnectInfo.canReconnect ? '✅ Yes' : '❌ No'}
+									</div>
+									<div className='text-xs'>
+										Reconnect Btn: ({debugInfo.reconnectInfo.reconnectButtonPos}
+										)
+									</div>
+									<div className='text-xs'>
+										Delete Btn: ({debugInfo.reconnectInfo.deleteButtonPos})
+									</div>
+								</div>
 							</div>
 						)}
+					</div>
+				</EdgeLabelRenderer>
+			)}
+
+			{/* Delete button - only shown when edge is selected */}
+			{selected && (
+				<EdgeLabelRenderer>
+					<div
+						style={{
+							position: 'absolute',
+							transform: `translate(-50%, -50%) translate(${labelX}px,${labelY + (showLabel && (label || showDebug) ? 30 : 0)}px)`,
+							pointerEvents: 'all',
+						}}
+						className='nodrag nopan'
+					>
+						<NodeDeleteButton
+							onClick={() => {
+								setEdges((edges) => edges.filter((edge) => edge.id !== id));
+							}}
+							title='Delete edge'
+						/>
+					</div>
+				</EdgeLabelRenderer>
+			)}
+
+			{/* Reconnect button - only shown when edge is selected, positioned near source */}
+			{selected && (
+				<EdgeLabelRenderer>
+					<div
+						style={{
+							position: 'absolute',
+							transform: `translate(-50%, -50%) translate(${sourcePoint.x + 20}px,${sourcePoint.y - 20}px)`,
+							pointerEvents: 'all',
+						}}
+						className='nodrag nopan'
+					>
+						<EdgeReconnectButton
+							edgeId={id}
+							title='Reconnect edge'
+						/>
+					</div>
+				</EdgeLabelRenderer>
+			)}
+
+			{/* Reconnect button - only shown when edge is selected, positioned near source */}
+			{selected && (
+				<EdgeLabelRenderer>
+					<div
+						style={{
+							position: 'absolute',
+							transform: `translate(-50%, -50%) translate(${sourcePoint.x + 20}px,${sourcePoint.y - 15}px)`,
+							pointerEvents: 'all',
+						}}
+						className='nodrag nopan'
+					>
+						<EdgeReconnectButton
+							edgeId={id}
+							title='Reconnect edge'
+						/>
 					</div>
 				</EdgeLabelRenderer>
 			)}

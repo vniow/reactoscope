@@ -4,9 +4,11 @@ import {
 	Background,
 	MiniMap,
 	addEdge,
+	reconnectEdge,
 	useNodesState,
 	useEdgesState,
 	type OnConnect,
+	type OnReconnect,
 	BackgroundVariant,
 } from '@xyflow/react';
 
@@ -34,6 +36,14 @@ export default function App() {
 		[setEdges]
 	);
 
+	// Handle edge reconnection
+	const onReconnect: OnReconnect = useCallback(
+		(oldEdge, newConnection) => {
+			setEdges((eds) => reconnectEdge(oldEdge, newConnection, eds));
+		},
+		[setEdges]
+	);
+
 	// Initialize with empty arrays (no longer needed as React Flow manages initial state)
 	return (
 		<ThemeProvider>
@@ -46,6 +56,7 @@ export default function App() {
 					edgeTypes={edgeTypes}
 					onEdgesChange={onEdgesChange}
 					onConnect={onConnect}
+					onReconnect={onReconnect}
 					fitView
 					snapToGrid
 					snapGrid={[GRID_UNIT / 2, GRID_UNIT / 2]}

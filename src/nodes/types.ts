@@ -27,7 +27,7 @@ export type PositionLoggerNode = Node<
 	PositionLoggerNodeData,
 	'position-logger'
 >;
-export type StaticNode = Node<StaticNodeData, 'static'>;
+export type StaticNode = Node<BaseNodeData, 'static'>;
 export type OscillatorNode = Node<BaseNodeData & AudioNodeData, 'oscillator'>;
 export type GainNode = Node<BaseNodeData & AudioNodeData, 'gain'>;
 export type VisualizerNode = Node<BaseNodeData & AudioNodeData, 'visualizer'>;

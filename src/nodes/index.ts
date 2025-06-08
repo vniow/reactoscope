@@ -8,39 +8,41 @@ import { GainNode } from './GainNode';
 import { VisualizerNode } from './VisualizerNode';
 import { DestinationNode } from './DestinationNode';
 
+import { GRID_UNIT } from '../config/grid';
+
 import type { AppNode } from './types';
 
 export const initialNodes: AppNode[] = [
-	// Demo: Position Logger Node with floating handles
+	// Floating Handle Node 1 - Source node with open source handle
 	{
-		id: 'floating-demo-1',
+		id: 'floating-node-1',
 		type: 'position-logger',
-		position: { x: 100, y: 50 },
+		position: { x: GRID_UNIT, y: GRID_UNIT * 8 },
 		data: { label: 'Floating Node 1' },
 	} as AppNode,
 
-	// Demo: Second Position Logger Node
+	// Floating Handle Node 2 - Middle node (all handles connected)
 	{
-		id: 'floating-demo-2',
+		id: 'floating-node-2',
 		type: 'position-logger',
-		position: { x: 400, y: 150 },
+		position: { x: GRID_UNIT * 12, y: GRID_UNIT * 8 },
 		data: { label: 'Floating Node 2' },
 	} as AppNode,
 
-	// Demo: Static Node for comparison
+	// Debug Node - Target node with open target handle
 	{
-		id: 'static-demo-1',
-		type: 'static',
-		position: { x: 250, y: 300 },
-		data: { label: 'Static Node' },
+		id: 'debug-node-1',
+		type: 'debug',
+		position: { x: GRID_UNIT * 6, y: GRID_UNIT * -2 },
+		data: { label: 'Debug Node' },
 	} as AppNode,
 
-	// Test debug node to check handle rendering
+	// Static Node - Static handle positioning for comparison
 	{
-		id: 'test-debug-1',
-		type: 'debug',
-		position: { x: 200, y: 100 },
-		data: { label: 'Test Debug Node' },
+		id: 'static-node-1',
+		type: 'static',
+		position: { x: GRID_UNIT * -18, y: GRID_UNIT * 8 },
+		data: { label: 'Static Node' },
 	} as AppNode,
 ];
 

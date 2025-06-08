@@ -265,9 +265,9 @@ export function useFloatingEdgePositions(
  * Based on reactoscope's node types that support dynamic positioning
  */
 export function isFloatingNode(node: Node): boolean {
-	// Support floating handles for position-logger nodes (from migration)
-	// and debug nodes which can demonstrate floating functionality
-	return node.type === 'position-logger' || node.type === 'debug';
+	// Support floating handles for position-logger nodes only
+	// Debug and Static nodes both use static handles
+	return node.type === 'position-logger';
 }
 
 /**
