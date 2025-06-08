@@ -1,30 +1,30 @@
-import { type NodeProps, Position } from '@xyflow/react';
+import { Position, type NodeProps } from '@xyflow/react';
 
+import { type StaticNode } from './types';
 import { BaseNode } from '../components/BaseNode';
 import { GridBlock } from '../components/GridBlock';
 import { GridNodeHandle } from '../components/GridNodeHandle';
 import { useNodeOperations } from '../hooks/useNodeOperations';
 
 /**
- * Simplified Position Logger Node
- * Shows current node position with single source and target handles
+ * Static Node with Grid-Based Handle Positions
+ * Demonstrates static grid-aligned handle positioning for comparison with floating handles
+ * Uses unified GridNodeHandle component in static mode
  */
 
-// Grid configuration for position logger
-const POSITION_LOGGER_CONFIG = {
-	gridWidth: 8,
-	gridHeight: 6,
+// Grid configuration for static node
+const STATIC_NODE_CONFIG = {
+	gridWidth: 7,
+	gridHeight: 5,
 } as const;
 
-export function DebugNode(props: NodeProps) {
-	const {
-		id,
-		data,
-		selected = false,
-		positionAbsoluteX,
-		positionAbsoluteY,
-	} = props;
-
+export function StaticNode({
+	id,
+	positionAbsoluteX,
+	positionAbsoluteY,
+	data,
+	selected = false,
+}: NodeProps<StaticNode>) {
 	// Use custom hook for node operations
 	const { deleteNode } = useNodeOperations();
 
@@ -37,28 +37,28 @@ export function DebugNode(props: NodeProps) {
 
 	return (
 		<BaseNode
-			variant='debug'
-			gridWidth={POSITION_LOGGER_CONFIG.gridWidth}
-			gridHeight={POSITION_LOGGER_CONFIG.gridHeight}
+			variant='default'
+			gridWidth={STATIC_NODE_CONFIG.gridWidth}
+			gridHeight={STATIC_NODE_CONFIG.gridHeight}
 			nodeId={id as string}
 			selected={selected}
 			onDelete={handleDelete}
-			title='Position Logger'
+			title={data.label || 'Static Position Logger'}
 		>
 			<div className='relative w-full h-full overflow-visible'>
 				{/* Position Display */}
 				<GridBlock
-					gridWidth={6}
-					gridHeight={4}
+					gridWidth={5}
+					gridHeight={3}
 					gridX={1}
 					gridY={1}
-					variant='debug'
+					variant='default'
 					showDimensions={false}
 				>
 					<div className='w-full h-full p-3 flex flex-col justify-center items-center'>
 						<div className='text-center space-y-2'>
-							<h3 className='text-sm font-bold text-blue-800 dark:text-blue-200'>
-								Node Position
+							<h3 className='text-sm font-bold text-blue-600 dark:text-blue-400'>
+								⚓ Static Position
 							</h3>
 							<div className='space-y-1'>
 								<div className='text-xs text-gray-600 dark:text-gray-400'>
@@ -74,35 +74,33 @@ export function DebugNode(props: NodeProps) {
 									</span>
 								</div>
 							</div>
-							<div className='text-xs text-gray-500 dark:text-gray-500 mt-2'>
-								{(data as { label?: string })?.label || 'Position Logger Node'}
+							<div className='text-xs text-blue-500 dark:text-blue-400 mt-2 font-semibold'>
+								Grid-aligned handle positions
 							</div>
 						</div>
 					</div>
 				</GridBlock>
 			</div>
 
-			{/* Single Target Handle - Left Side */}
-			<GridNodeHandle
-				id={`${id}-target`}
-				type='target'
-				mode='static'
-				position={Position.Left}
-				gridX={0}
-				gridY={3} // Center vertically (6/2 = 3)
-				color='primary'
-				size='md'
-			/>
-
-			{/* Single Source Handle - Right Side */}
+			{/* Static Handles - Fixed grid positions (using static mode) */}
 			<GridNodeHandle
 				id={`${id}-source`}
 				type='source'
 				mode='static'
 				position={Position.Right}
 				gridX={0}
-				gridY={3} // Center vertically (6/2 = 3)
-				color='success'
+				gridY={STATIC_NODE_CONFIG.gridHeight / 2} // Center vertically (5/2 = 2.5)
+				color='primary'
+				size='md'
+			/>
+			<GridNodeHandle
+				id={`${id}-target`}
+				type='target'
+				mode='static'
+				position={Position.Left}
+				gridX={0}
+				gridY={STATIC_NODE_CONFIG.gridHeight / 2} // Center vertically (5/2 = 2.5)
+				color='primary'
 				size='md'
 			/>
 		</BaseNode>

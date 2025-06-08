@@ -1,13 +1,15 @@
-import { type NodeProps, Position } from '@xyflow/react';
+import { type NodeProps } from '@xyflow/react';
 
+import { type PositionLoggerNode } from './types';
+import { GridNodeHandle } from '../components/GridNodeHandle';
 import { BaseNode } from '../components/BaseNode';
 import { GridBlock } from '../components/GridBlock';
-import { GridNodeHandle } from '../components/GridNodeHandle';
 import { useNodeOperations } from '../hooks/useNodeOperations';
 
 /**
- * Simplified Position Logger Node
- * Shows current node position with single source and target handles
+ * Position Logger Node with Floating Handles
+ * Demonstrates floating handle positioning that adapts to connected nodes
+ * Uses unified GridNodeHandle component in floating mode
  */
 
 // Grid configuration for position logger
@@ -16,15 +18,13 @@ const POSITION_LOGGER_CONFIG = {
 	gridHeight: 6,
 } as const;
 
-export function DebugNode(props: NodeProps) {
-	const {
-		id,
-		data,
-		selected = false,
-		positionAbsoluteX,
-		positionAbsoluteY,
-	} = props;
-
+export function PositionLoggerNode({
+	id,
+	positionAbsoluteX,
+	positionAbsoluteY,
+	data,
+	selected = false,
+}: NodeProps<PositionLoggerNode>) {
 	// Use custom hook for node operations
 	const { deleteNode } = useNodeOperations();
 
@@ -43,7 +43,7 @@ export function DebugNode(props: NodeProps) {
 			nodeId={id as string}
 			selected={selected}
 			onDelete={handleDelete}
-			title='Position Logger'
+			title={data.label || 'Floating Position Logger'}
 		>
 			<div className='relative w-full h-full overflow-visible'>
 				{/* Position Display */}
@@ -57,8 +57,8 @@ export function DebugNode(props: NodeProps) {
 				>
 					<div className='w-full h-full p-3 flex flex-col justify-center items-center'>
 						<div className='text-center space-y-2'>
-							<h3 className='text-sm font-bold text-blue-800 dark:text-blue-200'>
-								Node Position
+							<h3 className='text-sm font-bold text-pink-600 dark:text-pink-400'>
+								🎯 Floating Position
 							</h3>
 							<div className='space-y-1'>
 								<div className='text-xs text-gray-600 dark:text-gray-400'>
@@ -74,36 +74,30 @@ export function DebugNode(props: NodeProps) {
 									</span>
 								</div>
 							</div>
-							<div className='text-xs text-gray-500 dark:text-gray-500 mt-2'>
-								{(data as { label?: string })?.label || 'Position Logger Node'}
+							<div className='text-xs text-pink-500 dark:text-pink-400 mt-2 font-semibold'>
+								Handles adapt to connections
 							</div>
 						</div>
 					</div>
 				</GridBlock>
 			</div>
 
-			{/* Single Target Handle - Left Side */}
-			<GridNodeHandle
-				id={`${id}-target`}
-				type='target'
-				mode='static'
-				position={Position.Left}
-				gridX={0}
-				gridY={3} // Center vertically (6/2 = 3)
-				color='primary'
-				size='md'
-			/>
-
-			{/* Single Source Handle - Right Side */}
+			{/* Floating Handles - Dynamic positioning based on connections */}
 			<GridNodeHandle
 				id={`${id}-source`}
 				type='source'
-				mode='static'
-				position={Position.Right}
-				gridX={0}
-				gridY={3} // Center vertically (6/2 = 3)
-				color='success'
-				size='md'
+				mode='floating'
+				nodeId={id}
+				variant='debug'
+				minDistanceThreshold={50}
+			/>
+			<GridNodeHandle
+				id={`${id}-target`}
+				type='target'
+				mode='floating'
+				nodeId={id}
+				variant='debug'
+				minDistanceThreshold={50}
 			/>
 		</BaseNode>
 	);
