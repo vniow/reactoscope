@@ -2,51 +2,35 @@ import type { Edge, EdgeTypes } from '@xyflow/react';
 import { FloatingEdge } from './FloatingEdge';
 
 export const initialEdges: Edge[] = [
-	// Connection: Floating Node 1 → Floating Node 2
+	// Connection: Oscillator → Gain
 	{
-		id: 'edge-1-to-2',
-		source: 'floating-node-1',
-		sourceHandle: 'floating-node-1-source',
-		target: 'floating-node-2',
-		targetHandle: 'floating-node-2-target',
+		id: 'edge-osc-to-gain',
+		source: 'osc-1',
+		sourceHandle: 'osc-1-source',
+		target: 'gain-1',
+		targetHandle: 'gain-1-audio-in',
 		type: 'floating',
-		label: 'Float → Float',
-		reconnectable: true, // Enable reconnection from both ends
+		label: 'Audio Signal',
+		reconnectable: true,
 		data: {
-			showLabel: true,
-			showDebug: true,
+			// showLabel: true,
+			// showDebug: false,
 		},
 	},
 
-	// Connection: Floating Node 2 → Debug Node
+	// Connection: Gain → Destination
 	{
-		id: 'edge-2-to-debug',
-		source: 'floating-node-2',
-		sourceHandle: 'floating-node-2-source',
-		target: 'debug-node-1',
-		targetHandle: 'debug-node-1-target',
+		id: 'edge-gain-to-dest',
+		source: 'gain-1',
+		sourceHandle: 'gain-1-audio-out',
+		target: 'dest-1',
+		targetHandle: 'dest-1-audio-in',
 		type: 'floating',
-		label: 'Float → Debug',
-		reconnectable: true, // Enable reconnection from both ends
+		label: 'Audio Signal',
+		reconnectable: true,
 		data: {
-			showLabel: true,
-			showDebug: true,
-		},
-	},
-
-	// Connection: Floating Node 1 → Static Node
-	{
-		id: 'edge-1-to-static',
-		source: 'floating-node-1',
-		sourceHandle: 'floating-node-1-source',
-		target: 'static-node-1',
-		targetHandle: 'static-node-1-target',
-		type: 'floating',
-		label: 'Float → Static',
-		reconnectable: true, // Enable reconnection from both ends
-		data: {
-			showLabel: true,
-			showDebug: true,
+			// showLabel: true,
+			// showDebug: false,
 		},
 	},
 ];

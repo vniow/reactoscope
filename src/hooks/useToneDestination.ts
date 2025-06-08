@@ -14,14 +14,23 @@ export function useToneDestination(nodeId: string) {
 
 	useEffect(() => {
 		// Find all React Flow edges that target this destination node
-		const incomingEdges = edges.filter(
-			(edge: Edge) => edge.target === nodeId && edge.targetHandle === 'audio-in'
+		const incomingEdges = edges.filter((edge: Edge) => edge.target === nodeId);
+
+		console.log(
+			`🎧 useToneDestination for ${nodeId}: found ${incomingEdges.length} incoming edges`,
+			incomingEdges
 		);
 
 		// For each incoming edge, connect the source to Tone's destination
+		// This should only happen for the final node in the audio chain
 		incomingEdges.forEach((edge: Edge) => {
 			const sourceNode = Object.values(audioNodes).find(
 				(node) => node.id === edge.source
+			);
+
+			console.log(
+				`🎧 Processing destination edge ${edge.id}: ${edge.source} → ${edge.target}`,
+				sourceNode
 			);
 
 			if (
@@ -37,18 +46,29 @@ export function useToneDestination(nodeId: string) {
 						toneInstances?: Record<string, Tone.ToneAudioNode>;
 					}
 				).toneInstances;
+
+				console.log(`🎧 Looking for source instance: ${sourceKey}`);
+				console.log(
+					`🎧 Available tone instances:`,
+					Object.keys(toneInstances || {})
+				);
+
 				const sourceInstance = toneInstances?.[sourceKey];
+
+				console.log(`🎧 Found source instance:`, !!sourceInstance);
 
 				if (sourceInstance) {
 					try {
 						// Connect to Tone's master destination
 						sourceInstance.connect(Tone.getDestination());
 						console.log(
-							`✅ Connected ${sourceNode.type} ${sourceNode.id} to destination via edge ${edge.id}`
+							`✅ Connected ${sourceNode.type} ${sourceNode.id} to master destination via edge ${edge.id}`
 						);
 					} catch (error) {
 						console.error('❌ Failed to connect to destination:', error);
 					}
+				} else {
+					console.warn(`⚠️ Missing source instance for ${sourceKey}`);
 				}
 			}
 		});
@@ -93,17 +113,11 @@ export function useToneDestination(nodeId: string) {
 		// Return utility functions
 		getConnectedSources: () => {
 			return edges
-				.filter(
-					(edge: Edge) =>
-						edge.target === nodeId && edge.targetHandle === 'audio-in'
-				)
+				.filter((edge: Edge) => edge.target === nodeId)
 				.map((edge: Edge) => edge.source);
 		},
 		getIncomingEdges: () => {
-			return edges.filter(
-				(edge: Edge) =>
-					edge.target === nodeId && edge.targetHandle === 'audio-in'
-			);
+			return edges.filter((edge: Edge) => edge.target === nodeId);
 		},
 	};
 }

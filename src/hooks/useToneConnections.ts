@@ -14,9 +14,11 @@ export function useToneConnections(nodeId: string) {
 
 	useEffect(() => {
 		// Find all React Flow edges where this node is the source
-		const outgoingEdges = edges.filter(
-			(edge: Edge) =>
-				edge.source === nodeId && edge.sourceHandle === 'audio-out'
+		const outgoingEdges = edges.filter((edge: Edge) => edge.source === nodeId);
+
+		console.log(
+			`🔌 useToneConnections for ${nodeId}: found ${outgoingEdges.length} outgoing edges`,
+			outgoingEdges
 		);
 
 		// For each outgoing edge, connect this source to the target
@@ -26,6 +28,11 @@ export function useToneConnections(nodeId: string) {
 			);
 			const targetNode = Object.values(audioNodes).find(
 				(node) => node.id === edge.target
+			);
+
+			console.log(
+				`🔌 Processing edge ${edge.id}: ${edge.source} → ${edge.target}`,
+				{ sourceNode, targetNode }
 			);
 
 			if (sourceNode && targetNode) {
@@ -42,14 +49,26 @@ export function useToneConnections(nodeId: string) {
 					targetKey = `${targetNode.type}-${targetNode.id}`;
 				}
 
+				console.log(`🔌 Looking for instances: ${sourceKey} → ${targetKey}`);
+
 				const toneInstances = (
 					window as unknown as {
 						toneInstances?: Record<string, Tone.ToneAudioNode>;
 					}
 				).toneInstances;
 
+				console.log(
+					`🔌 Available tone instances:`,
+					Object.keys(toneInstances || {})
+				);
+
 				const sourceInstance = toneInstances?.[sourceKey];
 				const targetInstance = toneInstances?.[targetKey];
+
+				console.log(`🔌 Found instances:`, {
+					sourceInstance: !!sourceInstance,
+					targetInstance: !!targetInstance,
+				});
 
 				if (sourceInstance && targetInstance) {
 					try {
@@ -69,6 +88,10 @@ export function useToneConnections(nodeId: string) {
 					} catch (error) {
 						console.error('❌ Failed to connect audio nodes:', error);
 					}
+				} else {
+					console.warn(
+						`⚠️ Missing instances for connection ${sourceKey} → ${targetKey}`
+					);
 				}
 			}
 		});
@@ -126,10 +149,7 @@ export function useToneConnections(nodeId: string) {
 
 	return {
 		getOutgoingConnections: () => {
-			return edges.filter(
-				(edge: Edge) =>
-					edge.source === nodeId && edge.sourceHandle === 'audio-out'
-			);
+			return edges.filter((edge: Edge) => edge.source === nodeId);
 		},
 	};
 }

@@ -19,6 +19,7 @@ import { initialEdges, edgeTypes } from './edges';
 import { ThemeProvider } from './contexts/ThemeProvider';
 import { FlowControls } from './components/FlowControls';
 import { NodeAddPanel } from './components/NodeAddPanel';
+import { MetallicThemePanel } from './components/MetallicThemePanel';
 import { type AppNode } from './nodes/types';
 
 import { GRID_UNIT } from './config/grid';
@@ -62,6 +63,8 @@ export default function App() {
 					snapGrid={[GRID_UNIT / 2, GRID_UNIT / 2]}
 					proOptions={{ hideAttribution: true }}
 				>
+					<NodeAddPanel />
+					<MetallicThemePanel />
 					<Background
 						gap={GRID_UNIT}
 						size={6}
@@ -69,7 +72,6 @@ export default function App() {
 						offset={3}
 						variant={BackgroundVariant.Cross}
 					/>
-					<NodeAddPanel />
 					<FlowControls />
 					{/* <StoreDebugPanel /> */}
 					<MiniMap

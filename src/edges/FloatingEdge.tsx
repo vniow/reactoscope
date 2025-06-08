@@ -8,8 +8,6 @@ import {
 } from '@xyflow/react';
 import { useHybridEdgePositions } from '../hooks/useFloatingPositions';
 import { NodeDeleteButton } from '../components/ui/NodeDeleteButton';
-import { EdgeReconnectButton } from '../components/ui/EdgeReconnectButton';
-import { GRID_UNIT } from '../config/grid';
 
 // Hardcoded edge styling
 const EDGE_STROKE_WIDTH = 7;
@@ -136,14 +134,6 @@ export function FloatingEdge(props: EdgeProps) {
 				hasGradient: true, // Both path types now have gradients
 				gradientId: `gradient-${id}`,
 				selected, // Include edge selection state
-				// Reconnect debug information
-				reconnectInfo: {
-					sourceHandle: props.sourceHandleId || 'default',
-					targetHandle: props.targetHandleId || 'default',
-					canReconnect: true, // All FloatingEdges support reconnection
-					reconnectButtonPos: `${Math.round(sourcePoint.x + GRID_UNIT)}, ${Math.round(sourcePoint.y - GRID_UNIT)}`,
-					deleteButtonPos: `${Math.round(labelX)}, ${Math.round(labelY + (showLabel && (label || showDebug) ? 30 : 0))}`,
-				},
 			}
 		: null;
 
@@ -257,30 +247,6 @@ export function FloatingEdge(props: EdgeProps) {
 										</div>
 									)}
 								</div>
-
-								{/* Reconnect debug information */}
-								<div className='border-t pt-1 mt-2'>
-									<div className='font-medium text-blue-600'>
-										🔌 Reconnect Info
-									</div>
-									<div className='text-xs'>
-										Source Handle: {debugInfo.reconnectInfo.sourceHandle}
-									</div>
-									<div className='text-xs'>
-										Target Handle: {debugInfo.reconnectInfo.targetHandle}
-									</div>
-									<div className='text-xs'>
-										Can Reconnect:{' '}
-										{debugInfo.reconnectInfo.canReconnect ? '✅ Yes' : '❌ No'}
-									</div>
-									<div className='text-xs'>
-										Reconnect Btn: ({debugInfo.reconnectInfo.reconnectButtonPos}
-										)
-									</div>
-									<div className='text-xs'>
-										Delete Btn: ({debugInfo.reconnectInfo.deleteButtonPos})
-									</div>
-								</div>
 							</div>
 						)}
 					</div>
@@ -303,44 +269,6 @@ export function FloatingEdge(props: EdgeProps) {
 								setEdges((edges) => edges.filter((edge) => edge.id !== id));
 							}}
 							title='Delete edge'
-						/>
-					</div>
-				</EdgeLabelRenderer>
-			)}
-
-			{/* Reconnect button - only shown when edge is selected, positioned near source */}
-			{selected && (
-				<EdgeLabelRenderer>
-					<div
-						style={{
-							position: 'absolute',
-							transform: `translate(-50%, -50%) translate(${sourcePoint.x + 20}px,${sourcePoint.y - 20}px)`,
-							pointerEvents: 'all',
-						}}
-						className='nodrag nopan'
-					>
-						<EdgeReconnectButton
-							edgeId={id}
-							title='Reconnect edge'
-						/>
-					</div>
-				</EdgeLabelRenderer>
-			)}
-
-			{/* Reconnect button - only shown when edge is selected, positioned near source */}
-			{selected && (
-				<EdgeLabelRenderer>
-					<div
-						style={{
-							position: 'absolute',
-							transform: `translate(-50%, -50%) translate(${sourcePoint.x + 20}px,${sourcePoint.y - 15}px)`,
-							pointerEvents: 'all',
-						}}
-						className='nodrag nopan'
-					>
-						<EdgeReconnectButton
-							edgeId={id}
-							title='Reconnect edge'
 						/>
 					</div>
 				</EdgeLabelRenderer>

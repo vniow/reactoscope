@@ -35,7 +35,7 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 		detune: 0,
 		waveType: 'sine',
 		isPlaying: false,
-		volume: 0, // dB
+		volume: -20, // -20 dB for safe listening level
 	};
 
 	const params = (audioNode?.params as OscillatorParams) || defaultParams;
@@ -48,7 +48,7 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 				detune: 0,
 				waveType: 'sine',
 				isPlaying: false,
-				volume: 0,
+				volume: -20, // -20 dB for safe listening level
 			});
 		}
 	}, [nodeId, audioNode, addAudioNode]);
@@ -147,10 +147,27 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 	}, [nodeId, params]);
 
 	// Control functions
-	const start = useCallback(() => {
+	const start = useCallback(async () => {
+		console.log(
+			`🎵 START called for oscillator ${nodeId}, isStarted: ${isStartedRef.current}`
+		);
+
 		if (!oscillatorRef.current || isStartedRef.current) return;
 
 		try {
+			// Ensure audio context is started before playing
+			await initializeAudioContext();
+
+			// Log current volume for debugging
+			console.log(`🔊 Oscillator ${nodeId} volume: ${params.volume} dB`);
+			console.log(`🔊 Oscillator ${nodeId} frequency: ${params.frequency} Hz`);
+
+			// TEMPORARY TEST: Connect directly to destination to verify audio works
+			oscillatorRef.current.connect(Tone.getDestination());
+			console.log(
+				`🔌 TEMP: Connected oscillator ${nodeId} directly to destination for testing`
+			);
+
 			oscillatorRef.current.start();
 			isStartedRef.current = true;
 			updateAudioNode(nodeId, { isPlaying: true });
@@ -158,7 +175,13 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 		} catch (error) {
 			console.error(`🚨 Error starting oscillator ${nodeId}:`, error);
 		}
-	}, [nodeId, updateAudioNode]);
+	}, [
+		nodeId,
+		updateAudioNode,
+		initializeAudioContext,
+		params.volume,
+		params.frequency,
+	]);
 
 	const stop = useCallback(() => {
 		if (!oscillatorRef.current || !isStartedRef.current) return;

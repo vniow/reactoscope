@@ -1,26 +1,39 @@
-import { type NodeProps, useReactFlow, Position } from '@xyflow/react';
+import { type NodeProps, Position } from '@xyflow/react';
 
 import { BaseNode } from '../components/BaseNode';
+import { GridBlock } from '../components/GridBlock';
 import { GridNodeHandle } from '../components/GridNodeHandle';
 import { useToneDestination } from '../hooks/useToneDestination';
+import { useNodeOperations } from '../hooks/useNodeOperations';
 import type { DestinationNode } from './types';
+
+/**
+ * Destination Node - Audio output endpoint
+ * Updated with grid-based layout and styling consistency
+ */
+
+// Grid configuration for destination node
+const DESTINATION_NODE_CONFIG = {
+	gridWidth: 5,
+	gridHeight: 4,
+} as const;
 
 export function DestinationNode({
 	id,
 	data,
+	positionAbsoluteX,
+	positionAbsoluteY,
 	selected,
 }: NodeProps<DestinationNode>) {
-	// Get the React Flow instance for node management
-	const reactFlowInstance = useReactFlow();
+	// Use custom hook for node operations
+	const { deleteNode } = useNodeOperations();
 
-	const removeNode = () => {
-		reactFlowInstance.setNodes((nodes) =>
-			nodes.filter((node) => node.id !== id)
-		);
-		reactFlowInstance.setEdges((edges) =>
-			edges.filter((edge) => edge.source !== id && edge.target !== id)
-		);
-	};
+	// Event handlers
+	const handleDelete = () => deleteNode(id as string);
+
+	// Format position values
+	const x = Math.round(positionAbsoluteX || 0);
+	const y = Math.round(positionAbsoluteY || 0);
 
 	// Initialize destination connection management
 	const { getConnectedSources } = useToneDestination(id);
@@ -29,42 +42,74 @@ export function DestinationNode({
 	return (
 		<BaseNode
 			variant='audio'
-			gridWidth={3}
-			gridHeight={2}
-			nodeId={id}
+			gridWidth={DESTINATION_NODE_CONFIG.gridWidth}
+			gridHeight={DESTINATION_NODE_CONFIG.gridHeight}
+			nodeId={id as string}
 			selected={selected}
-			onDelete={removeNode}
+			onDelete={handleDelete}
 			title={data.label || 'Audio Destination'}
 		>
-			<div className='flex flex-col items-center justify-center h-full'>
-				{/* Audio Destination Icon */}
-				<div className='text-3xl mb-2'>🔊</div>
+			<div className='relative w-full h-full overflow-visible'>
+				{/* Main content area */}
+				<GridBlock
+					gridWidth={3}
+					gridHeight={2}
+					gridX={1}
+					gridY={1}
+					variant='audio'
+					showDimensions={false}
+					className='flex flex-col items-center justify-center'
+				>
+					{/* Audio Destination Icon */}
+					<div className='text-3xl mb-2'>🔊</div>
 
-				{/* Description */}
-				<div className='text-center'>
-					<div className='text-sm font-medium text-orange-800 dark:text-orange-200'>
-						Master Output
-					</div>
-					<div className='text-xs text-gray-600 dark:text-gray-400 mt-1'>
-						Audio destination endpoint
-					</div>
-
-					{/* Connection Status */}
-					{connectedSources.length > 0 && (
-						<div className='text-xs text-green-600 dark:text-green-400 mt-1'>
-							{connectedSources.length} source
-							{connectedSources.length !== 1 ? 's' : ''} connected
+					{/* Description */}
+					<div className='text-center'>
+						<div className='text-sm font-medium text-orange-800 dark:text-orange-200'>
+							Master Output
 						</div>
-					)}
-				</div>
+						<div className='text-xs text-gray-600 dark:text-gray-400 mt-1'>
+							Audio destination endpoint
+						</div>
+
+						{/* Connection Status */}
+						{connectedSources.length > 0 && (
+							<div className='text-xs text-green-600 dark:text-green-400 mt-1'>
+								{connectedSources.length} source
+								{connectedSources.length !== 1 ? 's' : ''} connected
+							</div>
+						)}
+					</div>
+				</GridBlock>
+
+				{/* Position Display */}
+				<GridBlock
+					gridWidth={3}
+					gridHeight={1}
+					gridX={1}
+					gridY={3}
+					variant='audio'
+					className='flex items-center justify-center'
+				>
+					<div className='text-xs text-orange-600 dark:text-orange-400'>
+						<span className='font-semibold'>Pos:</span>{' '}
+						<span className='font-mono bg-orange-50 dark:bg-orange-900/30 px-1 rounded'>
+							{x},{y}
+						</span>
+					</div>
+				</GridBlock>
 			</div>
-			{/* Audio input handle centered at top using grid system */}
+
+			{/* Audio input handle centered at top */}
 			<GridNodeHandle
 				id={`${id}-audio-in`}
 				type='target'
 				position={Position.Top}
-				gridX={1.5} // Center of 3-unit width (3/2 = 1.5)
+				mode='static'
+				gridX={DESTINATION_NODE_CONFIG.gridWidth / 2} // Center horizontally
 				gridY={0} // Top edge
+				color='primary'
+				size='md'
 			/>
 		</BaseNode>
 	);

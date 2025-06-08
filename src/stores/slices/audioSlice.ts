@@ -248,10 +248,14 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 
 	// Audio Context Actions
 	initializeAudioContext: async () => {
+		console.log('🎧 Initializing audio context...');
 		try {
 			if (Tone.getContext().state !== 'running') {
+				console.log('🎧 Audio context not running, starting...');
 				await Tone.start();
 				console.log('🎧 Audio context started');
+			} else {
+				console.log('🎧 Audio context already running');
 			}
 
 			set(() => ({

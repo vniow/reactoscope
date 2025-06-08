@@ -13,36 +13,49 @@ import { GRID_UNIT } from '../config/grid';
 import type { AppNode } from './types';
 
 export const initialNodes: AppNode[] = [
-	// Floating Handle Node 1 - Source node with open source handle
+	// Oscillator Node - Audio source
 	{
-		id: 'floating-node-1',
-		type: 'position-logger',
-		position: { x: GRID_UNIT, y: GRID_UNIT * 8 },
-		data: { label: 'Floating Node 1' },
+		id: 'osc-1',
+		type: 'oscillator',
+		position: { x: GRID_UNIT * 2, y: GRID_UNIT * 4 },
+		data: {
+			label: 'Sine Oscillator',
+			id: 'osc-1',
+			type: 'oscillator' as const,
+			params: {
+				frequency: 440,
+				detune: 0,
+				waveType: 'sine' as const,
+				isPlaying: false,
+				volume: -20, // -20 dB for safe listening level
+			},
+		},
 	} as AppNode,
 
-	// Floating Handle Node 2 - Middle node (all handles connected)
+	// Gain Node - Volume control
 	{
-		id: 'floating-node-2',
-		type: 'position-logger',
-		position: { x: GRID_UNIT * 12, y: GRID_UNIT * 8 },
-		data: { label: 'Floating Node 2' },
+		id: 'gain-1',
+		type: 'gain',
+		position: { x: GRID_UNIT * 12, y: GRID_UNIT * 4 },
+		data: {
+			label: 'Volume',
+			id: 'gain-1',
+			type: 'gain' as const,
+			params: {
+				gain: 0.5,
+				mute: false,
+			},
+		},
 	} as AppNode,
 
-	// Debug Node - Target node with open target handle
+	// Destination Node - Audio output
 	{
-		id: 'debug-node-1',
-		type: 'debug',
-		position: { x: GRID_UNIT * 6, y: GRID_UNIT * -2 },
-		data: { label: 'Debug Node' },
-	} as AppNode,
-
-	// Static Node - Static handle positioning for comparison
-	{
-		id: 'static-node-1',
-		type: 'static',
-		position: { x: GRID_UNIT * -18, y: GRID_UNIT * 8 },
-		data: { label: 'Static Node' },
+		id: 'dest-1',
+		type: 'destination',
+		position: { x: GRID_UNIT * 22, y: GRID_UNIT * 4 },
+		data: {
+			label: 'Speakers',
+		},
 	} as AppNode,
 ];
 

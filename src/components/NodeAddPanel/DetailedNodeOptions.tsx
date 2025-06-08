@@ -24,11 +24,11 @@ export function DetailedNodeOptions({ onAddNode }: DetailedNodeOptionsProps) {
 			showBorder={true}
 			transparentBackground={false}
 		>
-			<div className='w-full h-full p-2'>
+			<div className='w-full p-2'>
 				<div className='text-sm font-medium mb-2 text-center'>
 					All Node Types
 				</div>
-				<div className='space-y-2 overflow-auto h-full'>
+				<div className='space-y-2 overflow-auto'>
 					{ALL_NODE_TYPES.map((option) => (
 						<button
 							key={option.type}

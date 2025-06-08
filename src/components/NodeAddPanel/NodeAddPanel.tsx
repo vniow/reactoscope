@@ -6,7 +6,6 @@ import { GridButton } from '../ui/GridButton';
 import { NodeAddHeader } from './NodeAddHeader';
 import { QuickAddSection } from './QuickAddSection';
 import { DetailedNodeOptions } from './DetailedNodeOptions';
-import { MetallicThemeSelector } from './MetallicThemeSelector';
 import { PANEL_LAYOUT } from '../../config/panelLayout';
 import { createNode, createTestFlowNodes } from '../../utils/nodeFactory';
 import type { NodeTypeOption } from '../../config/nodeTypes';
@@ -83,14 +82,6 @@ export function NodeAddPanel() {
 					<>
 						{/* Detailed Node Options */}
 						<DetailedNodeOptions onAddNode={handleAddNode} />
-
-						{/* Metallic Theme Selector */}
-						<MetallicThemeSelector
-							gridWidth={PANEL_LAYOUT.sections.metallicTheme.gridWidth}
-							gridHeight={PANEL_LAYOUT.sections.metallicTheme.gridHeight}
-							gridX={PANEL_LAYOUT.sections.metallicTheme.gridX}
-							gridY={PANEL_LAYOUT.sections.metallicTheme.gridY}
-						/>
 
 						{/* Transport Controls Section */}
 						<GridBlock

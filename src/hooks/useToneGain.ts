@@ -1,9 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import * as Tone from 'tone';
-import { useEdges } from '@xyflow/react';
 import { useAppStore } from '../stores/appStore';
 import type { GainParams } from '../stores/slices/audioSlice';
-import type { Edge } from '@xyflow/react';
 
 export interface ToneGainControls {
 	updateGain: (gain: number) => void;
@@ -130,34 +128,8 @@ export const useToneGain = (nodeId: string): ToneGainControls => {
 		[nodeId, updateAudioNode]
 	);
 
-	// Edge monitoring for incoming audio connections
-	const edges = useEdges();
-	useEffect(() => {
-		if (!gainRef.current) return;
-
-		const gainNode = gainRef.current;
-
-		// Connect incoming audio edges to the gain node
-		const connections = edges
-			.filter((edge: Edge) => edge.target === nodeId)
-			.map((edge: Edge) => {
-				const sourceNode = (
-					window as unknown as {
-						toneInstances?: Record<string, Tone.ToneAudioNode>;
-					}
-				).toneInstances?.[edge.source];
-
-				return sourceNode ? sourceNode.connect(gainNode) : null;
-			})
-			.filter((connection): connection is Tone.ToneAudioNode =>
-				Boolean(connection)
-			);
-
-		// Cleanup connections on unmount or nodeId change
-		return () => {
-			connections.forEach((connection) => connection.disconnect());
-		};
-	}, [edges, nodeId]);
+	// Edge monitoring for incoming audio connections - REMOVED BROKEN LOGIC
+	// Connection management is now handled by useToneConnections hook
 
 	return {
 		updateGain,

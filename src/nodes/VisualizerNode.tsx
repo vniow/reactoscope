@@ -1,28 +1,43 @@
-import { type NodeProps, useReactFlow, Position } from '@xyflow/react';
+import { type NodeProps, Position } from '@xyflow/react';
+
 import { BaseNode } from '../components/BaseNode';
 import { GridNodeHandle } from '../components/GridNodeHandle';
-import { Slider } from '../components/ui';
+import { GridBlock } from '../components/GridBlock';
+import { GridSlider } from '../components/ui/GridSlider';
+import { GridSelect } from '../components/ui/GridSelect';
 import { useToneAnalyser } from '../hooks/useToneAnalyser';
 import { useToneConnections } from '../hooks/useToneConnections';
+import { useNodeOperations } from '../hooks/useNodeOperations';
 import AudioVisualizer from '../components/AudioVisualizer';
 import type { VisualizerNode } from './types';
+
+/**
+ * Visualizer Node - Audio spectrum analyzer and waveform display
+ * Updated with grid-based layout and components
+ */
+
+// Grid configuration for visualizer node
+const VISUALIZER_NODE_CONFIG = {
+	gridWidth: 6,
+	gridHeight: 8,
+} as const;
 
 export function VisualizerNode({
 	id,
 	data,
 	selected,
+	positionAbsoluteX,
+	positionAbsoluteY,
 }: NodeProps<VisualizerNode>) {
-	// Get the React Flow instance for node management
-	const reactFlowInstance = useReactFlow();
+	// Use custom hook for node operations
+	const { deleteNode } = useNodeOperations();
 
-	const removeNode = () => {
-		reactFlowInstance.setNodes((nodes) =>
-			nodes.filter((node) => node.id !== id)
-		);
-		reactFlowInstance.setEdges((edges) =>
-			edges.filter((edge) => edge.source !== id && edge.target !== id)
-		);
-	};
+	// Event handlers
+	const handleDelete = () => deleteNode(id as string);
+
+	// Format position values
+	const x = Math.round(positionAbsoluteX || 0);
+	const y = Math.round(positionAbsoluteY || 0);
 
 	// Initialize analyser controls
 	const { updateSize, updateSmoothing, getAnalyserL, getAnalyserR, params } =
@@ -35,97 +50,149 @@ export function VisualizerNode({
 	const analyserL = getAnalyserL();
 	const analyserR = getAnalyserR();
 
-	const handleSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-		const size = parseInt(e.target.value);
-		updateSize(size);
-	};
-
-	const handlePointerDown = (e: React.PointerEvent) => {
-		e.stopPropagation();
-	};
+	// FFT size options for the select dropdown
+	const fftSizeOptions = [
+		{ value: 256, label: '256' },
+		{ value: 512, label: '512' },
+		{ value: 1024, label: '1024' },
+		{ value: 2048, label: '2048' },
+	];
 
 	return (
 		<BaseNode
 			variant='audio'
-			gridWidth={6}
-			gridHeight={8}
-			nodeId={id}
+			gridWidth={VISUALIZER_NODE_CONFIG.gridWidth}
+			gridHeight={VISUALIZER_NODE_CONFIG.gridHeight}
+			nodeId={id as string}
 			selected={selected}
-			onDelete={removeNode}
+			onDelete={handleDelete}
 			title={data.label || 'Audio Visualizer'}
 		>
-			<div className='flex flex-col h-full space-y-3'>
-				{/* Visualizer Display */}
-				<div className='flex-1 min-h-0'>
-					<AudioVisualizer
-						analyserL={analyserL || undefined}
-						analyserR={analyserR || undefined}
-						isPlaying={params.isConnected}
-					/>
-				</div>
-
-				{/* Controls */}
-				<div className='space-y-2'>
-					{/* FFT Size Control */}
-					<div className='space-y-1'>
-						<label className='text-xs font-medium text-gray-700 dark:text-gray-300'>
-							FFT Size: {params.size}
-						</label>
-						<select
-							value={params.size}
-							onChange={handleSizeChange}
-							onPointerDown={handlePointerDown}
-							className='nodrag w-full text-xs bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1'
-						>
-							<option value={256}>256</option>
-							<option value={512}>512</option>
-							<option value={1024}>1024</option>
-							<option value={2048}>2048</option>
-						</select>
-					</div>
-
-					{/* Smoothing Control */}
-					<Slider
-						label='Smoothing'
-						value={params.smoothing}
-						min={0}
-						max={1}
-						step={0.01}
-						formatValue={(val) => val.toFixed(2)}
-						onChange={(e) => updateSmoothing(parseFloat(e.target.value))}
-						showMinMax={true}
-					/>
-
-					{/* Connection Status */}
-					<div className='text-center'>
-						<div className='text-xs text-gray-600 dark:text-gray-400'>
-							{params.isConnected ? (
-								<span className='text-green-600 dark:text-green-400'>
-									🎵 Audio Connected
+			<div className='relative w-full h-full overflow-visible'>
+				{/* Position Display */}
+				<GridBlock
+					gridWidth={4}
+					gridHeight={1}
+					gridX={1}
+					gridY={0.5}
+					variant='audio'
+					showDimensions={false}
+				>
+					<div className='w-full h-full flex justify-center items-center'>
+						<div className='text-center'>
+							<div className='text-xs text-gray-600 dark:text-gray-400'>
+								<span className='font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded'>
+									X: {x}px, Y: {y}px
 								</span>
-							) : (
-								<span className='text-orange-600 dark:text-orange-400'>
-									🔌 Waiting for input...
-								</span>
-							)}
+							</div>
 						</div>
 					</div>
-				</div>
+				</GridBlock>
+
+				{/* Visualizer Display */}
+				<GridBlock
+					gridWidth={6}
+					gridHeight={4}
+					gridX={0}
+					gridY={1.5}
+					variant='audio'
+					showDimensions={false}
+				>
+					<div className='w-full h-full p-1'>
+						<AudioVisualizer
+							analyserL={analyserL || undefined}
+							analyserR={analyserR || undefined}
+							isPlaying={params.isConnected}
+						/>
+					</div>
+				</GridBlock>
+
+				{/* FFT Size Control */}
+				<GridSelect
+					gridWidth={3}
+					gridHeight={1}
+					gridX={0}
+					gridY={6}
+					variant='audio'
+					label={`FFT Size`}
+					selectProps={{
+						value: params.size,
+						options: fftSizeOptions,
+						onChange: (e) =>
+							updateSize(parseInt((e.target as HTMLSelectElement).value)),
+						'aria-label': 'FFT Size control',
+					}}
+				/>
+
+				{/* Smoothing Control */}
+				<GridSlider
+					gridWidth={3}
+					gridHeight={1}
+					gridX={3}
+					gridY={6}
+					variant='audio'
+					label='Smoothing'
+					sliderProps={{
+						value: params.smoothing,
+						min: 0,
+						max: 1,
+						step: 0.01,
+						formatValue: (val: number) => val.toFixed(2),
+						onChange: (e) =>
+							updateSmoothing(parseFloat((e.target as HTMLInputElement).value)),
+						showMinMax: false,
+						'aria-label': 'Smoothing control',
+					}}
+				/>
+
+				{/* Connection Status */}
+				<GridBlock
+					gridWidth={6}
+					gridHeight={1}
+					gridX={0}
+					gridY={7}
+					variant='audio'
+					showDimensions={false}
+				>
+					<div className='w-full h-full flex justify-center items-center'>
+						<div className='text-center'>
+							<div className='text-xs'>
+								{params.isConnected ? (
+									<span className='text-green-600 dark:text-green-400'>
+										🎵 Audio Connected
+									</span>
+								) : (
+									<span className='text-orange-600 dark:text-orange-400'>
+										🔌 Waiting for input...
+									</span>
+								)}
+							</div>
+						</div>
+					</div>
+				</GridBlock>
 			</div>
-			{/* Stereo audio input handles positioned using grid system */}
+
+			{/* Left audio input handle */}
 			<GridNodeHandle
-				id={`${id}-audio-in-L`}
+				id='audio-in-L'
 				type='target'
+				mode='static'
 				position={Position.Left}
 				gridX={0}
-				gridY={2.64} // 33% of 8 grid units (8 * 0.33 = 2.64)
+				gridY={VISUALIZER_NODE_CONFIG.gridHeight / 2}
+				color='primary'
+				size='md'
 			/>
+			{/* Right audio input handle */}
 			<GridNodeHandle
-				id={`${id}-audio-in-R`}
+				id='audio-in-R'
 				type='target'
+				mode='static'
 				position={Position.Right}
-				gridX={6}
-				gridY={2.64} // 33% of 8 grid units (8 * 0.33 = 2.64)
+				gridX={0}
+				gridY={VISUALIZER_NODE_CONFIG.gridHeight / 2}
+				color='primary'
+				size='md'
 			/>
 		</BaseNode>
 	);

@@ -1,9 +1,10 @@
 import { type NodeProps, useReactFlow, Position } from '@xyflow/react';
-import React from 'react';
 
 import { BaseNode } from '../components/BaseNode';
+import { GridBlock } from '../components/GridBlock';
 import { GridNodeHandle } from '../components/GridNodeHandle';
-import { Slider } from '../components/ui';
+import { GridSlider } from '../components/ui/GridSlider';
+import { GridButton } from '../components/ui/GridButton';
 import { useToneConnections } from '../hooks/useToneConnections';
 import { useToneOscillator } from '../hooks/useToneOscillator';
 import type { OscillatorNode } from './types';
@@ -11,110 +12,18 @@ import type { OscillatorNode } from './types';
 // Wave type options for the oscillator
 const waveTypes = ['sine', 'square', 'triangle', 'sawtooth'] as const;
 
-// UI Components for oscillator controls
-interface WaveTypeSelectorProps {
-	value: 'sine' | 'square' | 'triangle' | 'sawtooth';
-	onChange: (waveType: 'sine' | 'square' | 'triangle' | 'sawtooth') => void;
-}
-
-function WaveTypeSelector({ value, onChange }: WaveTypeSelectorProps) {
-	return (
-		<div className='space-y-1'>
-			<label className='text-xs font-medium text-orange-800 dark:text-orange-200'>
-				Wave Type
-			</label>
-			<div className='grid grid-cols-2 gap-1'>
-				{waveTypes.map((type) => (
-					<button
-						key={type}
-						className={`nodrag px-2 py-1 text-xs rounded transition-colors ${
-							value === type
-								? 'bg-orange-500 text-white'
-								: 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
-						}`}
-						onClick={() => onChange(type)}
-					>
-						{type}
-					</button>
-				))}
-			</div>
-		</div>
-	);
-}
-
-interface FrequencySliderProps {
-	value: number;
-	onChange: (frequency: number) => void;
-}
-
-function FrequencySlider({ value, onChange }: FrequencySliderProps) {
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		onChange(Number(e.target.value));
-	};
-
-	return (
-		<Slider
-			label='Frequency'
-			value={value}
-			min={80}
-			max={2000}
-			step={1}
-			formatValue={(val) => `${val}Hz`}
-			color='orange'
-			onChange={handleChange}
-		/>
-	);
-}
-
-interface DetuneSliderProps {
-	value: number;
-	onChange: (detune: number) => void;
-}
-
-function DetuneSlider({ value, onChange }: DetuneSliderProps) {
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		onChange(Number(e.target.value));
-	};
-
-	return (
-		<Slider
-			label='Detune'
-			value={value}
-			min={-1200}
-			max={1200}
-			step={1}
-			formatValue={(val) => `${val > 0 ? '+' : ''}${val} cents`}
-			color='green'
-			onChange={handleChange}
-		/>
-	);
-}
-
-interface PlayStopButtonProps {
-	isPlaying: boolean;
-	onStart: () => void;
-	onStop: () => void;
-}
-
-function PlayStopButton({ isPlaying, onStart, onStop }: PlayStopButtonProps) {
-	return (
-		<button
-			onClick={isPlaying ? onStop : onStart}
-			className={`nodrag w-full py-2 px-4 rounded font-medium text-sm transition-colors ${
-				isPlaying
-					? 'bg-red-500 hover:bg-red-600 text-white'
-					: 'bg-green-500 hover:bg-green-600 text-white'
-			}`}
-		>
-			{isPlaying ? '⏹️ Stop' : '▶️ Play'}
-		</button>
-	);
-}
+// Grid configuration for oscillator node
+const OSCILLATOR_NODE_CONFIG = {
+	gridWidth: 7,
+	gridHeight: 6, // Increased height for volume slider
+} as const;
 
 export function OscillatorNode({
 	id,
 	data,
-	selected,
+	positionAbsoluteX,
+	positionAbsoluteY,
+	selected = false,
 }: NodeProps<OscillatorNode>) {
 	// Tone.js oscillator hook
 	const {
@@ -123,6 +32,7 @@ export function OscillatorNode({
 		updateFrequency,
 		updateDetune,
 		updateWaveType,
+		updateVolume,
 		isPlaying,
 		params,
 	} = useToneOscillator(id);
@@ -142,49 +52,179 @@ export function OscillatorNode({
 		);
 	};
 
+	// Format position values like the debug node
+	const x = Math.round(positionAbsoluteX || 0);
+	const y = Math.round(positionAbsoluteY || 0);
+
+	// Create wave type selector buttons
+	const handleWaveTypeClick = (type: (typeof waveTypes)[number]) => {
+		updateWaveType(type);
+	};
+
+	// Format frequency value with Hz
+	const formatFrequency = (value: number) => `${value} Hz`;
+
+	// Format detune value with cents
+	const formatDetune = (value: number) =>
+		`${value > 0 ? '+' : ''}${value} cents`;
+
+	// Format volume value with dB
+	const formatVolume = (value: number) => `${value} dB`;
+
 	return (
 		<BaseNode
 			variant='audio'
-			gridWidth={3}
-			gridHeight={6}
-			nodeId={id}
+			gridWidth={OSCILLATOR_NODE_CONFIG.gridWidth}
+			gridHeight={OSCILLATOR_NODE_CONFIG.gridHeight}
+			nodeId={id as string}
 			selected={selected}
 			onDelete={removeNode}
 			title={data.label || 'Oscillator'}
 		>
-			<div className='space-y-3'>
-				{/* Wave Type Selector */}
-				<WaveTypeSelector
-					value={params.waveType}
-					onChange={updateWaveType}
+			<div className='relative w-full h-full overflow-visible'>
+				{/* Wave Type Buttons - Top Row */}
+				<GridBlock
+					gridWidth={5}
+					gridHeight={1}
+					gridX={1}
+					gridY={0}
+					variant='audio'
+				>
+					<div className='grid grid-cols-4 gap-1 w-full h-full'>
+						{waveTypes.map((type) => (
+							<GridButton
+								key={type}
+								gridWidth={1}
+								gridHeight={1}
+								variant={params.waveType === type ? 'audio' : 'default'}
+								buttonLabel={type.substring(0, 4)}
+								buttonClassName='text-xs py-0.5 px-1'
+								onClick={() => handleWaveTypeClick(type)}
+							/>
+						))}
+					</div>
+				</GridBlock>
+
+				{/* Frequency Slider */}
+				<GridSlider
+					gridWidth={5}
+					gridHeight={1}
+					gridX={1}
+					gridY={1}
+					variant='audio'
+					label='Frequency'
+					sliderProps={{
+						value: params.frequency,
+						min: 80,
+						max: 2000,
+						step: 1,
+						formatValue: formatFrequency,
+						color: 'blue',
+						onChange: (e) => updateFrequency(Number(e.target.value)),
+					}}
 				/>
 
-				{/* Frequency Control */}
-				<FrequencySlider
-					value={params.frequency}
-					onChange={updateFrequency}
+				{/* Detune Slider */}
+				<GridSlider
+					gridWidth={5}
+					gridHeight={1}
+					gridX={1}
+					gridY={2}
+					variant='audio'
+					label='Detune'
+					sliderProps={{
+						value: params.detune,
+						min: -1200,
+						max: 1200,
+						step: 1,
+						formatValue: formatDetune,
+						color: 'orange',
+						onChange: (e) => updateDetune(Number(e.target.value)),
+					}}
 				/>
 
-				{/* Detune Control */}
-				<DetuneSlider
-					value={params.detune}
-					onChange={updateDetune}
+				{/* Volume Slider */}
+				<GridSlider
+					gridWidth={5}
+					gridHeight={1}
+					gridX={1}
+					gridY={3}
+					variant='audio'
+					label='Volume'
+					sliderProps={{
+						value: params.volume,
+						min: -60,
+						max: 0,
+						step: 1,
+						formatValue: formatVolume,
+						color: 'green',
+						onChange: (e) => updateVolume(Number(e.target.value)),
+					}}
 				/>
 
 				{/* Play/Stop Button */}
-				<PlayStopButton
-					isPlaying={isPlaying}
-					onStart={start}
-					onStop={stop}
+				<GridButton
+					gridWidth={3}
+					gridHeight={1}
+					gridX={2}
+					gridY={4}
+					variant='audio'
+					buttonLabel={isPlaying ? '⏹️ Stop' : '▶️ Play'}
+					buttonClassName={
+						isPlaying
+							? 'bg-red-500 hover:bg-red-600'
+							: 'bg-green-500 hover:bg-green-600'
+					}
+					onClick={() => {
+						console.log(
+							`🎵 Play button clicked for ${id}, isPlaying: ${isPlaying}`
+						);
+						if (isPlaying) {
+							stop();
+						} else {
+							start();
+						}
+					}}
 				/>
+
+				{/* Position Display */}
+				<GridBlock
+					gridWidth={5}
+					gridHeight={1}
+					gridX={1}
+					gridY={5}
+					variant='audio'
+					className='flex items-center justify-center'
+				>
+					<div className='text-xs text-orange-600 dark:text-orange-400'>
+						<span className='font-semibold'>Position:</span>{' '}
+						<span className='font-mono bg-orange-50 dark:bg-orange-900/30 px-1 rounded'>
+							{x},{y}
+						</span>
+					</div>
+				</GridBlock>
 			</div>
-			{/* Audio output handle centered at bottom using grid system */}
+
+			{/* Static Handles - Fixed grid positions (using static mode) like the debug node */}
+			{/* <GridNodeHandle
+				id={`${id}-target`}
+				type='target'
+				mode='static'
+				position={Position.Left}
+				gridX={0}
+				gridY={OSCILLATOR_NODE_CONFIG.gridHeight / 2} // Center vertically
+				color='primary'
+				size='md'
+			/> */}
 			<GridNodeHandle
-				id={`${id}-audio-out`}
+				id={`${id}-source`}
 				type='source'
-				position={Position.Bottom}
-				gridX={1.5} // Center of 3-unit width (3/2 = 1.5)
-				gridY={6} // Bottom edge
+				mode='static'
+				position={Position.Right}
+				gridX={0}
+				gridY={OSCILLATOR_NODE_CONFIG.gridHeight / 2} // Center vertically
+				color='primary'
+				size='md'
 			/>
 		</BaseNode>
 	);
