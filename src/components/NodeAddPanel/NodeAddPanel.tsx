@@ -1,8 +1,7 @@
-import { useState } from 'react';
 import { Panel, useReactFlow } from '@xyflow/react';
+import { useState } from 'react';
 import { NodeAddHeader } from './NodeAddHeader';
-import { QuickAddSection } from './QuickAddSection';
-import { DetailedNodeOptions } from './DetailedNodeOptions';
+import { NodeGroupsSection } from './NodeGroupsSection';
 import { PANEL_LAYOUT } from '../../config/panelLayout';
 import { createNode } from '../../utils/nodeFactory';
 import type { NodeTypeOption } from '../../config/nodeTypes';
@@ -15,9 +14,10 @@ export function NodeAddPanel() {
 		const newNode = createNode(nodeTypeOption);
 		reactFlowInstance.setNodes((nodes) => [...nodes, newNode]);
 		console.log(`🎯 Added new ${nodeTypeOption.name} node:`, newNode);
+	};
 
-		// Collapse the panel after adding a node
-		setIsExpanded(false);
+	const handleToggleExpanded = () => {
+		setIsExpanded(!isExpanded);
 	};
 
 	return (
@@ -25,32 +25,31 @@ export function NodeAddPanel() {
 			position='top-left'
 			className='w-96 max-w-full'
 		>
-			{/* Main container using grid layout */}
+			{/* Main container with variant-aware styling */}
 			<div
-				className='relative'
+				className='relative backdrop-blur-md rounded-xl transition-all duration-300 ease-in-out'
+				data-variant='core' // Use core variant for system panel
 				style={{
 					width: `${PANEL_LAYOUT.width}px`,
-					height: isExpanded
-						? `${PANEL_LAYOUT.heightExpanded}px`
-						: `${PANEL_LAYOUT.heightCollapsed}px`,
+					height: `${isExpanded ? PANEL_LAYOUT.heightExpanded : PANEL_LAYOUT.heightCollapsed}px`,
+					background:
+						'linear-gradient(135deg, var(--node-bg-from), var(--node-bg-via), var(--node-bg-to))',
+					boxShadow:
+						'0 10px 15px -3px var(--node-shadow), 0 4px 6px -4px var(--node-shadow)',
+					border: '1px solid var(--node-border)',
 				}}
 			>
 				{/* Header Section */}
 				<NodeAddHeader
 					isExpanded={isExpanded}
-					onToggleExpanded={() => setIsExpanded(!isExpanded)}
+					onToggleExpanded={handleToggleExpanded}
 				/>
 
-				{/* Quick Add Section - Always visible */}
-				<QuickAddSection onAddNode={handleAddNode} />
-
-				{/* Expanded Content - Only visible when expanded */}
-				{isExpanded && (
-					<>
-						{/* Detailed Node Options */}
-						<DetailedNodeOptions onAddNode={handleAddNode} />
-					</>
-				)}
+				{/* Node Groups Section - Only visible when expanded */}
+				<NodeGroupsSection
+					onAddNode={handleAddNode}
+					isVisible={isExpanded}
+				/>
 			</div>
 		</Panel>
 	);

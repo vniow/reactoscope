@@ -136,10 +136,63 @@ export const ALL_NODE_TYPES: NodeTypeOption[] = [
 	...UTILITY_NODES,
 ];
 
-// Quick access nodes (for the quick add section)
-export const QUICK_ADD_NODES = ALL_NODE_TYPES.slice(0, 8);
-
 // Helper to check if a node type requires audio-specific handling
 export const isAudioNode = (nodeType: string): boolean => {
 	return ['oscillator', 'gain', 'visualizer'].includes(nodeType);
+};
+
+// Variant display names for the UI
+export const VARIANT_DISPLAY_NAMES: Record<ComponentVariant, string> = {
+	core: 'Core System',
+	source: 'Audio Sources',
+	instrument: 'Instruments',
+	effect: 'Effects',
+	component: 'Components',
+	signal: 'Signal Processing',
+	event: 'Events',
+	unit: 'Debug & Utilities',
+} as const;
+
+// Helper to group nodes by their variant
+export const groupNodesByVariant = (): Record<
+	ComponentVariant,
+	NodeTypeOption[]
+> => {
+	const groups: Record<ComponentVariant, NodeTypeOption[]> = {
+		core: [],
+		source: [],
+		instrument: [],
+		effect: [],
+		component: [],
+		signal: [],
+		event: [],
+		unit: [],
+	};
+
+	ALL_NODE_TYPES.forEach((node) => {
+		groups[node.variant].push(node);
+	});
+
+	// Filter out empty groups
+	return Object.fromEntries(
+		Object.entries(groups).filter(([, nodes]) => nodes.length > 0)
+	) as Record<ComponentVariant, NodeTypeOption[]>;
+};
+
+// Get the order of variants to display (non-empty variants only)
+export const getVariantDisplayOrder = (): ComponentVariant[] => {
+	const groups = groupNodesByVariant();
+	const order: ComponentVariant[] = [
+		'core',
+		'source',
+		'instrument',
+		'effect',
+		'component',
+		'signal',
+		'event',
+		'unit',
+	];
+	return order.filter(
+		(variant) => groups[variant] && groups[variant].length > 0
+	);
 };

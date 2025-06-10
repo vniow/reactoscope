@@ -1,6 +1,3 @@
 export { NodeAddHeader } from './NodeAddHeader';
-export { QuickAddSection } from './QuickAddSection';
-export { DetailedNodeOptions } from './DetailedNodeOptions';
-
-// Re-export the main panel component
+export { NodeGroupsSection } from './NodeGroupsSection';
 export { NodeAddPanel } from './NodeAddPanel';

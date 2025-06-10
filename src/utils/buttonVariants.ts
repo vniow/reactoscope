@@ -112,7 +112,15 @@ export function getBorderVariantClasses(
  * Base button classes that apply to all variants
  */
 export const BASE_BUTTON_CLASSES =
-	'p-2 rounded text-xs font-medium transition-colors text-center';
+	'p-2 rounded text-xs font-medium transition-all duration-200 text-center border shadow-sm hover:shadow-md';
+
+/**
+ * Variant-aware button classes that use CSS custom properties
+ * These work with data-variant attributes on the button or parent element
+ * Enhanced for a11y compliance with proper contrast ratios
+ */
+export const VARIANT_BUTTON_CLASSES =
+	'bg-[var(--node-accent,theme(colors.gray.600))] hover:bg-[var(--node-accent,theme(colors.gray.700))] active:bg-[var(--node-accent,theme(colors.gray.800))] text-white border-[var(--node-accent,theme(colors.gray.600))] hover:border-[var(--node-accent,theme(colors.gray.700))] font-medium shadow-sm';
 
 /**
  * Base border button classes that apply to all variants

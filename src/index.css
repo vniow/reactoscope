@@ -60,6 +60,14 @@
 	--node-accent: var(--color-variant-core);
 	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
 	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
+	--node-text-on-accent: light-dark(
+		#ffffff,
+		#000000
+	); /* High contrast text on accent backgrounds */
+	--node-text-primary: light-dark(
+		#1f2937,
+		#f9fafb
+	); /* Primary text with high contrast */
 	--node-bg-from: color-mix(
 		in srgb,
 		var(--node-accent) 20%,
@@ -81,6 +89,8 @@
 	--node-accent: var(--color-variant-source);
 	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
 	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
+	--node-text-on-accent: light-dark(#ffffff, #000000);
+	--node-text-primary: light-dark(#1f2937, #f9fafb);
 	--node-bg-from: color-mix(
 		in srgb,
 		var(--node-accent) 20%,
@@ -102,6 +112,8 @@
 	--node-accent: var(--color-variant-instrument);
 	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
 	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
+	--node-text-on-accent: light-dark(#ffffff, #000000);
+	--node-text-primary: light-dark(#1f2937, #f9fafb);
 	--node-bg-from: color-mix(
 		in srgb,
 		var(--node-accent) 20%,
@@ -123,6 +135,8 @@
 	--node-accent: var(--color-variant-effect);
 	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
 	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
+	--node-text-on-accent: light-dark(#ffffff, #000000);
+	--node-text-primary: light-dark(#1f2937, #f9fafb);
 	--node-bg-from: color-mix(
 		in srgb,
 		var(--node-accent) 20%,
@@ -144,6 +158,8 @@
 	--node-accent: var(--color-variant-component);
 	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
 	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
+	--node-text-on-accent: light-dark(#ffffff, #000000);
+	--node-text-primary: light-dark(#1f2937, #f9fafb);
 	--node-bg-from: color-mix(
 		in srgb,
 		var(--node-accent) 20%,
@@ -165,6 +181,8 @@
 	--node-accent: var(--color-variant-signal);
 	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
 	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
+	--node-text-on-accent: light-dark(#ffffff, #000000);
+	--node-text-primary: light-dark(#1f2937, #f9fafb);
 	--node-bg-from: color-mix(
 		in srgb,
 		var(--node-accent) 20%,
@@ -186,6 +204,8 @@
 	--node-accent: var(--color-variant-event);
 	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
 	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
+	--node-text-on-accent: light-dark(#ffffff, #000000);
+	--node-text-primary: light-dark(#1f2937, #f9fafb);
 	--node-bg-from: color-mix(
 		in srgb,
 		var(--node-accent) 20%,
@@ -207,6 +227,8 @@
 	--node-accent: var(--color-variant-unit);
 	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
 	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
+	--node-text-on-accent: light-dark(#ffffff, #000000);
+	--node-text-primary: light-dark(#1f2937, #f9fafb);
 	--node-bg-from: color-mix(
 		in srgb,
 		var(--node-accent) 20%,

@@ -21,33 +21,44 @@ export function NodeAddHeader({
 			showBorder={true}
 			transparentBackground={false}
 		>
-			<div className='flex items-center justify-between w-full px-2'>
+			<button
+				onClick={onToggleExpanded}
+				className='flex items-center justify-between w-full px-4 py-2 text-left transition-colors duration-200 hover:bg-black/5 dark:hover:bg-white/5 group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset'
+				aria-expanded={isExpanded}
+				aria-label={`${isExpanded ? 'Collapse' : 'Expand'} node add panel`}
+			>
 				<div className='flex items-center gap-2'>
-					<span className='text-lg'>➕</span>
-					<span className='font-semibold'>Add Node</span>
-				</div>
-				<button
-					onClick={onToggleExpanded}
-					className='p-1 rounded hover:bg-white/20 transition-colors'
-					title={isExpanded ? 'Collapse' : 'Expand'}
-				>
-					<svg
-						className={`w-4 h-4 transition-transform ${
-							isExpanded ? 'rotate-180' : ''
-						}`}
-						fill='none'
-						stroke='currentColor'
-						viewBox='0 0 24 24'
+					<span
+						className='text-lg'
+						aria-hidden='true'
 					>
-						<path
-							strokeLinecap='round'
-							strokeLinejoin='round'
-							strokeWidth={2}
-							d='M19 9l-7 7-7-7'
-						/>
-					</svg>
-				</button>
-			</div>
+						➕
+					</span>
+					<span className='font-semibold text-gray-900 dark:text-gray-100'>
+						Add Node
+					</span>
+				</div>
+				<div className='flex items-center gap-1'>
+					<span className='text-xs text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100'>
+						{isExpanded ? 'Collapse' : 'Expand'}
+					</span>
+					<div
+						className={`transition-transform duration-200 text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 ${isExpanded ? 'rotate-180' : ''}`}
+						aria-hidden='true'
+					>
+						<svg
+							width='12'
+							height='12'
+							viewBox='0 0 24 24'
+							fill='none'
+							stroke='currentColor'
+							strokeWidth='2'
+						>
+							<path d='m6 9 6 6 6-6' />
+						</svg>
+					</div>
+				</div>
+			</button>
 		</GridBlock>
 	);
 }

@@ -4,26 +4,24 @@ import { GRID_UNIT } from './grid';
 export const PANEL_LAYOUT = {
 	// Main panel dimensions
 	width: GRID_UNIT * 6, // 384px (match the w-96 class which is 24rem = 384px)
-	heightCollapsed: GRID_UNIT * 5, // 320px
-	heightExpanded: GRID_UNIT * 9, // Height for expanded panel (reduced from 10 after removing test flow)
+	heightCollapsed: GRID_UNIT * 2, // 128px - just the header when collapsed
+	heightExpanded: GRID_UNIT * 12, // 768px - full height when expanded to show all variants
 
 	// Grid positions for each section
 	sections: {
 		header: { gridX: 0, gridY: 0, gridWidth: 6, gridHeight: 1 },
-		quickAdd: { gridX: 0, gridY: 1, gridWidth: 6, gridHeight: 3 },
-		detailedOptions: { gridX: 0, gridY: 4, gridWidth: 6, gridHeight: 5 }, // Moved up from gridY: 5 to gridY: 4
+		nodeGroups: { gridX: 0, gridY: 1, gridWidth: 6, gridHeight: 11 }, // Large area for variant groups
 	},
 
-	// Quick add grid configuration
-	quickAdd: {
-		columns: 4,
-		maxItems: 12,
+	// Node group configuration
+	nodeGroups: {
+		itemsPerRow: 3, // 3 nodes per row for better readability in sections
+		sectionSpacing: 16, // Space between variant sections
 	},
 } as const;
 
 // Calculate section heights for easier access
 export const SECTION_HEIGHTS = {
 	header: PANEL_LAYOUT.sections.header.gridHeight * GRID_UNIT,
-	quickAdd: PANEL_LAYOUT.sections.quickAdd.gridHeight * GRID_UNIT,
-	detailedOptions: PANEL_LAYOUT.sections.detailedOptions.gridHeight * GRID_UNIT,
+	nodeGroups: PANEL_LAYOUT.sections.nodeGroups.gridHeight * GRID_UNIT,
 } as const;
