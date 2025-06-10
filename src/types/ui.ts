@@ -79,3 +79,51 @@ export interface AccessibilityProps {
 	'aria-pressed'?: boolean;
 	role?: string;
 }
+
+// Enhanced color token system for variant-based theming
+export interface VariantColorTokens {
+	// Primary colors
+	accent: string;
+	accentHover: string;
+	accentActive: string;
+	
+	// Text colors
+	textOnAccent: string;
+	textPrimary: string;
+	textSecondary: string;
+	
+	// Background variations
+	bgFrom: string;
+	bgVia: string;
+	bgTo: string;
+	bgSubtle: string;
+	
+	// Border and effects
+	border: string;
+	borderFocus: string;
+	shadow: string;
+	shadowHover: string;
+	
+	// Opacity variations (for mixing)
+	accent10: string;
+	accent20: string;
+	accent40: string;
+	accent60: string;
+	accent80: string;
+}
+
+// Color inheritance configuration for edges
+export interface EdgeColorConfig {
+	sourceVariant: ComponentVariant;
+	targetVariant: ComponentVariant;
+	colorMode: 'source' | 'target' | 'gradient' | 'mixed';
+	opacity?: number;
+}
+
+// Component color inheritance props
+export interface ColorInheritanceProps {
+	variant?: ComponentVariant;
+	inheritFrom?: string; // ID of component to inherit from
+	colorTokens?: Partial<VariantColorTokens>;
+	forceColors?: boolean; // Override inherited colors
+}

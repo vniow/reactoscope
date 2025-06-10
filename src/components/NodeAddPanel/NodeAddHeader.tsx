@@ -18,8 +18,8 @@ export function NodeAddHeader({
 			gridHeight={gridHeight}
 			gridX={gridX}
 			gridY={gridY}
-			showBorder={true}
-			transparentBackground={false}
+			showBorder={false}
+			transparentBackground={true}
 		>
 			<button
 				onClick={onToggleExpanded}

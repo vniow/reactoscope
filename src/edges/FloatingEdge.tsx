@@ -9,12 +9,14 @@ import {
 import { useHybridEdgePositions } from '../hooks/useFloatingPositions';
 import { NodeDeleteButton } from '../components/ui/NodeDeleteButton';
 
+import { useEdgeColors } from '../hooks/useVariantColors';
+
 // Hardcoded edge styling
 const EDGE_STROKE_WIDTH = 7;
 
-// Gradient colors for all paths (blue to purple gradient)
-const GRADIENT_START_COLOR = '#3b82f6'; // blue-500
-const GRADIENT_END_COLOR = '#8b5cf6'; // violet-500
+// Remove hardcoded gradient colors - now using dynamic inheritance
+// const GRADIENT_START_COLOR = '#3b82f6'; // blue-500
+// const GRADIENT_END_COLOR = '#8b5cf6'; // violet-500
 
 // Type for edge data configuration
 interface FloatingEdgeData {
@@ -24,6 +26,7 @@ interface FloatingEdgeData {
 	borderRadius?: number;
 	offset?: number;
 	labelClassName?: string;
+	colorMode?: 'source' | 'target' | 'gradient' | 'mixed'; // Add color inheritance mode
 }
 
 export function FloatingEdge(props: EdgeProps) {
@@ -55,6 +58,14 @@ export function FloatingEdge(props: EdgeProps) {
 	const showDebug = edgeData?.showDebug ?? false;
 	const borderRadius = edgeData?.borderRadius ?? 5;
 	const offset = edgeData?.offset ?? 16;
+	const colorMode = edgeData?.colorMode ?? 'gradient';
+
+	// Get dynamic colors based on connected nodes
+	const { stroke: dynamicStroke, strokeHover, gradient, gradientId } = useEdgeColors(
+		source,
+		target,
+		colorMode
+	);
 
 	// Label styling
 	const labelClassName =
@@ -138,15 +149,15 @@ export function FloatingEdge(props: EdgeProps) {
 		: null;
 
 	// All edges now use gradients
-	const edgeStroke = `url(#gradient-${id})`;
+	const edgeStroke = colorMode === 'gradient' ? `url(#${gradientId})` : dynamicStroke;
 	const edgeStrokeWidth = selected ? EDGE_STROKE_WIDTH + 2 : EDGE_STROKE_WIDTH; // Make selected edges slightly thicker
 
 	return (
 		<>
-			{/* Define gradient for all paths */}
+			{/* Define gradient for dynamic color inheritance */}
 			<defs>
 				<linearGradient
-					id={`gradient-${id}`}
+					id={gradientId}
 					x1={sourcePoint.x}
 					y1={sourcePoint.y}
 					x2={targetPoint.x}
@@ -155,11 +166,11 @@ export function FloatingEdge(props: EdgeProps) {
 				>
 					<stop
 						offset='0%'
-						stopColor={GRADIENT_START_COLOR}
+						stopColor={gradient.from}
 					/>
 					<stop
 						offset='100%'
-						stopColor={GRADIENT_END_COLOR}
+						stopColor={gradient.to}
 					/>
 				</linearGradient>
 			</defs>
@@ -234,7 +245,7 @@ export function FloatingEdge(props: EdgeProps) {
 									</div>
 									{debugInfo.hasGradient && (
 										<div className='text-purple-600 text-xs'>
-											🎨 Gradient: {debugInfo.gradientId}
+											🎨 Gradient: {gradientId} ({colorMode})
 										</div>
 									)}
 									{debugInfo.isStraightLine ? (

@@ -25,18 +25,12 @@ export function NodeAddPanel() {
 			position='top-left'
 			className='w-96 max-w-full'
 		>
-			{/* Main container with variant-aware styling */}
+			{/* Main container with custom blurred background styling */}
 			<div
-				className='relative backdrop-blur-md rounded-xl transition-all duration-300 ease-in-out'
-				data-variant='core' // Use core variant for system panel
+				className='relative glass-panel-enhanced rounded-xl transition-all duration-300 ease-in-out'
 				style={{
 					width: `${PANEL_LAYOUT.width}px`,
 					height: `${isExpanded ? PANEL_LAYOUT.heightExpanded : PANEL_LAYOUT.heightCollapsed}px`,
-					background:
-						'linear-gradient(135deg, var(--node-bg-from), var(--node-bg-via), var(--node-bg-to))',
-					boxShadow:
-						'0 10px 15px -3px var(--node-shadow), 0 4px 6px -4px var(--node-shadow)',
-					border: '1px solid var(--node-border)',
 				}}
 			>
 				{/* Header Section */}

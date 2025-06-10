@@ -28,7 +28,7 @@
 		#06b6d4,
 		#67e8f9
 	); /* Cyan - Signal processing */
-	--color-variant-event: light-dark(#eab308, #fde047); /* Yellow - Events */
+	--color-variant-event: light-dark(#fbbf24, #fde68a); /* Pastel Yellow - Events */
 	--color-variant-unit: light-dark(
 		#ef4444,
 		#f87171
@@ -365,5 +365,99 @@
 		border-radius: inherit;
 		stroke-dasharray: var(--dash-length, 4px 4px);
 		pointer-events: none;
+	}
+
+	/* Glass morphism effects for panels */
+	.bg-glass-light {
+		background: linear-gradient(
+			135deg,
+			rgba(255, 255, 255, 0.1),
+			rgba(255, 255, 255, 0.05),
+			rgba(255, 255, 255, 0.08)
+		);
+	}
+
+	.bg-glass-dark {
+		background: linear-gradient(
+			135deg,
+			rgba(30, 41, 59, 0.15),
+			rgba(30, 41, 59, 0.08),
+			rgba(30, 41, 59, 0.12)
+		);
+	}
+
+	.shadow-glass {
+		box-shadow:
+			0 20px 25px -5px rgba(0, 0, 0, 0.1),
+			0 8px 10px -6px rgba(0, 0, 0, 0.1),
+			inset 0 1px 0 rgba(255, 255, 255, 0.1);
+	}
+
+	.dark .shadow-glass {
+		box-shadow:
+			0 20px 25px -5px rgba(0, 0, 0, 0.3),
+			0 8px 10px -6px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	}
+
+	/* Enhanced glass panel for add node panel */
+	.glass-panel {
+		backdrop-filter: blur(16px) saturate(180%);
+		-webkit-backdrop-filter: blur(16px) saturate(180%);
+	}
+
+	.glass-panel-enhanced {
+		background: light-dark(
+			rgba(255, 255, 255, 0.12),
+			rgba(255, 255, 255, 0.08)
+		);
+		backdrop-filter: blur(16px) saturate(180%);
+		-webkit-backdrop-filter: blur(16px) saturate(180%);
+		border: 1px solid light-dark(
+			rgba(255, 255, 255, 0.3),
+			rgba(255, 255, 255, 0.15)
+		);
+		box-shadow: 
+			0 8px 32px light-dark(
+				rgba(0, 0, 0, 0.1),
+				rgba(0, 0, 0, 0.3)
+			),
+			inset 0 1px 0 light-dark(
+				rgba(255, 255, 255, 0.2),
+				rgba(255, 255, 255, 0.1)
+			);
+	}
+
+	/* Custom scrollbar for glass panels */
+	.scrollbar-glass {
+		scrollbar-width: thin;
+		scrollbar-color: light-dark(
+			rgba(0, 0, 0, 0.3) transparent,
+			rgba(255, 255, 255, 0.3) transparent
+		);
+	}
+
+	.scrollbar-glass::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	.scrollbar-glass::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.scrollbar-glass::-webkit-scrollbar-thumb {
+		background: light-dark(
+			rgba(0, 0, 0, 0.3),
+			rgba(255, 255, 255, 0.3)
+		);
+		border-radius: 3px;
+		transition: background 0.2s ease;
+	}
+
+	.scrollbar-glass::-webkit-scrollbar-thumb:hover {
+		background: light-dark(
+			rgba(0, 0, 0, 0.5),
+			rgba(255, 255, 255, 0.5)
+		);
 	}
 }

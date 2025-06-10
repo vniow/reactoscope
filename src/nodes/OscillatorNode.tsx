@@ -67,7 +67,7 @@ export function OscillatorNode({
 
 	return (
 		<BaseNode
-			variant='source'
+			variant={data.variant || 'source'} // Use variant from data, default to source
 			gridWidth={OSCILLATOR_NODE_CONFIG.gridWidth}
 			gridHeight={OSCILLATOR_NODE_CONFIG.gridHeight}
 			nodeId={id as string}

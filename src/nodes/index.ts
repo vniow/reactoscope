@@ -22,6 +22,7 @@ export const initialNodes: AppNode[] = [
 			label: 'Sine Oscillator',
 			id: 'osc-1',
 			type: 'oscillator' as const,
+			variant: 'source', // Add variant for green color
 			params: {
 				frequency: 440,
 				detune: 0,
@@ -41,6 +42,7 @@ export const initialNodes: AppNode[] = [
 			label: 'Volume',
 			id: 'gain-1',
 			type: 'gain' as const,
+			variant: 'event', // Add variant for pastel yellow color
 			params: {
 				gain: 0.5,
 				mute: false,

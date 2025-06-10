@@ -82,7 +82,7 @@ export const AUDIO_NODES: NodeTypeOption[] = [
 		name: 'Gain',
 		description: 'Volume control with mute functionality',
 		emoji: '🎚️',
-		variant: 'component', // Signal component -> component category
+		variant: 'event', // Changed to event variant for pastel yellow color
 		category: 'audio',
 		defaultData: {
 			id: '',

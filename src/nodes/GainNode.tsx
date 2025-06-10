@@ -56,6 +56,7 @@ export function GainNode({
 			selected={selected}
 			onDelete={handleDelete}
 			title={data.label || 'Gain'}
+			variant={data.variant || 'event'} // Use variant from data, default to event for pastel yellow
 		>
 			<div className='relative w-full h-full overflow-visible'>
 				{/* Position Display */}

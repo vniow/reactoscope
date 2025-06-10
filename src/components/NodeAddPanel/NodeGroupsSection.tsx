@@ -6,10 +6,7 @@ import {
 	VARIANT_DISPLAY_NAMES,
 	type NodeTypeOption,
 } from '../../config/nodeTypes';
-import {
-	BASE_BUTTON_CLASSES,
-	VARIANT_BUTTON_CLASSES,
-} from '../../utils/buttonVariants';
+import { VariantButton } from '../ui/VariantButton';
 import type { ComponentVariant } from '../../types/ui';
 
 interface NodeGroupsSectionProps {
@@ -26,26 +23,34 @@ export function NodeGroupsSection({
 	const nodeGroups = groupNodesByVariant();
 	const variantOrder = getVariantDisplayOrder();
 
-	if (!isVisible) {
-		return null;
-	}
-
 	return (
 		<GridBlock
 			gridWidth={gridWidth}
 			gridHeight={gridHeight}
 			gridX={gridX}
 			gridY={gridY}
-			showBorder={true}
-			transparentBackground={false}
+			showBorder={false}
+			transparentBackground={true}
 		>
 			<div
-				className='w-full h-full p-3 overflow-auto'
+				className={`
+					w-full h-full p-3 scrollbar-glass
+					transition-all duration-300 ease-in-out
+					${isVisible 
+						? 'opacity-100 translate-y-0' 
+						: 'opacity-0 -translate-y-4 pointer-events-none'
+					}
+				`}
 				role='region'
 				aria-label='Node types grouped by category'
+				style={{
+					maxHeight: '100%',
+					overflowY: 'auto',
+					overflowX: 'hidden',
+				}}
 			>
-				<div className='space-y-4'>
-					{variantOrder.map((variant) => {
+				<div className='space-y-4 pb-2'>
+					{variantOrder.map((variant, index) => {
 						const nodes = nodeGroups[variant];
 						if (!nodes || nodes.length === 0) return null;
 
@@ -55,6 +60,8 @@ export function NodeGroupsSection({
 								variant={variant}
 								nodes={nodes}
 								onAddNode={onAddNode}
+								animationDelay={index * 50} // Stagger animation by 50ms per section
+								isVisible={isVisible}
 							/>
 						);
 					})}
@@ -68,17 +75,28 @@ interface VariantSectionProps {
 	variant: ComponentVariant;
 	nodes: NodeTypeOption[];
 	onAddNode: (nodeType: NodeTypeOption) => void;
+	animationDelay: number;
+	isVisible: boolean;
 }
 
-function VariantSection({ variant, nodes, onAddNode }: VariantSectionProps) {
+function VariantSection({ variant, nodes, onAddNode, animationDelay, isVisible }: VariantSectionProps) {
 	const variantName = VARIANT_DISPLAY_NAMES[variant];
 	const sectionId = `node-section-${variant}`;
 
 	return (
 		<section
-			className='variant-section'
+			className={`
+				variant-section transition-all duration-300 ease-in-out
+				${isVisible 
+					? 'opacity-100 translate-y-0' 
+					: 'opacity-0 translate-y-2'
+				}
+			`}
 			data-variant={variant}
 			aria-labelledby={sectionId}
+			style={{
+				transitionDelay: isVisible ? `${animationDelay}ms` : '0ms',
+			}}
 		>
 			{/* Section Header with variant styling and a11y compliance */}
 			<div className='mb-2'>
@@ -104,30 +122,36 @@ function VariantSection({ variant, nodes, onAddNode }: VariantSectionProps) {
 
 			{/* Node Grid */}
 			<div
-				className='grid grid-cols-3 gap-2 mb-1'
+				className='grid grid-cols-3 gap-2 m-1'
 				role='group'
 				aria-labelledby={sectionId}
 			>
-				{nodes.map((option) => (
-					<button
+				{nodes.map((option, buttonIndex) => (
+					<VariantButton
 						key={option.type}
+						variant={option.variant}
+						size="lg"
 						onClick={() => onAddNode(option)}
-						className={`${BASE_BUTTON_CLASSES} ${VARIANT_BUTTON_CLASSES} h-14 min-h-14 flex flex-col items-center justify-center text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-900 hover:scale-105 transform transition-transform`}
 						title={option.description}
 						aria-label={`Add ${option.name} node. ${option.description}`}
-						data-variant={option.variant}
-						tabIndex={0}
+						icon={<span className="text-sm">{option.emoji}</span>}
+						useCustomColors={true}
+						className={`
+							transition-all duration-300 ease-in-out
+							${isVisible 
+								? 'opacity-100 translate-y-0 scale-100' 
+								: 'opacity-0 translate-y-1 scale-95'
+							}
+							text-xs
+						`}
+						style={{
+							transitionDelay: isVisible 
+								? `${animationDelay + (buttonIndex * 30)}ms` 
+								: '0ms',
+						}}
 					>
-						<div
-							className='text-sm mb-1'
-							aria-hidden='true'
-						>
-							{option.emoji}
-						</div>
-						<div className='text-xs leading-tight font-medium text-white'>
-							{option.name.split(' ').slice(0, 2).join(' ')}
-						</div>
-					</button>
+						{option.name.split(' ').slice(0, 2).join(' ')}
+					</VariantButton>
 				))}
 			</div>
 		</section>
