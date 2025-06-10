@@ -30,8 +30,6 @@ interface GridNodeHandleProps {
 	style?: CSSProperties;
 	className?: string;
 	size?: 'sm' | 'md' | 'lg';
-	color?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error';
-	variant?: 'default' | 'primary' | 'debug' | 'secondary' | 'audio'; // For floating mode styling
 }
 
 /**
@@ -69,8 +67,6 @@ export function GridNodeHandle({
 	style = {},
 	className,
 	size = 'md',
-	color = 'default',
-	variant = 'default',
 }: GridNodeHandleProps) {
 	// Get floating positions if in floating mode
 	const floatingPositions = useFloatingHandles(
@@ -106,54 +102,34 @@ export function GridNodeHandle({
 		lg: 'w-10 h-10',
 	};
 
-	// Color variants for different handle types
-	const colorClasses = {
-		default: type === 'source' ? '!bg-emerald-500' : '!bg-blue-500',
-		primary: '!bg-blue-600',
-		secondary: '!bg-gray-500',
-		success: '!bg-green-500',
-		warning: '!bg-yellow-500',
-		error: '!bg-red-500',
-	};
-
-	// Floating mode variant styles (similar to FloatingHandle)
-	const floatingVariantStyles = {
-		default: {
-			backgroundColor: '#94a3b8',
-			border: '2px solid #475569',
-		},
-		primary: {
-			backgroundColor: '#3b82f6',
-			border: '2px solid #1e40af',
-		},
-		debug: {
-			backgroundColor: '#e91e63',
-			border: '2px solid #ad1457',
-		},
-		secondary: {
-			backgroundColor: '#64748b',
-			border: '2px solid #334155',
-		},
-		audio: {
-			backgroundColor: '#10b981',
-			border: '2px solid #047857',
-		},
-	};
-
 	// Shape based on handle type
 	const shapeClass = type === 'source' ? 'rounded-none' : 'rounded-full';
 
-	// Combine all Tailwind classes
+	// Handle styling that matches node buttons and adapts to light/dark mode
+	// Uses CSS custom properties to inherit the node's accent color and provide appropriate fill variants
 	const handleClasses = [
 		sizeClasses[size],
 		shapeClass,
 		'drop-shadow-md',
-		'border-2 border-white',
-		mode === 'static' ? colorClasses[color] : '', // Use Tailwind for static, inline styles for floating
+		'border-2',
+		// Use CSS custom properties for colors - inherits from parent node's data-variant
+		'border-[var(--node-accent,theme(colors.blue.500))]',
+		'transition-colors',
+		'duration-150',
 		className,
 	]
 		.filter(Boolean)
 		.join(' ');
+
+	// Background color using CSS custom properties for better browser support
+	const backgroundStyle: CSSProperties = {
+		backgroundColor:
+			type === 'source'
+				? // Source handles: lighter fill (20% accent mix)
+					'color-mix(in srgb, var(--node-accent, #3b82f6) 20%, light-dark(white, #374151))'
+				: // Target handles: slightly more saturated fill (30% accent mix)
+					'color-mix(in srgb, var(--node-accent, #3b82f6) 30%, light-dark(white, #374151))',
+	};
 
 	// Calculate positioning style
 	const positionStyle: CSSProperties = {
@@ -186,11 +162,8 @@ export function GridNodeHandle({
 	}
 	// For floating mode, React Flow handles the positioning automatically
 
-	// Merge styles - floating mode gets variant styles
-	const finalStyle =
-		mode === 'floating'
-			? { ...positionStyle, ...floatingVariantStyles[variant], ...style }
-			: { ...positionStyle, ...style };
+	// Merge styles - combine positioning, background, and custom styles
+	const finalStyle = { ...positionStyle, ...backgroundStyle, ...style };
 
 	return (
 		<>
@@ -208,15 +181,17 @@ export function GridNodeHandle({
 					style={{
 						position: 'absolute',
 						fontSize: '8px',
-						color: floatingVariantStyles[variant].backgroundColor,
-						backgroundColor: 'rgba(255,255,255,0.95)',
+						color: 'var(--node-accent, #6366f1)',
+						backgroundColor:
+							'color-mix(in srgb, var(--node-accent, #6366f1) 10%, light-dark(white, #1e293b))',
 						padding: '3px 6px',
 						borderRadius: '4px',
-						border: `1px solid ${floatingVariantStyles[variant].backgroundColor}`,
+						border: '1px solid var(--node-accent, #6366f1)',
 						pointerEvents: 'none',
 						fontWeight: 'bold',
 						fontFamily: 'ui-monospace, monospace',
-						boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+						boxShadow:
+							'0 2px 4px color-mix(in srgb, var(--node-accent, #6366f1) 20%, transparent)',
 						zIndex: 1000,
 						...(type === 'source'
 							? { bottom: '-22px', right: '-10px' }

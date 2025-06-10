@@ -14,15 +14,13 @@ import type { DestinationNode } from './types';
 
 // Grid configuration for destination node
 const DESTINATION_NODE_CONFIG = {
-	gridWidth: 5,
-	gridHeight: 4,
+	gridWidth: 3,
+	gridHeight: 3,
 } as const;
 
 export function DestinationNode({
 	id,
 	data,
-	positionAbsoluteX,
-	positionAbsoluteY,
 	selected,
 }: NodeProps<DestinationNode>) {
 	// Use custom hook for node operations
@@ -30,18 +28,13 @@ export function DestinationNode({
 
 	// Event handlers
 	const handleDelete = () => deleteNode(id as string);
-
-	// Format position values
-	const x = Math.round(positionAbsoluteX || 0);
-	const y = Math.round(positionAbsoluteY || 0);
-
 	// Initialize destination connection management
 	const { getConnectedSources } = useToneDestination(id);
 	const connectedSources = getConnectedSources();
 
 	return (
 		<BaseNode
-			variant='audio'
+			variant='core'
 			gridWidth={DESTINATION_NODE_CONFIG.gridWidth}
 			gridHeight={DESTINATION_NODE_CONFIG.gridHeight}
 			nodeId={id as string}
@@ -54,10 +47,11 @@ export function DestinationNode({
 				<GridBlock
 					gridWidth={3}
 					gridHeight={2}
-					gridX={1}
+					gridX={0}
 					gridY={1}
-					variant='audio'
+					showBorder={false}
 					showDimensions={false}
+					transparentBackground={true}
 					className='flex flex-col items-center justify-center'
 				>
 					{/* Audio Destination Icon */}
@@ -81,23 +75,6 @@ export function DestinationNode({
 						)}
 					</div>
 				</GridBlock>
-
-				{/* Position Display */}
-				<GridBlock
-					gridWidth={3}
-					gridHeight={1}
-					gridX={1}
-					gridY={3}
-					variant='audio'
-					className='flex items-center justify-center'
-				>
-					<div className='text-xs text-orange-600 dark:text-orange-400'>
-						<span className='font-semibold'>Pos:</span>{' '}
-						<span className='font-mono bg-orange-50 dark:bg-orange-900/30 px-1 rounded'>
-							{x},{y}
-						</span>
-					</div>
-				</GridBlock>
 			</div>
 
 			{/* Audio input handle centered at top */}
@@ -105,10 +82,10 @@ export function DestinationNode({
 				id={`${id}-audio-in`}
 				type='target'
 				position={Position.Top}
-				mode='static'
+				mode='floating'
+				nodeId={id as string}
 				gridX={DESTINATION_NODE_CONFIG.gridWidth / 2} // Center horizontally
 				gridY={0} // Top edge
-				color='primary'
 				size='md'
 			/>
 		</BaseNode>

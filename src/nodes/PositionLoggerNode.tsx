@@ -37,7 +37,7 @@ export function PositionLoggerNode({
 
 	return (
 		<BaseNode
-			variant='debug'
+			variant='unit'
 			gridWidth={POSITION_LOGGER_CONFIG.gridWidth}
 			gridHeight={POSITION_LOGGER_CONFIG.gridHeight}
 			nodeId={id as string}
@@ -52,7 +52,7 @@ export function PositionLoggerNode({
 					gridHeight={4}
 					gridX={1}
 					gridY={1}
-					variant='debug'
+					/* variant removed */
 					showDimensions={false}
 				>
 					<div className='w-full h-full p-3 flex flex-col justify-center items-center'>
@@ -88,7 +88,7 @@ export function PositionLoggerNode({
 				type='source'
 				mode='floating'
 				nodeId={id}
-				variant='debug'
+				/* variant removed */
 				minDistanceThreshold={50}
 			/>
 			<GridNodeHandle
@@ -96,7 +96,7 @@ export function PositionLoggerNode({
 				type='target'
 				mode='floating'
 				nodeId={id}
-				variant='debug'
+				/* variant removed */
 				minDistanceThreshold={50}
 			/>
 		</BaseNode>

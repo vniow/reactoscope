@@ -66,7 +66,6 @@ export function MetallicThemeSelector({
 			gridHeight={gridHeight}
 			gridX={gridX}
 			gridY={gridY}
-			variant='secondary'
 			showBorder={true}
 			transparentBackground={false}
 		>

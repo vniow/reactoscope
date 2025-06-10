@@ -29,7 +29,6 @@ export function GridSlider({
 	gridHeight,
 	gridX,
 	gridY,
-	variant = 'default',
 	showDimensions = false,
 	className = '',
 	sliderProps,
@@ -77,7 +76,6 @@ export function GridSlider({
 			gridHeight={gridHeight}
 			gridX={gridX}
 			gridY={gridY}
-			variant={variant}
 			showDimensions={showDimensions}
 			className={combineClasses('flex flex-col justify-center', className)}
 			{...rest}

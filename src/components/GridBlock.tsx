@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { GRID_UNIT } from '../config/grid';
-import type { ComponentVariant } from '../types/ui';
-import { getVariantClasses, combineClasses } from '../utils/styleUtils';
+import { combineClasses } from '../utils/styleUtils';
 
 export type BorderStyle = 'solid' | 'dashed' | 'dotted';
 export type DashSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
@@ -13,10 +12,10 @@ export interface GridBlockProps {
 	gridX?: number;
 	gridY?: number;
 	className?: string;
-	variant?: ComponentVariant;
 	showDimensions?: boolean;
 	showPosition?: boolean;
 	showBorder?: boolean;
+	showShadow?: boolean;
 	transparentBackground?: boolean;
 	borderStyle?: BorderStyle;
 	dashSize?: DashSize;
@@ -37,12 +36,12 @@ export function GridBlock({
 	gridX = 0,
 	gridY = 0,
 	className = '',
-	variant = 'default',
 	showDimensions = false,
 	showPosition = false,
-	showBorder = true,
-	transparentBackground = false,
-	borderStyle = 'dashed',
+	showBorder = false,
+	showShadow = false,
+	transparentBackground = true,
+	borderStyle = 'solid',
 	dashSize = 'sm',
 }: GridBlockProps) {
 	const pixelWidth = gridWidth * GRID_UNIT;
@@ -50,7 +49,7 @@ export function GridBlock({
 	const pixelX = gridX * GRID_UNIT;
 	const pixelY = gridY * GRID_UNIT;
 
-	// Build border classes
+	// Build border classes using CSS custom properties
 	const borderClasses = showBorder
 		? combineClasses(
 				'border-2',
@@ -59,14 +58,14 @@ export function GridBlock({
 					: borderStyle === 'dotted'
 						? 'border-dotted'
 						: 'border-dashed',
-				getVariantClasses(variant, 'border')
+				'border-[var(--node-border,theme(colors.gray.300))]'
 			)
 		: 'border-2 border-transparent';
 
-	// Build background classes
+	// Build background classes using CSS custom properties
 	const backgroundClasses = transparentBackground
 		? 'bg-transparent'
-		: getVariantClasses(variant, 'background');
+		: 'bg-[var(--node-accent,theme(colors.gray.100))]';
 
 	// Create style object with positioning and dash customization
 	const customStyle: React.CSSProperties & Record<string, string | number> = {
@@ -83,11 +82,17 @@ export function GridBlock({
 		customStyle['--dash-length'] = DASH_LENGTHS[dashSize];
 	}
 
-	// Build CSS classes
+	// Build shadow classes using CSS custom properties
+	const shadowClasses = showShadow
+		? 'shadow-[0_10px_15px_-3px_var(--node-shadow,theme(colors.gray.500/0.1)),0_4px_6px_-4px_var(--node-shadow,theme(colors.gray.500/0.1))]'
+		: '';
+
+	// Build CSS classes using CSS custom properties
 	const containerClasses = combineClasses(
 		borderClasses,
 		backgroundClasses,
-		getVariantClasses(variant, 'text'),
+		shadowClasses,
+		'text-[var(--node-accent,theme(colors.gray.800))]',
 		showBorder && borderStyle === 'dashed' ? `dash-${dashSize}` : '',
 		'rounded-lg p-2 flex flex-col transition-colors duration-200 absolute',
 		className
@@ -100,7 +105,7 @@ export function GridBlock({
 		>
 			{/* Dimension and position labels */}
 			{(showDimensions || showPosition) && (
-				<div className='absolute -top-6 left-0 text-xs font-mono font-semibold'>
+				<div className='absolute -top-6 left-0 text-xs  font-semibold'>
 					{showDimensions &&
 						`${gridWidth} × ${gridHeight} (${pixelWidth}px × ${pixelHeight}px)`}
 					{showDimensions && showPosition && ' • '}
@@ -111,7 +116,7 @@ export function GridBlock({
 			{/* Content area */}
 			<div className='flex-1 flex items-center justify-center overflow-hidden'>
 				{children || (
-					<div className='text-xs font-mono opacity-60 text-center'>
+					<div className='text-xs  opacity-60 text-center'>
 						Grid Block
 						<br />
 						{gridWidth} × {gridHeight}

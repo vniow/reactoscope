@@ -70,7 +70,6 @@ export function NodeAddPanel() {
 					gridHeight={PANEL_LAYOUT.sections.testFlow.gridHeight}
 					gridX={PANEL_LAYOUT.sections.testFlow.gridX}
 					gridY={PANEL_LAYOUT.sections.testFlow.gridY}
-					variant='secondary'
 					showBorder={true}
 					transparentBackground={false}
 					buttonLabel='🧪 Create Test Flow'
@@ -89,7 +88,6 @@ export function NodeAddPanel() {
 							gridHeight={PANEL_LAYOUT.sections.transportControls.gridHeight}
 							gridX={PANEL_LAYOUT.sections.transportControls.gridX}
 							gridY={PANEL_LAYOUT.sections.transportControls.gridY}
-							variant='audio'
 							showBorder={true}
 							transparentBackground={false}
 						>

@@ -20,7 +20,6 @@ export function QuickAddSection({ onAddNode }: QuickAddSectionProps) {
 			gridHeight={gridHeight}
 			gridX={gridX}
 			gridY={gridY}
-			variant='default'
 			showBorder={true}
 			transparentBackground={false}
 		>

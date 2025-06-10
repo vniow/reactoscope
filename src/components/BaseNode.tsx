@@ -3,11 +3,6 @@ import { calculateNodeSize } from '../config/grid';
 import { NodeHeader } from './NodeHeader';
 import { NodeDeleteButton } from './ui/NodeDeleteButton';
 import type { ComponentVariant } from '../types/ui';
-import {
-	getVariantClasses,
-	getGradientClasses,
-	combineClasses,
-} from '../utils/styleUtils';
 
 interface BaseNodeProps {
 	children: ReactNode;
@@ -24,7 +19,7 @@ interface BaseNodeProps {
 export function BaseNode({
 	children,
 	className = '',
-	variant = 'default',
+	variant = 'core',
 	gridWidth = 2,
 	gridHeight = 1,
 	nodeId,
@@ -41,24 +36,10 @@ export function BaseNode({
 		}
 	};
 
-	// Build outer container classes (gradient border)
-	const outerClasses = combineClasses(
-		getGradientClasses(variant),
-		'rounded-lg transition-all duration-200 relative',
-		selected ? `shadow-xl ${getVariantClasses(variant, 'shadow')}` : '',
-		className
-	);
-
-	// Build inner container classes (node background)
-	const innerClasses = combineClasses(
-		'w-full h-full flex flex-col rounded overflow-hidden',
-		'bg-gradient-to-br from-slate-300 via-slate-100 to-slate-300',
-		'dark:from-slate-400 dark:via-slate-500 dark:to-slate-700'
-	);
-
 	return (
 		<div
-			className={outerClasses}
+			className={`relative transition-all duration-200 ${selected ? 'scale-105' : ''} ${className}`}
+			data-variant={variant}
 			style={{
 				width: `${width}px`,
 				height: `${height}px`,
@@ -66,12 +47,19 @@ export function BaseNode({
 				minHeight: `${height}px`,
 			}}
 		>
-			<div className={innerClasses}>
+			<div
+				className={`w-full h-full flex flex-col rounded-xl backdrop-blur-md
+		bg-gradient-to-br from-[var(--node-bg-from)] via-[var(--node-bg-via)] to-[var(--node-bg-to)]
+		${
+			selected
+				? 'shadow-[0_20px_25px_-5px_var(--node-shadow),0_8px_10px_-6px_var(--node-shadow)]'
+				: 'shadow-[0_10px_15px_-3px_var(--node-shadow),0_4px_6px_-4px_var(--node-shadow)]'
+		}`}
+			>
 				{/* Header section */}
 				{title && (
 					<NodeHeader
 						title={title}
-						variant={variant}
 						className='flex-none'
 						gridWidth={gridWidth}
 					/>
@@ -83,7 +71,7 @@ export function BaseNode({
 				)}
 
 				{/* Content area */}
-				<div className='flex-1 overflow-hidden'>{children}</div>
+				<div className='flex-1 overflow-hidden rounded-b-xl'>{children}</div>
 			</div>
 		</div>
 	);

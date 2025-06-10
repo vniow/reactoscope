@@ -24,7 +24,6 @@ export function GridSelect({
 	gridHeight,
 	gridX,
 	gridY,
-	variant = 'default',
 	showDimensions = false,
 	className = '',
 	selectProps,
@@ -73,7 +72,6 @@ export function GridSelect({
 			gridHeight={gridHeight}
 			gridX={gridX}
 			gridY={gridY}
-			variant={variant}
 			showDimensions={showDimensions}
 			className={combineClasses('flex flex-col justify-center', className)}
 			{...rest}

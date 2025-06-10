@@ -37,7 +37,7 @@ export function StaticNode({
 
 	return (
 		<BaseNode
-			variant='default'
+			variant='core'
 			gridWidth={STATIC_NODE_CONFIG.gridWidth}
 			gridHeight={STATIC_NODE_CONFIG.gridHeight}
 			nodeId={id as string}
@@ -52,7 +52,7 @@ export function StaticNode({
 					gridHeight={3}
 					gridX={1}
 					gridY={1}
-					variant='default'
+					/* variant removed */
 					showDimensions={false}
 				>
 					<div className='w-full h-full p-3 flex flex-col justify-center items-center'>
@@ -90,7 +90,7 @@ export function StaticNode({
 				position={Position.Right}
 				gridX={0}
 				gridY={STATIC_NODE_CONFIG.gridHeight / 2} // Center vertically (5/2 = 2.5)
-				color='primary'
+				/* color removed */
 				size='md'
 			/>
 			<GridNodeHandle
@@ -100,7 +100,7 @@ export function StaticNode({
 				position={Position.Left}
 				gridX={0}
 				gridY={STATIC_NODE_CONFIG.gridHeight / 2} // Center vertically (5/2 = 2.5)
-				color='primary'
+				/* color removed */
 				size='md'
 			/>
 		</BaseNode>

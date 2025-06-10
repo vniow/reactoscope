@@ -26,18 +26,12 @@ export function VisualizerNode({
 	id,
 	data,
 	selected,
-	positionAbsoluteX,
-	positionAbsoluteY,
 }: NodeProps<VisualizerNode>) {
 	// Use custom hook for node operations
 	const { deleteNode } = useNodeOperations();
 
 	// Event handlers
 	const handleDelete = () => deleteNode(id as string);
-
-	// Format position values
-	const x = Math.round(positionAbsoluteX || 0);
-	const y = Math.round(positionAbsoluteY || 0);
 
 	// Initialize analyser controls
 	const { updateSize, updateSmoothing, getAnalyserL, getAnalyserR, params } =
@@ -60,7 +54,7 @@ export function VisualizerNode({
 
 	return (
 		<BaseNode
-			variant='audio'
+			variant='signal'
 			gridWidth={VISUALIZER_NODE_CONFIG.gridWidth}
 			gridHeight={VISUALIZER_NODE_CONFIG.gridHeight}
 			nodeId={id as string}
@@ -69,33 +63,12 @@ export function VisualizerNode({
 			title={data.label || 'Audio Visualizer'}
 		>
 			<div className='relative w-full h-full overflow-visible'>
-				{/* Position Display */}
-				<GridBlock
-					gridWidth={4}
-					gridHeight={1}
-					gridX={1}
-					gridY={0.5}
-					variant='audio'
-					showDimensions={false}
-				>
-					<div className='w-full h-full flex justify-center items-center'>
-						<div className='text-center'>
-							<div className='text-xs text-gray-600 dark:text-gray-400'>
-								<span className='font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded'>
-									X: {x}px, Y: {y}px
-								</span>
-							</div>
-						</div>
-					</div>
-				</GridBlock>
-
 				{/* Visualizer Display */}
 				<GridBlock
 					gridWidth={6}
 					gridHeight={4}
 					gridX={0}
 					gridY={1.5}
-					variant='audio'
 					showDimensions={false}
 				>
 					<div className='w-full h-full p-1'>
@@ -113,7 +86,6 @@ export function VisualizerNode({
 					gridHeight={1}
 					gridX={0}
 					gridY={6}
-					variant='audio'
 					label={`FFT Size`}
 					selectProps={{
 						value: params.size,
@@ -130,7 +102,6 @@ export function VisualizerNode({
 					gridHeight={1}
 					gridX={3}
 					gridY={6}
-					variant='audio'
 					label='Smoothing'
 					sliderProps={{
 						value: params.smoothing,
@@ -151,7 +122,6 @@ export function VisualizerNode({
 					gridHeight={1}
 					gridX={0}
 					gridY={7}
-					variant='audio'
 					showDimensions={false}
 				>
 					<div className='w-full h-full flex justify-center items-center'>
@@ -180,7 +150,6 @@ export function VisualizerNode({
 				position={Position.Left}
 				gridX={0}
 				gridY={VISUALIZER_NODE_CONFIG.gridHeight / 2}
-				color='primary'
 				size='md'
 			/>
 			{/* Right audio input handle */}
@@ -191,7 +160,6 @@ export function VisualizerNode({
 				position={Position.Right}
 				gridX={0}
 				gridY={VISUALIZER_NODE_CONFIG.gridHeight / 2}
-				color='primary'
 				size='md'
 			/>
 		</BaseNode>

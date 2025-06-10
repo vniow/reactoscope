@@ -162,11 +162,11 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 			console.log(`🔊 Oscillator ${nodeId} volume: ${params.volume} dB`);
 			console.log(`🔊 Oscillator ${nodeId} frequency: ${params.frequency} Hz`);
 
-			// TEMPORARY TEST: Connect directly to destination to verify audio works
-			oscillatorRef.current.connect(Tone.getDestination());
-			console.log(
-				`🔌 TEMP: Connected oscillator ${nodeId} directly to destination for testing`
-			);
+			// // TEMPORARY TEST: Connect directly to destination to verify audio works
+			// oscillatorRef.current.connect(Tone.getDestination());
+			// console.log(
+			// 	`🔌 TEMP: Connected oscillator ${nodeId} directly to destination for testing`
+			// );
 
 			oscillatorRef.current.start();
 			isStartedRef.current = true;

@@ -15,14 +15,12 @@ const waveTypes = ['sine', 'square', 'triangle', 'sawtooth'] as const;
 // Grid configuration for oscillator node
 const OSCILLATOR_NODE_CONFIG = {
 	gridWidth: 7,
-	gridHeight: 6, // Increased height for volume slider
+	gridHeight: 7, // Increased height for volume slider
 } as const;
 
 export function OscillatorNode({
 	id,
 	data,
-	positionAbsoluteX,
-	positionAbsoluteY,
 	selected = false,
 }: NodeProps<OscillatorNode>) {
 	// Tone.js oscillator hook
@@ -52,10 +50,6 @@ export function OscillatorNode({
 		);
 	};
 
-	// Format position values like the debug node
-	const x = Math.round(positionAbsoluteX || 0);
-	const y = Math.round(positionAbsoluteY || 0);
-
 	// Create wave type selector buttons
 	const handleWaveTypeClick = (type: (typeof waveTypes)[number]) => {
 		updateWaveType(type);
@@ -73,7 +67,7 @@ export function OscillatorNode({
 
 	return (
 		<BaseNode
-			variant='audio'
+			variant='source'
 			gridWidth={OSCILLATOR_NODE_CONFIG.gridWidth}
 			gridHeight={OSCILLATOR_NODE_CONFIG.gridHeight}
 			nodeId={id as string}
@@ -87,20 +81,22 @@ export function OscillatorNode({
 					gridWidth={5}
 					gridHeight={1}
 					gridX={1}
-					gridY={0}
-					variant='audio'
+					gridY={1.5}
 				>
 					<div className='grid grid-cols-4 gap-1 w-full h-full'>
 						{waveTypes.map((type) => (
-							<GridButton
+							<button
 								key={type}
-								gridWidth={1}
-								gridHeight={1}
-								variant={params.waveType === type ? 'audio' : 'default'}
-								buttonLabel={type.substring(0, 4)}
-								buttonClassName='text-xs py-0.5 px-1'
+								className={`text-xs py-0.5 px-1 rounded transition-colors ${
+									params.waveType === type
+										? 'bg-[var(--node-accent)] text-white'
+										: 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+								}`}
 								onClick={() => handleWaveTypeClick(type)}
-							/>
+								onPointerDown={(e) => e.stopPropagation()} // Prevent node dragging
+							>
+								{type.substring(0, 4)}
+							</button>
 						))}
 					</div>
 				</GridBlock>
@@ -110,8 +106,7 @@ export function OscillatorNode({
 					gridWidth={5}
 					gridHeight={1}
 					gridX={1}
-					gridY={1}
-					variant='audio'
+					gridY={2.5}
 					label='Frequency'
 					sliderProps={{
 						value: params.frequency,
@@ -119,7 +114,6 @@ export function OscillatorNode({
 						max: 2000,
 						step: 1,
 						formatValue: formatFrequency,
-						color: 'blue',
 						onChange: (e) => updateFrequency(Number(e.target.value)),
 					}}
 				/>
@@ -129,8 +123,7 @@ export function OscillatorNode({
 					gridWidth={5}
 					gridHeight={1}
 					gridX={1}
-					gridY={2}
-					variant='audio'
+					gridY={3.5}
 					label='Detune'
 					sliderProps={{
 						value: params.detune,
@@ -138,7 +131,6 @@ export function OscillatorNode({
 						max: 1200,
 						step: 1,
 						formatValue: formatDetune,
-						color: 'orange',
 						onChange: (e) => updateDetune(Number(e.target.value)),
 					}}
 				/>
@@ -148,8 +140,7 @@ export function OscillatorNode({
 					gridWidth={5}
 					gridHeight={1}
 					gridX={1}
-					gridY={3}
-					variant='audio'
+					gridY={4.5}
 					label='Volume'
 					sliderProps={{
 						value: params.volume,
@@ -157,7 +148,6 @@ export function OscillatorNode({
 						max: 0,
 						step: 1,
 						formatValue: formatVolume,
-						color: 'green',
 						onChange: (e) => updateVolume(Number(e.target.value)),
 					}}
 				/>
@@ -167,8 +157,7 @@ export function OscillatorNode({
 					gridWidth={3}
 					gridHeight={1}
 					gridX={2}
-					gridY={4}
-					variant='audio'
+					gridY={5.5}
 					buttonLabel={isPlaying ? '⏹️ Stop' : '▶️ Play'}
 					buttonClassName={
 						isPlaying
@@ -186,36 +175,8 @@ export function OscillatorNode({
 						}
 					}}
 				/>
-
-				{/* Position Display */}
-				<GridBlock
-					gridWidth={5}
-					gridHeight={1}
-					gridX={1}
-					gridY={5}
-					variant='audio'
-					className='flex items-center justify-center'
-				>
-					<div className='text-xs text-orange-600 dark:text-orange-400'>
-						<span className='font-semibold'>Position:</span>{' '}
-						<span className='font-mono bg-orange-50 dark:bg-orange-900/30 px-1 rounded'>
-							{x},{y}
-						</span>
-					</div>
-				</GridBlock>
 			</div>
 
-			{/* Static Handles - Fixed grid positions (using static mode) like the debug node */}
-			{/* <GridNodeHandle
-				id={`${id}-target`}
-				type='target'
-				mode='static'
-				position={Position.Left}
-				gridX={0}
-				gridY={OSCILLATOR_NODE_CONFIG.gridHeight / 2} // Center vertically
-				color='primary'
-				size='md'
-			/> */}
 			<GridNodeHandle
 				id={`${id}-source`}
 				type='source'
@@ -223,7 +184,6 @@ export function OscillatorNode({
 				position={Position.Right}
 				gridX={0}
 				gridY={OSCILLATOR_NODE_CONFIG.gridHeight / 2} // Center vertically
-				color='primary'
 				size='md'
 			/>
 		</BaseNode>

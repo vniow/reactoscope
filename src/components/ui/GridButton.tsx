@@ -20,7 +20,6 @@ export function GridButton({
 	gridHeight,
 	gridX,
 	gridY,
-	variant = 'primary',
 	showDimensions = false,
 	className = '',
 	buttonLabel,
@@ -31,9 +30,9 @@ export function GridButton({
 	'aria-describedby': ariaDescribedBy,
 	...rest
 }: GridButtonProps) {
-	// Use utility function for consistent styling
+	// Use utility function for consistent styling - defaults to inherit variant from parent
 	const buttonClasses = combineClasses(
-		getButtonVariantClasses(variant),
+		getButtonVariantClasses('primary'), // Default to primary styling
 		disabled && 'opacity-50 cursor-not-allowed',
 		buttonClassName
 	);
@@ -54,7 +53,6 @@ export function GridButton({
 			gridHeight={gridHeight}
 			gridX={gridX}
 			gridY={gridY}
-			variant={variant}
 			showDimensions={showDimensions}
 			className={combineClasses('flex items-center justify-center', className)}
 			{...rest}

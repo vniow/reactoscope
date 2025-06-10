@@ -50,7 +50,7 @@ export function GainNode({
 
 	return (
 		<BaseNode
-			variant='audio'
+			variant='component'
 			gridWidth={GAIN_NODE_CONFIG.gridWidth}
 			gridHeight={GAIN_NODE_CONFIG.gridHeight}
 			nodeId={id as string}
@@ -65,7 +65,6 @@ export function GainNode({
 					gridHeight={1}
 					gridX={1}
 					gridY={1}
-					variant='audio'
 					showDimensions={false}
 				>
 					<div className='w-full h-full flex justify-center items-center'>
@@ -85,7 +84,6 @@ export function GainNode({
 					gridHeight={2}
 					gridX={1}
 					gridY={2}
-					variant='audio'
 					sliderProps={{
 						value: params.gain,
 						min: 0,
@@ -106,7 +104,6 @@ export function GainNode({
 					gridHeight={1}
 					gridX={1}
 					gridY={4}
-					variant='audio'
 					buttonLabel={params.mute ? '🔇 Muted' : '🔊 Active'}
 					onClick={handleMuteToggle}
 					aria-label='Toggle mute'
@@ -122,7 +119,6 @@ export function GainNode({
 				position={Position.Left}
 				gridX={0}
 				gridY={GAIN_NODE_CONFIG.gridHeight / 2}
-				color='primary'
 				size='md'
 			/>
 			{/* Output handle - grid aligned */}
@@ -133,7 +129,6 @@ export function GainNode({
 				position={Position.Right}
 				gridX={0}
 				gridY={GAIN_NODE_CONFIG.gridHeight / 2}
-				color='success'
 				size='md'
 			/>
 		</BaseNode>

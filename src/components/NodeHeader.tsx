@@ -1,11 +1,9 @@
 import { GridBlock, type GridBlockProps } from './GridBlock';
-import type { ComponentVariant } from '../types/ui';
-import { getVariantClasses, combineClasses } from '../utils/styleUtils';
+import { combineClasses } from '../utils/styleUtils';
 
 export interface NodeHeaderProps
-	extends Omit<GridBlockProps, 'children' | 'gridHeight'> {
+	extends Omit<GridBlockProps, 'children' | 'gridHeight' | 'variant'> {
 	title: string;
-	variant?: ComponentVariant;
 }
 
 export function NodeHeader({
@@ -13,18 +11,17 @@ export function NodeHeader({
 	gridWidth,
 	gridX,
 	gridY,
-	variant = 'default',
 	className = '',
 	...rest
 }: NodeHeaderProps) {
-	// Build header classes using utilities
+	// Build header classes using CSS custom properties
 	const headerClasses = combineClasses(
-		'flex items-center justify-center font-semibold font-mono text-xl',
-		'bg-gradient-to-b from-slate-200 via-slate-50 to-slate-200',
-		'dark:from-slate-600 dark:via-slate-800 dark:to-slate-600',
-		'shadow-lg rounded-sm px-4',
-		getVariantClasses(variant, 'text'),
-		getVariantClasses(variant, 'shadow'),
+		'flex items-center justify-center font-semibold text-xl',
+		// 'bg-opacity-80 backdrop-blur-md',
+		// 'shadow-lg rounded-sm px-4',
+		'shadow-[0_10px_15px_-3px_var(--node-shadow),0_4px_6px_-4px_var(--node-shadow)]',
+		'text-[var(--node-accent)]',
+		// 'border-b border-[var(--node-border)]',
 		className
 	);
 
@@ -34,9 +31,8 @@ export function NodeHeader({
 			gridHeight={1}
 			gridX={gridX}
 			gridY={gridY}
-			variant={variant}
 			showDimensions={false}
-			showPosition={false}
+			showShadow={true}
 			showBorder={false}
 			transparentBackground={true}
 			className={headerClasses}

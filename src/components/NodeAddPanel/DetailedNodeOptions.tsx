@@ -20,7 +20,6 @@ export function DetailedNodeOptions({ onAddNode }: DetailedNodeOptionsProps) {
 			gridHeight={gridHeight}
 			gridX={gridX}
 			gridY={gridY}
-			variant='default'
 			showBorder={true}
 			transparentBackground={false}
 		>

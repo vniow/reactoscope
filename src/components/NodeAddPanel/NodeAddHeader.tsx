@@ -18,7 +18,6 @@ export function NodeAddHeader({
 			gridHeight={gridHeight}
 			gridX={gridX}
 			gridY={gridY}
-			variant='primary'
 			showBorder={true}
 			transparentBackground={false}
 		>

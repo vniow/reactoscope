@@ -2,13 +2,16 @@
  * Common UI type definitions following discriminated union patterns
  */
 
-// Component variant system with discriminated unions
+// Component variant system with discriminated unions - Tone.js categories
 export type ComponentVariant =
-	| 'default'
-	| 'debug'
-	| 'primary'
-	| 'secondary'
-	| 'audio';
+	| 'core' // Core system components (Context, Master, etc.)
+	| 'source' // Audio sources (Oscillator, Player, Microphone, etc.)
+	| 'instrument' // Instruments (Synth, FMSynth, AMSynth, etc.)
+	| 'effect' // Effects (Reverb, Delay, Filter, etc.)
+	| 'component' // Signal components (Gain, Panner, etc.)
+	| 'signal' // Signal processing (Analyser, FFT, etc.)
+	| 'event' // Event-based (Sequence, Part, Transport, etc.)
+	| 'unit'; // Utilities and units (Frequency, Time, etc.)
 
 export type ComponentSize = 'sm' | 'md' | 'lg';
 
@@ -38,7 +41,7 @@ export interface BaseGridProps extends GridPosition {
 // Style system types
 export interface VariantStyles {
 	border: string;
-	background: string;
+	// background: string;
 	text: string;
 	shadow: string;
 }
