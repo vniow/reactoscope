@@ -94,7 +94,7 @@ export function FlowControls() {
 						className='flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset'
 						style={{ 
 							background: metallicBackground === 'rainbow' 
-								? 'linear-gradient(45deg, #ff0080, #ff8c00, #40e0d0, #ff0080)' 
+								? 'linear-gradient(135deg, #ff0080, #ff8c00, #40e0d0, #ff0080)' 
 								: undefined,
 							color: metallicBackground === 'rainbow' ? 'white' : undefined,
 							textShadow: metallicBackground === 'rainbow' ? '0 1px 2px rgba(0,0,0,0.5)' : undefined

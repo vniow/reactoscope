@@ -22,7 +22,24 @@ export interface SliderProps
 export interface GridSliderProps extends Omit<GridBlockProps, 'children'> {
 	sliderProps: SliderProps;
 	label?: string;
+	layout?: 'stacked' | 'compact' | 'minimal'; // New layout options
+	showValue?: boolean; // Control value display
 }
+
+/**
+ * GridSlider Component - Now with proper vertical positioning
+ * 
+ * LAYOUT OPTIONS:
+ * - 'stacked': Full vertical distribution (label top, slider center, value bottom) - Best for tall grid areas
+ * - 'compact': Tight vertical layout with small gaps - Good for medium height grid areas  
+ * - 'minimal': Just the slider, no label or value display - Best for single-row grid areas
+ * 
+ * POSITIONING FIXES:
+ * - Removed justify-center from GridBlock to prevent all elements being centered
+ * - Used flex-grow on slider section in stacked mode to fill available space
+ * - Added proper flex-shrink-0 to prevent label/value sections from shrinking
+ * - Set transparentBackground={true} and p-0 for better integration with parent containers
+ */
 
 export function GridSlider({
 	gridWidth,
@@ -33,6 +50,8 @@ export function GridSlider({
 	className = '',
 	sliderProps,
 	label,
+	layout = 'stacked',
+	showValue = true,
 	...rest
 }: GridSliderProps) {
 	const {
@@ -77,48 +96,68 @@ export function GridSlider({
 			gridX={gridX}
 			gridY={gridY}
 			showDimensions={showDimensions}
-			className={combineClasses('flex flex-col justify-center', className)}
+			className={combineClasses('p-0', className)}
+			transparentBackground={true}
 			{...rest}
 		>
-			{/* Label/title above */}
-			{label && (
-				<div className='mb-1 text-center'>
-					<span className='text-xs font-medium text-gray-700 dark:text-gray-300'>
-						{label}
-					</span>
+			{/* Container that adapts based on layout */}
+			<div className={combineClasses(
+				'w-full h-full p-1',
+				layout === 'minimal' ? 'flex items-center justify-center' :
+				layout === 'compact' ? 'flex flex-col justify-center gap-1' :
+				'flex flex-col justify-between' // stacked layout
+			)}>
+				{/* Label section - only show if label exists and layout isn't minimal */}
+				{label && layout !== 'minimal' && (
+					<div className='flex-shrink-0'>
+						<div className='text-center mb-1'>
+							<span className='text-xs font-medium text-gray-700 dark:text-gray-300'>
+								{label}
+							</span>
+						</div>
+					</div>
+				)}
+
+				{/* Slider section */}
+				<div className={combineClasses(
+					'flex items-center justify-center',
+					layout === 'stacked' ? 'flex-grow' : ''
+				)}>
+					<div className='flex items-center gap-2 w-full px-1'>
+						{showMinMax && (
+							<span className='text-xs font-medium text-gray-600 dark:text-gray-400 min-w-fit'>
+								{min}
+							</span>
+						)}
+						<input
+							type='range'
+							value={value}
+							min={min}
+							max={max}
+							step={step}
+							onChange={onChange}
+							onPointerDown={handlePointerDown}
+							className={sliderInputClasses}
+							disabled={disabled}
+							{...accessibilityProps}
+							{...inputSpecificProps}
+						/>
+						{showMinMax && (
+							<span className='text-xs font-medium text-gray-600 dark:text-gray-400 min-w-fit'>
+								{max}
+							</span>
+						)}
+					</div>
 				</div>
-			)}
 
-			{/* Slider row: min | slider | max */}
-			<div className='flex items-center gap-2 w-full px-1'>
-				{showMinMax && (
-					<span className='text-xs font-medium text-gray-600 dark:text-gray-400 min-w-fit'>
-						{min}
-					</span>
+				{/* Value section - only show if showValue is true and layout isn't minimal */}
+				{showValue && layout !== 'minimal' && (
+					<div className='flex-shrink-0'>
+						<div className='text-center text-xs text-gray-600 dark:text-gray-300'>
+							{formatValue ? formatValue(value) : value}
+						</div>
+					</div>
 				)}
-				<input
-					type='range'
-					value={value}
-					min={min}
-					max={max}
-					step={step}
-					onChange={onChange}
-					onPointerDown={handlePointerDown}
-					className={sliderInputClasses}
-					disabled={disabled}
-					{...accessibilityProps}
-					{...inputSpecificProps}
-				/>
-				{showMinMax && (
-					<span className='text-xs font-medium text-gray-600 dark:text-gray-400 min-w-fit'>
-						{max}
-					</span>
-				)}
-			</div>
-
-			{/* Value below slider */}
-			<div className='mt-1 text-center text-xs text-gray-600 dark:text-gray-300'>
-				{formatValue ? formatValue(value) : value}
 			</div>
 		</GridBlock>
 	);

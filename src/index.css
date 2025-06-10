@@ -53,6 +53,63 @@
 	--z-overlay: 20;
 	--z-modal: 30;
 	--z-tooltip: 50;
+
+	/* === RAINBOW COLOR SYSTEM === */
+	/* Rainbow colors using Tailwind variants (-100 for light, -600 for dark) */
+	--color-rainbow-red: light-dark(#fee2e2, #dc2626);
+	--color-rainbow-orange: light-dark(#fed7aa, #ea580c);
+	--color-rainbow-amber: light-dark(#fef3c7, #d97706);
+	--color-rainbow-yellow: light-dark(#fef08a, #ca8a04);
+	--color-rainbow-lime: light-dark(#dcfce7, #65a30d);
+	--color-rainbow-green: light-dark(#dcfce7, #16a34a);
+	--color-rainbow-emerald: light-dark(#d1fae5, #059669);
+	--color-rainbow-teal: light-dark(#ccfbf1, #0d9488);
+	--color-rainbow-cyan: light-dark(#cffafe, #0891b2);
+	--color-rainbow-sky: light-dark(#dbeafe, #0284c7);
+	--color-rainbow-blue: light-dark(#dbeafe, #2563eb);
+	--color-rainbow-indigo: light-dark(#e0e7ff, #4f46e5);
+	--color-rainbow-violet: light-dark(#ede9fe, #7c3aed);
+	--color-rainbow-purple: light-dark(#f3e8ff, #9333ea);
+	--color-rainbow-fuchsia: light-dark(#fae8ff, #c026d3);
+	--color-rainbow-pink: light-dark(#fce7f3, #db2777);
+	--color-rainbow-rose: light-dark(#ffe4e6, #e11d48);
+
+	/* Rainbow gradients */
+	--gradient-rainbow-linear: linear-gradient(90deg,
+		var(--color-rainbow-red) 0%,
+		var(--color-rainbow-orange) 5.88%,
+		var(--color-rainbow-amber) 11.76%,
+		var(--color-rainbow-yellow) 17.64%,
+		var(--color-rainbow-lime) 23.52%,
+		var(--color-rainbow-green) 29.4%,
+		var(--color-rainbow-emerald) 35.28%,
+		var(--color-rainbow-teal) 41.16%,
+		var(--color-rainbow-cyan) 47.04%,
+		var(--color-rainbow-sky) 52.92%,
+		var(--color-rainbow-blue) 58.8%,
+		var(--color-rainbow-indigo) 64.68%,
+		var(--color-rainbow-violet) 70.56%,
+		var(--color-rainbow-purple) 76.44%,
+		var(--color-rainbow-fuchsia) 82.32%,
+		var(--color-rainbow-pink) 88.2%,
+		var(--color-rainbow-rose) 94.08%,
+		var(--color-rainbow-red) 100%
+	);
+
+	/* Rainbow metallic gradient - integrates with existing metallic system */
+	--gradient-rainbow-metallic: linear-gradient(135deg,
+		color-mix(in srgb, var(--color-rainbow-red) 70%, light-dark(#c0c0c0, #6b7280)) 0%,
+		color-mix(in srgb, var(--color-rainbow-orange) 70%, light-dark(#c0c0c0, #6b7280)) 14.28%,
+		color-mix(in srgb, var(--color-rainbow-yellow) 70%, light-dark(#c0c0c0, #6b7280)) 28.56%,
+		color-mix(in srgb, var(--color-rainbow-green) 70%, light-dark(#c0c0c0, #6b7280)) 42.84%,
+		color-mix(in srgb, var(--color-rainbow-cyan) 70%, light-dark(#c0c0c0, #6b7280)) 57.12%,
+		color-mix(in srgb, var(--color-rainbow-blue) 70%, light-dark(#c0c0c0, #6b7280)) 71.4%,
+		color-mix(in srgb, var(--color-rainbow-violet) 70%, light-dark(#c0c0c0, #6b7280)) 85.68%,
+		color-mix(in srgb, var(--color-rainbow-red) 70%, light-dark(#c0c0c0, #6b7280)) 100%
+	);
+
+	/* Animation timing */
+	--duration-rainbow: 6s;
 }
 
 /* === VARIANT-SPECIFIC CUSTOM PROPERTIES === */
@@ -244,6 +301,56 @@
 		var(--node-accent) 20%,
 		light-dark(#f1f5f9, #334155)
 	);
+}
+
+/* === RAINBOW METALLIC UTILITIES === */
+
+/* Rainbow metallic background - integrates with your metallic theme */
+.bg-rainbow-metallic {
+	background: var(--gradient-rainbow-metallic);
+}
+
+/* Standard rainbow utilities */
+.bg-rainbow {
+	background: var(--gradient-rainbow-linear);
+}
+
+.bg-rainbow-animated {
+	background: var(--gradient-rainbow-linear);
+	background-size: 200% 100%;
+	animation: rainbow-flow var(--duration-rainbow) linear infinite;
+}
+
+/* Rainbow text */
+.text-rainbow {
+	background: var(--gradient-rainbow-linear);
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+}
+
+.text-rainbow-animated {
+	background: var(--gradient-rainbow-linear);
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-size: 200% 100%;
+	animation: rainbow-flow var(--duration-rainbow) linear infinite;
+}
+
+/* Rainbow borders */
+.border-rainbow {
+	border: 2px solid transparent;
+	background: 
+		var(--gradient-rainbow-linear) border-box,
+		light-dark(#ffffff, #1e293b) padding-box;
+	background-clip: border-box, padding-box;
+}
+
+/* Keyframe animations */
+@keyframes rainbow-flow {
+	0% { background-position: 0% 50%; }
+	100% { background-position: 200% 50%; }
 }
 
 @custom-variant dark (&:where(.dark, .dark *));

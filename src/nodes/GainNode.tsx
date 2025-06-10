@@ -25,18 +25,12 @@ export function GainNode({
 	id,
 	data,
 	selected,
-	positionAbsoluteX,
-	positionAbsoluteY,
 }: NodeProps<GainNode>) {
 	// Use custom hook for node operations
 	const { deleteNode } = useNodeOperations();
 
 	// Event handlers
 	const handleDelete = () => deleteNode(id as string);
-
-	// Format position values
-	const x = Math.round(positionAbsoluteX || 0);
-	const y = Math.round(positionAbsoluteY || 0);
 
 	// Initialize gain controls
 	const { updateGain, updateMute, params } = useToneGain(id);
@@ -59,31 +53,14 @@ export function GainNode({
 			variant={data.variant || 'event'} // Use variant from data, default to event for pastel yellow
 		>
 			<div className='relative w-full h-full overflow-visible'>
-				{/* Position Display */}
-				<GridBlock
-					gridWidth={5}
-					gridHeight={1}
-					gridX={1}
-					gridY={1}
-					showDimensions={false}
-				>
-					<div className='w-full h-full flex justify-center items-center'>
-						<div className='text-center'>
-							<div className='text-xs text-gray-600 dark:text-gray-400'>
-								<span className='font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded'>
-									X: {x}px, Y: {y}px
-								</span>
-							</div>
-						</div>
-					</div>
-				</GridBlock>
 
-				{/* Gain Slider */}
+
+				{/* Gain Slider with Volume Indicator */}
 				<GridSlider
 					gridWidth={5}
-					gridHeight={2}
+					gridHeight={3}
 					gridX={1}
-					gridY={2}
+					gridY={1}
 					sliderProps={{
 						value: params.gain,
 						min: 0,
@@ -96,6 +73,14 @@ export function GainNode({
 						'aria-label': 'Gain control',
 					}}
 					label='Gain'
+					layout='stacked'
+					visualIndicator={{
+						type: 'volume',
+						showBars: true,
+						barCount: 5,
+						animated: true,
+						color: 'green'
+					}}
 				/>
 
 				{/* Mute Button */}

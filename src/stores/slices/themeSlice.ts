@@ -215,23 +215,8 @@ function getMetallicGradient(
 					];
 
 		case 'rainbow':
-			return theme === 'light'
-				? [
-						...baseClasses,
-						'from-purple-200',
-						'via-blue-100',
-						'via-green-50',
-						'via-yellow-100',
-						'to-pink-200',
-					]
-				: [
-						...baseClasses,
-						'from-purple-900',
-						'via-blue-800',
-						'via-green-900',
-						'via-indigo-800',
-						'to-purple-950',
-					];
+			// Use custom rainbow metallic utility class instead of Tailwind classes
+			return ['bg-rainbow-metallic'];
 
 		default:
 			return getMetallicGradient('titanium', theme);
