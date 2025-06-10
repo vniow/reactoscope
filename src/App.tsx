@@ -19,7 +19,6 @@ import { initialEdges, edgeTypes } from './edges';
 import { ThemeProvider } from './contexts/ThemeProvider';
 import { FlowControls } from './components/FlowControls';
 import { NodeAddPanel } from './components/NodeAddPanel';
-import { MetallicThemePanel } from './components/MetallicThemePanel';
 import { type AppNode } from './nodes/types';
 
 import { GRID_UNIT } from './config/grid';
@@ -64,7 +63,6 @@ export default function App() {
 					proOptions={{ hideAttribution: true }}
 				>
 					<NodeAddPanel />
-					<MetallicThemePanel />
 					<Background
 						gap={GRID_UNIT}
 						size={6}

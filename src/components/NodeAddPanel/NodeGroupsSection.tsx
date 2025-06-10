@@ -31,6 +31,7 @@ export function NodeGroupsSection({
 			gridY={gridY}
 			showBorder={false}
 			transparentBackground={true}
+			className={`overflow-hidden ${!isVisible ? 'pointer-events-none' : ''}`}
 		>
 			<div
 				className={`

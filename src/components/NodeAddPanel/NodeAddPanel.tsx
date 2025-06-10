@@ -23,14 +23,18 @@ export function NodeAddPanel() {
 	return (
 		<Panel
 			position='top-left'
-			className='w-96 max-w-full'
+			className='max-w-full'
+			style={{
+				pointerEvents: 'none', // Allow Panel itself to not block events
+			}}
 		>
 			{/* Main container with custom blurred background styling */}
 			<div
-				className='relative glass-panel-enhanced rounded-xl transition-all duration-300 ease-in-out'
+				className='relative glass-panel-enhanced rounded-xl transition-all duration-300 ease-in-out overflow-hidden'
 				style={{
 					width: `${PANEL_LAYOUT.width}px`,
 					height: `${isExpanded ? PANEL_LAYOUT.heightExpanded : PANEL_LAYOUT.heightCollapsed}px`,
+					pointerEvents: 'auto', // Re-enable pointer events only for the actual content
 				}}
 			>
 				{/* Header Section */}

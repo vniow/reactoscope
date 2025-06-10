@@ -61,7 +61,7 @@ export function FloatingEdge(props: EdgeProps) {
 	const colorMode = edgeData?.colorMode ?? 'gradient';
 
 	// Get dynamic colors based on connected nodes
-	const { stroke: dynamicStroke, strokeHover, gradient, gradientId } = useEdgeColors(
+	const { stroke: dynamicStroke, gradient, gradientId } = useEdgeColors(
 		source,
 		target,
 		colorMode

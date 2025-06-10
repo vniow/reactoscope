@@ -14,7 +14,7 @@ export const createThemeSlice: StateCreator<
 	theme: {
 		current: 'system',
 		actualTheme: 'light',
-		metallicBackground: 'chrome',
+		metallicBackground: 'titanium',
 	},
 
 	// Actions
@@ -103,7 +103,7 @@ export const createThemeSlice: StateCreator<
 		}
 
 		const metallicBackground =
-			(localStorage.getItem('metallicBackground') as MetallicTheme) || 'chrome';
+			(localStorage.getItem('metallicBackground') as MetallicTheme) || 'titanium';
 
 		set({
 			theme: {
@@ -158,7 +158,7 @@ function updateDOMTheme(
 	body.classList.add(theme);
 
 	// Apply metallic background based on selection
-	const metallicType = metallicBackground || 'chrome';
+	const metallicType = metallicBackground || 'titanium';
 
 	if (theme === 'light') {
 		applyLightMetallicBackground(body, metallicType);
@@ -195,63 +195,6 @@ function getMetallicGradient(
 	const baseClasses = ['bg-gradient-to-br'];
 
 	switch (metallicType) {
-		case 'chrome':
-			return theme === 'light'
-				? [
-						...baseClasses,
-						'from-slate-300',
-						'via-gray-200',
-						'via-slate-200',
-						'via-gray-300',
-						'to-slate-400',
-					]
-				: [
-						...baseClasses,
-						'from-slate-800',
-						'via-gray-700',
-						'via-slate-600',
-						'via-gray-800',
-						'to-slate-900',
-					];
-
-		case 'gold':
-			return theme === 'light'
-				? [
-						...baseClasses,
-						'from-yellow-200',
-						'via-amber-100',
-						'via-yellow-50',
-						'via-amber-200',
-						'to-yellow-300',
-					]
-				: [
-						...baseClasses,
-						'from-amber-900',
-						'via-yellow-800',
-						'via-amber-700',
-						'via-yellow-900',
-						'to-amber-950',
-					];
-
-		case 'copper':
-			return theme === 'light'
-				? [
-						...baseClasses,
-						'from-orange-200',
-						'via-amber-100',
-						'via-orange-50',
-						'via-red-100',
-						'to-orange-300',
-					]
-				: [
-						...baseClasses,
-						'from-orange-900',
-						'via-red-800',
-						'via-orange-800',
-						'via-red-900',
-						'to-orange-950',
-					];
-
 		case 'titanium':
 			return theme === 'light'
 				? [
@@ -291,6 +234,6 @@ function getMetallicGradient(
 					];
 
 		default:
-			return getMetallicGradient('chrome', theme);
+			return getMetallicGradient('titanium', theme);
 	}
 }

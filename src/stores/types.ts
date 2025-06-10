@@ -3,12 +3,7 @@ import type { AudioSlice } from './slices/audioSlice';
 // Theme Types
 export type Theme = 'light' | 'dark' | 'system';
 export type ActualTheme = 'light' | 'dark';
-export type MetallicTheme =
-	| 'chrome'
-	| 'gold'
-	| 'copper'
-	| 'titanium'
-	| 'rainbow';
+export type MetallicTheme = 'titanium' | 'rainbow';
 
 export interface ThemeState {
 	current: Theme;
