@@ -53,19 +53,6 @@ export const useAudioNodes = () => {
 	);
 };
 
-export const useTransport = () => {
-	return useAppStore(
-		useShallow((state) => ({
-			transport: state.transport,
-			audioContext: state.audioContext,
-			startTransport: state.startTransport,
-			stopTransport: state.stopTransport,
-			setBPM: state.setBPM,
-			initializeAudioContext: state.initializeAudioContext,
-		}))
-	);
-};
-
 export const useAudioConnections = () => {
 	return useAppStore(
 		useShallow((state) => ({

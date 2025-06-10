@@ -1,18 +1,12 @@
 import type { AppNode } from '../nodes/types';
-
-export type NodeVariant =
-	| 'primary'
-	| 'secondary'
-	| 'audio'
-	| 'debug'
-	| 'default';
+import type { ComponentVariant } from '../types/ui';
 
 export interface NodeTypeOption {
 	type: AppNode['type'];
 	name: string;
 	description: string;
 	emoji: string;
-	variant: NodeVariant;
+	variant: ComponentVariant; // Use ComponentVariant instead of NodeVariant
 	category: 'debug' | 'audio' | 'utility';
 	defaultData: Record<string, unknown>;
 }
@@ -31,7 +25,7 @@ export const DEBUG_NODES: NodeTypeOption[] = [
 		name: 'Debug Node',
 		description: 'Comprehensive debug info for all node properties',
 		emoji: '🔍',
-		variant: 'debug',
+		variant: 'unit', // Debug/development -> unit category
 		category: 'debug',
 		defaultData: {
 			label: 'Debug Node',
@@ -42,7 +36,7 @@ export const DEBUG_NODES: NodeTypeOption[] = [
 		name: 'Position Logger',
 		description: 'Floating handles demonstration node with position logging',
 		emoji: '📍',
-		variant: 'debug',
+		variant: 'unit', // Debug/development -> unit category
 		category: 'debug',
 		defaultData: {
 			label: 'Floating Node',
@@ -53,7 +47,7 @@ export const DEBUG_NODES: NodeTypeOption[] = [
 		name: 'Static Node',
 		description: 'Static handles for testing mixed floating/static scenarios',
 		emoji: '⚓',
-		variant: 'debug',
+		variant: 'unit', // Debug/development -> unit category
 		category: 'debug',
 		defaultData: {
 			label: 'Static Node',
@@ -68,7 +62,7 @@ export const AUDIO_NODES: NodeTypeOption[] = [
 		name: 'Oscillator',
 		description: 'Audio oscillator with frequency and waveform controls',
 		emoji: '🎵',
-		variant: 'audio',
+		variant: 'source', // Audio source -> source category
 		category: 'audio',
 		defaultData: {
 			id: '',
@@ -88,7 +82,7 @@ export const AUDIO_NODES: NodeTypeOption[] = [
 		name: 'Gain',
 		description: 'Volume control with mute functionality',
 		emoji: '🎚️',
-		variant: 'audio',
+		variant: 'component', // Signal component -> component category
 		category: 'audio',
 		defaultData: {
 			id: '',
@@ -105,7 +99,7 @@ export const AUDIO_NODES: NodeTypeOption[] = [
 		name: 'Audio Visualizer',
 		description: 'Real-time waveform visualization',
 		emoji: '📊',
-		variant: 'audio',
+		variant: 'signal', // Analysis/visualization -> signal category
 		category: 'audio',
 		defaultData: {
 			id: '',
@@ -127,7 +121,7 @@ export const UTILITY_NODES: NodeTypeOption[] = [
 		name: 'Audio Destination',
 		description: 'Master audio output endpoint',
 		emoji: '🔊',
-		variant: 'default',
+		variant: 'core', // Master output -> core system category
 		category: 'utility',
 		defaultData: {
 			label: 'Master Out',

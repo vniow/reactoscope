@@ -50,7 +50,6 @@ export function GainNode({
 
 	return (
 		<BaseNode
-			variant='component'
 			gridWidth={GAIN_NODE_CONFIG.gridWidth}
 			gridHeight={GAIN_NODE_CONFIG.gridHeight}
 			nodeId={id as string}

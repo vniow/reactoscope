@@ -1,11 +1,13 @@
 import type { Node, BuiltInNode, Position } from '@xyflow/react';
 import type { AudioNodeData } from '../stores/slices/audioSlice';
+import type { ComponentVariant } from '../types/ui';
 
 export interface BaseNodeData extends Record<string, unknown> {
 	label?: string;
 	gridWidth?: number;
 	gridHeight?: number;
 	handlePositions?: { [handleId: string]: Position };
+	variant?: ComponentVariant; // Add variant to node data for React Flow access
 }
 
 export interface DebugNodeData extends BaseNodeData {

@@ -35,20 +35,10 @@ export interface AudioConnection {
 	targetHandle: string;
 }
 
-export interface TransportState {
-	isPlaying: boolean;
-	bpm: number;
-	position: string;
-	loopStart: string;
-	loopEnd: string;
-	loop: boolean;
-}
-
 export interface AudioSlice {
 	// State
 	audioNodes: { [nodeId: string]: AudioNodeData };
 	audioConnections: AudioConnection[];
-	transport: TransportState;
 	audioContext: {
 		isStarted: boolean;
 		state: string;
@@ -75,13 +65,6 @@ export interface AudioSlice {
 	) => void;
 	disconnectAudioNodes: (connectionId: string) => void;
 
-	// Transport Actions
-	startTransport: () => void;
-	stopTransport: () => void;
-	pauseTransport: () => void;
-	setBPM: (bpm: number) => void;
-	setTransportPosition: (position: string) => void;
-
 	// Audio Context Actions
 	initializeAudioContext: () => Promise<void>;
 }
@@ -92,14 +75,6 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 	// Initial state
 	audioNodes: {},
 	audioConnections: [],
-	transport: {
-		isPlaying: false,
-		bpm: 120,
-		position: '0:0:0',
-		loopStart: '0:0:0',
-		loopEnd: '4:0:0',
-		loop: false,
-	},
 	audioContext: {
 		isStarted: false,
 		state: 'suspended',
@@ -188,62 +163,6 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 			),
 		}));
 		console.log(`🔌 Disconnected audio connection: ${connectionId}`);
-	},
-
-	// Transport Actions
-	startTransport: () => {
-		Tone.getTransport().start();
-		set((state) => ({
-			transport: {
-				...state.transport,
-				isPlaying: true,
-			},
-		}));
-		console.log('▶️ Transport started');
-	},
-
-	stopTransport: () => {
-		Tone.getTransport().stop();
-		set((state) => ({
-			transport: {
-				...state.transport,
-				isPlaying: false,
-				position: '0:0:0',
-			},
-		}));
-		console.log('⏹️ Transport stopped');
-	},
-
-	pauseTransport: () => {
-		Tone.getTransport().pause();
-		set((state) => ({
-			transport: {
-				...state.transport,
-				isPlaying: false,
-			},
-		}));
-		console.log('⏸️ Transport paused');
-	},
-
-	setBPM: (bpm) => {
-		Tone.getTransport().bpm.value = bpm;
-		set((state) => ({
-			transport: {
-				...state.transport,
-				bpm,
-			},
-		}));
-		console.log(`🎼 BPM set to ${bpm}`);
-	},
-
-	setTransportPosition: (position) => {
-		Tone.getTransport().position = position;
-		set((state) => ({
-			transport: {
-				...state.transport,
-				position,
-			},
-		}));
 	},
 
 	// Audio Context Actions

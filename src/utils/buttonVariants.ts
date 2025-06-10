@@ -1,7 +1,8 @@
-import type { NodeVariant } from '../config/nodeTypes';
+import type { ComponentVariant } from '../types/ui';
 
-// Variant style mappings
+// Variant style mappings - updated to use ComponentVariant
 export const VARIANT_STYLES = {
+	// Map old variants to new system for backward compatibility
 	primary: {
 		button:
 			'bg-green-100 hover:bg-green-200 text-green-800 dark:bg-green-900/30 dark:hover:bg-green-800/40 dark:text-green-200',
@@ -32,20 +33,79 @@ export const VARIANT_STYLES = {
 		border:
 			'border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700',
 	},
+	// New ComponentVariant mappings using CSS custom properties
+	core: {
+		button:
+			'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white dark:bg-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/70',
+		border:
+			'border-[var(--node-accent)] hover:bg-[var(--node-accent)]/10 dark:border-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/20',
+	},
+	source: {
+		button:
+			'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white dark:bg-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/70',
+		border:
+			'border-[var(--node-accent)] hover:bg-[var(--node-accent)]/10 dark:border-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/20',
+	},
+	instrument: {
+		button:
+			'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white dark:bg-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/70',
+		border:
+			'border-[var(--node-accent)] hover:bg-[var(--node-accent)]/10 dark:border-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/20',
+	},
+	effect: {
+		button:
+			'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white dark:bg-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/70',
+		border:
+			'border-[var(--node-accent)] hover:bg-[var(--node-accent)]/10 dark:border-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/20',
+	},
+	component: {
+		button:
+			'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white dark:bg-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/70',
+		border:
+			'border-[var(--node-accent)] hover:bg-[var(--node-accent)]/10 dark:border-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/20',
+	},
+	signal: {
+		button:
+			'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white dark:bg-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/70',
+		border:
+			'border-[var(--node-accent)] hover:bg-[var(--node-accent)]/10 dark:border-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/20',
+	},
+	event: {
+		button:
+			'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white dark:bg-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/70',
+		border:
+			'border-[var(--node-accent)] hover:bg-[var(--node-accent)]/10 dark:border-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/20',
+	},
+	unit: {
+		button:
+			'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white dark:bg-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/70',
+		border:
+			'border-[var(--node-accent)] hover:bg-[var(--node-accent)]/10 dark:border-[var(--node-accent)] dark:hover:bg-[var(--node-accent)]/20',
+	},
 } as const;
 
 /**
  * Get button classes for a specific variant
  */
-export function getButtonVariantClasses(variant: NodeVariant): string {
-	return VARIANT_STYLES[variant]?.button || VARIANT_STYLES.default.button;
+export function getButtonVariantClasses(
+	variant: ComponentVariant | string
+): string {
+	return (
+		VARIANT_STYLES[variant as keyof typeof VARIANT_STYLES]?.button ||
+		VARIANT_STYLES.default.button
+	);
 }
 
 /**
  * Get border button classes for a specific variant
  */
-export function getBorderVariantClasses(variant: NodeVariant): string {
-	return VARIANT_STYLES[variant]?.border || VARIANT_STYLES.default.border;
+export function getBorderVariantClasses(
+	variant: ComponentVariant | string
+): string {
+	return (
+		VARIANT_STYLES[variant as keyof typeof VARIANT_STYLES]?.border ||
+		VARIANT_STYLES.default.border
+	);
 }
 
 /**
