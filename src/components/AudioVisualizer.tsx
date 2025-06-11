@@ -9,8 +9,8 @@ import { Analyser } from 'tone';
 import AudioWaveformLines from './AudioWaveformLines';
 
 interface AudioVisualizerProps {
-	analyserL?: Analyser;
-	analyserR?: Analyser;
+	analyserX?: Analyser;
+	analyserY?: Analyser;
 	isPlaying: boolean;
 	width?: number;
 	height?: number;
@@ -21,8 +21,8 @@ interface AudioVisualizerProps {
  * Main AudioVisualizer component that sets up the canvas and scene
  */
 function AudioVisualizer({
-	analyserL,
-	analyserR,
+	analyserX,
+	analyserY,
 	isPlaying,
 	width = 280,
 	height = 280,
@@ -56,10 +56,10 @@ function AudioVisualizer({
 						attach='background'
 						args={[0, 0, 0]}
 					/>
-					{analyserL && analyserR && (
+					{analyserX && analyserY && (
 						<AudioWaveformLines
-							analyserL={analyserL}
-							analyserR={analyserR}
+							analyserX={analyserX}
+							analyserY={analyserY}
 							isPlaying={isPlaying}
 						/>
 					)}

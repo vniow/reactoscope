@@ -13,14 +13,14 @@ import { useWaveformGeometry } from '../geometry/AudioWaveformGeometry';
 import { useVisualizerControls } from '../controls/VisualizerControls';
 
 interface AudioWaveformLinesProps {
-	analyserL?: Analyser;
-	analyserR?: Analyser;
+	analyserX?: Analyser;
+	analyserY?: Analyser;
 	isPlaying: boolean;
 }
 
 function AudioWaveformLines({
-	analyserL,
-	analyserR,
+	analyserX,
+	analyserY,
 	isPlaying,
 }: AudioWaveformLinesProps) {
 	const meshRef = useRef<THREE.Mesh>(null!);
@@ -69,17 +69,17 @@ function AudioWaveformLines({
 
 	// Animation frame update
 	useFrame(() => {
-		if (!geometryRef.current || !analyserL || !analyserR) return;
+		if (!geometryRef.current || !analyserX || !analyserY) return;
 
 		if (isPlaying) {
-			const dataL = analyserL.getValue();
-			const dataR = analyserR.getValue();
+			const dataX = analyserX.getValue();
+			const dataY = analyserY.getValue();
 
-			if (dataL instanceof Float32Array && dataR instanceof Float32Array) {
+			if (dataX instanceof Float32Array && dataY instanceof Float32Array) {
 				updateGeometryWithAudioData(
 					geometryRef.current,
-					dataL,
-					dataR,
+					dataX,
+					dataY,
 					audioScale
 				);
 			}

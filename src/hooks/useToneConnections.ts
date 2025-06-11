@@ -43,7 +43,7 @@ export function useToneConnections(nodeId: string) {
 				let targetKey: string;
 				if (targetNode.type === 'analyser') {
 					// For analyser nodes, determine which channel based on target handle
-					const channel = edge.targetHandle === 'audio-in-L' ? 'L' : 'R';
+					const channel = edge.targetHandle === 'audio-in-X' ? 'X' : 'Y';
 					targetKey = `${targetNode.type}-${targetNode.id}-${channel}`;
 				} else {
 					targetKey = `${targetNode.type}-${targetNode.id}`;
@@ -113,7 +113,7 @@ export function useToneConnections(nodeId: string) {
 					let targetKey: string;
 					if (targetNode.type === 'analyser') {
 						// For analyser nodes, determine which channel based on target handle
-						const channel = edge.targetHandle === 'audio-in-L' ? 'L' : 'R';
+						const channel = edge.targetHandle === 'audio-in-X' ? 'X' : 'Y';
 						targetKey = `${targetNode.type}-${targetNode.id}-${channel}`;
 					} else {
 						targetKey = `${targetNode.type}-${targetNode.id}`;

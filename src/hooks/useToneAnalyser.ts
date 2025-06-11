@@ -8,18 +8,18 @@ import type { Edge } from '@xyflow/react';
 export interface ToneAnalyserControls {
 	updateSize: (size: number) => void;
 	updateSmoothing: (smoothing: number) => void;
-	getAnalyserL: () => Tone.Analyser | null;
-	getAnalyserR: () => Tone.Analyser | null;
+	getAnalyserX: () => Tone.Analyser | null;
+	getAnalyserY: () => Tone.Analyser | null;
 	params: AnalyserParams;
 }
 
 /**
- * Custom hook for managing Tone.js Analyser nodes for stereo audio visualization
+ * Custom hook for managing Tone.js Analyser nodes for X/Y axis audio visualization
  * Handles lifecycle, parameter updates, and state synchronization
  */
 export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
-	const analyserLRef = useRef<Tone.Analyser | null>(null);
-	const analyserRRef = useRef<Tone.Analyser | null>(null);
+	const analyserXRef = useRef<Tone.Analyser | null>(null);
+	const analyserYRef = useRef<Tone.Analyser | null>(null);
 
 	// Get audio node data from store
 	const audioNode = useAppStore((state) => state.audioNodes[nodeId]);
@@ -53,14 +53,14 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 				// Ensure audio context is started
 				await initializeAudioContext();
 
-				// Create left and right analysers independently
-				analyserLRef.current = new Tone.Analyser({
+				// Create X and Y analysers independently
+				analyserXRef.current = new Tone.Analyser({
 					type: 'waveform',
 					size: params.size,
 					smoothing: params.smoothing,
 				});
 
-				analyserRRef.current = new Tone.Analyser({
+				analyserYRef.current = new Tone.Analyser({
 					type: 'waveform',
 					size: params.size,
 					smoothing: params.smoothing,
@@ -74,10 +74,10 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 					windowWithTone.toneInstances = {};
 				}
 				// Register both analysers with separate handles
-				windowWithTone.toneInstances[`analyser-${nodeId}-L`] =
-					analyserLRef.current;
-				windowWithTone.toneInstances[`analyser-${nodeId}-R`] =
-					analyserRRef.current;
+				windowWithTone.toneInstances[`analyser-${nodeId}-X`] =
+					analyserXRef.current;
+				windowWithTone.toneInstances[`analyser-${nodeId}-Y`] =
+					analyserYRef.current;
 
 				console.log(
 					`🎵 Created independent analyser nodes for ${nodeId}:`,
@@ -95,7 +95,7 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 
 		// Cleanup on unmount
 		return () => {
-			if (analyserLRef.current) {
+			if (analyserXRef.current) {
 				try {
 					// Remove from global registry
 					const toneInstances = (
@@ -104,12 +104,12 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 						}
 					).toneInstances;
 					if (toneInstances) {
-						delete toneInstances[`analyser-${nodeId}-L`];
-						delete toneInstances[`analyser-${nodeId}-R`];
+						delete toneInstances[`analyser-${nodeId}-X`];
+						delete toneInstances[`analyser-${nodeId}-Y`];
 					}
 
-					analyserLRef.current.dispose();
-					analyserRRef.current?.dispose();
+					analyserXRef.current.dispose();
+					analyserYRef.current?.dispose();
 					console.log(`🗑️ Disposed analyser nodes for ${nodeId}`);
 				} catch (error) {
 					console.error(
@@ -124,14 +124,14 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 
 	// Update analyser parameters when store params change
 	useEffect(() => {
-		if (!analyserLRef.current || !analyserRRef.current) return;
+		if (!analyserXRef.current || !analyserYRef.current) return;
 
 		try {
 			// Update size and smoothing for both analysers
-			analyserLRef.current.size = params.size;
-			analyserLRef.current.smoothing = params.smoothing;
-			analyserRRef.current.size = params.size;
-			analyserRRef.current.smoothing = params.smoothing;
+			analyserXRef.current.size = params.size;
+			analyserXRef.current.smoothing = params.smoothing;
+			analyserYRef.current.size = params.size;
+			analyserYRef.current.smoothing = params.smoothing;
 
 			console.log(`🎚️ Updated analyser parameters for ${nodeId}:`, params);
 		} catch (error) {
@@ -157,12 +157,12 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 		[nodeId, updateAudioNode]
 	);
 
-	const getAnalyserL = useCallback(() => {
-		return analyserLRef.current;
+	const getAnalyserX = useCallback(() => {
+		return analyserXRef.current;
 	}, []);
 
-	const getAnalyserR = useCallback(() => {
-		return analyserRRef.current;
+	const getAnalyserY = useCallback(() => {
+		return analyserYRef.current;
 	}, []);
 
 	// Monitor incoming connections to update isConnected status
@@ -171,8 +171,8 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 		const incomingEdges = edges.filter(
 			(edge: Edge) =>
 				edge.target === nodeId &&
-				(edge.targetHandle === 'audio-in-L' ||
-					edge.targetHandle === 'audio-in-R')
+				(edge.targetHandle === 'audio-in-X' ||
+					edge.targetHandle === 'audio-in-Y')
 		);
 
 		const isConnected = incomingEdges.length > 0;
@@ -184,8 +184,8 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 	return {
 		updateSize,
 		updateSmoothing,
-		getAnalyserL,
-		getAnalyserR,
+		getAnalyserX,
+		getAnalyserY,
 		params,
 	};
 };

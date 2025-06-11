@@ -34,15 +34,15 @@ export function VisualizerNode({
 	const handleDelete = () => deleteNode(id as string);
 
 	// Initialize analyser controls
-	const { updateSize, updateSmoothing, getAnalyserL, getAnalyserR, params } =
+	const { updateSize, updateSmoothing, getAnalyserX, getAnalyserY, params } =
 		useToneAnalyser(id);
 
 	// Handle audio connections to other nodes
 	useToneConnections(id);
 
 	// Get analysers for visualization
-	const analyserL = getAnalyserL();
-	const analyserR = getAnalyserR();
+	const analyserX = getAnalyserX();
+	const analyserY = getAnalyserY();
 
 	// FFT size options for the select dropdown
 	const fftSizeOptions = [
@@ -73,8 +73,8 @@ export function VisualizerNode({
 				>
 					<div className='w-full h-full p-1'>
 						<AudioVisualizer
-							analyserL={analyserL || undefined}
-							analyserR={analyserR || undefined}
+							analyserX={analyserX || undefined}
+							analyserY={analyserY || undefined}
 							isPlaying={params.isConnected}
 							fillContainer={true}
 						/>
@@ -147,9 +147,9 @@ export function VisualizerNode({
 				</GridBlock>
 			</div>
 
-			{/* Left audio input handle */}
+			{/* X axis audio input handle */}
 			<GridNodeHandle
-				id='audio-in-L'
+				id='audio-in-X'
 				type='target'
 				mode='static'
 				position={Position.Left}
@@ -157,9 +157,9 @@ export function VisualizerNode({
 				gridY={1}
 				size='md'
 			/>
-			{/* Right audio input handle */}
+			{/* Y axis audio input handle */}
 			<GridNodeHandle
-				id='audio-in-R'
+				id='audio-in-Y'
 				type='target'
 				mode='static'
 				position={Position.Right}
