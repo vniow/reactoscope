@@ -31,28 +31,6 @@ export const DEBUG_NODES: NodeTypeOption[] = [
 			label: 'Debug Node',
 		},
 	},
-	{
-		type: 'position-logger',
-		name: 'Position Logger',
-		description: 'Floating handles demonstration node with position logging',
-		emoji: '📍',
-		variant: 'unit', // Debug/development -> unit category
-		category: 'debug',
-		defaultData: {
-			label: 'Floating Node',
-		},
-	},
-	{
-		type: 'static',
-		name: 'Static Node',
-		description: 'Static handles for testing mixed floating/static scenarios',
-		emoji: '⚓',
-		variant: 'unit', // Debug/development -> unit category
-		category: 'debug',
-		defaultData: {
-			label: 'Static Node',
-		},
-	},
 ];
 
 // Audio processing nodes

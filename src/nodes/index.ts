@@ -1,8 +1,6 @@
 import type { NodeTypes } from '@xyflow/react';
 
 import { DebugNode } from './DebugNode';
-import { PositionLoggerNode } from './PositionLoggerNode';
-import { StaticNode } from './StaticNode';
 import { OscillatorNode } from './OscillatorNode';
 import { GainNode } from './GainNode';
 import { VisualizerNode } from './VisualizerNode';
@@ -63,8 +61,6 @@ export const initialNodes: AppNode[] = [
 
 export const nodeTypes = {
 	debug: DebugNode,
-	'position-logger': PositionLoggerNode,
-	static: StaticNode,
 	oscillator: OscillatorNode,
 	gain: GainNode,
 	visualizer: VisualizerNode,

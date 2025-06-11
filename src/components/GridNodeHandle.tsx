@@ -30,10 +30,21 @@ interface GridNodeHandleProps {
 	style?: CSSProperties;
 	className?: string;
 	size?: 'sm' | 'md' | 'lg';
+	
+	// === LABEL OPTIONS (for source handles) ===
+	label?: string; // Text label to display inside source handles
+	showLabel?: boolean; // Whether to show the label (default: true if label is provided)
 }
 
 /**
  * GridNodeHandle component - a unified handle system supporting both static and floating positioning
+ * 
+ * VISUAL DESIGN:
+ * - Source handles: Large pointed arrow SVG icons that can contain text labels
+ *   Arrow points start their angle at the edge of the node where the handle is positioned
+ *   Sized to accommodate labels: sm(64x32), md(80x40), lg(96x48)
+ * - Target handles: Circle SVG icons indicating input connections
+ * - Uses CSS custom properties for theming and color consistency
  *
  * STATIC MODE (mode='static'):
  * - gridX: Grid column position (required) - multiplied by GRID_UNIT (64px)
@@ -50,9 +61,14 @@ interface GridNodeHandleProps {
  * - showDebugInfo: Show debug information overlay
  * - Position is calculated dynamically based on connected nodes
  *
+ * LABEL FUNCTIONALITY (source handles only):
+ * - label: Text to display inside the arrow handle
+ * - showLabel: Control label visibility (default: true if label is provided)
+ *
  * EXAMPLES:
  * Static: gridX={1}, gridY={0}, position={Position.Top} = 64px from left, at top edge
  * Floating: nodeId="node-1", minDistanceThreshold={50} = dynamic positioning
+ * With Label: label="Audio Out", showLabel={true} = displays text inside source arrow
  */
 export function GridNodeHandle({
 	id,
@@ -67,6 +83,8 @@ export function GridNodeHandle({
 	style = {},
 	className,
 	size = 'md',
+	label,
+	showLabel = true,
 }: GridNodeHandleProps) {
 	// Get floating positions if in floating mode
 	const floatingPositions = useFloatingHandles(
@@ -95,40 +113,169 @@ export function GridNodeHandle({
 		}
 	}
 
-	// Size variants
+	// Size variants - both source and target handles use same arrow dimensions
 	const sizeClasses = {
-		sm: 'w-6 h-6',
-		md: 'w-8 h-8',
-		lg: 'w-10 h-10',
+		sm: 'w-16 h-8',
+		md: 'w-20 h-10',
+		lg: 'w-24 h-12',
 	};
 
-	// Shape based on handle type
-	const shapeClass = type === 'source' ? 'rounded-none' : 'rounded-full';
+	// Get SVG size in pixels for inline SVG - same dimensions for both source and target
+	const getSvgSize = (size: 'sm' | 'md' | 'lg'): { width: number; height: number } => {
+		switch (size) {
+			case 'sm': return { width: 64, height: 32 };
+			case 'md': return { width: 80, height: 40 };
+			case 'lg': return { width: 96, height: 48 };
+			default: return { width: 80, height: 40 };
+		}
+	};
 
-	// Handle styling that matches node buttons and adapts to light/dark mode
-	// Uses CSS custom properties to inherit the node's accent color and provide appropriate fill variants
+	const svgDimensions = getSvgSize(size);
+
+	// Create SVG icon based on handle type
+	const createHandleIcon = () => {
+		// Use currentColor to inherit from CSS custom properties
+		const strokeColor = 'var(--node-accent, #3b82f6)';
+		const fillColor = type === 'source' 
+			? 'color-mix(in srgb, var(--node-accent, #3b82f6) 20%, light-dark(white, #374151))'
+			: 'color-mix(in srgb, var(--node-accent, #3b82f6) 30%, light-dark(white, #374151))';
+
+		// Both source and target handles now use arrow shapes
+		return (
+			<svg
+				width={svgDimensions.width}
+				height={svgDimensions.height}
+				viewBox={`0 0 ${svgDimensions.width} ${svgDimensions.height}`}
+				style={{ 
+					pointerEvents: 'none',
+					filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))'
+				}}
+			>
+				{getArrowPath(finalPosition, fillColor, strokeColor, svgDimensions, type)}
+				{/* Add label text inside the arrow if provided */}
+				{label && showLabel && (
+					<text
+						x={svgDimensions.width / 2}
+						y={svgDimensions.height / 2 + 1}
+						textAnchor="middle"
+						dominantBaseline="middle"
+						fill="var(--node-text-primary, light-dark(#374151, #f9fafb))"
+						fontSize={size === 'sm' ? '10' : size === 'md' ? '12' : '14'}
+						fontWeight="600"
+						fontFamily="ui-sans-serif, system-ui, sans-serif"
+						style={{ userSelect: 'none' }}
+					>
+						{label}
+					</text>
+				)}
+			</svg>
+		);
+	};
+
+	// Helper function to create arrow path based on position and handle type
+	// Target handles point in the opposite direction of source handles
+	const getArrowPath = (position: Position | undefined, fillColor: string, strokeColor: string, dimensions: { width: number; height: number }, handleType: 'source' | 'target') => {
+		const { width, height } = dimensions;
+		const centerX = width / 2;
+		const centerY = height / 2;
+		
+		// Determine arrow direction based on handle type and position
+		const getArrowDirection = (pos: Position | undefined) => {
+			if (handleType === 'source') {
+				return pos; // Source handles point in their natural direction
+			} else {
+				// Target handles point in the opposite direction
+				switch (pos) {
+					case Position.Right: return Position.Left;
+					case Position.Left: return Position.Right;
+					case Position.Bottom: return Position.Top;
+					case Position.Top: return Position.Bottom;
+					default: return Position.Left; // Default opposite of right
+				}
+			}
+		};
+
+		const arrowDirection = getArrowDirection(position);
+		
+		switch (arrowDirection) {
+			case Position.Right:
+				// Arrow pointing right - elongated to fit label
+				return (
+					<path
+						d={`M 4 4 L ${width - 12} 4 L ${width - 4} ${centerY} L ${width - 12} ${height - 4} L 4 ${height - 4} Z`}
+						fill={fillColor}
+						stroke={strokeColor}
+						strokeWidth="2"
+						strokeLinejoin="round"
+					/>
+				);
+			case Position.Left:
+				// Arrow pointing left - elongated to fit label
+				return (
+					<path
+						d={`M ${width - 4} 4 L 12 4 L 4 ${centerY} L 12 ${height - 4} L ${width - 4} ${height - 4} Z`}
+						fill={fillColor}
+						stroke={strokeColor}
+						strokeWidth="2"
+						strokeLinejoin="round"
+					/>
+				);
+			case Position.Bottom:
+				// Arrow pointing down - wider to fit label
+				return (
+					<path
+						d={`M 4 4 L ${width - 4} 4 L ${width - 4} ${height - 12} L ${centerX} ${height - 4} L 4 ${height - 12} Z`}
+						fill={fillColor}
+						stroke={strokeColor}
+						strokeWidth="2"
+						strokeLinejoin="round"
+					/>
+				);
+			case Position.Top:
+				// Arrow pointing up - wider to fit label
+				return (
+					<path
+						d={`M 4 ${height - 4} L ${width - 4} ${height - 4} L ${width - 4} 12 L ${centerX} 4 L 4 12 Z`}
+						fill={fillColor}
+						stroke={strokeColor}
+						strokeWidth="2"
+						strokeLinejoin="round"
+					/>
+				);
+			default:
+				// Default left-pointing arrow (opposite of default right for source)
+				return (
+					<path
+						d={`M ${width - 4} 4 L 12 4 L 4 ${centerY} L 12 ${height - 4} L ${width - 4} ${height - 4} Z`}
+						fill={fillColor}
+						stroke={strokeColor}
+						strokeWidth="2"
+						strokeLinejoin="round"
+					/>
+				);
+		}
+	};
+
+	// Handle styling for SVG container - simplified since we're using SVG icons
 	const handleClasses = [
 		sizeClasses[size],
-		shapeClass,
-		'drop-shadow-md',
-		'border-2',
-		// Use CSS custom properties for colors - inherits from parent node's data-variant
-		'border-[var(--node-accent,theme(colors.blue.500))]',
 		'transition-colors',
 		'duration-150',
+		// Remove border and background since SVG handles its own styling
+		'bg-transparent',
+		'border-0',
+		'flex',
+		'items-center',
+		'justify-center',
 		className,
 	]
 		.filter(Boolean)
 		.join(' ');
 
-	// Background color using CSS custom properties for better browser support
+	// Background style - simplified since SVG handles visual appearance
 	const backgroundStyle: CSSProperties = {
-		backgroundColor:
-			type === 'source'
-				? // Source handles: lighter fill (20% accent mix)
-					'color-mix(in srgb, var(--node-accent, #3b82f6) 20%, light-dark(white, #374151))'
-				: // Target handles: slightly more saturated fill (30% accent mix)
-					'color-mix(in srgb, var(--node-accent, #3b82f6) 30%, light-dark(white, #374151))',
+		// Remove background color since SVG handles it
+		backgroundColor: 'transparent',
 	};
 
 	// Calculate positioning style
@@ -173,7 +320,10 @@ export function GridNodeHandle({
 				position={finalPosition!}
 				style={finalStyle}
 				className={handleClasses}
-			/>
+			>
+				{/* Render SVG icon inside the handle */}
+				{createHandleIcon()}
+			</Handle>
 
 			{/* Debug info for floating mode */}
 			{mode === 'floating' && showDebugInfo && (

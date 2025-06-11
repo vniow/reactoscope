@@ -166,7 +166,7 @@ export function OscillatorNode({
 				mode='static'
 				position={Position.Right}
 				gridX={0}
-				gridY={OSCILLATOR_NODE_CONFIG.gridHeight / 2} // Center vertically
+				gridY={1} // Center vertically
 				size='md'
 			/>
 		</BaseNode>

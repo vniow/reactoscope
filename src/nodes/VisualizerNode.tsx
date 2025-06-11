@@ -154,7 +154,7 @@ export function VisualizerNode({
 				mode='static'
 				position={Position.Left}
 				gridX={0}
-				gridY={VISUALIZER_NODE_CONFIG.gridHeight / 2}
+				gridY={1}
 				size='md'
 			/>
 			{/* Right audio input handle */}
@@ -164,7 +164,7 @@ export function VisualizerNode({
 				mode='static'
 				position={Position.Right}
 				gridX={0}
-				gridY={VISUALIZER_NODE_CONFIG.gridHeight / 2}
+				gridY={1}
 				size='md'
 			/>
 		</BaseNode>

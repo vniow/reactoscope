@@ -89,24 +89,24 @@ export function GainNode({
 				/>
 			</div>
 
-			{/* Input handle - grid aligned */}
+			{/* Input handle - grid aligned (circle SVG icon) */}
 			<GridNodeHandle
 				id={`${id}-audio-in`}
 				type='target'
 				mode='static'
 				position={Position.Left}
 				gridX={0}
-				gridY={GAIN_NODE_CONFIG.gridHeight / 2}
+				gridY={1}
 				size='md'
 			/>
-			{/* Output handle - grid aligned */}
+			{/* Output handle - grid aligned (square SVG icon) */}
 			<GridNodeHandle
 				id={`${id}-audio-out`}
 				type='source'
 				mode='static'
 				position={Position.Right}
 				gridX={0}
-				gridY={GAIN_NODE_CONFIG.gridHeight / 2}
+				gridY={1}
 				size='md'
 			/>
 		</BaseNode>

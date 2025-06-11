@@ -72,8 +72,6 @@ function inferVariantFromNodeType(nodeType?: string): ComponentVariant {
 		visualizer: 'signal',
 		destination: 'core',
 		debug: 'unit',
-		'position-logger': 'unit',
-		static: 'unit',
 	};
 
 	return typeToVariantMap[nodeType] || 'core';

@@ -267,7 +267,7 @@ export function useFloatingEdgePositions(
 export function isFloatingNode(node: Node): boolean {
 	// Support floating handles for nodes that explicitly use floating mode
 	// These node types have handles with mode='floating' in their implementation
-	return node.type === 'position-logger' || node.type === 'destination';
+	return node.type === 'destination';
 }
 
 /**
