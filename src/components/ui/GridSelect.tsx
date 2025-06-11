@@ -17,6 +17,9 @@ export interface SelectProps
 export interface GridSelectProps extends Omit<GridBlockProps, 'children'> {
 	selectProps: SelectProps;
 	label?: string;
+	layout?: 'stacked' | 'compact' | 'minimal'; // Layout options like GridSlider
+	showValue?: boolean; // Control value display
+	textSize?: 'xs' | 'sm' | 'base' | 'lg' | 'xl'; // Text size for label and value
 }
 
 export function GridSelect({
@@ -28,6 +31,9 @@ export function GridSelect({
 	className = '',
 	selectProps,
 	label,
+	layout = 'stacked',
+	showValue = true,
+	textSize = 'xs',
 	...rest
 }: GridSelectProps) {
 	const {
@@ -73,43 +79,79 @@ export function GridSelect({
 			gridX={gridX}
 			gridY={gridY}
 			showDimensions={showDimensions}
-			className={combineClasses('flex flex-col justify-center', className)}
+			className={combineClasses('p-0', className)}
+			transparentBackground={true}
 			{...rest}
 		>
-			{/* Label above select */}
-			{label && (
-				<div className='mb-1 text-center'>
-					<span className='text-xs font-medium text-gray-700 dark:text-gray-300'>
-						{label}
-					</span>
-				</div>
-			)}
+			{/* Container that adapts based on layout */}
+			<div className={combineClasses(
+				'w-full h-full p-1',
+				layout === 'minimal' ? 'flex items-center justify-center' :
+				layout === 'compact' ? 'flex flex-col justify-center gap-1' :
+				'flex flex-col justify-between' // stacked layout
+			)}>
+				{/* Label section - only show if label exists and layout isn't minimal */}
+				{label && layout !== 'minimal' && (
+					<div className='flex-shrink-0'>
+						<div className='text-center mb-1'>
+							<span className={combineClasses(
+								'font-medium text-gray-700 dark:text-gray-300',
+								textSize === 'xs' ? 'text-xs' :
+								textSize === 'sm' ? 'text-sm' :
+								textSize === 'base' ? 'text-base' :
+								textSize === 'lg' ? 'text-lg' :
+								textSize === 'xl' ? 'text-xl' :
+								'text-xs'
+							)}>
+								{label}
+							</span>
+						</div>
+					</div>
+				)}
 
-			{/* Select input */}
-			<div className='flex items-center justify-center w-full px-1'>
-				<select
-					value={value}
-					onChange={onChange}
-					onPointerDown={handlePointerDown}
-					className={selectClasses}
-					disabled={disabled}
-					{...accessibilityProps}
-					{...selectSpecificProps}
-				>
-					{options.map((option) => (
-						<option
-							key={option.value}
-							value={option.value}
+				{/* Select section */}
+				<div className={combineClasses(
+					'flex items-center justify-center',
+					layout === 'stacked' ? 'flex-grow' : ''
+				)}>
+					<div className='flex items-center justify-center w-full px-1'>
+						<select
+							value={value}
+							onChange={onChange}
+							onPointerDown={handlePointerDown}
+							className={selectClasses}
+							disabled={disabled}
+							{...accessibilityProps}
+							{...selectSpecificProps}
 						>
-							{option.label}
-						</option>
-					))}
-				</select>
-			</div>
+							{options.map((option) => (
+								<option
+									key={option.value}
+									value={option.value}
+								>
+									{option.label}
+								</option>
+							))}
+						</select>
+					</div>
+				</div>
 
-			{/* Current value below select */}
-			<div className='mt-1 text-center text-xs text-gray-600 dark:text-gray-300'>
-				{options.find((opt) => opt.value === value)?.label || value}
+				{/* Value section - only show if showValue is true and layout isn't minimal */}
+				{showValue && layout !== 'minimal' && (
+					<div className='flex-shrink-0'>
+						<div className={combineClasses(
+							'text-center text-gray-600 dark:text-gray-300',
+							textSize === 'xs' ? 'text-xs' :
+							textSize === 'sm' ? 'text-sm' :
+							textSize === 'base' ? 'text-base' :
+							textSize === 'lg' ? 'text-lg' :
+							textSize === 'xl' ? 'text-xl' :
+							'text-xs'
+						)}>
+							{options.find((opt) => opt.value === value)?.label || value}
+						</div>
+					</div>
+				)}
 			</div>
 		</GridBlock>
 	);

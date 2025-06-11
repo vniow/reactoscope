@@ -2,7 +2,6 @@ import { type NodeProps, Position } from '@xyflow/react';
 
 import { BaseNode } from '../components/BaseNode';
 import { GridNodeHandle } from '../components/GridNodeHandle';
-import { GridBlock } from '../components/GridBlock';
 import { GridSlider } from '../components/ui/GridSlider';
 import { GridButton } from '../components/ui/GridButton';
 import { useToneGain } from '../hooks/useToneGain';
@@ -17,8 +16,8 @@ import type { GainNode } from './types';
 
 // Grid configuration for gain node
 const GAIN_NODE_CONFIG = {
-	gridWidth: 7,
-	gridHeight: 5,
+	gridWidth: 4,
+	gridHeight: 4,
 } as const;
 
 export function GainNode({
@@ -55,16 +54,16 @@ export function GainNode({
 			<div className='relative w-full h-full overflow-visible'>
 
 
-				{/* Gain Slider with Volume Indicator */}
+				{/* Gain Slider */}
 				<GridSlider
-					gridWidth={5}
-					gridHeight={3}
-					gridX={1}
+					gridWidth={3}
+					gridHeight={2}
+					gridX={0.5}
 					gridY={1}
 					sliderProps={{
 						value: params.gain,
 						min: 0,
-						max: 2,
+						max: 1,
 						step: 0.01,
 						formatValue: (val) => val.toFixed(2),
 						onChange: (e) => updateGain(parseFloat(e.target.value)),
@@ -74,21 +73,15 @@ export function GainNode({
 					}}
 					label='Gain'
 					layout='stacked'
-					visualIndicator={{
-						type: 'volume',
-						showBars: true,
-						barCount: 5,
-						animated: true,
-						color: 'green'
-					}}
+					textSize='lg'
 				/>
 
 				{/* Mute Button */}
 				<GridButton
-					gridWidth={5}
+					gridWidth={3}
 					gridHeight={1}
-					gridX={1}
-					gridY={4}
+					gridX={0.5}
+					gridY={3}
 					buttonLabel={params.mute ? '🔇 Muted' : '🔊 Active'}
 					onClick={handleMuteToggle}
 					aria-label='Toggle mute'

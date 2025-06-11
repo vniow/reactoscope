@@ -35,7 +35,7 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 		detune: 0,
 		waveType: 'sine',
 		isPlaying: false,
-		volume: -20, // -20 dB for safe listening level
+		volume: 0, // 0 dB volume
 	};
 
 	const params = (audioNode?.params as OscillatorParams) || defaultParams;
@@ -48,7 +48,7 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 				detune: 0,
 				waveType: 'sine',
 				isPlaying: false,
-				volume: -20, // -20 dB for safe listening level
+				volume: 0, // 0 dB volume
 			});
 		}
 	}, [nodeId, audioNode, addAudioNode]);

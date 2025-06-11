@@ -18,8 +18,8 @@ import type { VisualizerNode } from './types';
 
 // Grid configuration for visualizer node
 const VISUALIZER_NODE_CONFIG = {
-	gridWidth: 6,
-	gridHeight: 8,
+	gridWidth: 12,
+	gridHeight: 16,
 } as const;
 
 export function VisualizerNode({
@@ -65,8 +65,8 @@ export function VisualizerNode({
 			<div className='relative w-full h-full overflow-visible'>
 				{/* Visualizer Display */}
 				<GridBlock
-					gridWidth={6}
-					gridHeight={4}
+					gridWidth={12}
+					gridHeight={12}
 					gridX={0}
 					gridY={1.5}
 					showDimensions={false}
@@ -76,6 +76,7 @@ export function VisualizerNode({
 							analyserL={analyserL || undefined}
 							analyserR={analyserR || undefined}
 							isPlaying={params.isConnected}
+							fillContainer={true}
 						/>
 					</div>
 				</GridBlock>
@@ -83,10 +84,12 @@ export function VisualizerNode({
 				{/* FFT Size Control */}
 				<GridSelect
 					gridWidth={3}
-					gridHeight={1}
+					gridHeight={2}
 					gridX={0}
-					gridY={6}
+					gridY={13.5}
 					label={`FFT Size`}
+					layout='stacked'
+					textSize='lg'
 					selectProps={{
 						value: params.size,
 						options: fftSizeOptions,
@@ -99,10 +102,12 @@ export function VisualizerNode({
 				{/* Smoothing Control */}
 				<GridSlider
 					gridWidth={3}
-					gridHeight={1}
+					gridHeight={2}
 					gridX={3}
-					gridY={6}
+					gridY={13.5}
 					label='Smoothing'
+					layout='stacked'
+					textSize='lg'
 					sliderProps={{
 						value: params.smoothing,
 						min: 0,
@@ -120,13 +125,13 @@ export function VisualizerNode({
 				<GridBlock
 					gridWidth={6}
 					gridHeight={1}
-					gridX={0}
-					gridY={7}
+					gridX={6}
+					gridY={14}
 					showDimensions={false}
 				>
 					<div className='w-full h-full flex justify-center items-center'>
 						<div className='text-center'>
-							<div className='text-xs'>
+							<div className='text-lg font-medium'>
 								{params.isConnected ? (
 									<span className='text-green-600 dark:text-green-400'>
 										🎵 Audio Connected

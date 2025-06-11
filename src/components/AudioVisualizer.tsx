@@ -14,6 +14,7 @@ interface AudioVisualizerProps {
 	isPlaying: boolean;
 	width?: number;
 	height?: number;
+	fillContainer?: boolean; // New prop to control whether to fill container
 }
 
 /**
@@ -25,6 +26,7 @@ function AudioVisualizer({
 	isPlaying,
 	width = 280,
 	height = 280,
+	fillContainer = false,
 }: AudioVisualizerProps) {
 	return (
 		<div className='flex justify-center items-center w-full h-full'>
@@ -32,8 +34,8 @@ function AudioVisualizer({
 			<div
 				className='r3f-canvas-container bg-black rounded-lg overflow-hidden relative border border-gray-300 dark:border-gray-600'
 				style={{
-					width: width ? `${width}px` : '100%', // Use prop or fill
-					height: height ? `${height}px` : '100%', // Use prop or fill
+					width: fillContainer ? '100%' : (width ? `${width}px` : '100%'),
+					height: fillContainer ? '100%' : (height ? `${height}px` : '100%'),
 					// position, overflow, isolation are handled by CSS class now
 				}}
 			>

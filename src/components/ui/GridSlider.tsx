@@ -24,6 +24,7 @@ export interface GridSliderProps extends Omit<GridBlockProps, 'children'> {
 	label?: string;
 	layout?: 'stacked' | 'compact' | 'minimal'; // New layout options
 	showValue?: boolean; // Control value display
+	textSize?: 'xs' | 'sm' | 'base' | 'lg' | 'xl'; // Text size for label and value
 }
 
 /**
@@ -52,6 +53,7 @@ export function GridSlider({
 	label,
 	layout = 'stacked',
 	showValue = true,
+	textSize = 'xs',
 	...rest
 }: GridSliderProps) {
 	const {
@@ -111,7 +113,15 @@ export function GridSlider({
 				{label && layout !== 'minimal' && (
 					<div className='flex-shrink-0'>
 						<div className='text-center mb-1'>
-							<span className='text-xs font-medium text-gray-700 dark:text-gray-300'>
+							<span className={combineClasses(
+								'font-medium text-gray-700 dark:text-gray-300',
+								textSize === 'xs' ? 'text-xs' :
+								textSize === 'sm' ? 'text-sm' :
+								textSize === 'base' ? 'text-base' :
+								textSize === 'lg' ? 'text-lg' :
+								textSize === 'xl' ? 'text-xl' :
+								'text-xs'
+							)}>
 								{label}
 							</span>
 						</div>
@@ -125,7 +135,15 @@ export function GridSlider({
 				)}>
 					<div className='flex items-center gap-2 w-full px-1'>
 						{showMinMax && (
-							<span className='text-xs font-medium text-gray-600 dark:text-gray-400 min-w-fit'>
+							<span className={combineClasses(
+								'font-medium text-gray-600 dark:text-gray-400 min-w-fit',
+								textSize === 'xs' ? 'text-xs' :
+								textSize === 'sm' ? 'text-sm' :
+								textSize === 'base' ? 'text-base' :
+								textSize === 'lg' ? 'text-lg' :
+								textSize === 'xl' ? 'text-xl' :
+								'text-xs'
+							)}>
 								{min}
 							</span>
 						)}
@@ -143,7 +161,15 @@ export function GridSlider({
 							{...inputSpecificProps}
 						/>
 						{showMinMax && (
-							<span className='text-xs font-medium text-gray-600 dark:text-gray-400 min-w-fit'>
+							<span className={combineClasses(
+								'font-medium text-gray-600 dark:text-gray-400 min-w-fit',
+								textSize === 'xs' ? 'text-xs' :
+								textSize === 'sm' ? 'text-sm' :
+								textSize === 'base' ? 'text-base' :
+								textSize === 'lg' ? 'text-lg' :
+								textSize === 'xl' ? 'text-xl' :
+								'text-xs'
+							)}>
 								{max}
 							</span>
 						)}
@@ -153,7 +179,15 @@ export function GridSlider({
 				{/* Value section - only show if showValue is true and layout isn't minimal */}
 				{showValue && layout !== 'minimal' && (
 					<div className='flex-shrink-0'>
-						<div className='text-center text-xs text-gray-600 dark:text-gray-300'>
+						<div className={combineClasses(
+							'text-center text-gray-600 dark:text-gray-300',
+							textSize === 'xs' ? 'text-xs' :
+							textSize === 'sm' ? 'text-sm' :
+							textSize === 'base' ? 'text-base' :
+							textSize === 'lg' ? 'text-lg' :
+							textSize === 'xl' ? 'text-xl' :
+							'text-xs'
+						)}>
 							{formatValue ? formatValue(value) : value}
 						</div>
 					</div>

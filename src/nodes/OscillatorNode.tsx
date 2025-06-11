@@ -14,8 +14,8 @@ const waveTypes = ['sine', 'square', 'triangle', 'sawtooth'] as const;
 
 // Grid configuration for oscillator node
 const OSCILLATOR_NODE_CONFIG = {
-	gridWidth: 7,
-	gridHeight: 7, // Increased height for volume slider
+	gridWidth: 5,
+	gridHeight: 7, // Reduced height since volume slider was removed
 } as const;
 
 export function OscillatorNode({
@@ -30,7 +30,6 @@ export function OscillatorNode({
 		updateFrequency,
 		updateDetune,
 		updateWaveType,
-		updateVolume,
 		isPlaying,
 		params,
 	} = useToneOscillator(id);
@@ -62,9 +61,6 @@ export function OscillatorNode({
 	const formatDetune = (value: number) =>
 		`${value > 0 ? '+' : ''}${value} cents`;
 
-	// Format volume value with dB
-	const formatVolume = (value: number) => `${value} dB`;
-
 	return (
 		<BaseNode
 			variant={data.variant || 'source'} // Use variant from data, default to source
@@ -80,7 +76,7 @@ export function OscillatorNode({
 				<GridBlock
 					gridWidth={5}
 					gridHeight={1}
-					gridX={1}
+					gridX={0}
 					gridY={1.5}
 				>
 					<div className='grid grid-cols-4 gap-1 w-full h-full'>
@@ -103,11 +99,13 @@ export function OscillatorNode({
 
 				{/* Frequency Slider */}
 				<GridSlider
-					gridWidth={5}
-					gridHeight={1}
-					gridX={1}
+					gridWidth={4.5}
+					gridHeight={2}
+					gridX={0.25}
 					gridY={2.5}
 					label='Frequency'
+					layout='stacked'
+					textSize='lg'
 					sliderProps={{
 						value: params.frequency,
 						min: 80,
@@ -120,11 +118,13 @@ export function OscillatorNode({
 
 				{/* Detune Slider */}
 				<GridSlider
-					gridWidth={5}
-					gridHeight={1}
-					gridX={1}
-					gridY={3.5}
+					gridWidth={4.5}
+					gridHeight={2}
+					gridX={0.25}
+					gridY={4.5}
 					label='Detune'
+					layout='stacked'
+					textSize='lg'
 					sliderProps={{
 						value: params.detune,
 						min: -1200,
@@ -135,29 +135,12 @@ export function OscillatorNode({
 					}}
 				/>
 
-				{/* Volume Slider */}
-				<GridSlider
-					gridWidth={5}
-					gridHeight={1}
-					gridX={1}
-					gridY={4.5}
-					label='Volume'
-					sliderProps={{
-						value: params.volume,
-						min: -60,
-						max: 0,
-						step: 1,
-						formatValue: formatVolume,
-						onChange: (e) => updateVolume(Number(e.target.value)),
-					}}
-				/>
-
 				{/* Play/Stop Button */}
 				<GridButton
 					gridWidth={3}
 					gridHeight={1}
-					gridX={2}
-					gridY={5.5}
+					gridX={1}
+					gridY={6}
 					buttonLabel={isPlaying ? '⏹️ Stop' : '▶️ Play'}
 					buttonClassName={
 						isPlaying
