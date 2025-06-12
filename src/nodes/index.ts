@@ -26,7 +26,6 @@ export const initialNodes: AppNode[] = [
 				detune: 0,
 				waveType: 'sine' as const,
 				isPlaying: false,
-				volume: -20, // -20 dB for safe listening level
 			},
 		},
 	} as AppNode,

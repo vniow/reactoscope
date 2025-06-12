@@ -1,14 +1,14 @@
 import { Panel, useReactFlow } from '@xyflow/react';
-import { useState } from 'react';
 import { NodeAddHeader } from './NodeAddHeader';
 import { NodeGroupsSection } from './NodeGroupsSection';
 import { PANEL_LAYOUT } from '../../config/panelLayout';
 import { createNode } from '../../utils/nodeFactory';
+import { useUIState } from '../../hooks/useAppStore';
 import type { NodeTypeOption } from '../../config/nodeTypes';
 
 export function NodeAddPanel() {
 	const reactFlowInstance = useReactFlow();
-	const [isExpanded, setIsExpanded] = useState(false);
+	const { isNodeAddPanelExpanded, setIsNodeAddPanelExpanded } = useUIState();
 
 	const handleAddNode = (nodeTypeOption: NodeTypeOption) => {
 		const newNode = createNode(nodeTypeOption);
@@ -17,7 +17,7 @@ export function NodeAddPanel() {
 	};
 
 	const handleToggleExpanded = () => {
-		setIsExpanded(!isExpanded);
+		setIsNodeAddPanelExpanded(!isNodeAddPanelExpanded);
 	};
 
 	return (
@@ -33,20 +33,20 @@ export function NodeAddPanel() {
 				className='relative glass-panel-enhanced rounded-xl transition-all duration-300 ease-in-out overflow-hidden'
 				style={{
 					width: `${PANEL_LAYOUT.width}px`,
-					height: `${isExpanded ? PANEL_LAYOUT.heightExpanded : PANEL_LAYOUT.heightCollapsed}px`,
+					height: `${isNodeAddPanelExpanded ? PANEL_LAYOUT.heightExpanded : PANEL_LAYOUT.heightCollapsed}px`,
 					pointerEvents: 'auto', // Re-enable pointer events only for the actual content
 				}}
 			>
 				{/* Header Section */}
 				<NodeAddHeader
-					isExpanded={isExpanded}
+					isExpanded={isNodeAddPanelExpanded}
 					onToggleExpanded={handleToggleExpanded}
 				/>
 
 				{/* Node Groups Section - Only visible when expanded */}
 				<NodeGroupsSection
 					onAddNode={handleAddNode}
-					isVisible={isExpanded}
+					isVisible={isNodeAddPanelExpanded}
 				/>
 			</div>
 		</Panel>

@@ -18,7 +18,6 @@ import { initialNodes, nodeTypes } from './nodes';
 import { initialEdges, edgeTypes } from './edges';
 import { ThemeProvider } from './contexts/ThemeProvider';
 import { FlowControls } from './components/FlowControls';
-import { NodeAddPanel } from './components/NodeAddPanel';
 import { type AppNode } from './nodes/types';
 import { useAppStore } from './stores/appStore';
 
@@ -31,7 +30,9 @@ export default function App() {
 
 	// Get theme state for background color
 	const actualTheme = useAppStore((state) => state.theme.actualTheme);
-	const metallicBackground = useAppStore((state) => state.theme.metallicBackground);
+	const metallicBackground = useAppStore(
+		(state) => state.theme.metallicBackground
+	);
 
 	// Calculate background color based on theme
 	const getBackgroundColor = () => {
@@ -39,7 +40,7 @@ export default function App() {
 			// For rainbow theme, use a neutral color that contrasts with the vibrant background
 			return actualTheme === 'light' ? '#64748b' : '#475569'; // slate-500 / slate-600
 		}
-		
+
 		// For titanium theme
 		if (actualTheme === 'light') {
 			return '#d1d5db'; // gray-300 - darker for light theme contrast
@@ -84,7 +85,6 @@ export default function App() {
 					maxZoom={4}
 					proOptions={{ hideAttribution: true }}
 				>
-					<NodeAddPanel />
 					<Background
 						gap={GRID_UNIT}
 						size={6}

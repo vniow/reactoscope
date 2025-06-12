@@ -1,7 +1,6 @@
 import { type NodeProps, useReactFlow, Position } from '@xyflow/react';
 
 import { BaseNode } from '../components/BaseNode';
-import { GridBlock } from '../components/GridBlock';
 import { GridNodeHandle } from '../components/GridNodeHandle';
 import { GridSlider } from '../components/ui/GridSlider';
 import { GridButton } from '../components/ui/GridButton';
@@ -9,13 +8,13 @@ import { useToneConnections } from '../hooks/useToneConnections';
 import { useToneOscillator } from '../hooks/useToneOscillator';
 import type { OscillatorNode } from './types';
 
-// Wave type options for the oscillator
-const waveTypes = ['sine', 'square', 'triangle', 'sawtooth'] as const;
+// Wave type options for the oscillator (used for type checking)
+type WaveType = 'sine' | 'square' | 'triangle' | 'sawtooth';
 
 // Grid configuration for oscillator node
 const OSCILLATOR_NODE_CONFIG = {
 	gridWidth: 5,
-	gridHeight: 7, // Reduced height since volume slider was removed
+	gridHeight: 8.5, // Optimized for SVG wave buttons and controls
 } as const;
 
 export function OscillatorNode({
@@ -50,7 +49,7 @@ export function OscillatorNode({
 	};
 
 	// Create wave type selector buttons
-	const handleWaveTypeClick = (type: (typeof waveTypes)[number]) => {
+	const handleWaveTypeClick = (type: WaveType) => {
 		updateWaveType(type);
 	};
 
@@ -72,37 +71,147 @@ export function OscillatorNode({
 			title={data.label || 'Oscillator'}
 		>
 			<div className='relative w-full h-full overflow-visible'>
-				{/* Wave Type Buttons - Top Row */}
-				<GridBlock
-					gridWidth={5}
-					gridHeight={1}
-					gridX={0}
-					gridY={1.5}
-				>
-					<div className='grid grid-cols-4 gap-1 w-full h-full'>
-						{waveTypes.map((type) => (
-							<button
-								key={type}
-								className={`text-xs py-0.5 px-1 rounded transition-colors ${
-									params.waveType === type
-										? 'bg-[var(--node-accent)] text-white'
-										: 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-								}`}
-								onClick={() => handleWaveTypeClick(type)}
-								onPointerDown={(e) => e.stopPropagation()} // Prevent node dragging
-							>
-								{type.substring(0, 4)}
-							</button>
-						))}
-					</div>
-				</GridBlock>
+				{/* Wave Type Selection - 2x2 Grid Layout with SVG Icons */}
+				{/* 
+					Enhanced wave type buttons with:
+					- SVG icons for better scaling and visual quality
+					- Optimized grid positioning to fill available space
+					- Accessible labels for screen readers
+					- Variant-aware styling (highlighted when selected)
+					- vectorEffect="non-scaling-stroke" for consistent line width
+				*/}
+				{/* Top Row */}
+				<GridButton
+					gridWidth={2.25}
+					gridHeight={1.3}
+					gridX={0.375}
+					gridY={1.0}
+					buttonLabel=''
+					variant={params.waveType === 'sine' ? 'node-variant' : 'secondary'}
+					size='sm'
+					layout='fill'
+					onClick={() => handleWaveTypeClick('sine')}
+					aria-label='Select sine wave'
+					icon={
+						<svg
+							viewBox='0 0 48 24'
+							className='w-full h-full'
+							style={{ minWidth: '24px', minHeight: '12px' }}
+						>
+							<path
+								d='M4 12 Q12 4 20 12 T36 12'
+								stroke='currentColor'
+								strokeWidth='2.5'
+								fill='none'
+								strokeLinecap='round'
+								strokeLinejoin='round'
+								vectorEffect='non-scaling-stroke'
+							/>
+						</svg>
+					}
+				/>
+
+				<GridButton
+					gridWidth={2.25}
+					gridHeight={1.3}
+					gridX={2.625}
+					gridY={1.0}
+					buttonLabel=''
+					variant={params.waveType === 'square' ? 'node-variant' : 'secondary'}
+					size='sm'
+					layout='fill'
+					onClick={() => handleWaveTypeClick('square')}
+					aria-label='Select square wave'
+					icon={
+						<svg
+							viewBox='0 0 48 24'
+							className='w-full h-full'
+							style={{ minWidth: '24px', minHeight: '12px' }}
+						>
+							<path
+								d='M4 18 L4 6 L12 6 L12 18 L20 18 L20 6 L28 6 L28 18 L36 18'
+								stroke='currentColor'
+								strokeWidth='2.5'
+								fill='none'
+								strokeLinecap='round'
+								strokeLinejoin='round'
+								vectorEffect='non-scaling-stroke'
+							/>
+						</svg>
+					}
+				/>
+
+				{/* Bottom Row */}
+				<GridButton
+					gridWidth={2.25}
+					gridHeight={1.3}
+					gridX={0.375}
+					gridY={2.3}
+					buttonLabel=''
+					variant={
+						params.waveType === 'triangle' ? 'node-variant' : 'secondary'
+					}
+					size='sm'
+					layout='fill'
+					onClick={() => handleWaveTypeClick('triangle')}
+					aria-label='Select triangle wave'
+					icon={
+						<svg
+							viewBox='0 0 48 24'
+							className='w-full h-full'
+							style={{ minWidth: '24px', minHeight: '12px' }}
+						>
+							<path
+								d='M4 18 L12 6 L20 18 L28 6 L36 18'
+								stroke='currentColor'
+								strokeWidth='2.5'
+								fill='none'
+								strokeLinecap='round'
+								strokeLinejoin='round'
+								vectorEffect='non-scaling-stroke'
+							/>
+						</svg>
+					}
+				/>
+
+				<GridButton
+					gridWidth={2.25}
+					gridHeight={1.3}
+					gridX={2.625}
+					gridY={2.3}
+					buttonLabel=''
+					variant={
+						params.waveType === 'sawtooth' ? 'node-variant' : 'secondary'
+					}
+					size='sm'
+					layout='fill'
+					onClick={() => handleWaveTypeClick('sawtooth')}
+					aria-label='Select sawtooth wave'
+					icon={
+						<svg
+							viewBox='0 0 48 24'
+							className='w-full h-full'
+							style={{ minWidth: '24px', minHeight: '12px' }}
+						>
+							<path
+								d='M4 18 L12 6 L12 18 L20 6 L20 18 L28 6 L28 18 L36 6'
+								stroke='currentColor'
+								strokeWidth='2.5'
+								fill='none'
+								strokeLinecap='round'
+								strokeLinejoin='round'
+								vectorEffect='non-scaling-stroke'
+							/>
+						</svg>
+					}
+				/>
 
 				{/* Frequency Slider */}
 				<GridSlider
 					gridWidth={4.5}
 					gridHeight={2}
 					gridX={0.25}
-					gridY={2.5}
+					gridY={3.5}
 					label='Frequency'
 					layout='stacked'
 					textSize='lg'
@@ -121,7 +230,7 @@ export function OscillatorNode({
 					gridWidth={4.5}
 					gridHeight={2}
 					gridX={0.25}
-					gridY={4.5}
+					gridY={5.5}
 					label='Detune'
 					layout='stacked'
 					textSize='lg'
@@ -140,13 +249,11 @@ export function OscillatorNode({
 					gridWidth={3}
 					gridHeight={1}
 					gridX={1}
-					gridY={6}
-					buttonLabel={isPlaying ? '⏹️ Stop' : '▶️ Play'}
-					buttonClassName={
-						isPlaying
-							? 'bg-red-500 hover:bg-red-600'
-							: 'bg-green-500 hover:bg-green-600'
-					}
+					gridY={7.5}
+					buttonLabel={isPlaying ? 'Stop' : 'Play'}
+					variant={isPlaying ? 'danger' : 'success'}
+					icon={isPlaying ? '⏹️' : '▶️'}
+					layout='fill'
 					onClick={() => {
 						console.log(
 							`🎵 Play button clicked for ${id}, isPlaying: ${isPlaying}`

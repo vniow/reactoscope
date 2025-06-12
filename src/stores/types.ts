@@ -32,6 +32,7 @@ export interface UIState {
 	selectedNodes: string[];
 	selectedEdges: string[];
 	isConnecting: boolean;
+	isNodeAddPanelExpanded: boolean; // Add state for NodeAddPanel visibility
 }
 
 // Audio Types
@@ -54,6 +55,8 @@ export interface UIActions {
 	setSelectedEdges: (edgeIds: string[]) => void;
 	setIsNodeDragging: (isDragging: boolean) => void;
 	setIsConnecting: (isConnecting: boolean) => void;
+	setIsNodeAddPanelExpanded: (isExpanded: boolean) => void; // Add action for NodeAddPanel
+	toggleNodeAddPanel: () => void; // Add toggle action for convenience
 }
 
 // Main Store Interface

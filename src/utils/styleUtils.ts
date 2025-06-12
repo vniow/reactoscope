@@ -9,43 +9,9 @@ export function combineClasses(
 }
 
 /**
- * Button variant styles with proper accessibility - simplified for CSS custom properties
- */
-export function getButtonVariantClasses(variant: string): string {
-	const baseClasses =
-		'px-3 py-1.5 text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800';
-
-	const variantClasses: Record<string, string> = {
-		default:
-			'bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-100 focus:ring-gray-400',
-		// Tone.js category variants
-		core: 'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white focus:ring-[var(--node-accent)]',
-		source:
-			'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white focus:ring-[var(--node-accent)]',
-		instrument:
-			'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white focus:ring-[var(--node-accent)]',
-		effect:
-			'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white focus:ring-[var(--node-accent)]',
-		component:
-			'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white focus:ring-[var(--node-accent)]',
-		signal:
-			'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white focus:ring-[var(--node-accent)]',
-		event:
-			'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white focus:ring-[var(--node-accent)]',
-		unit: 'bg-[var(--node-accent)] hover:bg-[var(--node-accent)]/80 text-white focus:ring-[var(--node-accent)]',
-	};
-
-	return combineClasses(
-		baseClasses,
-		variantClasses[variant] || variantClasses.default
-	);
-}
-
-/**
- * Slider variant styles
+ * Slider variant styles - Now uses CSS custom properties for variant-aware backgrounds
  */
 export function getSliderTrackClasses(
-	color: string,
 	size: string,
 	disabled?: boolean
 ): string {
@@ -53,25 +19,55 @@ export function getSliderTrackClasses(
 		'w-full rounded-lg appearance-none cursor-pointer transition-all nodrag';
 
 	const sizeClasses = {
-		sm: 'h-1',
+		sm: 'h-1.5',
 		md: 'h-2',
 		lg: 'h-3',
 	};
 
-	const colorClasses = {
-		default: 'bg-gray-200 dark:bg-gray-700',
-		orange: 'bg-orange-200 dark:bg-orange-800',
-		green: 'bg-green-200 dark:bg-green-800',
-		red: 'bg-red-200 dark:bg-red-800',
-		blue: 'bg-blue-200 dark:bg-blue-800',
-	};
+	// Updated to use variant-aware gradient backgrounds that inherit from parent node
+	// Uses the same gradient as the node background for visual consistency
+	const variantAwareBackground = combineClasses(
+		'bg-gradient-to-r',
+		'from-[var(--node-bg-from,light-dark(#f8fafc,#0f172a))]',
+		'via-[var(--node-bg-via,light-dark(#f1f5f9,#1e293b))]',
+		'to-[var(--node-bg-to,light-dark(#e2e8f0,#334155))]',
+		'border border-[var(--node-border,light-dark(#cbd5e1,#475569))]'
+	);
 
 	const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : '';
+
+	// Custom slider thumb styles using CSS custom properties
+	const sliderThumbStyles = combineClasses(
+		// Webkit (Chrome, Safari)
+		'[&::-webkit-slider-thumb]:appearance-none',
+		'[&::-webkit-slider-thumb]:w-4',
+		'[&::-webkit-slider-thumb]:h-4',
+		'[&::-webkit-slider-thumb]:rounded-full',
+		'[&::-webkit-slider-thumb]:bg-[var(--node-accent,light-dark(#3b82f6,#60a5fa))]',
+		'[&::-webkit-slider-thumb]:border-2',
+		'[&::-webkit-slider-thumb]:border-white',
+		'[&::-webkit-slider-thumb]:shadow-lg',
+		'[&::-webkit-slider-thumb]:cursor-pointer',
+		'[&::-webkit-slider-thumb]:transition-all',
+		'[&::-webkit-slider-thumb]:hover:scale-110',
+		'[&::-webkit-slider-thumb]:hover:shadow-xl',
+		// Firefox
+		'[&::-moz-range-thumb]:appearance-none',
+		'[&::-moz-range-thumb]:w-4',
+		'[&::-moz-range-thumb]:h-4',
+		'[&::-moz-range-thumb]:rounded-full',
+		'[&::-moz-range-thumb]:bg-[var(--node-accent,light-dark(#3b82f6,#60a5fa))]',
+		'[&::-moz-range-thumb]:border-2',
+		'[&::-moz-range-thumb]:border-white',
+		'[&::-moz-range-thumb]:cursor-pointer',
+		'[&::-moz-range-thumb]:transition-all'
+	);
 
 	return combineClasses(
 		baseClasses,
 		sizeClasses[size as keyof typeof sizeClasses] || sizeClasses.md,
-		colorClasses[color as keyof typeof colorClasses] || colorClasses.default,
+		variantAwareBackground,
+		sliderThumbStyles,
 		disabledClasses
 	);
 }

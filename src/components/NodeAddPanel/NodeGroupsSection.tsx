@@ -8,6 +8,7 @@ import {
 } from '../../config/nodeTypes';
 import { VariantButton } from '../ui/VariantButton';
 import type { ComponentVariant } from '../../types/ui';
+import { useEffect } from 'react';
 
 interface NodeGroupsSectionProps {
 	onAddNode: (nodeType: NodeTypeOption) => void;
@@ -23,6 +24,24 @@ export function NodeGroupsSection({
 	const nodeGroups = groupNodesByVariant();
 	const variantOrder = getVariantDisplayOrder();
 
+	// Log when component renders
+	useEffect(() => {
+		console.log('🎭 NodeGroupsSection rendered:', {
+			isVisible,
+			nodeGroups: Object.keys(nodeGroups).length,
+			totalNodes: Object.values(nodeGroups).flat().length,
+		});
+	}, [isVisible, nodeGroups]);
+
+	const handleAddNode = (nodeType: NodeTypeOption) => {
+		console.log('🎯 NodeGroupsSection - Node clicked:', {
+			nodeType: nodeType.name,
+			variant: nodeType.variant,
+			timestamp: new Date().toISOString(),
+		});
+		onAddNode(nodeType);
+	};
+
 	return (
 		<GridBlock
 			gridWidth={gridWidth}
@@ -37,9 +56,10 @@ export function NodeGroupsSection({
 				className={`
 					w-full h-full p-3 scrollbar-glass
 					transition-all duration-300 ease-in-out
-					${isVisible 
-						? 'opacity-100 translate-y-0' 
-						: 'opacity-0 -translate-y-4 pointer-events-none'
+					${
+						isVisible
+							? 'opacity-100 translate-y-0'
+							: 'opacity-0 -translate-y-4 pointer-events-none'
 					}
 				`}
 				role='region'
@@ -60,7 +80,7 @@ export function NodeGroupsSection({
 								key={variant}
 								variant={variant}
 								nodes={nodes}
-								onAddNode={onAddNode}
+								onAddNode={handleAddNode}
 								animationDelay={index * 50} // Stagger animation by 50ms per section
 								isVisible={isVisible}
 							/>
@@ -80,7 +100,13 @@ interface VariantSectionProps {
 	isVisible: boolean;
 }
 
-function VariantSection({ variant, nodes, onAddNode, animationDelay, isVisible }: VariantSectionProps) {
+function VariantSection({
+	variant,
+	nodes,
+	onAddNode,
+	animationDelay,
+	isVisible,
+}: VariantSectionProps) {
 	const variantName = VARIANT_DISPLAY_NAMES[variant];
 	const sectionId = `node-section-${variant}`;
 
@@ -88,10 +114,7 @@ function VariantSection({ variant, nodes, onAddNode, animationDelay, isVisible }
 		<section
 			className={`
 				variant-section transition-all duration-300 ease-in-out
-				${isVisible 
-					? 'opacity-100 translate-y-0' 
-					: 'opacity-0 translate-y-2'
-				}
+				${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}
 			`}
 			data-variant={variant}
 			aria-labelledby={sectionId}
@@ -131,23 +154,24 @@ function VariantSection({ variant, nodes, onAddNode, animationDelay, isVisible }
 					<VariantButton
 						key={option.type}
 						variant={option.variant}
-						size="lg"
+						size='lg'
 						onClick={() => onAddNode(option)}
 						title={option.description}
 						aria-label={`Add ${option.name} node. ${option.description}`}
-						icon={<span className="text-sm">{option.emoji}</span>}
+						icon={<span className='text-sm'>{option.emoji}</span>}
 						useCustomColors={true}
 						className={`
 							transition-all duration-300 ease-in-out
-							${isVisible 
-								? 'opacity-100 translate-y-0 scale-100' 
-								: 'opacity-0 translate-y-1 scale-95'
+							${
+								isVisible
+									? 'opacity-100 translate-y-0 scale-100'
+									: 'opacity-0 translate-y-1 scale-95'
 							}
 							text-xs
 						`}
 						style={{
-							transitionDelay: isVisible 
-								? `${animationDelay + (buttonIndex * 30)}ms` 
+							transitionDelay: isVisible
+								? `${animationDelay + buttonIndex * 30}ms`
 								: '0ms',
 						}}
 					>

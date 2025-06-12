@@ -33,10 +33,13 @@ export const useUIState = () => {
 			selectedEdges: state.ui.selectedEdges,
 			isNodeDragging: state.ui.isNodeDragging,
 			isConnecting: state.ui.isConnecting,
+			isNodeAddPanelExpanded: state.ui.isNodeAddPanelExpanded,
 			setSelectedNodes: state.setSelectedNodes,
 			setSelectedEdges: state.setSelectedEdges,
 			setIsNodeDragging: state.setIsNodeDragging,
 			setIsConnecting: state.setIsConnecting,
+			setIsNodeAddPanelExpanded: state.setIsNodeAddPanelExpanded,
+			toggleNodeAddPanel: state.toggleNodeAddPanel,
 		}))
 	);
 };

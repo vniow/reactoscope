@@ -8,6 +8,8 @@ type UISliceProps = Pick<
 	| 'setSelectedEdges'
 	| 'setIsNodeDragging'
 	| 'setIsConnecting'
+	| 'setIsNodeAddPanelExpanded'
+	| 'toggleNodeAddPanel'
 >;
 
 export const createUISlice: StateCreator<AppStore, [], [], UISliceProps> = (
@@ -19,6 +21,7 @@ export const createUISlice: StateCreator<AppStore, [], [], UISliceProps> = (
 		selectedNodes: [],
 		selectedEdges: [],
 		isConnecting: false,
+		isNodeAddPanelExpanded: false, // Initialize NodeAddPanel as collapsed
 	},
 
 	// Actions
@@ -56,5 +59,29 @@ export const createUISlice: StateCreator<AppStore, [], [], UISliceProps> = (
 				isConnecting,
 			},
 		}));
+	},
+
+	setIsNodeAddPanelExpanded: (isExpanded: boolean) => {
+		set((state) => ({
+			ui: {
+				...state.ui,
+				isNodeAddPanelExpanded: isExpanded,
+			},
+		}));
+	},
+
+	toggleNodeAddPanel: () => {
+		set((state) => {
+			const newState = !state.ui.isNodeAddPanelExpanded;
+			console.log(
+				`🎛️ Toggling node add panel: ${state.ui.isNodeAddPanelExpanded} -> ${newState}`
+			);
+			return {
+				ui: {
+					...state.ui,
+					isNodeAddPanelExpanded: newState,
+				},
+			};
+		});
 	},
 });

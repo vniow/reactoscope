@@ -20,11 +20,7 @@ const GAIN_NODE_CONFIG = {
 	gridHeight: 4,
 } as const;
 
-export function GainNode({
-	id,
-	data,
-	selected,
-}: NodeProps<GainNode>) {
+export function GainNode({ id, data, selected }: NodeProps<GainNode>) {
 	// Use custom hook for node operations
 	const { deleteNode } = useNodeOperations();
 
@@ -52,8 +48,6 @@ export function GainNode({
 			variant={data.variant || 'event'} // Use variant from data, default to event for pastel yellow
 		>
 			<div className='relative w-full h-full overflow-visible'>
-
-
 				{/* Gain Slider */}
 				<GridSlider
 					gridWidth={3}
@@ -82,7 +76,10 @@ export function GainNode({
 					gridHeight={1}
 					gridX={0.5}
 					gridY={3}
-					buttonLabel={params.mute ? '🔇 Muted' : '🔊 Active'}
+					buttonLabel={params.mute ? 'Muted' : 'Active'}
+					variant={params.mute ? 'warning' : 'node-variant'}
+					icon={params.mute ? '🔇' : '🔊'}
+					layout='fill'
 					onClick={handleMuteToggle}
 					aria-label='Toggle mute'
 					disabled={false}
