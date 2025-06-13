@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import * as Tone from 'tone';
 import { useAppStore } from '../stores/appStore';
+import { toneRegistry } from '../utils/toneRegistry';
 import type { GainParams } from '../stores/slices/audioSlice';
 
 export interface ToneGainControls {
@@ -41,24 +42,27 @@ export const useToneGain = (nodeId: string): ToneGainControls => {
 
 	// Create and configure gain node
 	useEffect(() => {
+		console.log(`🎚️ useToneGain effect running for ${nodeId}`, {
+			params,
+			audioNode,
+		});
+
 		const createGain = async () => {
 			try {
+				console.log(`🎚️ About to initialize audio context for ${nodeId}`);
 				// Ensure audio context is started
 				await initializeAudioContext();
+				console.log(`🎚️ Audio context initialized for ${nodeId}`);
 
 				// Create new gain node
+				console.log(`🎚️ Creating gain node for ${nodeId}`, params);
 				gainRef.current = new Tone.Gain({
 					gain: params.mute ? 0 : params.gain,
 				});
 
-				// Register gain node in global registry for audio routing
-				const windowWithTone = window as unknown as {
-					toneInstances?: Record<string, Tone.Gain>;
-				};
-				if (!windowWithTone.toneInstances) {
-					windowWithTone.toneInstances = {};
-				}
-				windowWithTone.toneInstances[`gain-${nodeId}`] = gainRef.current;
+				// Register gain node in centralized registry
+				console.log(`🎚️ Registering gain-${nodeId} in tone registry`);
+				toneRegistry.register(`gain-${nodeId}`, gainRef.current);
 
 				console.log(`🎚️ Created gain node for ${nodeId}:`, params);
 			} catch (error) {
@@ -72,15 +76,8 @@ export const useToneGain = (nodeId: string): ToneGainControls => {
 		return () => {
 			if (gainRef.current) {
 				try {
-					// Remove from global registry
-					const toneInstances = (
-						window as unknown as {
-							toneInstances?: Record<string, Tone.Gain>;
-						}
-					).toneInstances;
-					if (toneInstances) {
-						delete toneInstances[`gain-${nodeId}`];
-					}
+					// Remove from centralized registry
+					toneRegistry.unregister(`gain-${nodeId}`);
 
 					gainRef.current.dispose();
 					console.log(`🗑️ Disposed gain node for ${nodeId}`);

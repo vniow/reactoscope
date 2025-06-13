@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import * as Tone from 'tone';
 import { useEdges } from '@xyflow/react';
 import { useAudioNodes } from './useAppStore';
+import { toneRegistry } from '../utils/toneRegistry';
 import type { Edge } from '@xyflow/react';
 
 /**
@@ -51,19 +52,15 @@ export function useToneConnections(nodeId: string) {
 
 				console.log(`🔌 Looking for instances: ${sourceKey} → ${targetKey}`);
 
-				const toneInstances = (
-					window as unknown as {
-						toneInstances?: Record<string, Tone.ToneAudioNode>;
-					}
-				).toneInstances;
-
 				console.log(
-					`🔌 Available tone instances:`,
-					Object.keys(toneInstances || {})
+					`🔌 Available tone instances: (${toneRegistry.size()}) [${toneRegistry.getKeys().join(', ')}]`
 				);
 
-				const sourceInstance = toneInstances?.[sourceKey];
-				const targetInstance = toneInstances?.[targetKey];
+				// Debug: Log the full registry state
+				toneRegistry.debug();
+
+				const sourceInstance = toneRegistry.get(sourceKey);
+				const targetInstance = toneRegistry.get(targetKey);
 
 				console.log(`🔌 Found instances:`, {
 					sourceInstance: !!sourceInstance,
@@ -119,14 +116,8 @@ export function useToneConnections(nodeId: string) {
 						targetKey = `${targetNode.type}-${targetNode.id}`;
 					}
 
-					const toneInstances = (
-						window as unknown as {
-							toneInstances?: Record<string, Tone.ToneAudioNode>;
-						}
-					).toneInstances;
-
-					const sourceInstance = toneInstances?.[sourceKey];
-					const targetInstance = toneInstances?.[targetKey];
+					const sourceInstance = toneRegistry.get(sourceKey);
+					const targetInstance = toneRegistry.get(targetKey);
 
 					if (sourceInstance && targetInstance) {
 						try {

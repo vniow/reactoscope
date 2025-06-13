@@ -1,4 +1,5 @@
 import { Panel, useReactFlow } from '@xyflow/react';
+import { useEffect, useRef } from 'react';
 import { NodeAddHeader } from './NodeAddHeader';
 import { NodeGroupsSection } from './NodeGroupsSection';
 import { PANEL_LAYOUT } from '../../config/panelLayout';
@@ -9,6 +10,7 @@ import type { NodeTypeOption } from '../../config/nodeTypes';
 export function NodeAddPanel() {
 	const reactFlowInstance = useReactFlow();
 	const { isNodeAddPanelExpanded, setIsNodeAddPanelExpanded } = useUIState();
+	const panelRef = useRef<HTMLDivElement>(null);
 
 	const handleAddNode = (nodeTypeOption: NodeTypeOption) => {
 		const newNode = createNode(nodeTypeOption);
@@ -20,6 +22,44 @@ export function NodeAddPanel() {
 		setIsNodeAddPanelExpanded(!isNodeAddPanelExpanded);
 	};
 
+	const handlePanelClick = () => {
+		if (isNodeAddPanelExpanded) {
+			console.log('🖱️ Click inside add node panel');
+		}
+	};
+
+	// Handle clicks outside the panel when expanded
+	useEffect(() => {
+		if (!isNodeAddPanelExpanded) return;
+
+		const handleClickOutside = (event: MouseEvent) => {
+			console.log('🖱️ Document click detected, checking if outside panel');
+
+			if (panelRef.current && event.target) {
+				const target = event.target as Element;
+				const isClickInsidePanel = panelRef.current.contains(target);
+
+				console.log('🔍 Click outside check:', {
+					hasPanel: !!panelRef.current,
+					hasTarget: !!event.target,
+					targetType: event.target.constructor.name,
+					isInsidePanel: isClickInsidePanel,
+				});
+
+				if (!isClickInsidePanel) {
+					console.log('🖱️ Click outside add node panel');
+				}
+			}
+		};
+
+		console.log('👂 Adding document click listener for outside clicks');
+		document.addEventListener('click', handleClickOutside, true);
+		return () => {
+			console.log('🧹 Removing document click listener');
+			document.removeEventListener('click', handleClickOutside, true);
+		};
+	}, [isNodeAddPanelExpanded]);
+
 	return (
 		<Panel
 			position='top-left'
@@ -30,6 +70,8 @@ export function NodeAddPanel() {
 		>
 			{/* Main container with custom blurred background styling */}
 			<div
+				ref={panelRef}
+				onClick={handlePanelClick}
 				className='relative glass-panel-enhanced rounded-xl transition-all duration-300 ease-in-out overflow-hidden'
 				style={{
 					width: `${PANEL_LAYOUT.width}px`,

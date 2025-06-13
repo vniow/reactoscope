@@ -1,13 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
 	ReactFlow,
 	Background,
 	MiniMap,
-	addEdge,
 	reconnectEdge,
-	useNodesState,
-	useEdgesState,
-	type OnConnect,
 	type OnReconnect,
 	BackgroundVariant,
 } from '@xyflow/react';
@@ -18,21 +14,31 @@ import { initialNodes, nodeTypes } from './nodes';
 import { initialEdges, edgeTypes } from './edges';
 import { ThemeProvider } from './contexts/ThemeProvider';
 import { FlowControls } from './components/FlowControls';
+import { FlowDebugPanel } from './components/FlowDebugPanel';
 import { type AppNode } from './nodes/types';
 import { useAppStore } from './stores/appStore';
 
 import { GRID_UNIT } from './config/grid';
 
 export default function App() {
-	// Use React Flow's native state management hooks
-	const [nodes, , onNodesChange] = useNodesState(initialNodes as AppNode[]);
-	const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+	// Use Zustand store for flow state management
+	const nodes = useAppStore((state) => state.nodes);
+	const edges = useAppStore((state) => state.edges);
+	const onNodesChange = useAppStore((state) => state.onNodesChange);
+	const onEdgesChange = useAppStore((state) => state.onEdgesChange);
+	const onConnect = useAppStore((state) => state.onConnect);
+	const initializeFlow = useAppStore((state) => state.initializeFlow);
 
 	// Get theme state for background color
 	const actualTheme = useAppStore((state) => state.theme.actualTheme);
 	const metallicBackground = useAppStore(
 		(state) => state.theme.metallicBackground
 	);
+
+	// Initialize flow state on component mount
+	useEffect(() => {
+		initializeFlow(initialNodes as AppNode[], initialEdges);
+	}, [initializeFlow]);
 
 	// Calculate background color based on theme
 	const getBackgroundColor = () => {
@@ -49,26 +55,42 @@ export default function App() {
 		}
 	};
 
-	// Handle connections with React Flow's addEdge utility
-	const onConnect: OnConnect = useCallback(
-		(connection) => {
-			setEdges((eds) => addEdge({ ...connection, type: 'floating' }, eds));
-		},
-		[setEdges]
-	);
-
 	// Handle edge reconnection
 	const onReconnect: OnReconnect = useCallback(
 		(oldEdge, newConnection) => {
-			setEdges((eds) => reconnectEdge(oldEdge, newConnection, eds));
+			// Use the setEdges action from Zustand to update with reconnected edge
+			const newEdges = reconnectEdge(oldEdge, newConnection, edges);
+			useAppStore.getState().setEdges(newEdges);
 		},
-		[setEdges]
+		[edges]
 	);
 
-	// Initialize with empty arrays (no longer needed as React Flow manages initial state)
 	return (
 		<ThemeProvider>
 			<div className='w-full h-screen'>
+				{/* Debug button - temporary */}
+				<button
+					onClick={() => {
+						console.log('=== DEBUG BUTTON CLICKED ===');
+						(
+							window as unknown as { debugToneRegistry?: () => void }
+						).debugToneRegistry?.();
+					}}
+					style={{
+						position: 'fixed',
+						top: '10px',
+						right: '10px',
+						zIndex: 1000,
+						padding: '8px 16px',
+						backgroundColor: '#f59e0b',
+						color: 'white',
+						border: 'none',
+						borderRadius: '4px',
+						cursor: 'pointer',
+					}}
+				>
+					Debug Registry
+				</button>
 				<ReactFlow
 					nodes={nodes}
 					nodeTypes={nodeTypes}
@@ -94,6 +116,7 @@ export default function App() {
 						color={getBackgroundColor()}
 					/>
 					<FlowControls />
+					<FlowDebugPanel />
 					{/* <StoreDebugPanel /> */}
 					<MiniMap
 						pannable={true}

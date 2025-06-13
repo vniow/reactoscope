@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import * as Tone from 'tone';
 import { useAppStore } from '../stores/appStore';
+import { toneRegistry } from '../utils/toneRegistry';
 import type { OscillatorParams } from '../stores/slices/audioSlice';
 
 export interface ToneOscillatorControls {
@@ -55,12 +56,20 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 
 	// Create and configure oscillator
 	useEffect(() => {
+		console.log(`🎵 useToneOscillator effect running for ${nodeId}`, {
+			params,
+			audioNode,
+		});
+
 		const createOscillator = async () => {
 			try {
+				console.log(`🎵 About to initialize audio context for ${nodeId}`);
 				// Ensure audio context is started
 				await initializeAudioContext();
+				console.log(`🎵 Audio context initialized for ${nodeId}`);
 
 				// Create new oscillator WITHOUT auto-connecting to destination
+				console.log(`🎵 Creating oscillator for ${nodeId}`, params);
 				oscillatorRef.current = new Tone.Oscillator({
 					frequency: params.frequency,
 					detune: params.detune,
@@ -68,15 +77,9 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 					volume: params.volume,
 				}); // Removed .toDestination() so destination node can control connections
 
-				// Register oscillator in global registry for destination node access
-				const windowWithTone = window as unknown as {
-					toneInstances?: Record<string, Tone.Oscillator>;
-				};
-				if (!windowWithTone.toneInstances) {
-					windowWithTone.toneInstances = {};
-				}
-				windowWithTone.toneInstances[`oscillator-${nodeId}`] =
-					oscillatorRef.current;
+				// Register oscillator in centralized registry
+				console.log(`🎵 Registering oscillator-${nodeId} in tone registry`);
+				toneRegistry.register(`oscillator-${nodeId}`, oscillatorRef.current);
 
 				console.log(`🎵 Created oscillator for node ${nodeId}:`, params);
 			} catch (error) {
@@ -97,15 +100,8 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 						oscillatorRef.current.stop();
 					}
 
-					// Remove from global registry
-					const toneInstances = (
-						window as unknown as {
-							toneInstances?: Record<string, Tone.Oscillator>;
-						}
-					).toneInstances;
-					if (toneInstances) {
-						delete toneInstances[`oscillator-${nodeId}`];
-					}
+					// Remove from centralized registry
+					toneRegistry.unregister(`oscillator-${nodeId}`);
 
 					oscillatorRef.current.dispose();
 					console.log(`🗑️ Disposed oscillator for node ${nodeId}`);
@@ -156,6 +152,17 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 
 		try {
 			// Ensure audio context is started before playing
+			console.log(
+				`🔊 Starting oscillator ${nodeId} - checking audio context...`
+			);
+
+			// Force start the audio context on user interaction
+			if (Tone.getContext().state !== 'running') {
+				console.log(`🔊 Audio context not running, starting now...`);
+				await Tone.start();
+				console.log(`🔊 Audio context started successfully`);
+			}
+
 			await initializeAudioContext();
 
 			// Log current volume for debugging
@@ -202,15 +209,8 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 						volume: params.volume,
 					}); // Removed .toDestination() so destination node can control connections
 
-					// Register new oscillator in global registry for destination node access
-					const windowWithTone = window as unknown as {
-						toneInstances?: Record<string, Tone.Oscillator>;
-					};
-					if (!windowWithTone.toneInstances) {
-						windowWithTone.toneInstances = {};
-					}
-					windowWithTone.toneInstances[`oscillator-${nodeId}`] =
-						oscillatorRef.current;
+					// Register new oscillator in centralized registry
+					toneRegistry.register(`oscillator-${nodeId}`, oscillatorRef.current);
 				}
 			}, 100);
 		} catch (error) {

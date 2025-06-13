@@ -170,21 +170,34 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 		console.log('🎧 Initializing audio context...');
 		try {
 			if (Tone.getContext().state !== 'running') {
-				console.log('🎧 Audio context not running, starting...');
-				await Tone.start();
-				console.log('🎧 Audio context started');
+				console.log(
+					'🎧 Audio context not running, creating instances without starting...'
+				);
+				// Don't await Tone.start() during initialization
+				// Just prepare the context and create instances
+				console.log(
+					'🎧 Audio context prepared (will start on user interaction)'
+				);
 			} else {
 				console.log('🎧 Audio context already running');
 			}
 
 			set(() => ({
 				audioContext: {
-					isStarted: true,
+					isStarted: true, // Mark as initialized
 					state: Tone.getContext().state,
 				},
 			}));
+
+			console.log('🎧 Audio context initialization complete');
 		} catch (error) {
-			console.error('🚨 Failed to start audio context:', error);
+			console.error('🚨 Failed to initialize audio context:', error);
+			set(() => ({
+				audioContext: {
+					isStarted: false,
+					state: 'suspended',
+				},
+			}));
 		}
 	},
 });

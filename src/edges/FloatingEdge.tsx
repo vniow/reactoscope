@@ -46,6 +46,16 @@ export function FloatingEdge(props: EdgeProps) {
 		targetY,
 		sourcePosition: _sourcePosition,
 		targetPosition: _targetPosition,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		sourceHandleId,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		targetHandleId,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		pathOptions,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		selectable,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		deletable,
 		...rest
 	} = props;
 
@@ -61,11 +71,11 @@ export function FloatingEdge(props: EdgeProps) {
 	const colorMode = edgeData?.colorMode ?? 'gradient';
 
 	// Get dynamic colors based on connected nodes
-	const { stroke: dynamicStroke, gradient, gradientId } = useEdgeColors(
-		source,
-		target,
-		colorMode
-	);
+	const {
+		stroke: dynamicStroke,
+		gradient,
+		gradientId,
+	} = useEdgeColors(source, target, colorMode);
 
 	// Label styling
 	const labelClassName =
@@ -149,7 +159,8 @@ export function FloatingEdge(props: EdgeProps) {
 		: null;
 
 	// All edges now use gradients
-	const edgeStroke = colorMode === 'gradient' ? `url(#${gradientId})` : dynamicStroke;
+	const edgeStroke =
+		colorMode === 'gradient' ? `url(#${gradientId})` : dynamicStroke;
 	const edgeStrokeWidth = selected ? EDGE_STROKE_WIDTH + 2 : EDGE_STROKE_WIDTH; // Make selected edges slightly thicker
 
 	return (

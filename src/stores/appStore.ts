@@ -4,6 +4,7 @@ import type { AppStore } from './types';
 import { createThemeSlice } from './slices/themeSlice';
 import { createUISlice } from './slices/uiSlice';
 import { createAudioSlice } from './slices/audioSlice';
+import { createFlowSlice } from './slices/flowSlice';
 
 // Create the main store by combining slices
 export const useAppStore = create<AppStore>()(
@@ -13,6 +14,7 @@ export const useAppStore = create<AppStore>()(
 			...createThemeSlice(set, get, api),
 			...createUISlice(set, get, api),
 			...createAudioSlice(set, get, api),
+			...createFlowSlice(set, get, api),
 		}),
 		{
 			name: 'reactoscope-store', // Name for devtools
