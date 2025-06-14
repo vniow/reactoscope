@@ -3,13 +3,15 @@ import { useTheme } from '../hooks/useAppStore';
 import { useAppStore } from '../stores/appStore';
 import { useUIState } from '../hooks/useAppStore';
 import { NodeGroupsSection } from './NodeAddPanel/NodeGroupsSection';
+import { SaveRestoreModal } from './SaveRestoreModal';
 import { createNode } from '../utils/nodeFactory';
 import type { NodeTypeOption } from '../config/nodeTypes';
 import { GRID_UNIT } from '../config/grid';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export function FlowControls() {
 	const { theme, setTheme } = useTheme();
+	const [isSaveRestoreModalOpen, setIsSaveRestoreModalOpen] = useState(false);
 	const metallicBackground = useAppStore(
 		(state) => state.theme.metallicBackground
 	);
@@ -225,7 +227,7 @@ export function FlowControls() {
 							}
 						`}
 						style={{
-							width: `${GRID_UNIT * 6}px`, // Match controls width
+							width: `${GRID_UNIT * 7}px`, // Match controls width
 							height: `${GRID_UNIT * 7}px`, // Increased height as requested
 							pointerEvents: 'auto', // Ensure interactions work
 							transformOrigin: 'bottom center', // Animate from bottom (near controls)
@@ -246,7 +248,7 @@ export function FlowControls() {
 				<div
 					className='relative glass-panel-enhanced rounded-xl transition-all duration-300 ease-in-out'
 					style={{
-						width: `${GRID_UNIT * 6}px`, // Wider to accommodate 6 controls
+						width: `${GRID_UNIT * 7}px`, // Wider to accommodate 7 controls (added save/restore)
 						height: `${GRID_UNIT}px`, // Single row height
 					}}
 				>
@@ -288,6 +290,15 @@ export function FlowControls() {
 									strokeLinejoin='round'
 								/>
 							</svg>
+						</button>
+
+						{/* Save/Restore Control */}
+						<button
+							onClick={() => setIsSaveRestoreModalOpen(true)}
+							title='Save & Restore Flow States'
+							className='flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset'
+						>
+							<span className='text-lg'>💾</span>
 						</button>
 
 						{/* Zoom In Control */}
@@ -348,6 +359,12 @@ export function FlowControls() {
 						</button>
 					</div>
 				</div>
+
+				{/* Save/Restore Modal */}
+				<SaveRestoreModal
+					isOpen={isSaveRestoreModalOpen}
+					onClose={() => setIsSaveRestoreModalOpen(false)}
+				/>
 			</div>
 		</Panel>
 	);

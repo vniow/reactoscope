@@ -2,7 +2,6 @@ import { useCallback, useEffect } from 'react';
 import {
 	ReactFlow,
 	Background,
-	MiniMap,
 	reconnectEdge,
 	type OnReconnect,
 	BackgroundVariant,
@@ -14,7 +13,7 @@ import { initialNodes, nodeTypes } from './nodes';
 import { initialEdges, edgeTypes } from './edges';
 import { ThemeProvider } from './contexts/ThemeProvider';
 import { FlowControls } from './components/FlowControls';
-import { FlowDebugPanel } from './components/FlowDebugPanel';
+import { ThemedMiniMap } from './components/ThemedMiniMap';
 import { type AppNode } from './nodes/types';
 import { useAppStore } from './stores/appStore';
 
@@ -116,12 +115,15 @@ export default function App() {
 						color={getBackgroundColor()}
 					/>
 					<FlowControls />
-					<FlowDebugPanel />
+					{/* <FlowDebugPanel /> */}
 					{/* <StoreDebugPanel /> */}
-					<MiniMap
+					<ThemedMiniMap
+						variant='source'
+						position='bottom-right'
 						pannable={true}
-						bgColor='bg-gray-100/50 dark:bg-gray-800'
-						ariaLabel={'MiniMap'}
+						nodeStrokeWidth={1.5}
+						nodeBorderRadius={3}
+						ariaLabel='Flow MiniMap'
 					/>
 				</ReactFlow>
 			</div>

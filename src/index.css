@@ -28,7 +28,10 @@
 		#06b6d4,
 		#67e8f9
 	); /* Cyan - Signal processing */
-	--color-variant-event: light-dark(#fbbf24, #fde68a); /* Pastel Yellow - Events */
+	--color-variant-event: light-dark(
+		#fbbf24,
+		#fde68a
+	); /* Pastel Yellow - Events */
 	--color-variant-unit: light-dark(
 		#ef4444,
 		#f87171
@@ -75,7 +78,8 @@
 	--color-rainbow-rose: light-dark(#ffe4e6, #e11d48);
 
 	/* Rainbow gradients */
-	--gradient-rainbow-linear: linear-gradient(90deg,
+	--gradient-rainbow-linear: linear-gradient(
+		90deg,
 		var(--color-rainbow-red) 0%,
 		var(--color-rainbow-orange) 5.88%,
 		var(--color-rainbow-amber) 11.76%,
@@ -97,15 +101,56 @@
 	);
 
 	/* Rainbow metallic gradient - integrates with existing metallic system */
-	--gradient-rainbow-metallic: linear-gradient(135deg,
-		color-mix(in srgb, var(--color-rainbow-red) 70%, light-dark(#c0c0c0, #6b7280)) 0%,
-		color-mix(in srgb, var(--color-rainbow-orange) 70%, light-dark(#c0c0c0, #6b7280)) 14.28%,
-		color-mix(in srgb, var(--color-rainbow-yellow) 70%, light-dark(#c0c0c0, #6b7280)) 28.56%,
-		color-mix(in srgb, var(--color-rainbow-green) 70%, light-dark(#c0c0c0, #6b7280)) 42.84%,
-		color-mix(in srgb, var(--color-rainbow-cyan) 70%, light-dark(#c0c0c0, #6b7280)) 57.12%,
-		color-mix(in srgb, var(--color-rainbow-blue) 70%, light-dark(#c0c0c0, #6b7280)) 71.4%,
-		color-mix(in srgb, var(--color-rainbow-violet) 70%, light-dark(#c0c0c0, #6b7280)) 85.68%,
-		color-mix(in srgb, var(--color-rainbow-red) 70%, light-dark(#c0c0c0, #6b7280)) 100%
+	--gradient-rainbow-metallic: linear-gradient(
+		135deg,
+		color-mix(
+				in srgb,
+				var(--color-rainbow-red) 70%,
+				light-dark(#c0c0c0, #6b7280)
+			)
+			0%,
+		color-mix(
+				in srgb,
+				var(--color-rainbow-orange) 70%,
+				light-dark(#c0c0c0, #6b7280)
+			)
+			14.28%,
+		color-mix(
+				in srgb,
+				var(--color-rainbow-yellow) 70%,
+				light-dark(#c0c0c0, #6b7280)
+			)
+			28.56%,
+		color-mix(
+				in srgb,
+				var(--color-rainbow-green) 70%,
+				light-dark(#c0c0c0, #6b7280)
+			)
+			42.84%,
+		color-mix(
+				in srgb,
+				var(--color-rainbow-cyan) 70%,
+				light-dark(#c0c0c0, #6b7280)
+			)
+			57.12%,
+		color-mix(
+				in srgb,
+				var(--color-rainbow-blue) 70%,
+				light-dark(#c0c0c0, #6b7280)
+			)
+			71.4%,
+		color-mix(
+				in srgb,
+				var(--color-rainbow-violet) 70%,
+				light-dark(#c0c0c0, #6b7280)
+			)
+			85.68%,
+		color-mix(
+				in srgb,
+				var(--color-rainbow-red) 70%,
+				light-dark(#c0c0c0, #6b7280)
+			)
+			100%
 	);
 
 	/* Animation timing */
@@ -341,7 +386,7 @@
 /* Rainbow borders */
 .border-rainbow {
 	border: 2px solid transparent;
-	background: 
+	background:
 		var(--gradient-rainbow-linear) border-box,
 		light-dark(#ffffff, #1e293b) padding-box;
 	background-clip: border-box, padding-box;
@@ -349,8 +394,12 @@
 
 /* Keyframe animations */
 @keyframes rainbow-flow {
-	0% { background-position: 0% 50%; }
-	100% { background-position: 200% 50%; }
+	0% {
+		background-position: 0% 50%;
+	}
+	100% {
+		background-position: 200% 50%;
+	}
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -520,19 +569,12 @@
 		);
 		backdrop-filter: blur(16px) saturate(180%);
 		-webkit-backdrop-filter: blur(16px) saturate(180%);
-		border: 1px solid light-dark(
-			rgba(255, 255, 255, 0.3),
-			rgba(255, 255, 255, 0.15)
-		);
-		box-shadow: 
-			0 8px 32px light-dark(
-				rgba(0, 0, 0, 0.1),
-				rgba(0, 0, 0, 0.3)
-			),
-			inset 0 1px 0 light-dark(
-				rgba(255, 255, 255, 0.2),
-				rgba(255, 255, 255, 0.1)
-			);
+		border: 1px solid
+			light-dark(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.15));
+		box-shadow:
+			0 8px 32px light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.3)),
+			inset 0 1px 0
+				light-dark(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
 	}
 
 	/* Custom scrollbar for glass panels */
@@ -553,18 +595,126 @@
 	}
 
 	.scrollbar-glass::-webkit-scrollbar-thumb {
-		background: light-dark(
-			rgba(0, 0, 0, 0.3),
-			rgba(255, 255, 255, 0.3)
-		);
+		background: light-dark(rgba(0, 0, 0, 0.3), rgba(255, 255, 255, 0.3));
 		border-radius: 3px;
 		transition: background 0.2s ease;
 	}
 
 	.scrollbar-glass::-webkit-scrollbar-thumb:hover {
-		background: light-dark(
-			rgba(0, 0, 0, 0.5),
-			rgba(255, 255, 255, 0.5)
+		background: light-dark(rgba(0, 0, 0, 0.5), rgba(255, 255, 255, 0.5));
+	}
+}
+
+/* === THEMED MINIMAP STYLES === */
+
+/* Enhanced styling for ThemedMiniMap component */
+.themed-minimap {
+	/* Ensure proper z-index positioning */
+	z-index: var(--z-dropdown);
+
+	/* Improved backdrop blur for better glass effect */
+	backdrop-filter: blur(12px) saturate(150%) brightness(1.1);
+	-webkit-backdrop-filter: blur(12px) saturate(150%) brightness(1.1);
+
+	/* Subtle inner glow effect */
+	&::before {
+		content: '';
+		position: absolute;
+		inset: 1px;
+		border-radius: calc(var(--radius-control) - 1px);
+		background: linear-gradient(
+			135deg,
+			rgba(255, 255, 255, 0.1) 0%,
+			transparent 50%,
+			rgba(255, 255, 255, 0.05) 100%
 		);
+		pointer-events: none;
+		opacity: 0.6;
+		transition: opacity var(--duration-normal);
+	}
+
+	/* Enhanced hover effects */
+	&:hover::before {
+		opacity: 1;
+	}
+
+	/* Theme-specific adjustments */
+	.dark &::before {
+		background: linear-gradient(
+			135deg,
+			rgba(255, 255, 255, 0.05) 0%,
+			transparent 50%,
+			rgba(255, 255, 255, 0.02) 100%
+		);
+	}
+}
+
+/* Position-specific styles */
+.themed-minimap.position-bottom-right {
+	/* Additional spacing for controls */
+	margin-bottom: 4px;
+	margin-right: 4px;
+}
+
+.themed-minimap.position-bottom-left {
+	margin-bottom: 4px;
+	margin-left: 4px;
+}
+
+.themed-minimap.position-top-right {
+	margin-top: 4px;
+	margin-right: 4px;
+}
+
+.themed-minimap.position-top-left {
+	margin-top: 4px;
+	margin-left: 4px;
+}
+
+/* React Flow MiniMap node styling within ThemedMiniMap */
+.themed-minimap .react-flow__minimap-node {
+	/* Apply variant-aware coloring to minimap nodes */
+	&[data-variant] {
+		fill: var(--node-accent, var(--color-variant-core)) !important;
+		stroke: color-mix(
+			in srgb,
+			var(--node-accent, var(--color-variant-core)) 80%,
+			transparent
+		) !important;
+		stroke-width: 1px;
+	}
+
+	/* Default fallback for nodes without variant */
+	&:not([data-variant]) {
+		fill: var(--color-variant-core) !important;
+		stroke: color-mix(
+			in srgb,
+			var(--color-variant-core) 80%,
+			transparent
+		) !important;
+	}
+}
+
+/* Enhanced selection indicator in minimap */
+.themed-minimap .react-flow__minimap-node.selected {
+	stroke-width: 2px !important;
+	stroke: var(--color-interactive-border-focus) !important;
+	filter: brightness(1.2) saturate(1.1);
+}
+
+/* Minimap viewport indicator styling */
+.themed-minimap .react-flow__minimap-mask {
+	/* Custom mask styling with theme awareness */
+	fill: light-dark(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.4)) !important;
+
+	/* Subtle animation on viewport changes */
+	transition: fill var(--duration-normal);
+}
+
+/* Rainbow theme adjustments */
+.bg-rainbow-metallic .themed-minimap {
+	/* Enhanced contrast for rainbow theme */
+	.react-flow__minimap-mask {
+		fill: rgba(0, 0, 0, 0.3) !important;
 	}
 }
