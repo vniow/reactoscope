@@ -90,6 +90,24 @@ export const AUDIO_NODES: NodeTypeOption[] = [
 			label: 'Visualizer',
 		},
 	},
+	// Worklet nodes
+	{
+		type: 'noise-worklet',
+		name: 'Noise Generator',
+		description: 'AudioWorklet-based white noise generator',
+		emoji: '📡',
+		variant: 'source', // Audio source -> source category
+		category: 'audio',
+		defaultData: {
+			id: '',
+			type: 'noise-worklet' as const,
+			params: {
+				isPlaying: false,
+				volume: 0.5,
+			},
+			label: 'Noise Generator',
+		},
+	},
 ];
 
 // Utility nodes
@@ -116,7 +134,14 @@ export const ALL_NODE_TYPES: NodeTypeOption[] = [
 
 // Helper to check if a node type requires audio-specific handling
 export const isAudioNode = (nodeType: string): boolean => {
-	return ['oscillator', 'gain', 'visualizer'].includes(nodeType);
+	return [
+		'oscillator',
+		'gain',
+		'visualizer',
+		'noise-worklet',
+		'bitcrusher-worklet',
+		'delay-worklet',
+	].includes(nodeType);
 };
 
 // Variant display names for the UI

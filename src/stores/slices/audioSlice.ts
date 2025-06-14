@@ -21,10 +21,41 @@ export interface AnalyserParams {
 	isConnected: boolean;
 }
 
+// Worklet parameter types
+export interface NoiseWorkletParams {
+	isPlaying: boolean;
+	volume: number;
+}
+
+export interface BitCrusherWorkletParams {
+	bits: number;
+	wet: number;
+}
+
+export interface DelayWorkletParams {
+	delayTime: number;
+	feedback: number;
+	wet: number;
+}
+
 export interface AudioNodeData {
 	id: string;
-	type: 'oscillator' | 'gain' | 'analyser' | 'visualizer' | 'destination';
-	params: OscillatorParams | GainParams | AnalyserParams;
+	type:
+		| 'oscillator'
+		| 'gain'
+		| 'analyser'
+		| 'visualizer'
+		| 'destination'
+		| 'noise-worklet'
+		| 'bitcrusher-worklet'
+		| 'delay-worklet';
+	params:
+		| OscillatorParams
+		| GainParams
+		| AnalyserParams
+		| NoiseWorkletParams
+		| BitCrusherWorkletParams
+		| DelayWorkletParams;
 }
 
 export interface AudioConnection {
@@ -47,12 +78,32 @@ export interface AudioSlice {
 	// Audio Node Actions
 	addAudioNode: (
 		nodeId: string,
-		type: 'oscillator' | 'gain' | 'analyser',
-		params: OscillatorParams | GainParams | AnalyserParams
+		type:
+			| 'oscillator'
+			| 'gain'
+			| 'analyser'
+			| 'visualizer'
+			| 'noise-worklet'
+			| 'bitcrusher-worklet'
+			| 'delay-worklet',
+		params:
+			| OscillatorParams
+			| GainParams
+			| AnalyserParams
+			| NoiseWorkletParams
+			| BitCrusherWorkletParams
+			| DelayWorkletParams
 	) => void;
 	updateAudioNode: (
 		nodeId: string,
-		params: Partial<OscillatorParams | GainParams | AnalyserParams>
+		params: Partial<
+			| OscillatorParams
+			| GainParams
+			| AnalyserParams
+			| NoiseWorkletParams
+			| BitCrusherWorkletParams
+			| DelayWorkletParams
+		>
 	) => void;
 	removeAudioNode: (nodeId: string) => void;
 

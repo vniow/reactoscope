@@ -19,10 +19,28 @@ export type OscillatorNode = Node<BaseNodeData & AudioNodeData, 'oscillator'>;
 export type GainNode = Node<BaseNodeData & AudioNodeData, 'gain'>;
 export type VisualizerNode = Node<BaseNodeData & AudioNodeData, 'visualizer'>;
 export type DestinationNode = Node<BaseNodeData, 'destination'>;
+
+// Worklet node types
+export type NoiseWorkletNode = Node<
+	BaseNodeData & AudioNodeData,
+	'noise-worklet'
+>;
+export type BitCrusherWorkletNode = Node<
+	BaseNodeData & AudioNodeData,
+	'bitcrusher-worklet'
+>;
+export type DelayWorkletNode = Node<
+	BaseNodeData & AudioNodeData,
+	'delay-worklet'
+>;
+
 export type AppNode =
 	| BuiltInNode
 	| DebugNode
 	| OscillatorNode
 	| GainNode
 	| VisualizerNode
-	| DestinationNode;
+	| DestinationNode
+	| NoiseWorkletNode
+	| BitCrusherWorkletNode
+	| DelayWorkletNode;

@@ -46,7 +46,8 @@ export function useToneDestination(nodeId: string) {
 					sourceNode &&
 					(sourceNode.type === 'oscillator' ||
 						sourceNode.type === 'gain' ||
-						sourceNode.type === 'analyser')
+						sourceNode.type === 'analyser' ||
+						sourceNode.type === 'visualizer')
 				) {
 					connectionsNeeded++;
 
@@ -119,7 +120,8 @@ export function useToneDestination(nodeId: string) {
 						sourceNode &&
 						(sourceNode.type === 'oscillator' ||
 							sourceNode.type === 'gain' ||
-							sourceNode.type === 'analyser')
+							sourceNode.type === 'analyser' ||
+							sourceNode.type === 'visualizer')
 					) {
 						const sourceKey = `${sourceNode.type}-${sourceNode.id}`;
 						const sourceInstance = toneRegistry.get(sourceKey);
@@ -163,7 +165,8 @@ export function useToneDestination(nodeId: string) {
 					sourceNode &&
 					(sourceNode.type === 'oscillator' ||
 						sourceNode.type === 'gain' ||
-						sourceNode.type === 'analyser')
+						sourceNode.type === 'analyser' ||
+						sourceNode.type === 'visualizer')
 				) {
 					const sourceKey = `${sourceNode.type}-${sourceNode.id}`;
 					const sourceInstance = toneRegistry.get(sourceKey);

@@ -5,6 +5,7 @@ import { OscillatorNode } from './OscillatorNode';
 import { GainNode } from './GainNode';
 import { VisualizerNode } from './VisualizerNode';
 import { DestinationNode } from './DestinationNode';
+import { NoiseWorkletNode } from './NoiseWorkletNode';
 
 import { GRID_UNIT } from '../config/grid';
 
@@ -64,5 +65,6 @@ export const nodeTypes = {
 	gain: GainNode,
 	visualizer: VisualizerNode,
 	destination: DestinationNode,
+	'noise-worklet': NoiseWorkletNode,
 	// Add any of your custom nodes here!
 } as NodeTypes;

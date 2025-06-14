@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import * as Tone from 'tone';
 import { useEdges } from '@xyflow/react';
 import { useAppStore } from '../stores/appStore';
+import { toneRegistry } from '../utils/toneRegistry';
 import type { AnalyserParams } from '../stores/slices/audioSlice';
 import type { Edge } from '@xyflow/react';
 
@@ -38,7 +39,7 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 	// Initialize audio node in store if it doesn't exist
 	useEffect(() => {
 		if (!audioNode) {
-			addAudioNode(nodeId, 'analyser', {
+			addAudioNode(nodeId, 'visualizer', {
 				size: 1024,
 				smoothing: 0.8,
 				isConnected: false,
@@ -66,23 +67,21 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 					smoothing: params.smoothing,
 				});
 
-				// Register in global registry for audio routing
-				const windowWithTone = window as unknown as {
-					toneInstances?: Record<string, Tone.ToneAudioNode>;
-				};
-				if (!windowWithTone.toneInstances) {
-					windowWithTone.toneInstances = {};
-				}
-				// Register both analysers with separate handles
-				windowWithTone.toneInstances[`analyser-${nodeId}-X`] =
-					analyserXRef.current;
-				windowWithTone.toneInstances[`analyser-${nodeId}-Y`] =
-					analyserYRef.current;
+				// Register in ToneRegistry for audio routing
+				toneRegistry.register(`visualizer-${nodeId}-X`, analyserXRef.current);
+				toneRegistry.register(`visualizer-${nodeId}-Y`, analyserYRef.current);
 
 				console.log(
 					`🎵 Created independent analyser nodes for ${nodeId}:`,
 					params
 				);
+				console.log(`📝 ToneRegistry after registration:`, {
+					registeredKeys: toneRegistry.getKeys(),
+					xKey: `visualizer-${nodeId}-X`,
+					yKey: `visualizer-${nodeId}-Y`,
+					xInstance: toneRegistry.get(`visualizer-${nodeId}-X`),
+					yInstance: toneRegistry.get(`visualizer-${nodeId}-Y`),
+				});
 			} catch (error) {
 				console.error(
 					`🚨 Failed to create analyser nodes for ${nodeId}:`,
@@ -97,16 +96,9 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 		return () => {
 			if (analyserXRef.current) {
 				try {
-					// Remove from global registry
-					const toneInstances = (
-						window as unknown as {
-							toneInstances?: Record<string, Tone.ToneAudioNode>;
-						}
-					).toneInstances;
-					if (toneInstances) {
-						delete toneInstances[`analyser-${nodeId}-X`];
-						delete toneInstances[`analyser-${nodeId}-Y`];
-					}
+					// Remove from ToneRegistry
+					toneRegistry.unregister(`visualizer-${nodeId}-X`);
+					toneRegistry.unregister(`visualizer-${nodeId}-Y`);
 
 					analyserXRef.current.dispose();
 					analyserYRef.current?.dispose();

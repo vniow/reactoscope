@@ -65,6 +65,12 @@ export function useWaveformGeometry() {
 		const startAttr = geometry.attributes.aStart as THREE.BufferAttribute;
 		const endAttr = geometry.attributes.aEnd as THREE.BufferAttribute;
 
+		// Guard against uninitialized geometry
+		if (!startAttr || !endAttr || !startAttr.array || !endAttr.array) {
+			console.warn('🚨 Geometry not initialized for audio data update');
+			return;
+		}
+
 		const numSamples = Math.min(dataL.length, dataR.length, NUM_POINTS);
 
 		for (let i = 0; i < NUM_SEGMENTS; i++) {
