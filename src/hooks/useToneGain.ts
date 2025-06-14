@@ -42,31 +42,20 @@ export const useToneGain = (nodeId: string): ToneGainControls => {
 
 	// Create and configure gain node
 	useEffect(() => {
-		console.log(`🎚️ useToneGain effect running for ${nodeId}`, {
-			params,
-			audioNode,
-		});
-
 		const createGain = async () => {
 			try {
-				console.log(`🎚️ About to initialize audio context for ${nodeId}`);
 				// Ensure audio context is started
 				await initializeAudioContext();
-				console.log(`🎚️ Audio context initialized for ${nodeId}`);
 
 				// Create new gain node
-				console.log(`🎚️ Creating gain node for ${nodeId}`, params);
 				gainRef.current = new Tone.Gain({
 					gain: params.mute ? 0 : params.gain,
 				});
 
 				// Register gain node in centralized registry
-				console.log(`🎚️ Registering gain-${nodeId} in tone registry`);
 				toneRegistry.register(`gain-${nodeId}`, gainRef.current);
-
-				console.log(`🎚️ Created gain node for ${nodeId}:`, params);
 			} catch (error) {
-				console.error(`🚨 Failed to create gain node for ${nodeId}:`, error);
+				console.error(`Failed to create gain node for ${nodeId}:`, error);
 			}
 		};
 
@@ -80,9 +69,8 @@ export const useToneGain = (nodeId: string): ToneGainControls => {
 					toneRegistry.unregister(`gain-${nodeId}`);
 
 					gainRef.current.dispose();
-					console.log(`🗑️ Disposed gain node for ${nodeId}`);
 				} catch (error) {
-					console.error(`🚨 Error disposing gain node for ${nodeId}:`, error);
+					console.error(`Error disposing gain node for ${nodeId}:`, error);
 				}
 			}
 		};
@@ -100,13 +88,8 @@ export const useToneGain = (nodeId: string): ToneGainControls => {
 			// Update gain value (apply mute if needed)
 			const targetGain = params.mute ? 0 : params.gain;
 			gain.gain.setValueAtTime(targetGain, now);
-
-			console.log(`🎚️ Updated gain for ${nodeId}:`, {
-				gain: targetGain,
-				mute: params.mute,
-			});
 		} catch (error) {
-			console.error(`🚨 Error updating gain parameters for ${nodeId}:`, error);
+			console.error(`Error updating gain parameters for ${nodeId}:`, error);
 		}
 	}, [params, nodeId]);
 

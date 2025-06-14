@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import * as Tone from 'tone';
 import { useEdges } from '@xyflow/react';
 import { useAudioNodes } from './useAppStore';
 import { toneRegistry } from '../utils/toneRegistry';
@@ -17,11 +16,6 @@ export function useToneConnections(nodeId: string) {
 		// Find all React Flow edges where this node is the source
 		const outgoingEdges = edges.filter((edge: Edge) => edge.source === nodeId);
 
-		console.log(
-			`🔌 useToneConnections for ${nodeId}: found ${outgoingEdges.length} outgoing edges`,
-			outgoingEdges
-		);
-
 		// For each outgoing edge, connect this source to the target
 		outgoingEdges.forEach((edge: Edge) => {
 			const sourceNode = Object.values(audioNodes).find(
@@ -31,10 +25,10 @@ export function useToneConnections(nodeId: string) {
 				(node) => node.id === edge.target
 			);
 
-			console.log(
-				`🔌 Processing edge ${edge.id}: ${edge.source} → ${edge.target}`,
-				{ sourceNode, targetNode }
-			);
+			// console.log(
+			// 	`🔌 Processing edge ${edge.id}: ${edge.source} → ${edge.target}`,
+			// 	{ sourceNode, targetNode }
+			// );
 
 			if (sourceNode && targetNode) {
 				// Get the source instance
@@ -53,36 +47,12 @@ export function useToneConnections(nodeId: string) {
 					targetKey = `${targetNode.type}-${targetNode.id}`;
 				}
 
-				console.log(`🔌 Looking for instances: ${sourceKey} → ${targetKey}`);
-
-				console.log(
-					`🔌 Available tone instances: (${toneRegistry.size()}) [${toneRegistry.getKeys().join(', ')}]`
-				);
-
-				// Debug: Log the full registry state
-				toneRegistry.debug();
-
 				const sourceInstance = toneRegistry.get(sourceKey);
 				const targetInstance = toneRegistry.get(targetKey);
-
-				console.log(`🔌 Found instances:`, {
-					sourceInstance: !!sourceInstance,
-					targetInstance: !!targetInstance,
-				});
 
 				if (sourceInstance && targetInstance) {
 					try {
 						sourceInstance.connect(targetInstance);
-						console.log(
-							`✅ Connected ${sourceNode.type} ${sourceNode.id} to ${
-								targetNode.type
-							} ${targetNode.id} ${
-								targetNode.type === 'analyser' ||
-								targetNode.type === 'visualizer'
-									? `(${edge.targetHandle})`
-									: ''
-							}`
-						);
 
 						// Update analyser/visualizer connection status
 						if (
@@ -92,12 +62,8 @@ export function useToneConnections(nodeId: string) {
 							// This will be handled by the analyser/visualizer hook's useEffect for connection monitoring
 						}
 					} catch (error) {
-						console.error('❌ Failed to connect audio nodes:', error);
+						console.error('Failed to connect audio nodes:', error);
 					}
-				} else {
-					console.warn(
-						`⚠️ Missing instances for connection ${sourceKey} → ${targetKey}`
-					);
 				}
 			}
 		});
@@ -134,15 +100,8 @@ export function useToneConnections(nodeId: string) {
 					if (sourceInstance && targetInstance) {
 						try {
 							sourceInstance.disconnect(targetInstance);
-							// console.log(
-							// 	`🔌 Disconnected ${sourceNode.type} ${sourceNode.id} from ${
-							// 		targetNode.type
-							// 	} ${targetNode.id} ${
-							// 		targetNode.type === 'analyser' ? `(${edge.targetHandle})` : ''
-							// 	}`
-							// );
 						} catch (error) {
-							console.error('❌ Failed to disconnect audio nodes:', error);
+							console.error('Failed to disconnect audio nodes:', error);
 						}
 					}
 				}

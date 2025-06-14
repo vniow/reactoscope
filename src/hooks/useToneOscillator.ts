@@ -56,20 +56,12 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 
 	// Create and configure oscillator
 	useEffect(() => {
-		console.log(`🎵 useToneOscillator effect running for ${nodeId}`, {
-			params,
-			audioNode,
-		});
-
 		const createOscillator = async () => {
 			try {
-				console.log(`🎵 About to initialize audio context for ${nodeId}`);
 				// Ensure audio context is started
 				await initializeAudioContext();
-				console.log(`🎵 Audio context initialized for ${nodeId}`);
 
 				// Create new oscillator WITHOUT auto-connecting to destination
-				console.log(`🎵 Creating oscillator for ${nodeId}`, params);
 				oscillatorRef.current = new Tone.Oscillator({
 					frequency: params.frequency,
 					detune: params.detune,
@@ -78,15 +70,9 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 				}); // Removed .toDestination() so destination node can control connections
 
 				// Register oscillator in centralized registry
-				console.log(`🎵 Registering oscillator-${nodeId} in tone registry`);
 				toneRegistry.register(`oscillator-${nodeId}`, oscillatorRef.current);
-
-				console.log(`🎵 Created oscillator for node ${nodeId}:`, params);
 			} catch (error) {
-				console.error(
-					`🚨 Failed to create oscillator for node ${nodeId}:`,
-					error
-				);
+				console.error(`Failed to create oscillator for node ${nodeId}:`, error);
 			}
 		};
 
@@ -104,10 +90,9 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 					toneRegistry.unregister(`oscillator-${nodeId}`);
 
 					oscillatorRef.current.dispose();
-					console.log(`🗑️ Disposed oscillator for node ${nodeId}`);
 				} catch (error) {
 					console.error(
-						`🚨 Error disposing oscillator for node ${nodeId}:`,
+						`Error disposing oscillator for node ${nodeId}:`,
 						error
 					);
 				}
@@ -135,39 +120,23 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 
 			// Update volume
 			osc.volume.setValueAtTime(params.volume, now);
-
-			console.log(`🎛️ Updated oscillator ${nodeId} parameters:`, params);
 		} catch (error) {
-			console.error(`🚨 Error updating oscillator ${nodeId}:`, error);
+			console.error(`Error updating oscillator ${nodeId}:`, error);
 		}
 	}, [nodeId, params]);
 
 	// Control functions
 	const start = useCallback(async () => {
-		console.log(
-			`🎵 START called for oscillator ${nodeId}, isStarted: ${isStartedRef.current}`
-		);
-
 		if (!oscillatorRef.current || isStartedRef.current) return;
 
 		try {
 			// Ensure audio context is started before playing
-			console.log(
-				`🔊 Starting oscillator ${nodeId} - checking audio context...`
-			);
-
 			// Force start the audio context on user interaction
 			if (Tone.getContext().state !== 'running') {
-				console.log(`🔊 Audio context not running, starting now...`);
 				await Tone.start();
-				console.log(`🔊 Audio context started successfully`);
 			}
 
 			await initializeAudioContext();
-
-			// Log current volume for debugging
-			console.log(`🔊 Oscillator ${nodeId} volume: ${params.volume} dB`);
-			console.log(`🔊 Oscillator ${nodeId} frequency: ${params.frequency} Hz`);
 
 			// // TEMPORARY TEST: Connect directly to destination to verify audio works
 			// oscillatorRef.current.connect(Tone.getDestination());
@@ -178,17 +147,10 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 			oscillatorRef.current.start();
 			isStartedRef.current = true;
 			updateAudioNode(nodeId, { isPlaying: true });
-			console.log(`▶️ Started oscillator ${nodeId}`);
 		} catch (error) {
-			console.error(`🚨 Error starting oscillator ${nodeId}:`, error);
+			console.error(`Error starting oscillator ${nodeId}:`, error);
 		}
-	}, [
-		nodeId,
-		updateAudioNode,
-		initializeAudioContext,
-		params.volume,
-		params.frequency,
-	]);
+	}, [nodeId, updateAudioNode, initializeAudioContext]);
 
 	const stop = useCallback(() => {
 		if (!oscillatorRef.current || !isStartedRef.current) return;
@@ -197,7 +159,6 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 			oscillatorRef.current.stop();
 			isStartedRef.current = false;
 			updateAudioNode(nodeId, { isPlaying: false });
-			console.log(`⏹️ Stopped oscillator ${nodeId}`);
 			// Create a new oscillator for next play
 			setTimeout(() => {
 				if (oscillatorRef.current) {
@@ -214,7 +175,7 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 				}
 			}, 100);
 		} catch (error) {
-			console.error(`🚨 Error stopping oscillator ${nodeId}:`, error);
+			console.error(`Error stopping oscillator ${nodeId}:`, error);
 		}
 	}, [nodeId, updateAudioNode, params]);
 

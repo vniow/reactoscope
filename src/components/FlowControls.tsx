@@ -27,18 +27,6 @@ export function FlowControls() {
 	const reactFlowInstance = useReactFlow();
 	const panelContainerRef = useRef<HTMLDivElement>(null);
 
-	// Log when ref gets attached
-	useEffect(() => {
-		if (panelContainerRef.current) {
-			console.log('🔗 Panel container ref attached:', {
-				element: panelContainerRef.current.tagName,
-				className: panelContainerRef.current.className,
-				children: panelContainerRef.current.children.length,
-				bounds: panelContainerRef.current.getBoundingClientRect(),
-			});
-		}
-	}, [isNodeAddPanelExpanded]);
-
 	const handleAddNode = (nodeTypeOption: NodeTypeOption) => {
 		const newNode = createNode(nodeTypeOption);
 		reactFlowInstance.setNodes((nodes) => [...nodes, newNode]);
@@ -160,7 +148,7 @@ export function FlowControls() {
 			console.log('👂 Adding click-outside listener for expanded panel');
 			document.addEventListener('mousedown', handleClickOutside);
 		} else {
-			console.log('🔇 Panel closed - not listening for clicks');
+			// console.log('🔇 Panel closed - not listening for clicks');
 		}
 
 		return () => {

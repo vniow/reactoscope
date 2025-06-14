@@ -170,10 +170,6 @@ export class CoordinateAudioWorkletNode extends ToneWorkletBase<CoordinateAudioW
 	protected onReady(node: AudioWorkletNode): void {
 		// Connect the worklet to the output
 		node.connect(this.output.input);
-
-		if (this.debug) {
-			console.log(`🎵 CoordinateAudioWorkletNode ready for ${this._axis}-axis`);
-		}
 	}
 
 	/**

@@ -55,17 +55,12 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 
 	// Create and configure worklet
 	useEffect(() => {
-		console.log(`🎵 useNoiseWorklet effect running for ${nodeId}`);
-
 		const createWorklet = async () => {
 			try {
-				console.log(`🎵 About to initialize audio context for ${nodeId}`);
 				// Ensure audio context is started
 				await initializeAudioContext();
-				console.log(`🎵 Audio context initialized for ${nodeId}`);
 
 				// Create new noise worklet
-				console.log(`🎵 Creating noise worklet for ${nodeId}`);
 				workletRef.current = new NoiseWorkletNode({
 					debug: true,
 					volume: 0.5, // Will be synced later
@@ -75,13 +70,10 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 				await workletRef.current.ready;
 
 				// Register worklet in centralized registry
-				console.log(`🎵 Registering noise-worklet-${nodeId} in tone registry`);
 				toneRegistry.register(`noise-worklet-${nodeId}`, workletRef.current);
-
-				console.log(`🎵 Created noise worklet for node ${nodeId}`);
 			} catch (error) {
 				console.error(
-					`🚨 Failed to create noise worklet for node ${nodeId}:`,
+					`Failed to create noise worklet for node ${nodeId}:`,
 					error
 				);
 			}
@@ -98,10 +90,9 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 					}
 					workletRef.current.dispose();
 					toneRegistry.unregister(`noise-worklet-${nodeId}`);
-					console.log(`🧹 Cleaned up noise worklet for node ${nodeId}`);
 				} catch (error) {
 					console.error(
-						`🚨 Error cleaning up noise worklet for node ${nodeId}:`,
+						`Error cleaning up noise worklet for node ${nodeId}:`,
 						error
 					);
 				}
@@ -138,8 +129,6 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 
 			// Update store
 			updateAudioNode(nodeId, { isPlaying: true });
-
-			console.log(`▶️ Started noise worklet for node ${nodeId}`);
 		}
 	}, [nodeId, updateAudioNode, params.isPlaying]);
 
@@ -150,8 +139,6 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 
 			// Update store
 			updateAudioNode(nodeId, { isPlaying: false });
-
-			console.log(`⏹️ Stopped noise worklet for node ${nodeId}`);
 		}
 	}, [nodeId, updateAudioNode, params.isPlaying]);
 
@@ -163,8 +150,6 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 
 			// Update store
 			updateAudioNode(nodeId, { volume });
-
-			console.log(`🔊 Set volume to ${volume} for noise worklet ${nodeId}`);
 		},
 		[nodeId, updateAudioNode]
 	);

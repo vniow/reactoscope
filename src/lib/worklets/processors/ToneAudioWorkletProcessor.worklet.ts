@@ -50,8 +50,6 @@ export const toneAudioWorkletProcessor = /* javascript */ `
 			this.port.onmessage = (event) => {
 				this._onMessage(event);
 			};
-			
-			console.log('ToneAudioWorkletProcessor initialized');
 		}
 		
 		/**
@@ -80,7 +78,6 @@ export const toneAudioWorkletProcessor = /* javascript */ `
 		 */
 		_dispose() {
 			this.disposed = true;
-			console.log('ToneAudioWorkletProcessor disposed');
 		}
 		
 		/**

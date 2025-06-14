@@ -28,11 +28,7 @@ export function SaveRestoreModal({ isOpen, onClose }: SaveRestoreModalProps) {
 			return;
 		}
 
-		const id = saveFlowState(
-			saveName.trim(),
-			saveDescription.trim() || undefined
-		);
-		console.log(`💾 Saved flow state with ID: ${id}`);
+		saveFlowState(saveName.trim(), saveDescription.trim() || undefined);
 		setSaveName('');
 		setSaveDescription('');
 		// Don't close modal so user can see the new saved state
@@ -41,7 +37,6 @@ export function SaveRestoreModal({ isOpen, onClose }: SaveRestoreModalProps) {
 	const handleRestore = (savedState: SavedFlowState) => {
 		const success = restoreFlowState(savedState.id);
 		if (success) {
-			console.log(`📋 Restored flow state: ${savedState.name}`);
 			onClose();
 		} else {
 			alert('Failed to restore flow state');
@@ -51,7 +46,6 @@ export function SaveRestoreModal({ isOpen, onClose }: SaveRestoreModalProps) {
 	const handleDelete = (savedState: SavedFlowState) => {
 		if (confirm(`Are you sure you want to delete "${savedState.name}"?`)) {
 			deleteSavedState(savedState.id);
-			console.log(`🗑️ Deleted flow state: ${savedState.name}`);
 		}
 	};
 
@@ -67,7 +61,6 @@ export function SaveRestoreModal({ isOpen, onClose }: SaveRestoreModalProps) {
 		a.click();
 		document.body.removeChild(a);
 		URL.revokeObjectURL(url);
-		console.log('📤 Flow state exported');
 	};
 
 	const handleImport = () => {
@@ -78,7 +71,6 @@ export function SaveRestoreModal({ isOpen, onClose }: SaveRestoreModalProps) {
 
 		const success = importFlowState(importData);
 		if (success) {
-			console.log('📥 Flow state imported successfully');
 			setImportData('');
 			onClose();
 		} else {

@@ -26,19 +26,10 @@ export function NodeGroupsSection({
 
 	// Log when component renders
 	useEffect(() => {
-		console.log('🎭 NodeGroupsSection rendered:', {
-			isVisible,
-			nodeGroups: Object.keys(nodeGroups).length,
-			totalNodes: Object.values(nodeGroups).flat().length,
-		});
+		// Component rendered
 	}, [isVisible, nodeGroups]);
 
 	const handleAddNode = (nodeType: NodeTypeOption) => {
-		console.log('🎯 NodeGroupsSection - Node clicked:', {
-			nodeType: nodeType.name,
-			variant: nodeType.variant,
-			timestamp: new Date().toISOString(),
-		});
 		onAddNode(nodeType);
 	};
 

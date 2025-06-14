@@ -53,7 +53,7 @@ const saveCurrentFlowState = (nodes: AppNode[], edges: Edge[]) => {
 			timestamp: Date.now(),
 		};
 		localStorage.setItem(FLOW_STORAGE_KEY, JSON.stringify(stateToSave));
-		console.log('💾 Flow state persisted to localStorage');
+		// console.log('💾 Flow state persisted to localStorage');
 	} catch (error) {
 		console.error('❌ Failed to persist flow state:', error);
 	}
@@ -101,11 +101,11 @@ const loadFlowState = (): { nodes: AppNode[]; edges: Edge[] } | null => {
 			return null;
 		}
 
-		console.log('📋 Flow state loaded from localStorage:', {
-			nodesCount: parsed.nodes.length,
-			edgesCount: parsed.edges.length,
-			timestamp: new Date(parsed.timestamp || 0).toISOString(),
-		});
+		// console.log('📋 Flow state loaded from localStorage:', {
+		// 	nodesCount: parsed.nodes.length,
+		// 	edgesCount: parsed.edges.length,
+		// 	timestamp: new Date(parsed.timestamp || 0).toISOString(),
+		// });
 
 		return {
 			nodes: parsed.nodes,
@@ -144,7 +144,7 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
 	},
 
 	onNodesChange: (changes) => {
-		console.log('🔄 Applying node changes:', changes);
+		// console.log('🔄 Applying node changes:', changes);
 		set((state) => {
 			const newNodes = applyNodeChanges(changes, state.nodes) as AppNode[];
 			saveCurrentFlowState(newNodes, state.edges);
@@ -225,13 +225,13 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
 	},
 
 	initializeFlow: (initialNodes, initialEdges) => {
-		console.log('🚀 Initializing flow state...');
+		// console.log('🚀 Initializing flow state...');
 
 		// Try to load from localStorage first
 		const savedState = loadFlowState();
 
 		if (savedState && savedState.nodes.length > 0) {
-			console.log('📋 Using saved flow state from localStorage');
+			// console.log('📋 Using saved flow state from localStorage');
 			set(() => savedState);
 		} else {
 			console.log('🆕 Using initial flow state');

@@ -35,8 +35,6 @@ export const noiseProcessorWorklet = /* javascript */ `
 			 * @private
 			 */
 			this._isActive = false;
-			
-			console.log('NoiseProcessor initialized');
 		}
 		
 		/**
@@ -90,17 +88,12 @@ export const noiseProcessorWorklet = /* javascript */ `
 			switch (type) {
 				case 'start':
 					this._isActive = true;
-					console.log('Noise generation started');
 					break;
 				case 'stop':
 					this._isActive = false;
-					console.log('Noise generation stopped');
 					break;
 				case 'param-update':
 					// Handle parameter updates if needed
-					if (data) {
-						console.log('Noise processor parameter update:', data);
-					}
 					break;
 			}
 		}

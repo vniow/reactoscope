@@ -24,10 +24,6 @@ export function useToneDestination(nodeId: string) {
 				(edge: Edge) => edge.target === nodeId
 			);
 
-			console.log(
-				`🎧 useToneDestination for ${nodeId}: found ${incomingEdges.length} incoming edges (attempt ${retryCount + 1}/${maxRetries + 1})`
-			);
-
 			let connectionsNeeded = 0;
 			let connectionsSuccessful = 0;
 
@@ -35,11 +31,6 @@ export function useToneDestination(nodeId: string) {
 			incomingEdges.forEach((edge: Edge) => {
 				const sourceNode = Object.values(audioNodes).find(
 					(node) => node.id === edge.source
-				);
-
-				console.log(
-					`🎧 Processing destination edge ${edge.id}: ${edge.source} → ${edge.target}`,
-					sourceNode
 				);
 
 				if (
@@ -56,34 +47,15 @@ export function useToneDestination(nodeId: string) {
 
 					console.log(`🎧 Looking for source instance: ${sourceKey}`);
 
-					// Only show detailed debug on first attempt to reduce noise
-					if (retryCount === 0) {
-						console.log(
-							`🎧 Available tone instances: (${toneRegistry.size()}) [${toneRegistry.getKeys().join(', ')}]`
-						);
-						toneRegistry.debug();
-					}
-
 					const sourceInstance = toneRegistry.get(sourceKey);
-
-					console.log(`🎧 Found source instance:`, !!sourceInstance);
 
 					if (sourceInstance) {
 						try {
 							// Connect to Tone's master destination
 							sourceInstance.connect(Tone.getDestination());
-							console.log(
-								`✅ Connected ${sourceNode.type} ${sourceNode.id} to master destination via edge ${edge.id}`
-							);
 							connectionsSuccessful++;
 						} catch (error) {
-							console.error('❌ Failed to connect to destination:', error);
-						}
-					} else {
-						if (retryCount === 0) {
-							console.warn(
-								`⚠️ Missing source instance for ${sourceKey} - will retry`
-							);
+							console.error('Failed to connect to destination:', error);
 						}
 					}
 				}
@@ -94,19 +66,7 @@ export function useToneDestination(nodeId: string) {
 				connectionsNeeded > connectionsSuccessful &&
 				retryCount < maxRetries
 			) {
-				console.log(
-					`🔄 Retrying connections in ${retryDelay}ms (${connectionsSuccessful}/${connectionsNeeded} successful)`
-				);
 				setTimeout(() => attemptConnections(retryCount + 1), retryDelay);
-			} else if (connectionsNeeded > 0) {
-				console.log(
-					`🎯 Connection attempts complete: ${connectionsSuccessful}/${connectionsNeeded} successful`
-				);
-				if (connectionsSuccessful < connectionsNeeded) {
-					console.warn(
-						`⚠️ Some tone connections failed - audio routing may be incomplete`
-					);
-				}
 			}
 
 			// Return cleanup function for successful connections
@@ -129,14 +89,8 @@ export function useToneDestination(nodeId: string) {
 						if (sourceInstance) {
 							try {
 								sourceInstance.disconnect(Tone.getDestination());
-								console.log(
-									`🔌 Disconnected ${sourceNode.type} ${sourceNode.id} from destination (edge ${edge.id} removed)`
-								);
 							} catch (error) {
-								console.error(
-									'❌ Failed to disconnect from destination:',
-									error
-								);
+								console.error('Failed to disconnect from destination:', error);
 							}
 						}
 					}

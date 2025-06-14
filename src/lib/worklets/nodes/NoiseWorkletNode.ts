@@ -100,10 +100,6 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 			swappable: true,
 		});
 
-		if (this.debug) {
-			console.log('🎛️ Created NoiseWorkletNode');
-		}
-
 		// Auto-start if requested
 		if (opts.autostart) {
 			this.ready
@@ -140,10 +136,6 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 			// Sync initial value
 			volumeParam.value = this.volume.value;
 		}
-
-		if (this.debug) {
-			console.log('✅ NoiseWorkletNode setup complete');
-		}
 	}
 
 	/**
@@ -153,14 +145,6 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 		if (this.isReady && !this._isPlaying) {
 			this.postMessage({ type: 'start' });
 			this._isPlaying = true;
-
-			if (this.debug) {
-				console.log('▶️ Starting noise generation');
-			}
-		} else if (this.debug) {
-			console.warn(
-				'⚠️ Cannot start noise: worklet not ready or already playing'
-			);
 		}
 		return this;
 	}
@@ -172,10 +156,6 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 		if (this.isReady && this._isPlaying) {
 			this.postMessage({ type: 'stop' });
 			this._isPlaying = false;
-
-			if (this.debug) {
-				console.log('⏹️ Stopping noise generation');
-			}
 		}
 		return this;
 	}
@@ -222,10 +202,6 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 	 * Clean up and release resources
 	 */
 	dispose(): this {
-		if (this.debug) {
-			console.log('🧹 Disposing NoiseWorkletNode');
-		}
-
 		// Stop noise generation if playing
 		if (this._isPlaying) {
 			this.stop();

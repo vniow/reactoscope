@@ -18,7 +18,7 @@ import type { NoiseWorkletNode } from './types';
 // Grid configuration for noise worklet node
 const NOISE_WORKLET_NODE_CONFIG = {
 	gridWidth: 4,
-	gridHeight: 6,
+	gridHeight: 4,
 } as const;
 
 export function NoiseWorkletNode({
@@ -118,18 +118,18 @@ export function NoiseWorkletNode({
 					layout='compact'
 					showValue={true}
 				/>
-
-				{/* Output Handle */}
-				<GridNodeHandle
-					id='output'
-					type='source'
-					mode='static'
-					position={Position.Right}
-					gridX={4}
-					gridY={2.5}
-					label='Out'
-				/>
 			</div>
+
+			{/* Output Handle */}
+			<GridNodeHandle
+				id='output'
+				type='source'
+				mode='static'
+				position={Position.Right}
+				gridX={0}
+				gridY={2.5}
+				label='Out'
+			/>
 		</BaseNode>
 	);
 }

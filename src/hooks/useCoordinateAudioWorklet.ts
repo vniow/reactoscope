@@ -67,23 +67,12 @@ export function useCoordinateAudioWorklet({
 
 	// Create and configure worklet
 	useEffect(() => {
-		console.log(`🎵 useCoordinateAudioWorklet effect running for ${nodeId}`, {
-			params,
-		});
-
 		const createWorklet = async () => {
 			try {
-				console.log(`🎵 About to initialize audio context for ${nodeId}`);
 				// Ensure audio context is started
 				await initializeAudioContext();
-				console.log(`🎵 Audio context initialized for ${nodeId}`);
 
 				// Create new coordinate audio worklet
-				console.log(`🎵 Creating coordinate audio worklet for ${nodeId}`, {
-					axis,
-					gain,
-					frequency,
-				});
 				workletRef.current = new CoordinateAudioWorkletNode({
 					debug: true,
 					axis,
@@ -95,10 +84,6 @@ export function useCoordinateAudioWorklet({
 				// Wait for worklet to be ready
 				await workletRef.current.ready;
 
-				// Register worklet in centralized registry
-				console.log(
-					`🎵 Registering coordinate-audio-worklet-${nodeId} in tone registry`
-				);
 				toneRegistry.register(
 					`coordinate-audio-worklet-${nodeId}`,
 					workletRef.current
@@ -109,13 +94,9 @@ export function useCoordinateAudioWorklet({
 					...params,
 					isReady: true,
 				});
-
-				console.log(`🎵 Created coordinate audio worklet for node ${nodeId}`, {
-					axis,
-				});
 			} catch (error) {
 				console.error(
-					`🚨 Failed to create coordinate audio worklet for node ${nodeId}:`,
+					`Failed to create coordinate audio worklet for node ${nodeId}:`,
 					error
 				);
 				// Update store to indicate failure
@@ -134,10 +115,9 @@ export function useCoordinateAudioWorklet({
 				try {
 					workletRef.current.dispose();
 					toneRegistry.unregister(`coordinate-audio-worklet-${nodeId}`);
-					console.log(`🧹 Cleaned up coordinate audio worklet for ${nodeId}`);
 				} catch (error) {
 					console.error(
-						`⚠️ Error cleaning up coordinate audio worklet for ${nodeId}:`,
+						`Error cleaning up coordinate audio worklet for ${nodeId}:`,
 						error
 					);
 				}

@@ -70,23 +70,8 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 				// Register in ToneRegistry for audio routing
 				toneRegistry.register(`visualizer-${nodeId}-X`, analyserXRef.current);
 				toneRegistry.register(`visualizer-${nodeId}-Y`, analyserYRef.current);
-
-				console.log(
-					`🎵 Created independent analyser nodes for ${nodeId}:`,
-					params
-				);
-				console.log(`📝 ToneRegistry after registration:`, {
-					registeredKeys: toneRegistry.getKeys(),
-					xKey: `visualizer-${nodeId}-X`,
-					yKey: `visualizer-${nodeId}-Y`,
-					xInstance: toneRegistry.get(`visualizer-${nodeId}-X`),
-					yInstance: toneRegistry.get(`visualizer-${nodeId}-Y`),
-				});
 			} catch (error) {
-				console.error(
-					`🚨 Failed to create analyser nodes for ${nodeId}:`,
-					error
-				);
+				console.error(`Failed to create analyser nodes for ${nodeId}:`, error);
 			}
 		};
 
@@ -102,12 +87,8 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 
 					analyserXRef.current.dispose();
 					analyserYRef.current?.dispose();
-					console.log(`🗑️ Disposed analyser nodes for ${nodeId}`);
 				} catch (error) {
-					console.error(
-						`🚨 Error disposing analyser nodes for ${nodeId}:`,
-						error
-					);
+					console.error(`Error disposing analyser nodes for ${nodeId}:`, error);
 				}
 			}
 		};
@@ -124,13 +105,8 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 			analyserXRef.current.smoothing = params.smoothing;
 			analyserYRef.current.size = params.size;
 			analyserYRef.current.smoothing = params.smoothing;
-
-			console.log(`🎚️ Updated analyser parameters for ${nodeId}:`, params);
 		} catch (error) {
-			console.error(
-				`🚨 Error updating analyser parameters for ${nodeId}:`,
-				error
-			);
+			console.error(`Error updating analyser parameters for ${nodeId}:`, error);
 		}
 	}, [params, nodeId]);
 

@@ -123,10 +123,6 @@ export abstract class ToneWorkletBase<
 	private _initWorklet(): void {
 		const workletName = this._audioWorkletName();
 
-		if (this.debug) {
-			console.log(`🔍 Initializing AudioWorklet: ${workletName}`);
-		}
-
 		// Create blob URL for the worklet code
 		const blobUrl = createWorkletBlobUrl(this.debug);
 
@@ -144,12 +140,6 @@ export abstract class ToneWorkletBase<
 
 						// Set up error handling
 						this._worklet.onprocessorerror = (e: ErrorEvent) => {
-							if (this.debug) {
-								console.error(
-									`⚠️ AudioWorklet processor error in ${workletName}:`,
-									e
-								);
-							}
 							this._workletState.error = new Error(
 								`Worklet processor error: ${e.message}`
 							);
@@ -163,20 +153,9 @@ export abstract class ToneWorkletBase<
 						this._workletState.isInitialized = true;
 						this._workletState.isReady = true;
 						this._workletReadyResolve();
-
-						if (this.debug) {
-							console.log(`✅ AudioWorklet node ready: ${workletName}`);
-						}
 					} catch (err) {
 						const error = err instanceof Error ? err : new Error(String(err));
 						this._workletState.error = error;
-
-						if (this.debug) {
-							console.error(
-								`❌ Failed to create AudioWorklet node ${workletName}:`,
-								error
-							);
-						}
 						this._workletReadyReject(error);
 					}
 				}
@@ -184,13 +163,6 @@ export abstract class ToneWorkletBase<
 			.catch((err) => {
 				const error = err instanceof Error ? err : new Error(String(err));
 				this._workletState.error = error;
-
-				if (this.debug) {
-					console.error(
-						`❌ Failed to add AudioWorklet module ${workletName}:`,
-						error
-					);
-				}
 				this._workletReadyReject(error);
 			})
 			.finally(() => {
@@ -253,10 +225,6 @@ export abstract class ToneWorkletBase<
 	 * Clean up and release resources
 	 */
 	dispose(): this {
-		if (this.debug) {
-			console.log(`🧹 Disposing ${this.name} worklet`);
-		}
-
 		super.dispose();
 
 		// Clean up dummy gain

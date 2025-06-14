@@ -156,7 +156,7 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 				},
 			},
 		}));
-		console.log(`🎵 Added audio node ${nodeId} with type ${type}`);
+		// console.log(`🎵 Added audio node ${nodeId} with type ${type}`);
 	},
 
 	updateAudioNode: (nodeId, params) => {
@@ -180,7 +180,7 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 				},
 			};
 		});
-		console.log(`🎛️ Updated audio node ${nodeId}:`, params);
+		// console.log(`🎛️ Updated audio node ${nodeId}:`, params);
 	},
 
 	removeAudioNode: (nodeId) => {
@@ -231,7 +231,7 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 
 	// Audio Context Actions
 	initializeAudioContext: async () => {
-		console.log('🎧 Initializing audio context...');
+		// console.log('🎧 Initializing audio context...');
 		try {
 			if (Tone.getContext().state !== 'running') {
 				console.log(
@@ -243,7 +243,7 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 					'🎧 Audio context prepared (will start on user interaction)'
 				);
 			} else {
-				console.log('🎧 Audio context already running');
+				// console.log('🎧 Audio context already running');
 			}
 
 			set(() => ({
@@ -253,7 +253,7 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 				},
 			}));
 
-			console.log('🎧 Audio context initialization complete');
+			// console.log('🎧 Audio context initialization complete');
 		} catch (error) {
 			console.error('🚨 Failed to initialize audio context:', error);
 			set(() => ({

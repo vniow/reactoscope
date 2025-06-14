@@ -29,28 +29,13 @@ class ToneRegistry {
 	 */
 	register(key: string, instance: ToneInstanceType): void {
 		this.instances.set(key, instance);
-		console.log(
-			`🏗️ ToneRegistry: Registered ${key} (total: ${this.instances.size})`
-		);
-		console.log(
-			`🏗️ ToneRegistry: Current keys: [${Array.from(this.instances.keys()).join(', ')}]`
-		);
 	}
 
 	/**
 	 * Unregister a Tone.js instance
 	 */
 	unregister(key: string): void {
-		const removed = this.instances.delete(key);
-		if (removed) {
-			console.log(
-				`🗑️ ToneRegistry: Unregistered ${key} (total: ${this.instances.size})`
-			);
-		} else {
-			console.warn(
-				`⚠️ ToneRegistry: Attempted to unregister unknown key: ${key}`
-			);
-		}
+		this.instances.delete(key);
 	}
 
 	/**
@@ -79,25 +64,28 @@ class ToneRegistry {
 	 */
 	clear(): void {
 		this.instances.clear();
-		console.log('🧹 ToneRegistry: Cleared all instances');
 	}
 
 	/**
-	 * Debug function to print current state
+	 * Debug function to print current state (for development use)
 	 */
 	debug(): void {
-		console.log('🔍 ToneRegistry Debug:', {
-			size: this.instances.size,
-			keys: this.getKeys(),
-			instances: Array.from(this.instances.entries()).map(
-				([key, instance]) => ({
-					key,
-					type: instance.constructor.name,
-					disposed:
-						(instance as unknown as { _disposed?: boolean })._disposed || false,
-				})
-			),
-		});
+		// Debug information available in development mode
+		if (process.env.NODE_ENV === 'development') {
+			console.log('ToneRegistry Debug:', {
+				size: this.instances.size,
+				keys: this.getKeys(),
+				instances: Array.from(this.instances.entries()).map(
+					([key, instance]) => ({
+						key,
+						type: instance.constructor.name,
+						disposed:
+							(instance as unknown as { _disposed?: boolean })._disposed ||
+							false,
+					})
+				),
+			});
+		}
 	}
 }
 
