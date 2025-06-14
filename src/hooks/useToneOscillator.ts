@@ -1,7 +1,6 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import * as Tone from 'tone';
 import { useAppStore } from '../stores/appStore';
-import { toneRegistry } from '../utils/toneRegistry';
 import type { OscillatorParams } from '../stores/slices/audioSlice';
 
 export interface ToneOscillatorControls {
@@ -19,58 +18,66 @@ export interface ToneOscillatorControls {
 
 /**
  * Custom hook for managing a Tone.js Oscillator
- * Handles lifecycle, parameter updates, and state synchronization
+ * Handles lifecycle, parameter updates, and state synchronization using Zustand as single source of truth
  */
 export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
-	const oscillatorRef = useRef<Tone.Oscillator | null>(null);
-	const isStartedRef = useRef(false);
+	// Store actions for managing both UI state and Tone.js instances
+	const {
+		audioNodes,
+		addAudioNode,
+		updateAudioNode,
+		setAudioNodeInstance,
+		removeAudioNodeInstance,
+		getAudioNodeInstance,
+		initializeAudioContext,
+	} = useAppStore();
 
 	// Get audio node data from store
-	const audioNode = useAppStore((state) => state.audioNodes[nodeId]);
-	const { updateAudioNode, addAudioNode, initializeAudioContext } =
-		useAppStore();
+	const audioNode = audioNodes[nodeId];
 
-	// Initialize default parameters if node doesn't exist
-	const defaultParams: OscillatorParams = {
-		frequency: 440,
-		detune: 0,
-		waveType: 'sine',
-		isPlaying: false,
-		volume: 0, // 0 dB volume
-	};
+	// Default parameters
+	const defaultParams: OscillatorParams = useMemo(
+		() => ({
+			frequency: 440,
+			detune: 0,
+			waveType: 'sine',
+			isPlaying: false,
+			// volume: -12, // -12 dB volume (reasonable default)
+		}),
+		[]
+	);
 
 	const params = (audioNode?.params as OscillatorParams) || defaultParams;
 
 	// Initialize audio node in store if it doesn't exist
 	useEffect(() => {
 		if (!audioNode) {
-			addAudioNode(nodeId, 'oscillator', {
-				frequency: 440,
-				detune: 0,
-				waveType: 'sine',
-				isPlaying: false,
-				volume: 0, // 0 dB volume
-			});
+			addAudioNode(nodeId, 'oscillator', defaultParams);
 		}
-	}, [nodeId, audioNode, addAudioNode]);
+	}, [nodeId, audioNode, addAudioNode, defaultParams]);
 
-	// Create and configure oscillator
+	// Create oscillator instance and manage lifecycle
 	useEffect(() => {
 		const createOscillator = async () => {
 			try {
-				// Ensure audio context is started
+				// Ensure audio context is initialized
 				await initializeAudioContext();
 
-				// Create new oscillator WITHOUT auto-connecting to destination
-				oscillatorRef.current = new Tone.Oscillator({
-					frequency: params.frequency,
-					detune: params.detune,
-					type: params.waveType,
-					volume: params.volume,
-				}); // Removed .toDestination() so destination node can control connections
+				// Only create if no instance exists
+				const existingInstance = getAudioNodeInstance(nodeId);
+				if (!existingInstance) {
+					const newOscillator = new Tone.Oscillator({
+						frequency: params.frequency,
+						detune: params.detune,
+						type: params.waveType,
+						volume: params.volume,
+					}); // Not auto-connected to destination
 
-				// Register oscillator in centralized registry
-				toneRegistry.register(`oscillator-${nodeId}`, oscillatorRef.current);
+					console.log(`🎵 Created oscillator for node ${nodeId}`);
+
+					// Store instance in Zustand
+					setAudioNodeInstance(nodeId, newOscillator);
+				}
 			} catch (error) {
 				console.error(`Failed to create oscillator for node ${nodeId}:`, error);
 			}
@@ -78,106 +85,119 @@ export const useToneOscillator = (nodeId: string): ToneOscillatorControls => {
 
 		createOscillator();
 
-		// Cleanup on unmount
+		// Cleanup on unmount only
 		return () => {
-			if (oscillatorRef.current) {
+			const currentOscillator = getAudioNodeInstance(nodeId) as Tone.Oscillator;
+			if (currentOscillator) {
 				try {
-					if (isStartedRef.current) {
-						oscillatorRef.current.stop();
+					if (currentOscillator.state === 'started') {
+						currentOscillator.stop();
 					}
-
-					// Remove from centralized registry
-					toneRegistry.unregister(`oscillator-${nodeId}`);
-
-					oscillatorRef.current.dispose();
+					currentOscillator.dispose();
 				} catch (error) {
 					console.error(
 						`Error disposing oscillator for node ${nodeId}:`,
 						error
 					);
 				}
+				removeAudioNodeInstance(nodeId);
 			}
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [nodeId, initializeAudioContext]); // Re-create only when nodeId changes
+	}, [
+		nodeId,
+		setAudioNodeInstance,
+		removeAudioNodeInstance,
+		initializeAudioContext,
+		getAudioNodeInstance,
+		params.frequency,
+		params.detune,
+		params.waveType,
+		params.volume,
+	]);
 
-	// Update oscillator parameters when store params change
+	// Update oscillator parameters when they change
 	useEffect(() => {
-		if (!oscillatorRef.current) return;
+		const currentOscillator = getAudioNodeInstance(nodeId) as Tone.Oscillator;
+		if (!currentOscillator) return;
 
 		try {
-			const osc = oscillatorRef.current;
 			const now = Tone.now();
-
-			// Update frequency
-			osc.frequency.setValueAtTime(params.frequency, now);
-
-			// Update detune
-			osc.detune.setValueAtTime(params.detune, now);
-
-			// Update wave type
-			osc.type = params.waveType;
-
-			// Update volume
-			osc.volume.setValueAtTime(params.volume, now);
+			currentOscillator.frequency.setValueAtTime(params.frequency, now);
+			currentOscillator.detune.setValueAtTime(params.detune, now);
+			currentOscillator.type = params.waveType;
+			currentOscillator.volume.setValueAtTime(params.volume, now);
 		} catch (error) {
-			console.error(`Error updating oscillator ${nodeId}:`, error);
+			console.error(
+				`Error updating oscillator parameters for node ${nodeId}:`,
+				error
+			);
 		}
-	}, [nodeId, params]);
+	}, [params, nodeId, getAudioNodeInstance]);
 
 	// Control functions
 	const start = useCallback(async () => {
-		if (!oscillatorRef.current || isStartedRef.current) return;
+		const currentOscillator = getAudioNodeInstance(nodeId) as Tone.Oscillator;
+		if (!currentOscillator) return;
 
 		try {
 			// Ensure audio context is started before playing
-			// Force start the audio context on user interaction
 			if (Tone.getContext().state !== 'running') {
 				await Tone.start();
 			}
 
-			await initializeAudioContext();
-
-			// // TEMPORARY TEST: Connect directly to destination to verify audio works
-			// oscillatorRef.current.connect(Tone.getDestination());
-			// console.log(
-			// 	`🔌 TEMP: Connected oscillator ${nodeId} directly to destination for testing`
-			// );
-
-			oscillatorRef.current.start();
-			isStartedRef.current = true;
-			updateAudioNode(nodeId, { isPlaying: true });
+			if (currentOscillator.state !== 'started') {
+				currentOscillator.start();
+				updateAudioNode(nodeId, { isPlaying: true });
+				console.log(`▶️ Started oscillator for node ${nodeId}`);
+			}
 		} catch (error) {
-			console.error(`Error starting oscillator ${nodeId}:`, error);
+			console.error(`Error starting oscillator for node ${nodeId}:`, error);
 		}
-	}, [nodeId, updateAudioNode, initializeAudioContext]);
+	}, [nodeId, updateAudioNode, getAudioNodeInstance]);
 
 	const stop = useCallback(() => {
-		if (!oscillatorRef.current || !isStartedRef.current) return;
+		const currentOscillator = getAudioNodeInstance(nodeId) as Tone.Oscillator;
+		if (!currentOscillator) return;
 
 		try {
-			oscillatorRef.current.stop();
-			isStartedRef.current = false;
-			updateAudioNode(nodeId, { isPlaying: false });
-			// Create a new oscillator for next play
-			setTimeout(() => {
-				if (oscillatorRef.current) {
-					oscillatorRef.current.dispose();
-					oscillatorRef.current = new Tone.Oscillator({
-						frequency: params.frequency,
-						detune: params.detune,
-						type: params.waveType,
-						volume: params.volume,
-					}); // Removed .toDestination() so destination node can control connections
+			if (currentOscillator.state === 'started') {
+				currentOscillator.stop();
+				updateAudioNode(nodeId, { isPlaying: false });
 
-					// Register new oscillator in centralized registry
-					toneRegistry.register(`oscillator-${nodeId}`, oscillatorRef.current);
-				}
-			}, 100);
+				// Tone.js oscillators can only be started once, so we need a new one for next play
+				// But we should do this immediately, not in a timeout
+				currentOscillator.dispose();
+
+				// Create new oscillator for next play
+				const newOscillator = new Tone.Oscillator({
+					frequency: params.frequency,
+					detune: params.detune,
+					type: params.waveType,
+					volume: params.volume,
+				});
+
+				// Store the new instance
+				setAudioNodeInstance(nodeId, newOscillator);
+
+				console.log(`🛑 Stopped and recreated oscillator for node ${nodeId}`);
+
+				// Small delay to ensure the new instance is stored, then trigger reconnection
+				setTimeout(() => {
+					// The useToneConnections hook should automatically handle reconnection
+					// since it will detect the new instance when it next runs
+					console.log(`🔄 Oscillator ${nodeId} ready for reconnection`);
+				}, 10);
+			}
 		} catch (error) {
-			console.error(`Error stopping oscillator ${nodeId}:`, error);
+			console.error(`Error stopping oscillator for node ${nodeId}:`, error);
 		}
-	}, [nodeId, updateAudioNode, params]);
+	}, [
+		nodeId,
+		updateAudioNode,
+		params,
+		setAudioNodeInstance,
+		getAudioNodeInstance,
+	]);
 
 	const updateFrequency = useCallback(
 		(frequency: number) => {

@@ -52,6 +52,9 @@ export const useAudioNodes = () => {
 			addAudioNode: state.addAudioNode,
 			updateAudioNode: state.updateAudioNode,
 			removeAudioNode: state.removeAudioNode,
+			setAudioNodeInstance: state.setAudioNodeInstance,
+			removeAudioNodeInstance: state.removeAudioNodeInstance,
+			getAudioNodeInstance: state.getAudioNodeInstance,
 		}))
 	);
 };
@@ -62,6 +65,9 @@ export const useAudioConnections = () => {
 			audioConnections: state.audioConnections,
 			connectAudioNodes: state.connectAudioNodes,
 			disconnectAudioNodes: state.disconnectAudioNodes,
+			updateConnectionStatus: state.updateConnectionStatus,
+			establishAllConnections: state.establishAllConnections,
+			syncWithReactFlowEdges: state.syncWithReactFlowEdges,
 		}))
 	);
 };

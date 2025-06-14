@@ -5,11 +5,10 @@
  * within the Reactoscope ecosystem, handling lifecycle, parameters, and store integration.
  */
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import * as Tone from 'tone';
 import { NoiseWorkletNode } from '../lib/worklets';
 import { useAppStore } from '../stores/appStore';
-import { toneRegistry } from '../utils/toneRegistry';
 import type { NoiseWorkletParams } from '../stores/slices/audioSlice';
 
 export interface NoiseWorkletControls {
@@ -32,8 +31,13 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 
 	// Get audio node data from store
 	const audioNode = useAppStore((state) => state.audioNodes[nodeId]);
-	const { updateAudioNode, addAudioNode, initializeAudioContext } =
-		useAppStore();
+	const {
+		updateAudioNode,
+		addAudioNode,
+		initializeAudioContext,
+		setAudioNodeInstance,
+		removeAudioNodeInstance,
+	} = useAppStore();
 
 	// Initialize default parameters if node doesn't exist
 	const defaultParams: NoiseWorkletParams = {
@@ -64,13 +68,13 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 				workletRef.current = new NoiseWorkletNode({
 					debug: true,
 					volume: 0.5, // Will be synced later
-				});
-
-				// Wait for worklet to be ready
+				}); // Wait for worklet to be ready
 				await workletRef.current.ready;
 
-				// Register worklet in centralized registry
-				toneRegistry.register(`noise-worklet-${nodeId}`, workletRef.current);
+				console.log(`🔊 Created noise worklet for node ${nodeId}`);
+
+				// Store worklet instance in Zustand
+				setAudioNodeInstance(nodeId, workletRef.current);
 			} catch (error) {
 				console.error(
 					`Failed to create noise worklet for node ${nodeId}:`,
@@ -89,7 +93,7 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 						workletRef.current.stop();
 					}
 					workletRef.current.dispose();
-					toneRegistry.unregister(`noise-worklet-${nodeId}`);
+					removeAudioNodeInstance(nodeId);
 				} catch (error) {
 					console.error(
 						`Error cleaning up noise worklet for node ${nodeId}:`,
@@ -99,7 +103,12 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 				workletRef.current = null;
 			}
 		};
-	}, [nodeId, initializeAudioContext]);
+	}, [
+		nodeId,
+		initializeAudioContext,
+		setAudioNodeInstance,
+		removeAudioNodeInstance,
+	]);
 
 	// Sync parameters with worklet
 	useEffect(() => {

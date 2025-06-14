@@ -2,12 +2,16 @@ import { useEffect, useCallback } from 'react';
 import * as Tone from 'tone';
 import { useEdges } from '@xyflow/react';
 import { useAudioNodes } from './useAppStore';
-import { toneRegistry } from '../utils/toneRegistry';
 import type { Edge } from '@xyflow/react';
 
 /**
  * Custom hook for managing Tone.js destination connections
- * Handles connecting audio nodes to the master output via React Flow edges
+ *
+ * TYPE-AGNOSTIC APPROACH:
+ * - Works with ANY node type that has Tone.js instances
+ * - No need to update this hook when adding new node types
+ * - Automatically handles both single and multi-instance nodes
+ * - Scales efficiently as the application grows
  */
 export function useToneDestination(nodeId: string) {
 	const { audioNodes } = useAudioNodes();
@@ -33,30 +37,60 @@ export function useToneDestination(nodeId: string) {
 					(node) => node.id === edge.source
 				);
 
-				if (
-					sourceNode &&
-					(sourceNode.type === 'oscillator' ||
-						sourceNode.type === 'gain' ||
-						sourceNode.type === 'analyser' ||
-						sourceNode.type === 'visualizer')
-				) {
-					connectionsNeeded++;
+				// Type-agnostic approach: any node with an instance can connect
+				if (sourceNode) {
+					const audioNodeData = audioNodes[sourceNode.id];
 
-					// Get the Tone.js instance from the centralized registry
-					const sourceKey = `${sourceNode.type}-${sourceNode.id}`;
+					// Handle multi-instance nodes (e.g., analysers with X/Y channels)
+					if (audioNodeData?.instances) {
+						// Connect all instances in the instances object
+						Object.entries(audioNodeData.instances).forEach(
+							([key, instance]) => {
+								if (instance) {
+									connectionsNeeded++;
+									try {
+										instance.connect(Tone.getDestination());
+										connectionsSuccessful++;
+										console.log(
+											`✅ Connected ${sourceNode.type}[${key}] ${sourceNode.id} to destination`
+										);
+									} catch (error) {
+										console.error(
+											`Failed to connect ${sourceNode.type}[${key}] to destination:`,
+											error
+										);
+									}
+								}
+							}
+						);
+					}
+					// Handle single-instance nodes
+					else if (audioNodeData?.instance) {
+						const sourceInstance = audioNodeData.instance;
+						connectionsNeeded++;
 
-					console.log(`🎧 Looking for source instance: ${sourceKey}`);
+						console.log(
+							`🔍 Destination: Trying to connect ${sourceNode.type} node ${sourceNode.id}:`,
+							{
+								hasInstance: !!sourceInstance,
+								instanceType: sourceInstance?.constructor?.name,
+							}
+						);
 
-					const sourceInstance = toneRegistry.get(sourceKey);
-
-					if (sourceInstance) {
 						try {
 							// Connect to Tone's master destination
 							sourceInstance.connect(Tone.getDestination());
 							connectionsSuccessful++;
+							console.log(
+								`✅ Connected ${sourceNode.type} ${sourceNode.id} to destination`
+							);
 						} catch (error) {
 							console.error('Failed to connect to destination:', error);
 						}
+					} else {
+						console.warn(
+							`⚠️ No instance found for ${sourceNode.type} node ${sourceNode.id}`
+						);
 					}
 				}
 			});
@@ -76,21 +110,42 @@ export function useToneDestination(nodeId: string) {
 						(node) => node.id === edge.source
 					);
 
-					if (
-						sourceNode &&
-						(sourceNode.type === 'oscillator' ||
-							sourceNode.type === 'gain' ||
-							sourceNode.type === 'analyser' ||
-							sourceNode.type === 'visualizer')
-					) {
-						const sourceKey = `${sourceNode.type}-${sourceNode.id}`;
-						const sourceInstance = toneRegistry.get(sourceKey);
+					// Type-agnostic cleanup: any node with instances can be disconnected
+					if (sourceNode) {
+						const audioNodeData = audioNodes[sourceNode.id];
 
-						if (sourceInstance) {
+						// Handle multi-instance nodes
+						if (audioNodeData?.instances) {
+							Object.entries(audioNodeData.instances).forEach(
+								([key, instance]) => {
+									if (instance) {
+										try {
+											instance.disconnect(Tone.getDestination());
+											console.log(
+												`🔌 Disconnected ${sourceNode.type}[${key}] ${sourceNode.id} from destination`
+											);
+										} catch (error) {
+											console.error(
+												`Failed to disconnect ${sourceNode.type}[${key}] from destination:`,
+												error
+											);
+										}
+									}
+								}
+							);
+						}
+						// Handle single-instance nodes
+						else if (audioNodeData?.instance) {
 							try {
-								sourceInstance.disconnect(Tone.getDestination());
+								audioNodeData.instance.disconnect(Tone.getDestination());
+								console.log(
+									`🔌 Disconnected ${sourceNode.type} ${sourceNode.id} from destination`
+								);
 							} catch (error) {
-								console.error('Failed to disconnect from destination:', error);
+								console.error(
+									`Failed to disconnect ${sourceNode.type} from destination:`,
+									error
+								);
 							}
 						}
 					}
@@ -102,42 +157,10 @@ export function useToneDestination(nodeId: string) {
 
 	useEffect(() => {
 		// Start connection attempts
-		attemptConnections();
+		const cleanup = attemptConnections();
 
-		// Return cleanup function for successful connections
-		return () => {
-			const incomingEdges = edges.filter(
-				(edge: Edge) => edge.target === nodeId
-			);
-
-			incomingEdges.forEach((edge: Edge) => {
-				const sourceNode = Object.values(audioNodes).find(
-					(node) => node.id === edge.source
-				);
-
-				if (
-					sourceNode &&
-					(sourceNode.type === 'oscillator' ||
-						sourceNode.type === 'gain' ||
-						sourceNode.type === 'analyser' ||
-						sourceNode.type === 'visualizer')
-				) {
-					const sourceKey = `${sourceNode.type}-${sourceNode.id}`;
-					const sourceInstance = toneRegistry.get(sourceKey);
-
-					if (sourceInstance) {
-						try {
-							sourceInstance.disconnect(Tone.getDestination());
-							console.log(
-								`🔌 Disconnected ${sourceNode.type} ${sourceNode.id} from destination (edge ${edge.id} removed)`
-							);
-						} catch (error) {
-							console.error('❌ Failed to disconnect from destination:', error);
-						}
-					}
-				}
-			});
-		};
+		// Return cleanup function
+		return cleanup;
 	}, [nodeId, edges, audioNodes, attemptConnections]);
 
 	return {

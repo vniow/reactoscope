@@ -71,9 +71,21 @@ export default function App() {
 				<button
 					onClick={() => {
 						console.log('=== DEBUG BUTTON CLICKED ===');
-						(
-							window as unknown as { debugToneRegistry?: () => void }
-						).debugToneRegistry?.();
+						// Debug Zustand audio state instead of toneRegistry
+						const audioNodes = useAppStore.getState().audioNodes;
+						console.log('Audio Nodes State:', audioNodes);
+						console.log('Audio Nodes Count:', Object.keys(audioNodes).length);
+						Object.entries(audioNodes).forEach(([nodeId, node]) => {
+							console.log(`Node ${nodeId}:`, {
+								type: node.type,
+								hasInstance: !!node.instance,
+								hasInstances: !!node.instances,
+								instancesCount: node.instances
+									? Object.keys(node.instances).length
+									: 0,
+								params: node.params,
+							});
+						});
 					}}
 					style={{
 						position: 'fixed',
@@ -88,7 +100,7 @@ export default function App() {
 						cursor: 'pointer',
 					}}
 				>
-					Debug Registry
+					Debug Audio State
 				</button>
 				<ReactFlow
 					nodes={nodes}

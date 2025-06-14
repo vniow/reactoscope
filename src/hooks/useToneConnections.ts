@@ -1,16 +1,25 @@
 import { useEffect } from 'react';
 import { useEdges } from '@xyflow/react';
 import { useAudioNodes } from './useAppStore';
-import { toneRegistry } from '../utils/toneRegistry';
 import type { Edge } from '@xyflow/react';
 
 /**
  * Custom hook for managing Tone.js audio connections between nodes
- * Handles connecting source audio nodes to target audio nodes via React Flow edges
+ *
+ * TYPE-AGNOSTIC APPROACH:
+ * - Works with ANY node type that has Tone.js instances
+ * - No need to update this hook when adding new node types
+ * - Automatically handles both single and multi-instance nodes
+ * - Uses handle-based routing for multi-instance targets (e.g., 'audio-in-X' -> channel 'X')
+ * - Scales efficiently as the application grows
  */
 export function useToneConnections(nodeId: string) {
 	const { audioNodes } = useAudioNodes();
 	const edges = useEdges();
+
+	// Get the source node's instance to trigger re-connection when it changes
+	const sourceNodeData = audioNodes[nodeId];
+	const sourceInstance = sourceNodeData?.instance;
 
 	useEffect(() => {
 		// Find all React Flow edges where this node is the source
@@ -18,52 +27,61 @@ export function useToneConnections(nodeId: string) {
 
 		// For each outgoing edge, connect this source to the target
 		outgoingEdges.forEach((edge: Edge) => {
-			const sourceNode = Object.values(audioNodes).find(
-				(node) => node.id === edge.source
-			);
-			const targetNode = Object.values(audioNodes).find(
-				(node) => node.id === edge.target
-			);
-
-			// console.log(
-			// 	`🔌 Processing edge ${edge.id}: ${edge.source} → ${edge.target}`,
-			// 	{ sourceNode, targetNode }
-			// );
+			const sourceNode = audioNodes[edge.source];
+			const targetNode = audioNodes[edge.target];
 
 			if (sourceNode && targetNode) {
-				// Get the source instance
-				const sourceKey = `${sourceNode.type}-${sourceNode.id}`;
+				// Get source instance (type-agnostic)
+				const sourceInstance = sourceNode.instance;
 
-				// Handle different target types
-				let targetKey: string;
-				if (
-					targetNode.type === 'analyser' ||
-					targetNode.type === 'visualizer'
-				) {
-					// For analyser/visualizer nodes, determine which channel based on target handle
-					const channel = edge.targetHandle === 'audio-in-X' ? 'X' : 'Y';
-					targetKey = `${targetNode.type}-${targetNode.id}-${channel}`;
+				console.log(
+					`🔗 Connection: ${sourceNode.type} (${sourceNode.id}) -> ${targetNode.type} (${targetNode.id})`,
+					{
+						hasSourceInstance: !!sourceInstance,
+						sourceInstanceType: sourceInstance?.constructor?.name,
+					}
+				);
+
+				// Get target instance (type-agnostic with multi-instance support)
+				let targetInstance;
+
+				// Check if target has multiple instances and we have a specific handle
+				if (targetNode.instances && edge.targetHandle) {
+					// Extract channel from handle (e.g., 'audio-in-X' -> 'X')
+					const channelMatch = edge.targetHandle.match(/audio-in-(.+)$/);
+					const channel = channelMatch ? channelMatch[1] : 'default';
+					targetInstance = targetNode.instances[channel];
+
+					console.log(`🎯 Target (${channel} channel):`, {
+						hasTargetInstance: !!targetInstance,
+						targetInstanceType: targetInstance?.constructor?.name,
+					});
 				} else {
-					targetKey = `${targetNode.type}-${targetNode.id}`;
+					// Single instance target
+					targetInstance = targetNode.instance;
+					console.log(`🎯 Target:`, {
+						hasTargetInstance: !!targetInstance,
+						targetInstanceType: targetInstance?.constructor?.name,
+					});
 				}
-
-				const sourceInstance = toneRegistry.get(sourceKey);
-				const targetInstance = toneRegistry.get(targetKey);
 
 				if (sourceInstance && targetInstance) {
 					try {
 						sourceInstance.connect(targetInstance);
-
-						// Update analyser/visualizer connection status
-						if (
-							targetNode.type === 'analyser' ||
-							targetNode.type === 'visualizer'
-						) {
-							// This will be handled by the analyser/visualizer hook's useEffect for connection monitoring
-						}
+						console.log(
+							`✅ Connected ${sourceNode.type} -> ${targetNode.type}`
+						);
 					} catch (error) {
 						console.error('Failed to connect audio nodes:', error);
 					}
+				} else {
+					console.warn(`⚠️ Connection failed: missing instances`, {
+						hasSource: !!sourceInstance,
+						hasTarget: !!targetInstance,
+						sourceType: sourceNode.type,
+						targetType: targetNode.type,
+						targetHandle: edge.targetHandle,
+					});
 				}
 			}
 		});
@@ -71,35 +89,31 @@ export function useToneConnections(nodeId: string) {
 		// Cleanup function to disconnect when edges change
 		return () => {
 			outgoingEdges.forEach((edge: Edge) => {
-				const sourceNode = Object.values(audioNodes).find(
-					(node) => node.id === edge.source
-				);
-				const targetNode = Object.values(audioNodes).find(
-					(node) => node.id === edge.target
-				);
+				const sourceNode = audioNodes[edge.source];
+				const targetNode = audioNodes[edge.target];
 
 				if (sourceNode && targetNode) {
-					const sourceKey = `${sourceNode.type}-${sourceNode.id}`;
+					// Get source instance (type-agnostic)
+					const sourceInstance = sourceNode.instance;
 
-					// Handle different target types
-					let targetKey: string;
-					if (
-						targetNode.type === 'analyser' ||
-						targetNode.type === 'visualizer'
-					) {
-						// For analyser/visualizer nodes, determine which channel based on target handle
-						const channel = edge.targetHandle === 'audio-in-X' ? 'X' : 'Y';
-						targetKey = `${targetNode.type}-${targetNode.id}-${channel}`;
+					// Get target instance (type-agnostic with multi-instance support)
+					let targetInstance;
+
+					if (targetNode.instances && edge.targetHandle) {
+						// Extract channel from handle
+						const channelMatch = edge.targetHandle.match(/audio-in-(.+)$/);
+						const channel = channelMatch ? channelMatch[1] : 'default';
+						targetInstance = targetNode.instances[channel];
 					} else {
-						targetKey = `${targetNode.type}-${targetNode.id}`;
+						targetInstance = targetNode.instance;
 					}
-
-					const sourceInstance = toneRegistry.get(sourceKey);
-					const targetInstance = toneRegistry.get(targetKey);
 
 					if (sourceInstance && targetInstance) {
 						try {
 							sourceInstance.disconnect(targetInstance);
+							console.log(
+								`🔌 Disconnected ${sourceNode.type} -> ${targetNode.type}`
+							);
 						} catch (error) {
 							console.error('Failed to disconnect audio nodes:', error);
 						}
@@ -107,7 +121,7 @@ export function useToneConnections(nodeId: string) {
 				}
 			});
 		};
-	}, [nodeId, audioNodes, edges]);
+	}, [nodeId, audioNodes, edges, sourceInstance]);
 
 	return {
 		getOutgoingConnections: () => {

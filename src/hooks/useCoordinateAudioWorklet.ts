@@ -6,7 +6,6 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { CoordinateAudioWorkletNode } from '../lib/worklets';
 import { useAppStore } from '../stores/appStore';
-import { toneRegistry } from '../utils/toneRegistry';
 import type { CoordinateAudioWorkletParams } from '../stores/slices/audioSlice';
 
 interface CoordinateAudioWorkletOptions {
@@ -36,8 +35,13 @@ export function useCoordinateAudioWorklet({
 
 	// Get audio node data from store
 	const audioNode = useAppStore((state) => state.audioNodes[nodeId]);
-	const { updateAudioNode, addAudioNode, initializeAudioContext } =
-		useAppStore();
+	const {
+		updateAudioNode,
+		addAudioNode,
+		initializeAudioContext,
+		setAudioNodeInstance,
+		removeAudioNodeInstance,
+	} = useAppStore();
 
 	// Initialize default parameters if node doesn't exist
 	const defaultParams: CoordinateAudioWorkletParams = {
@@ -84,10 +88,8 @@ export function useCoordinateAudioWorklet({
 				// Wait for worklet to be ready
 				await workletRef.current.ready;
 
-				toneRegistry.register(
-					`coordinate-audio-worklet-${nodeId}`,
-					workletRef.current
-				);
+				// Store worklet instance in Zustand
+				setAudioNodeInstance(nodeId, workletRef.current);
 
 				// Update store to indicate readiness
 				updateAudioNode(nodeId, {
@@ -114,7 +116,7 @@ export function useCoordinateAudioWorklet({
 			if (workletRef.current) {
 				try {
 					workletRef.current.dispose();
-					toneRegistry.unregister(`coordinate-audio-worklet-${nodeId}`);
+					removeAudioNodeInstance(nodeId);
 				} catch (error) {
 					console.error(
 						`Error cleaning up coordinate audio worklet for ${nodeId}:`,
@@ -125,7 +127,14 @@ export function useCoordinateAudioWorklet({
 			}
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [nodeId, axis, gain, frequency]);
+	}, [
+		nodeId,
+		axis,
+		gain,
+		frequency,
+		setAudioNodeInstance,
+		removeAudioNodeInstance,
+	]);
 
 	// Update coordinate buffer
 	const updateBuffer = useCallback(

@@ -1,8 +1,7 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import * as Tone from 'tone';
 import { useEdges } from '@xyflow/react';
 import { useAppStore } from '../stores/appStore';
-import { toneRegistry } from '../utils/toneRegistry';
 import type { AnalyserParams } from '../stores/slices/audioSlice';
 import type { Edge } from '@xyflow/react';
 
@@ -16,60 +15,76 @@ export interface ToneAnalyserControls {
 
 /**
  * Custom hook for managing Tone.js Analyser nodes for X/Y axis audio visualization
- * Handles lifecycle, parameter updates, and state synchronization
+ * Handles lifecycle, parameter updates, and state synchronization using Zustand as single source of truth
  */
 export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
-	const analyserXRef = useRef<Tone.Analyser | null>(null);
-	const analyserYRef = useRef<Tone.Analyser | null>(null);
+	// Store actions for managing both UI state and Tone.js instances
+	const {
+		audioNodes,
+		addAudioNode,
+		updateAudioNode,
+		setAudioNodeInstance,
+		removeAudioNodeInstance,
+		getAudioNodeInstance,
+		initializeAudioContext,
+	} = useAppStore();
 
 	// Get audio node data from store
-	const audioNode = useAppStore((state) => state.audioNodes[nodeId]);
-	const { updateAudioNode, addAudioNode, initializeAudioContext } =
-		useAppStore();
+	const audioNode = audioNodes[nodeId];
 
-	// Initialize default parameters if node doesn't exist
-	const defaultParams: AnalyserParams = {
-		size: 1024,
-		smoothing: 0.8,
-		isConnected: false,
-	};
+	// Default parameters
+	const defaultParams: AnalyserParams = useMemo(
+		() => ({
+			size: 1024,
+			smoothing: 0.8,
+			isConnected: false,
+		}),
+		[]
+	);
 
 	const params = (audioNode?.params as AnalyserParams) || defaultParams;
+
+	// Get analyser instances using multi-instance pattern (X/Y channels)
+	const analyserX = getAudioNodeInstance(nodeId, 'X') as
+		| Tone.Analyser
+		| undefined;
+	const analyserY = getAudioNodeInstance(nodeId, 'Y') as
+		| Tone.Analyser
+		| undefined;
 
 	// Initialize audio node in store if it doesn't exist
 	useEffect(() => {
 		if (!audioNode) {
-			addAudioNode(nodeId, 'visualizer', {
-				size: 1024,
-				smoothing: 0.8,
-				isConnected: false,
-			});
+			addAudioNode(nodeId, 'visualizer', defaultParams);
 		}
-	}, [nodeId, audioNode, addAudioNode]);
+	}, [nodeId, audioNode, addAudioNode, defaultParams]);
 
-	// Create and configure analyser nodes
+	// Create analyser instances and manage lifecycle
 	useEffect(() => {
 		const createAnalysers = async () => {
 			try {
-				// Ensure audio context is started
+				// Ensure audio context is initialized
 				await initializeAudioContext();
 
-				// Create X and Y analysers independently
-				analyserXRef.current = new Tone.Analyser({
-					type: 'waveform',
-					size: params.size,
-					smoothing: params.smoothing,
-				});
+				// Create X analyser if it doesn't exist
+				if (!analyserX) {
+					const newAnalyserX = new Tone.Analyser({
+						type: 'waveform',
+						size: params.size,
+						smoothing: params.smoothing,
+					});
+					setAudioNodeInstance(nodeId, newAnalyserX, 'X');
+				}
 
-				analyserYRef.current = new Tone.Analyser({
-					type: 'waveform',
-					size: params.size,
-					smoothing: params.smoothing,
-				});
-
-				// Register in ToneRegistry for audio routing
-				toneRegistry.register(`visualizer-${nodeId}-X`, analyserXRef.current);
-				toneRegistry.register(`visualizer-${nodeId}-Y`, analyserYRef.current);
+				// Create Y analyser if it doesn't exist
+				if (!analyserY) {
+					const newAnalyserY = new Tone.Analyser({
+						type: 'waveform',
+						size: params.size,
+						smoothing: params.smoothing,
+					});
+					setAudioNodeInstance(nodeId, newAnalyserY, 'Y');
+				}
 			} catch (error) {
 				console.error(`Failed to create analyser nodes for ${nodeId}:`, error);
 			}
@@ -79,36 +94,47 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 
 		// Cleanup on unmount
 		return () => {
-			if (analyserXRef.current) {
+			if (analyserX) {
 				try {
-					// Remove from ToneRegistry
-					toneRegistry.unregister(`visualizer-${nodeId}-X`);
-					toneRegistry.unregister(`visualizer-${nodeId}-Y`);
-
-					analyserXRef.current.dispose();
-					analyserYRef.current?.dispose();
+					analyserX.dispose();
 				} catch (error) {
-					console.error(`Error disposing analyser nodes for ${nodeId}:`, error);
+					console.error(`Error disposing analyser X for ${nodeId}:`, error);
 				}
+				removeAudioNodeInstance(nodeId, 'X');
+			}
+			if (analyserY) {
+				try {
+					analyserY.dispose();
+				} catch (error) {
+					console.error(`Error disposing analyser Y for ${nodeId}:`, error);
+				}
+				removeAudioNodeInstance(nodeId, 'Y');
 			}
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [nodeId, initializeAudioContext]); // Re-create only when nodeId changes
+	}, [
+		nodeId,
+		analyserX,
+		analyserY,
+		params,
+		setAudioNodeInstance,
+		removeAudioNodeInstance,
+		initializeAudioContext,
+	]);
 
-	// Update analyser parameters when store params change
+	// Update analyser parameters when they change
 	useEffect(() => {
-		if (!analyserXRef.current || !analyserYRef.current) return;
+		if (!analyserX || !analyserY) return;
 
 		try {
 			// Update size and smoothing for both analysers
-			analyserXRef.current.size = params.size;
-			analyserXRef.current.smoothing = params.smoothing;
-			analyserYRef.current.size = params.size;
-			analyserYRef.current.smoothing = params.smoothing;
+			analyserX.size = params.size;
+			analyserX.smoothing = params.smoothing;
+			analyserY.size = params.size;
+			analyserY.smoothing = params.smoothing;
 		} catch (error) {
 			console.error(`Error updating analyser parameters for ${nodeId}:`, error);
 		}
-	}, [params, nodeId]);
+	}, [analyserX, analyserY, params, nodeId]);
 
 	// Control functions
 	const updateSize = useCallback(
@@ -126,12 +152,12 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 	);
 
 	const getAnalyserX = useCallback(() => {
-		return analyserXRef.current;
-	}, []);
+		return analyserX || null;
+	}, [analyserX]);
 
 	const getAnalyserY = useCallback(() => {
-		return analyserYRef.current;
-	}, []);
+		return analyserY || null;
+	}, [analyserY]);
 
 	// Monitor incoming connections to update isConnected status
 	const edges = useEdges();

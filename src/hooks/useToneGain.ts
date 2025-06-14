@@ -1,7 +1,6 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import * as Tone from 'tone';
 import { useAppStore } from '../stores/appStore';
-import { toneRegistry } from '../utils/toneRegistry';
 import type { GainParams } from '../stores/slices/audioSlice';
 
 export interface ToneGainControls {
@@ -12,48 +11,58 @@ export interface ToneGainControls {
 
 /**
  * Custom hook for managing a Tone.js Gain node
- * Handles lifecycle, parameter updates, and state synchronization
+ * Handles lifecycle, parameter updates, and state synchronization using Zustand as single source of truth
  */
 export const useToneGain = (nodeId: string): ToneGainControls => {
-	const gainRef = useRef<Tone.Gain | null>(null);
+	// Store actions for managing both UI state and Tone.js instances
+	const {
+		audioNodes,
+		addAudioNode,
+		updateAudioNode,
+		setAudioNodeInstance,
+		removeAudioNodeInstance,
+		getAudioNodeInstance,
+		initializeAudioContext,
+	} = useAppStore();
 
 	// Get audio node data from store
-	const audioNode = useAppStore((state) => state.audioNodes[nodeId]);
-	const { updateAudioNode, addAudioNode, initializeAudioContext } =
-		useAppStore();
+	const audioNode = audioNodes[nodeId];
 
-	// Initialize default parameters if node doesn't exist
-	const defaultParams: GainParams = {
-		gain: 1.0, // Unity gain
-		mute: false,
-	};
+	// Default parameters
+	const defaultParams: GainParams = useMemo(
+		() => ({
+			gain: 1.0, // Unity gain
+			mute: false,
+		}),
+		[]
+	);
 
 	const params = (audioNode?.params as GainParams) || defaultParams;
+	const gainNode = getAudioNodeInstance(nodeId) as Tone.Gain | undefined;
 
 	// Initialize audio node in store if it doesn't exist
 	useEffect(() => {
 		if (!audioNode) {
-			addAudioNode(nodeId, 'gain', {
-				gain: 1.0,
-				mute: false,
-			});
+			addAudioNode(nodeId, 'gain', defaultParams);
 		}
-	}, [nodeId, audioNode, addAudioNode]);
+	}, [nodeId, audioNode, addAudioNode, defaultParams]);
 
-	// Create and configure gain node
+	// Create gain node instance and manage lifecycle
 	useEffect(() => {
 		const createGain = async () => {
 			try {
-				// Ensure audio context is started
+				// Ensure audio context is initialized
 				await initializeAudioContext();
 
-				// Create new gain node
-				gainRef.current = new Tone.Gain({
-					gain: params.mute ? 0 : params.gain,
-				});
+				// Create new gain node if it doesn't exist
+				if (!gainNode) {
+					const newGainNode = new Tone.Gain({
+						gain: params.mute ? 0 : params.gain,
+					});
 
-				// Register gain node in centralized registry
-				toneRegistry.register(`gain-${nodeId}`, gainRef.current);
+					// Store instance in Zustand
+					setAudioNodeInstance(nodeId, newGainNode);
+				}
 			} catch (error) {
 				console.error(`Failed to create gain node for ${nodeId}:`, error);
 			}
@@ -63,35 +72,37 @@ export const useToneGain = (nodeId: string): ToneGainControls => {
 
 		// Cleanup on unmount
 		return () => {
-			if (gainRef.current) {
+			if (gainNode) {
 				try {
-					// Remove from centralized registry
-					toneRegistry.unregister(`gain-${nodeId}`);
-
-					gainRef.current.dispose();
+					gainNode.dispose();
 				} catch (error) {
 					console.error(`Error disposing gain node for ${nodeId}:`, error);
 				}
+				removeAudioNodeInstance(nodeId);
 			}
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [nodeId, initializeAudioContext]); // Re-create only when nodeId changes
+	}, [
+		nodeId,
+		gainNode,
+		params,
+		setAudioNodeInstance,
+		removeAudioNodeInstance,
+		initializeAudioContext,
+	]);
 
-	// Update gain parameters when store params change
+	// Update gain parameters when they change
 	useEffect(() => {
-		if (!gainRef.current) return;
+		if (!gainNode) return;
 
 		try {
-			const gain = gainRef.current;
 			const now = Tone.now();
-
 			// Update gain value (apply mute if needed)
 			const targetGain = params.mute ? 0 : params.gain;
-			gain.gain.setValueAtTime(targetGain, now);
+			gainNode.gain.setValueAtTime(targetGain, now);
 		} catch (error) {
 			console.error(`Error updating gain parameters for ${nodeId}:`, error);
 		}
-	}, [params, nodeId]);
+	}, [gainNode, params, nodeId]);
 
 	// Control functions
 	const updateGain = useCallback(
@@ -107,9 +118,6 @@ export const useToneGain = (nodeId: string): ToneGainControls => {
 		},
 		[nodeId, updateAudioNode]
 	);
-
-	// Edge monitoring for incoming audio connections - REMOVED BROKEN LOGIC
-	// Connection management is now handled by useToneConnections hook
 
 	return {
 		updateGain,
