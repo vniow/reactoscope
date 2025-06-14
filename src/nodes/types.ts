@@ -34,6 +34,8 @@ export type DelayWorkletNode = Node<
 	'delay-worklet'
 >;
 
+export type ThreeFiberDemoNode = Node<BaseNodeData, 'threejs-demo'>;
+
 export type AppNode =
 	| BuiltInNode
 	| DebugNode
@@ -43,4 +45,5 @@ export type AppNode =
 	| DestinationNode
 	| NoiseWorkletNode
 	| BitCrusherWorkletNode
-	| DelayWorkletNode;
+	| DelayWorkletNode
+	| ThreeFiberDemoNode;

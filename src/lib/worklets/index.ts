@@ -39,6 +39,8 @@ export type {
 // Worklet nodes
 export { NoiseWorkletNode } from './nodes/NoiseWorkletNode';
 export type { NoiseWorkletNodeOptions } from './nodes/NoiseWorkletNode';
+export { CoordinateAudioWorkletNode } from './nodes/CoordinateAudioWorkletNode';
+export type { CoordinateAudioWorkletNodeOptions } from './nodes/CoordinateAudioWorkletNode';
 
 // Worklet processors (these are imported for side effects to register them)
 export { workletName as noiseProcessorName } from './processors/NoiseProcessor.worklet';

@@ -123,6 +123,17 @@ export const UTILITY_NODES: NodeTypeOption[] = [
 			label: 'Master Out',
 		},
 	},
+	{
+		type: 'threejs-demo',
+		name: 'Three.js Demo',
+		description: 'Simple rotating 3D box outline',
+		emoji: '🎲',
+		variant: 'component', // Visual component -> component category
+		category: 'utility',
+		defaultData: {
+			label: 'Three.js Demo',
+		},
+	},
 ];
 
 // Combined node types for easy access

@@ -38,6 +38,14 @@ export interface DelayWorkletParams {
 	wet: number;
 }
 
+export interface CoordinateAudioWorkletParams {
+	axis: 'x' | 'y';
+	gain: number;
+	frequency: number;
+	bufferSize: number;
+	isReady: boolean;
+}
+
 export interface AudioNodeData {
 	id: string;
 	type:
@@ -48,14 +56,16 @@ export interface AudioNodeData {
 		| 'destination'
 		| 'noise-worklet'
 		| 'bitcrusher-worklet'
-		| 'delay-worklet';
+		| 'delay-worklet'
+		| 'coordinate-audio-worklet';
 	params:
 		| OscillatorParams
 		| GainParams
 		| AnalyserParams
 		| NoiseWorkletParams
 		| BitCrusherWorkletParams
-		| DelayWorkletParams;
+		| DelayWorkletParams
+		| CoordinateAudioWorkletParams;
 }
 
 export interface AudioConnection {
@@ -85,7 +95,8 @@ export interface AudioSlice {
 			| 'visualizer'
 			| 'noise-worklet'
 			| 'bitcrusher-worklet'
-			| 'delay-worklet',
+			| 'delay-worklet'
+			| 'coordinate-audio-worklet',
 		params:
 			| OscillatorParams
 			| GainParams
@@ -93,6 +104,7 @@ export interface AudioSlice {
 			| NoiseWorkletParams
 			| BitCrusherWorkletParams
 			| DelayWorkletParams
+			| CoordinateAudioWorkletParams
 	) => void;
 	updateAudioNode: (
 		nodeId: string,
@@ -103,6 +115,7 @@ export interface AudioSlice {
 			| NoiseWorkletParams
 			| BitCrusherWorkletParams
 			| DelayWorkletParams
+			| CoordinateAudioWorkletParams
 		>
 	) => void;
 	removeAudioNode: (nodeId: string) => void;

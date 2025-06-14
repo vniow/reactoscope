@@ -6,6 +6,7 @@ import { GainNode } from './GainNode';
 import { VisualizerNode } from './VisualizerNode';
 import { DestinationNode } from './DestinationNode';
 import { NoiseWorkletNode } from './NoiseWorkletNode';
+import { ThreeFiberDemoNode } from './ThreeFiberDemoNode';
 
 import { GRID_UNIT } from '../config/grid';
 
@@ -57,6 +58,17 @@ export const initialNodes: AppNode[] = [
 			label: 'Speakers',
 		},
 	} as AppNode,
+
+	// Three.js Demo Node - Testing worklet integration
+	{
+		id: 'threejs-1',
+		type: 'threejs-demo',
+		position: { x: GRID_UNIT * 2, y: GRID_UNIT * 12 },
+		data: {
+			label: '3D Audio Box',
+			variant: 'component',
+		},
+	} as AppNode,
 ];
 
 export const nodeTypes = {
@@ -66,5 +78,6 @@ export const nodeTypes = {
 	visualizer: VisualizerNode,
 	destination: DestinationNode,
 	'noise-worklet': NoiseWorkletNode,
+	'threejs-demo': ThreeFiberDemoNode,
 	// Add any of your custom nodes here!
 } as NodeTypes;
