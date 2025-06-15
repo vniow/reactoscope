@@ -1,29 +1,49 @@
-import { type NodeProps, useReactFlow, Position } from '@xyflow/react';
-import { useCallback } from 'react';
+import {
+	useReactFlow,
+	type NodeProps,
+	Position,
+	type Edge,
+} from '@xyflow/react'; // Import Position as a value
+import { useCallback, type ChangeEvent } from 'react'; // Use type-only import for ChangeEvent
 
 import { BaseNode } from '../shared/components/BaseNode';
 import { GridNodeHandle } from '../shared/components/GridNodeHandle';
-import { GridSlider } from '../shared/components/ui/GridSlider';
+import {
+	GridSlider,
+	type SliderProps,
+} from '../shared/components/ui/GridSlider'; // Assuming SliderProps is exported
 import { GridButton } from '../shared/components/ui/GridButton';
+import type { ComponentSize } from '../shared/types/ui'; // Corrected import path
 import { useToneConnections } from '../audio/hooks/useToneConnections';
-import { useToneOscillator } from '../audio/hooks/useToneOscillator';
-import type { OscillatorNode } from './types';
+import {
+	useToneOscillator,
+	type ToneOscillatorControls,
+	type WaveType,
+} from '../audio/hooks/useToneOscillator';
+import type { OscillatorNode as OscillatorNodeType } from './types';
 
-// Wave type options for the oscillator (used for type checking)
-type WaveType = 'sine' | 'square' | 'triangle' | 'sawtooth';
-
-// Grid configuration for oscillator node
-const OSCILLATOR_NODE_CONFIG = {
+// Grid configuration for the oscillator node
+const OSCILLATOR_NODE_GRID_CONFIG = {
 	gridWidth: 5,
-	gridHeight: 8.5, // Optimized for SVG wave buttons and controls
+	gridHeight: 8.5,
 } as const;
 
+/**
+ * React component for an Oscillator audio node in the React Flow graph.
+ * It provides UI controls for managing the oscillator's parameters like
+ * frequency, detune, wave type, and playback state.
+ *
+ * @param id - The unique identifier of the node.
+ * @param data - Data associated with the node, including label and variant.
+ * @param selected - Boolean indicating if the node is currently selected.
+ * @returns A JSX element representing the oscillator node.
+ */
 export function OscillatorNode({
 	id,
 	data,
 	selected = false,
-}: NodeProps<OscillatorNode>) {
-	// Tone.js oscillator hook
+}: NodeProps<OscillatorNodeType>): JSX.Element {
+	// Hook for managing the underlying Tone.js oscillator instance
 	const {
 		start,
 		stop,
@@ -32,269 +52,217 @@ export function OscillatorNode({
 		updateWaveType,
 		isPlaying,
 		params,
-	} = useToneOscillator(id);
+	}: ToneOscillatorControls = useToneOscillator(id);
 
-	// Handle audio connections to other nodes
+	// Hook to manage audio connections for this node
 	useToneConnections(id);
 
-	// Get the React Flow instance for node management
-	const reactFlowInstance = useReactFlow();
+	// Correctly type the React Flow instance.
+	const reactFlowInstance = useReactFlow<
+		OscillatorNodeType,
+		Edge<Record<string, unknown>>
+	>();
 
-	const removeNode = useCallback(() => {
-		reactFlowInstance.setNodes((nodes) =>
-			nodes.filter((node) => node.id !== id)
+	/**
+	 * Removes the current node and its associated edges from the graph.
+	 */
+	const handleRemoveNode = useCallback((): void => {
+		reactFlowInstance.setNodes((nds) => nds.filter((node) => node.id !== id));
+		reactFlowInstance.setEdges((eds) =>
+			eds.filter((edge) => edge.source !== id && edge.target !== id)
 		);
-		reactFlowInstance.setEdges((edges) =>
-			edges.filter((edge) => edge.source !== id && edge.target !== id)
-		);
+		console.log(`🗑️ Removed oscillator node ${id} and its edges.`);
 	}, [reactFlowInstance, id]);
 
-	// Create wave type selector buttons
+	/**
+	 * Handles clicks on wave type selector buttons.
+	 * @param type - The selected wave type.
+	 */
 	const handleWaveTypeClick = useCallback(
-		(type: WaveType) => {
+		(type: WaveType): void => {
 			updateWaveType(type);
 		},
 		[updateWaveType]
 	);
 
-	// Format frequency value with Hz
-	const formatFrequency = useCallback((value: number) => `${value} Hz`, []);
-
-	// Format detune value with cents
-	const formatDetune = useCallback(
-		(value: number) => `${value > 0 ? '+' : ''}${value} cents`,
+	/**
+	 * Formats the frequency value for display.
+	 * @param value - The frequency value in Hz.
+	 * @returns Formatted string (e.g., "440 Hz").
+	 */
+	const formatFrequencyDisplay = useCallback(
+		(value: number): string => `${value} Hz`,
 		[]
 	);
 
-	const handlePlayStopClick = useCallback(() => {
-		console.log(`🎵 Play button clicked for ${id}, isPlaying: ${isPlaying}`);
+	/**
+	 * Formats the detune value for display.
+	 * @param value - The detune value in cents.
+	 * @returns Formatted string (e.g., "+50 cents").
+	 */
+	const formatDetuneDisplay = useCallback(
+		(value: number): string => `${value > 0 ? '+' : ''}${value} cents`,
+		[]
+	);
+
+	/**
+	 * Toggles the playback state of the oscillator.
+	 */
+	const handlePlayStopClick = useCallback((): void => {
 		if (isPlaying) {
 			stop();
 		} else {
 			start();
 		}
-	}, [isPlaying, start, stop, id]);
+	}, [isPlaying, start, stop]);
 
+	/**
+	 * Handles changes from the frequency slider.
+	 * @param event - The input change event.
+	 */
 	const handleFrequencyChange = useCallback(
-		(event: React.ChangeEvent<HTMLInputElement>) => {
+		(event: ChangeEvent<HTMLInputElement>): void => {
 			updateFrequency(Number(event.target.value));
 		},
 		[updateFrequency]
 	);
 
+	/**
+	 * Handles changes from the detune slider.
+	 * @param event - The input change event.
+	 */
 	const handleDetuneChange = useCallback(
-		(event: React.ChangeEvent<HTMLInputElement>) => {
+		(event: ChangeEvent<HTMLInputElement>): void => {
 			updateDetune(Number(event.target.value));
 		},
 		[updateDetune]
 	);
 
+	// Slider properties for frequency control
+	const frequencySliderProps: SliderProps = {
+		value: params.frequency,
+		min: 80,
+		max: 2000,
+		step: 1,
+		formatValue: formatFrequencyDisplay,
+		onChange: handleFrequencyChange,
+		'aria-label': 'Frequency control',
+	};
+
+	// Slider properties for detune control
+	const detuneSliderProps: SliderProps = {
+		value: params.detune,
+		min: -1200,
+		max: 1200,
+		step: 1,
+		formatValue: formatDetuneDisplay,
+		onChange: handleDetuneChange,
+		'aria-label': 'Detune control',
+	};
+
 	return (
 		<BaseNode
-			variant={data.variant || 'source'} // Use variant from data, default to source
-			gridWidth={OSCILLATOR_NODE_CONFIG.gridWidth}
-			gridHeight={OSCILLATOR_NODE_CONFIG.gridHeight}
-			nodeId={id as string}
+			variant={data.variant || 'source'}
+			gridWidth={OSCILLATOR_NODE_GRID_CONFIG.gridWidth}
+			gridHeight={OSCILLATOR_NODE_GRID_CONFIG.gridHeight}
+			nodeId={id}
 			selected={selected}
-			onDelete={removeNode}
+			onDelete={handleRemoveNode}
 			title={data.label || 'Oscillator'}
 		>
-			<div className='relative w-full h-full overflow-visible'>
-				{/* Wave Type Selection - 2x2 Grid Layout with SVG Icons */}
-				{/* 
-					Enhanced wave type buttons with:
-					- SVG icons for better scaling and visual quality
-					- Optimized grid positioning to fill available space
-					- Accessible labels for screen readers
-					- Variant-aware styling (highlighted when selected)
-					- vectorEffect="non-scaling-stroke" for consistent line width
-				*/}
-				{/* Top Row */}
-				<GridButton
-					gridWidth={2.25}
-					gridHeight={1.3}
-					gridX={0.375}
-					gridY={1.0}
-					buttonLabel=''
-					variant={params.waveType === 'sine' ? 'node-variant' : 'secondary'}
-					size='sm'
-					layout='fill'
-					onClick={() => handleWaveTypeClick('sine')}
-					aria-label='Select sine wave'
-					icon={
-						<svg
-							viewBox='0 0 48 24'
-							className='w-full h-full'
-							style={{ minWidth: '24px', minHeight: '12px' }}
-						>
-							<path
-								d='M4 12 Q12 4 20 12 T36 12'
-								stroke='currentColor'
-								strokeWidth='2.5'
-								fill='none'
-								strokeLinecap='round'
-								strokeLinejoin='round'
-								vectorEffect='non-scaling-stroke'
-							/>
-						</svg>
-					}
-				/>
-
-				<GridButton
-					gridWidth={2.25}
-					gridHeight={1.3}
-					gridX={2.625}
-					gridY={1.0}
-					buttonLabel=''
-					variant={params.waveType === 'square' ? 'node-variant' : 'secondary'}
-					size='sm'
-					layout='fill'
-					onClick={() => handleWaveTypeClick('square')}
-					aria-label='Select square wave'
-					icon={
-						<svg
-							viewBox='0 0 48 24'
-							className='w-full h-full'
-							style={{ minWidth: '24px', minHeight: '12px' }}
-						>
-							<path
-								d='M4 18 L4 6 L12 6 L12 18 L20 18 L20 6 L28 6 L28 18 L36 18'
-								stroke='currentColor'
-								strokeWidth='2.5'
-								fill='none'
-								strokeLinecap='round'
-								strokeLinejoin='round'
-								vectorEffect='non-scaling-stroke'
-							/>
-						</svg>
-					}
-				/>
-
-				{/* Bottom Row */}
-				<GridButton
-					gridWidth={2.25}
-					gridHeight={1.3}
-					gridX={0.375}
-					gridY={2.3}
-					buttonLabel=''
-					variant={
-						params.waveType === 'triangle' ? 'node-variant' : 'secondary'
-					}
-					size='sm'
-					layout='fill'
-					onClick={() => handleWaveTypeClick('triangle')}
-					aria-label='Select triangle wave'
-					icon={
-						<svg
-							viewBox='0 0 48 24'
-							className='w-full h-full'
-							style={{ minWidth: '24px', minHeight: '12px' }}
-						>
-							<path
-								d='M4 18 L12 6 L20 18 L28 6 L36 18'
-								stroke='currentColor'
-								strokeWidth='2.5'
-								fill='none'
-								strokeLinecap='round'
-								strokeLinejoin='round'
-								vectorEffect='non-scaling-stroke'
-							/>
-						</svg>
-					}
-				/>
-
-				<GridButton
-					gridWidth={2.25}
-					gridHeight={1.3}
-					gridX={2.625}
-					gridY={2.3}
-					buttonLabel=''
-					variant={
-						params.waveType === 'sawtooth' ? 'node-variant' : 'secondary'
-					}
-					size='sm'
-					layout='fill'
-					onClick={() => handleWaveTypeClick('sawtooth')}
-					aria-label='Select sawtooth wave'
-					icon={
-						<svg
-							viewBox='0 0 48 24'
-							className='w-full h-full'
-							style={{ minWidth: '24px', minHeight: '12px' }}
-						>
-							<path
-								d='M4 18 L12 6 L12 18 L20 6 L20 18 L28 6 L28 18 L36 6'
-								stroke='currentColor'
-								strokeWidth='2.5'
-								fill='none'
-								strokeLinecap='round'
-								strokeLinejoin='round'
-								vectorEffect='non-scaling-stroke'
-							/>
-						</svg>
-					}
-				/>
+			<div className='relative flex flex-col w-full h-full p-1 space-y-1 md:p-2 md:space-y-2 overflow-visible'>
+				{/* Wave Type Selection Buttons */}
+				<div className='grid grid-cols-2 gap-1'>
+					{(['sine', 'square', 'triangle', 'sawtooth'] as const).map((wave) => (
+						<GridButton
+							key={wave}
+							gridWidth={1}
+							gridHeight={1}
+							buttonLabel=''
+							variant={params.waveType === wave ? 'node-variant' : 'secondary'}
+							layout='minimal'
+							size='sm'
+							buttonClassName='p-0.5'
+							onClick={() => handleWaveTypeClick(wave)}
+							aria-label={`Select ${wave} wave`}
+							icon={
+								<svg
+									viewBox='0 0 24 24'
+									className='w-5 h-5'
+								>
+									<path
+										d={
+											wave === 'sine'
+												? 'M2 12 Q6 4 10 12 T18 12'
+												: wave === 'square'
+													? 'M2 18 L2 6 L6 6 L6 18 L10 18 L10 6 L14 6 L14 18 L18 18'
+													: wave === 'triangle'
+														? 'M2 18 L7 6 L12 18 L17 6 L22 18'
+														: 'M2 18 L6 6 L6 18 L10 6 L10 18 L14 6 L14 18 L18 6'
+										}
+										stroke='currentColor'
+										strokeWidth='2'
+										fill='none'
+										strokeLinecap='round'
+										strokeLinejoin='round'
+										vectorEffect='non-scaling-stroke'
+									/>
+								</svg>
+							}
+						/>
+					))}
+				</div>
 
 				{/* Frequency Slider */}
 				<GridSlider
-					gridWidth={4.5}
+					gridWidth={OSCILLATOR_NODE_GRID_CONFIG.gridWidth - 0.5}
 					gridHeight={2}
 					gridX={0.25}
-					gridY={3.5}
+					gridY={3}
 					label='Frequency'
 					layout='stacked'
-					textSize='lg'
-					sliderProps={{
-						value: params.frequency,
-						min: 80,
-						max: 2000,
-						step: 1,
-						formatValue: formatFrequency,
-						onChange: handleFrequencyChange,
-					}}
+					textSize='sm'
+					sliderProps={frequencySliderProps}
 				/>
 
 				{/* Detune Slider */}
 				<GridSlider
-					gridWidth={4.5}
+					gridWidth={OSCILLATOR_NODE_GRID_CONFIG.gridWidth - 0.5}
 					gridHeight={2}
 					gridX={0.25}
-					gridY={5.5}
+					gridY={5}
 					label='Detune'
 					layout='stacked'
-					textSize='lg'
-					sliderProps={{
-						value: params.detune,
-						min: -1200,
-						max: 1200,
-						step: 1,
-						formatValue: formatDetune,
-						onChange: handleDetuneChange,
-					}}
+					textSize='sm'
+					sliderProps={detuneSliderProps}
 				/>
 
 				{/* Play/Stop Button */}
 				<GridButton
-					gridWidth={3}
-					gridHeight={1}
-					gridX={1}
-					gridY={7.5}
+					gridWidth={OSCILLATOR_NODE_GRID_CONFIG.gridWidth - 1} // Adjusted width
+					gridHeight={1.25} // Adjusted height
+					gridX={0.5} // Centered
+					gridY={7}
 					buttonLabel={isPlaying ? 'Stop' : 'Play'}
-					variant={isPlaying ? 'danger' : 'success'}
-					icon={isPlaying ? '⏹️' : '▶️'}
+					variant={isPlaying ? 'danger' : 'success'} // Use valid variants
+					size={'default' as ComponentSize} // Use a valid ComponentSize, e.g., 'md' or 'default' if defined
 					layout='fill'
 					onClick={handlePlayStopClick}
+					aria-label={isPlaying ? 'Stop oscillator' : 'Play oscillator'}
 				/>
 			</div>
 
+			{/* Output Handle */}
 			<GridNodeHandle
-				id={`${id}-source`}
 				type='source'
-				mode='static'
 				position={Position.Right}
-				gridX={0}
-				gridY={1} // Center vertically
-				size='md'
+				id={`${id}-audio-out`} // Consistent handle ID
+				// Positioning of handle is now relative to BaseNode content area via gridX/gridY on BaseNode itself
+				// Or, if BaseNode has specific slots or props for handle positioning, use those.
+				// For simplicity, assuming BaseNode handles centering or specific placement.
+				// Defaulting to a common pattern if BaseNode doesn't auto-place based on type.
+				gridX={0} // Example: Place near the right edge
+				gridY={OSCILLATOR_NODE_GRID_CONFIG.gridHeight / 2} // Example: Vertically centered
 			/>
 		</BaseNode>
 	);

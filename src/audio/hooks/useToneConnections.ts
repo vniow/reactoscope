@@ -30,6 +30,11 @@ export function useToneConnections(nodeId: string) {
 			const sourceNode = audioNodes[edge.source];
 			const targetNode = audioNodes[edge.target];
 
+			// Log the handles from the edge object itself
+			console.log(
+				`🔍 Edge details: sourceHandle=${edge.sourceHandle}, targetHandle=${edge.targetHandle}`
+			);
+
 			if (sourceNode && targetNode) {
 				// Get source instance (type-agnostic)
 				const sourceInstance = sourceNode.instance;
