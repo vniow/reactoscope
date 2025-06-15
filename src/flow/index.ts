@@ -9,4 +9,4 @@ export * from './hooks/useNodeOperations';
 export * from './hooks/useViewportSize';
 export * from './stores/flowSlice';
 export * from './stores/uiSlice';
-export * from './flow/edges';
+export * from './edges';

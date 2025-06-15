@@ -678,9 +678,9 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 			edges.map((edge) =>
 				createConnectionId(
 					edge.source,
-					edge.sourceHandle || 'audio-out', // Default source handle
+					edge.sourceHandle || `${edge.source}-audio-out`, // Default source handle with node ID prefix
 					edge.target,
-					edge.targetHandle || 'audio-in' // Default target handle
+					edge.targetHandle || `${edge.target}-audio-in` // Default target handle with node ID prefix
 				)
 			)
 		);
@@ -696,16 +696,16 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 		edges.forEach((edge) => {
 			const edgeId = createConnectionId(
 				edge.source,
-				edge.sourceHandle || 'audio-out',
+				edge.sourceHandle || `${edge.source}-audio-out`,
 				edge.target,
-				edge.targetHandle || 'audio-in'
+				edge.targetHandle || `${edge.target}-audio-in`
 			);
 			if (!currentConnectionIds.has(edgeId)) {
 				connectAudioNodes(
 					edge.source,
 					edge.target,
-					edge.sourceHandle || 'audio-out',
-					edge.targetHandle || 'audio-in'
+					edge.sourceHandle || `${edge.source}-audio-out`,
+					edge.targetHandle || `${edge.target}-audio-in`
 				);
 			}
 		});
