@@ -1,4 +1,5 @@
 import { type NodeProps, useReactFlow, Position } from '@xyflow/react';
+import { useCallback } from 'react';
 
 import { BaseNode } from '../shared/components/BaseNode';
 import { GridNodeHandle } from '../shared/components/GridNodeHandle';
@@ -39,26 +40,54 @@ export function OscillatorNode({
 	// Get the React Flow instance for node management
 	const reactFlowInstance = useReactFlow();
 
-	const removeNode = () => {
+	const removeNode = useCallback(() => {
 		reactFlowInstance.setNodes((nodes) =>
 			nodes.filter((node) => node.id !== id)
 		);
 		reactFlowInstance.setEdges((edges) =>
 			edges.filter((edge) => edge.source !== id && edge.target !== id)
 		);
-	};
+	}, [reactFlowInstance, id]);
 
 	// Create wave type selector buttons
-	const handleWaveTypeClick = (type: WaveType) => {
-		updateWaveType(type);
-	};
+	const handleWaveTypeClick = useCallback(
+		(type: WaveType) => {
+			updateWaveType(type);
+		},
+		[updateWaveType]
+	);
 
 	// Format frequency value with Hz
-	const formatFrequency = (value: number) => `${value} Hz`;
+	const formatFrequency = useCallback((value: number) => `${value} Hz`, []);
 
 	// Format detune value with cents
-	const formatDetune = (value: number) =>
-		`${value > 0 ? '+' : ''}${value} cents`;
+	const formatDetune = useCallback(
+		(value: number) => `${value > 0 ? '+' : ''}${value} cents`,
+		[]
+	);
+
+	const handlePlayStopClick = useCallback(() => {
+		console.log(`🎵 Play button clicked for ${id}, isPlaying: ${isPlaying}`);
+		if (isPlaying) {
+			stop();
+		} else {
+			start();
+		}
+	}, [isPlaying, start, stop, id]);
+
+	const handleFrequencyChange = useCallback(
+		(event: React.ChangeEvent<HTMLInputElement>) => {
+			updateFrequency(Number(event.target.value));
+		},
+		[updateFrequency]
+	);
+
+	const handleDetuneChange = useCallback(
+		(event: React.ChangeEvent<HTMLInputElement>) => {
+			updateDetune(Number(event.target.value));
+		},
+		[updateDetune]
+	);
 
 	return (
 		<BaseNode
@@ -221,7 +250,7 @@ export function OscillatorNode({
 						max: 2000,
 						step: 1,
 						formatValue: formatFrequency,
-						onChange: (e) => updateFrequency(Number(e.target.value)),
+						onChange: handleFrequencyChange,
 					}}
 				/>
 
@@ -240,7 +269,7 @@ export function OscillatorNode({
 						max: 1200,
 						step: 1,
 						formatValue: formatDetune,
-						onChange: (e) => updateDetune(Number(e.target.value)),
+						onChange: handleDetuneChange,
 					}}
 				/>
 
@@ -254,16 +283,7 @@ export function OscillatorNode({
 					variant={isPlaying ? 'danger' : 'success'}
 					icon={isPlaying ? '⏹️' : '▶️'}
 					layout='fill'
-					onClick={() => {
-						console.log(
-							`🎵 Play button clicked for ${id}, isPlaying: ${isPlaying}`
-						);
-						if (isPlaying) {
-							stop();
-						} else {
-							start();
-						}
-					}}
+					onClick={handlePlayStopClick}
 				/>
 			</div>
 
