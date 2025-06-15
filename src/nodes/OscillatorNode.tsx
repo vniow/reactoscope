@@ -1,11 +1,11 @@
 import { type NodeProps, useReactFlow, Position } from '@xyflow/react';
 
-import { BaseNode } from '../components/BaseNode';
-import { GridNodeHandle } from '../components/GridNodeHandle';
-import { GridSlider } from '../components/ui/GridSlider';
-import { GridButton } from '../components/ui/GridButton';
-import { useToneConnections } from '../hooks/useToneConnections';
-import { useToneOscillator } from '../hooks/useToneOscillator';
+import { BaseNode } from '../shared/components/BaseNode';
+import { GridNodeHandle } from '../shared/components/GridNodeHandle';
+import { GridSlider } from '../shared/components/ui/GridSlider';
+import { GridButton } from '../shared/components/ui/GridButton';
+import { useToneConnections } from '../audio/hooks/useToneConnections';
+import { useToneOscillator } from '../audio/hooks/useToneOscillator';
 import type { OscillatorNode } from './types';
 
 // Wave type options for the oscillator (used for type checking)

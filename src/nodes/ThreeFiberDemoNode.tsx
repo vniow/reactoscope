@@ -5,13 +5,13 @@ import { type NodeProps, Position } from '@xyflow/react';
 import type { Mesh } from 'three';
 import { Vector3 } from 'three';
 
-import { BaseNode } from '../components/BaseNode';
-import { GridBlock } from '../components/GridBlock';
-import { GridNodeHandle } from '../components/GridNodeHandle';
-import { GridButton } from '../components/ui/GridButton';
-import { useNodeOperations } from '../hooks/useNodeOperations';
-import { useCoordinateAudioWorklet } from '../hooks/useCoordinateAudioWorklet';
-import { useToneConnections } from '../hooks/useToneConnections';
+import { BaseNode } from '../shared/components/BaseNode';
+import { GridBlock } from '../shared/components/GridBlock';
+import { GridNodeHandle } from '../shared/components/GridNodeHandle';
+import { GridButton } from '../shared/components/ui/GridButton';
+import { useNodeOperations } from '../flow/hooks/useNodeOperations';
+import { useCoordinateAudioWorklet } from '../audio/hooks/useCoordinateAudioWorklet';
+import { useToneConnections } from '../audio/hooks/useToneConnections';
 import type { ThreeFiberDemoNode } from './types';
 
 /**

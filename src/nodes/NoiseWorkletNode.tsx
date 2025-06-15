@@ -7,12 +7,12 @@
 
 import { type NodeProps, useReactFlow, Position } from '@xyflow/react';
 
-import { BaseNode } from '../components/BaseNode';
-import { GridNodeHandle } from '../components/GridNodeHandle';
-import { GridSlider } from '../components/ui/GridSlider';
-import { GridButton } from '../components/ui/GridButton';
-import { useToneConnections } from '../hooks/useToneConnections';
-import { useNoiseWorklet } from '../hooks/useNoiseWorklet';
+import { BaseNode } from '../shared/components/BaseNode';
+import { GridNodeHandle } from '../shared/components/GridNodeHandle';
+import { GridSlider } from '../shared/components/ui/GridSlider';
+import { GridButton } from '../shared/components/ui/GridButton';
+import { useToneConnections } from '../audio/hooks/useToneConnections';
+import { useNoiseWorklet } from '../audio/hooks/useNoiseWorklet';
 import type { NoiseWorkletNode } from './types';
 
 // Grid configuration for noise worklet node

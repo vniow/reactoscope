@@ -8,7 +8,7 @@ import { DestinationNode } from './DestinationNode';
 import { NoiseWorkletNode } from './NoiseWorkletNode';
 import { ThreeFiberDemoNode } from './ThreeFiberDemoNode';
 
-import { GRID_UNIT } from '../config/grid';
+import { GRID_UNIT } from '../shared/config/grid';
 
 import type { AppNode } from './types';
 

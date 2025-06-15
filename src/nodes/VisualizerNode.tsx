@@ -1,14 +1,14 @@
 import { type NodeProps, Position } from '@xyflow/react';
 
-import { BaseNode } from '../components/BaseNode';
-import { GridNodeHandle } from '../components/GridNodeHandle';
-import { GridBlock } from '../components/GridBlock';
-import { GridSlider } from '../components/ui/GridSlider';
-import { GridSelect } from '../components/ui/GridSelect';
-import { useToneAnalyser } from '../hooks/useToneAnalyser';
-import { useToneConnections } from '../hooks/useToneConnections';
-import { useNodeOperations } from '../hooks/useNodeOperations';
-import AudioVisualizer from '../components/AudioVisualizer';
+import { BaseNode } from '../shared/components/BaseNode';
+import { GridNodeHandle } from '../shared/components/GridNodeHandle';
+import { GridBlock } from '../shared/components/GridBlock';
+import { GridSlider } from '../shared/components/ui/GridSlider';
+import { GridSelect } from '../shared/components/ui/GridSelect';
+import { useToneAnalyser } from '../audio/hooks/useToneAnalyser';
+import { useToneConnections } from '../audio/hooks/useToneConnections';
+import { useNodeOperations } from '../flow/hooks/useNodeOperations';
+import AudioVisualizer from '../audio/AudioVisualizer';
 import type { VisualizerNode } from './types';
 
 /**

@@ -1,10 +1,10 @@
 import { type NodeProps, Position } from '@xyflow/react';
 
-import { BaseNode } from '../components/BaseNode';
-import { GridBlock } from '../components/GridBlock';
-import { GridNodeHandle } from '../components/GridNodeHandle';
-import { useToneDestination } from '../hooks/useToneDestination';
-import { useNodeOperations } from '../hooks/useNodeOperations';
+import { BaseNode } from '../shared/components/BaseNode';
+import { GridBlock } from '../shared/components/GridBlock';
+import { GridNodeHandle } from '../shared/components/GridNodeHandle';
+import { useToneDestination } from '../audio/hooks/useToneDestination';
+import { useNodeOperations } from '../flow/hooks/useNodeOperations';
 import type { DestinationNode } from './types';
 
 /**

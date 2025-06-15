@@ -1,16 +1,16 @@
 import { useState, useCallback } from 'react';
-import { BaseNode } from '../components/BaseNode';
-import { GridFileInput } from '../components/ui/GridFileInput';
-import { GridButton } from '../components/ui/GridButton';
-import { GridBlock } from '../components/GridBlock';
-import { createTypeValidator, createSizeValidator } from '../utils/fileUtils';
-import { useNodeOperations } from '../hooks/useNodeOperations';
+import { BaseNode } from '../shared/components/BaseNode';
+// import { GridFileInput } from '../shared/components/ui/GridFileInput';
+import { GridButton } from '../shared/components/ui/GridButton';
+import { GridBlock } from '../shared/components/GridBlock';
+// import { createTypeValidator, createSizeValidator } from '../shared/utils/fileUtils';
+import { useNodeOperations } from '../flow/hooks/useNodeOperations';
 import type { NodeProps } from '@xyflow/react';
 import type { FileLoaderNode as FileLoaderNodeType } from './types';
 
 export function FileLoaderNode({
 	id,
-	data,
+	// data,
 	selected,
 }: NodeProps<FileLoaderNodeType>) {
 	const { deleteNode } = useNodeOperations();
@@ -20,30 +20,30 @@ export function FileLoaderNode({
 	const [errors, setErrors] = useState<string[]>([]);
 
 	// Configuration from node data
-	const maxFileSize = (data?.maxFileSize as number) || 50 * 1024 * 1024; // 50MB default
-	const acceptedTypes = (data?.acceptedTypes as string) || 'audio/*,image/*';
+	// const maxFileSize = (data?.maxFileSize as number) || 50 * 1024 * 1024; // 50MB default
+	// const acceptedTypes = (data?.acceptedTypes as string) || 'audio/*,image/*';
 
 	// Handle file selection
-	const handleFileSelect = useCallback((files: File[]) => {
-		setSelectedFiles(files);
-		setErrors([]); // Clear previous errors
-		console.log(
-			'Files selected:',
-			files.map((f) => ({ name: f.name, size: f.size, type: f.type }))
-		);
-	}, []);
+	// const handleFileSelect = useCallback((files: File[]) => {
+	//	setSelectedFiles(files);
+	//	setErrors([]); // Clear previous errors
+	//	console.log(
+	//		'Files selected:',
+	//		files.map((f) => ({ name: f.name, size: f.size, type: f.type }))
+	//	);
+	// }, []);
 
 	// Handle file errors
-	const handleFileError = useCallback((fileErrors: string[]) => {
-		setErrors(fileErrors);
-		console.error('File validation errors:', fileErrors);
-	}, []);
+	// const handleFileError = useCallback((fileErrors: string[]) => {
+	//	setErrors(fileErrors);
+	//	console.error('File validation errors:', fileErrors);
+	// }, []);
 
 	// Handle file removal
-	const handleFileRemove = useCallback((fileToRemove: File) => {
-		setSelectedFiles((prev) => prev.filter((file) => file !== fileToRemove));
-		console.log('File removed:', fileToRemove.name);
-	}, []);
+	// const handleFileRemove = useCallback((fileToRemove: File) => {
+	//	setSelectedFiles((prev) => prev.filter((file) => file !== fileToRemove));
+	//	console.log('File removed:', fileToRemove.name);
+	// }, []);
 
 	// Handle clear files
 	const handleClearFiles = useCallback(() => {
@@ -61,34 +61,19 @@ export function FileLoaderNode({
 			gridWidth={4}
 			gridHeight={6}
 		>
-			{/* Main file input area */}
-			<GridFileInput
+			{/* Main file input area - TODO: Implement GridFileInput component */}
+			<GridBlock
 				gridWidth={4}
 				gridHeight={3}
 				gridX={0}
 				gridY={1}
-				label='Select Files'
-				layout='stacked'
-				showFileName={true}
-				showFileSize={true}
-				showPreview={true}
-				textSize='xs'
-				placeholder='Drop audio/image files here'
-				fileInputProps={{
-					accept: acceptedTypes,
-					multiple: true,
-					maxSize: maxFileSize,
-					onFileSelect: handleFileSelect,
-					onFileError: handleFileError,
-					onFileRemove: handleFileRemove,
-					currentFiles: selectedFiles,
-					validators: [
-						createTypeValidator(['audio/*', 'image/*']),
-						createSizeValidator(maxFileSize),
-					],
-					'aria-label': 'File loader input - accepts audio and image files',
-				}}
-			/>
+				className='p-2'
+			>
+				<div className='w-full h-full flex flex-col justify-center items-center text-xs text-gray-600 dark:text-gray-400'>
+					<div>📁 File Input</div>
+					<div>TODO: GridFileInput component</div>
+				</div>
+			</GridBlock>
 
 			{/* Action button */}
 			<GridButton
@@ -143,8 +128,7 @@ export function FileLoaderNode({
 
 					{/* Accepted formats info */}
 					<div className='text-xs opacity-70 mt-1'>
-						Accepts: Audio & Images (max {Math.round(maxFileSize / 1024 / 1024)}
-						MB)
+						Accepts: Audio & Images (max 50 MB)
 					</div>
 				</div>
 			</GridBlock>

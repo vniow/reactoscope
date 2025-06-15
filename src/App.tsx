@@ -10,14 +10,14 @@ import {
 import '@xyflow/react/dist/base.css';
 
 import { initialNodes, nodeTypes } from './nodes';
-import { initialEdges, edgeTypes } from './edges';
+import { initialEdges, edgeTypes } from './flow/edges';
 import { ThemeProvider } from './contexts/ThemeProvider';
-import { FlowControls } from './components/FlowControls';
-import { ThemedMiniMap } from './components/ThemedMiniMap';
+import { FlowControls } from './flow/components/FlowControls';
+import { ThemedMiniMap } from './flow/components/ThemedMiniMap';
 import { type AppNode } from './nodes/types';
-import { useAppStore } from './stores/appStore';
+import { useAppStore } from './shared/stores/appStore';
 
-import { GRID_UNIT } from './config/grid';
+import { GRID_UNIT } from './shared/config/grid';
 
 export default function App() {
 	// Use Zustand store for flow state management

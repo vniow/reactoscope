@@ -1,10 +1,10 @@
 import { Position, type NodeProps } from '@xyflow/react';
 
 import { type DebugNode } from './types';
-import { BaseNode } from '../components/BaseNode';
-import { GridBlock } from '../components/GridBlock';
-import { GridNodeHandle } from '../components/GridNodeHandle';
-import { useNodeOperations } from '../hooks/useNodeOperations';
+import { BaseNode } from '../shared/components/BaseNode';
+import { GridBlock } from '../shared/components/GridBlock';
+import { GridNodeHandle } from '../shared/components/GridNodeHandle';
+import { useNodeOperations } from '../flow/hooks/useNodeOperations';
 
 /**
  * Debug Node - Displays node position and connection information

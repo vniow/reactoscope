@@ -1,6 +1,6 @@
 import type { Node, BuiltInNode, Position } from '@xyflow/react';
-import type { AudioNodeData } from '../stores/slices/audioSlice';
-import type { ComponentVariant } from '../types/ui';
+import type { AudioNodeData } from '../audio/stores/audioSlice';
+import type { ComponentVariant } from '../shared/types/ui';
 
 export interface BaseNodeData extends Record<string, unknown> {
 	label?: string;
@@ -35,6 +35,7 @@ export type DelayWorkletNode = Node<
 >;
 
 export type ThreeFiberDemoNode = Node<BaseNodeData, 'threejs-demo'>;
+export type FileLoaderNode = Node<BaseNodeData, 'file-loader'>;
 
 export type AppNode =
 	| BuiltInNode
@@ -46,4 +47,5 @@ export type AppNode =
 	| NoiseWorkletNode
 	| BitCrusherWorkletNode
 	| DelayWorkletNode
-	| ThreeFiberDemoNode;
+	| ThreeFiberDemoNode
+	| FileLoaderNode;
