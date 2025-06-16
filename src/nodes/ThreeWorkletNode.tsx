@@ -2,13 +2,28 @@
  * ThreeWorkletNode - React Flow node component for coordinate-based stereo audio generator
  *
  * This component provides a user interface for controlling a coordinate-based stereo audio generator
- * that converts rotating triangle NDC coordinates into stereo audio output within the React Flow canvas.
+ * that converts rotating triangle NDC 	// Update coordinates when cube coordinates change
+	useEffect(() => {
+		if (cubeCoords.length > 0) {
+			smoothAndBufferCoordinates(cubeCoords);
+		}
+	}, [cubeCoords, smoothAndBufferCoordinates]);
+
+	// Handle coordinate updates from the cube tracker
+	const handleCoordinatesUpdate = useCallback((coords: Vector2[]) => {
+		setCubeCoords(coords);
+	}, []);
+
+	// Handle rotation updates from the cube
+	const handleRotationUpdate = useCallback((rotation: Vector3) => {
+		setCubeRotation(rotation);
+	}, []); stereo audio output within the React Flow canvas.
  * Features coordinate smoothing, buffering, and real-time visualization.
  */
 import { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import type { Mesh } from 'three';
-import { Vector3, Vector2 } from 'three';
+import { Vector3, Vector2, Euler } from 'three';
 
 import { GridBlock } from '../shared/components/GridBlock';
 import { useCallback } from 'react';
@@ -31,95 +46,83 @@ const THREE_WORKLET_NODE_CONFIG = {
 
 // Configuration for coordinate smoothing and buffering
 const COORDINATE_BUFFER_CONFIG = {
-	maxBufferSize: 512, // Maximum number of coordinate points to buffer
+	maxBufferSize: 4096, // Maximum number of coordinate points to buffer (increased from 512)
 	updateInterval: 16, // Update interval in milliseconds (roughly 60fps)
 	smoothingFactor: 0.1, // Interpolation factor for smoothing (0-1)
 } as const;
 
-// Triangle points array - defining vertices of a triangle
-const TRIANGLE_POINTS = [
-	new Vector3(0, 1, 0), // Top vertex
-	new Vector3(-1, -1, 0), // Bottom left vertex
-	new Vector3(1, -1, 0), // Bottom right vertex
+// Cube vertices for coordinate tracking (8 corners of a cube)
+const CUBE_POINTS = [
+	// Front face
+	new Vector3(-1, -1, 1), // Bottom-left-front
+	new Vector3(1, -1, 1), // Bottom-right-front
+	new Vector3(1, 1, 1), // Top-right-front
+	new Vector3(-1, 1, 1), // Top-left-front
+	// Back face
+	new Vector3(-1, -1, -1), // Bottom-left-back
+	new Vector3(1, -1, -1), // Bottom-right-back
+	new Vector3(1, 1, -1), // Top-right-back
+	new Vector3(-1, 1, -1), // Top-left-back
 ];
 
-// Simple triangle component drawn with lines and rotation
-function Triangle({
+// Rotating cube component with wireframe edges
+function RotatingCube({
 	onRotationUpdate,
 }: {
-	onRotationUpdate?: (rotation: number) => void;
+	onRotationUpdate?: (rotation: Vector3) => void;
 }) {
 	const meshRef = useRef<Mesh>(null);
 
-	// Add rotation animation
+	// Add multi-axis rotation animation
 	useFrame((_state, delta) => {
 		if (meshRef.current) {
-			meshRef.current.rotation.z += delta * 0.5; // Rotate around Z-axis
-			// Pass the current rotation to the parent
-			onRotationUpdate?.(meshRef.current.rotation.z);
+			meshRef.current.rotation.x += delta * 0.3; // Rotate around X-axis
+			meshRef.current.rotation.y += delta * 0.5; // Rotate around Y-axis
+			meshRef.current.rotation.z += delta * 0.2; // Rotate around Z-axis
+
+			// Pass the current rotation to the parent as Vector3
+			const rotationVector = new Vector3(
+				meshRef.current.rotation.x,
+				meshRef.current.rotation.y,
+				meshRef.current.rotation.z
+			);
+			onRotationUpdate?.(rotationVector);
 		}
 	});
 
-	// Create geometry from triangle points
-	const vertices = new Float32Array([
-		...TRIANGLE_POINTS[0].toArray(),
-		...TRIANGLE_POINTS[1].toArray(),
-		...TRIANGLE_POINTS[2].toArray(),
-	]);
-
-	// Indices to define the triangle edges (lines)
-	const indices = new Uint16Array([
-		0,
-		1, // First edge: top to bottom-left
-		1,
-		2, // Second edge: bottom-left to bottom-right
-		2,
-		0, // Third edge: bottom-right to top
-	]);
-
 	return (
-		<lineSegments ref={meshRef}>
-			<bufferGeometry>
-				<bufferAttribute
-					attach='attributes-position'
-					args={[vertices, 3]}
-				/>
-				<bufferAttribute
-					attach='index'
-					args={[indices, 1]}
-				/>
-			</bufferGeometry>
-			<lineBasicMaterial
+		<mesh ref={meshRef}>
+			{/* Use box geometry for the cube */}
+			<boxGeometry args={[2, 2, 2]} />
+			{/* Wireframe material to show the cube edges */}
+			<meshBasicMaterial
 				color={'#00ff00'}
-				linewidth={8}
+				wireframe={true}
 			/>
-		</lineSegments>
+		</mesh>
 	);
 }
 
-// Component to calculate and track triangle point screen coordinates
-function TriangleCoordinateTracker({
+// Component to calculate and track cube point screen coordinates
+function CubeCoordinateTracker({
 	onCoordinatesUpdate,
 	rotation,
 }: {
 	onCoordinatesUpdate: (coords: Vector2[]) => void;
-	rotation: number;
+	rotation: Vector3;
 }) {
 	const { camera } = useThree();
 
 	useFrame(() => {
 		const screenCoords: Vector2[] = [];
 
-		TRIANGLE_POINTS.forEach((point) => {
+		CUBE_POINTS.forEach((point) => {
 			// Clone the 3D point and apply the current rotation
 			const rotatedPoint = point.clone();
 
-			// Apply rotation around Z-axis (same as the triangle)
-			const cos = Math.cos(rotation);
-			const sin = Math.sin(rotation);
-			const x = rotatedPoint.x * cos - rotatedPoint.y * sin;
-			const y = rotatedPoint.x * sin + rotatedPoint.y * cos;
-			rotatedPoint.set(x, y, rotatedPoint.z);
+			// Apply rotation around all axes using Euler angles
+			const euler = new Euler(rotation.x, rotation.y, rotation.z, 'XYZ');
+			rotatedPoint.applyEuler(euler);
 
 			// Project the rotated point to screen space
 			rotatedPoint.project(camera);
@@ -135,24 +138,27 @@ function TriangleCoordinateTracker({
 }
 
 /**
- * ThreeWorkletNode - React Flow node component for three worklet generator
+ * ThreeWorkletNode - React Flow node component for coordinate-based stereo audio generator
  *
- * This component provides a user interface for controlling a three worklet generator AudioWorklet
- * within the React Flow canvas, with comprehensive accessibility and error handling.
+ * This component provides a user interface for controlling a coordinate-based stereo audio generator
+ * that converts rotating cube NDC coordinates into stereo audio output within the React Flow canvas.
+ * Features coordinate smoothing, buffering, and real-time visualization of the 8 cube vertices.
  *
  * @param props - React Flow node properties
- * @returns JSX element representing the three worklet node
+ * @returns JSX element representing the coordinate-based audio generator node
  */
 export function ThreeWorkletNode({
 	id,
 	data,
 	selected = false,
 }: NodeProps<ThreeWorkletNode>) {
-	// State to track triangle point coordinates
-	const [triangleCoords, setTriangleCoords] = useState<Vector2[]>([]);
+	// State to track cube point coordinates
+	const [cubeCoords, setCubeCoords] = useState<Vector2[]>([]);
 
-	// State to track triangle rotation
-	const [triangleRotation, setTriangleRotation] = useState<number>(0);
+	// State to track cube rotation
+	const [cubeRotation, setCubeRotation] = useState<Vector3>(
+		new Vector3(0, 0, 0)
+	);
 
 	// Coordinate buffer for smoothing
 	const coordinateBufferRef = useRef<CoordinatePoint[]>([]);
@@ -250,21 +256,21 @@ export function ThreeWorkletNode({
 		[isReady, setCoordinates]
 	);
 
-	// Update coordinates when triangle coordinates change
+	// Update coordinates when cube coordinates change
 	useEffect(() => {
-		if (triangleCoords.length > 0) {
-			smoothAndBufferCoordinates(triangleCoords);
+		if (cubeCoords.length > 0) {
+			smoothAndBufferCoordinates(cubeCoords);
 		}
-	}, [triangleCoords, smoothAndBufferCoordinates]);
+	}, [cubeCoords, smoothAndBufferCoordinates]);
 
-	// Handle coordinate updates from the triangle tracker
+	// Handle coordinate updates from the cube tracker
 	const handleCoordinatesUpdate = useCallback((coords: Vector2[]) => {
-		setTriangleCoords(coords);
+		setCubeCoords(coords);
 	}, []);
 
-	// Handle rotation updates from the triangle
-	const handleRotationUpdate = useCallback((rotation: number) => {
-		setTriangleRotation(rotation);
+	// Handle rotation updates from the cube
+	const handleRotationUpdate = useCallback((rotation: Vector3) => {
+		setCubeRotation(rotation);
 	}, []);
 
 	// Input validation after hooks
@@ -318,13 +324,13 @@ export function ThreeWorkletNode({
 									{/* Simple lighting */}
 									<ambientLight intensity={0.8} />
 
-									{/* The triangle */}
-									<Triangle onRotationUpdate={handleRotationUpdate} />
+									{/* The rotating cube */}
+									<RotatingCube onRotationUpdate={handleRotationUpdate} />
 
 									{/* Coordinate tracker */}
-									<TriangleCoordinateTracker
+									<CubeCoordinateTracker
 										onCoordinatesUpdate={handleCoordinatesUpdate}
-										rotation={triangleRotation}
+										rotation={cubeRotation}
 									/>
 								</Canvas>
 							</div>
@@ -364,7 +370,7 @@ export function ThreeWorkletNode({
 						{isReady ? '●' : '○'}
 					</div>
 
-					{/* Triangle Coordinates Display */}
+					{/* Cube Coordinates Display */}
 					<GridBlock
 						gridWidth={5}
 						gridHeight={1.5}
@@ -373,16 +379,21 @@ export function ThreeWorkletNode({
 						showDimensions={false}
 					>
 						<div className='w-full h-full p-1 flex flex-col justify-center'>
-							<div className='text-xs text-gray-300 mb-1'>Triangle NDC:</div>
-							<div className='space-y-0.5'>
-								{triangleCoords.map((coord, index) => (
+							<div className='text-xs text-gray-300 mb-1'>Cube NDC:</div>
+							<div className='space-y-0.5 max-h-16 overflow-y-auto'>
+								{cubeCoords.slice(0, 3).map((coord, index) => (
 									<div
 										key={index}
-										className='text-xs text-blue-400 font-mono'
+										className='text-xs text-green-400 font-mono'
 									>
 										P{index + 1}: ({coord.x.toFixed(3)}, {coord.y.toFixed(3)})
 									</div>
 								))}
+								{cubeCoords.length > 3 && (
+									<div className='text-xs text-gray-500'>
+										...+{cubeCoords.length - 3} more
+									</div>
+								)}
 							</div>
 						</div>
 					</GridBlock>
@@ -442,15 +453,24 @@ export function ThreeWorkletNode({
 				</div>
 			</div>
 
-			{/* Output Handle */}
+			{/* Output Handles */}
 			<GridNodeHandle
-				id='output'
+				id='outputX'
 				type='source'
 				mode='static'
 				position={Position.Right}
 				gridX={0}
-				gridY={1}
-				label='Out'
+				gridY={0.5}
+				label='X'
+			/>
+			<GridNodeHandle
+				id='outputY'
+				type='source'
+				mode='static'
+				position={Position.Right}
+				gridX={0}
+				gridY={1.5}
+				label='Y'
 			/>
 		</BaseNode>
 	);

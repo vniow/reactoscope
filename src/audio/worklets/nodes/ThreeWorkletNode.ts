@@ -77,9 +77,24 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 	readonly input: undefined = undefined;
 
 	/**
-	 * Output for generated audio
+	 * Main output (for backward compatibility and ToneWorkletBase requirement)
 	 */
 	readonly output: Tone.Gain;
+
+	/**
+	 * Output for X coordinate audio (left channel)
+	 */
+	readonly outputX: Tone.Gain;
+
+	/**
+	 * Output for Y coordinate audio (right channel)
+	 */
+	readonly outputY: Tone.Gain;
+
+	/**
+	 * Internal splitter to separate stereo channels
+	 */
+	private readonly _channelSplitter: Tone.Split;
 
 	/**
 	 * Volume parameter for controlling audio amplitude
@@ -140,11 +155,32 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 
 		super(opts);
 
-		// Create output gain node
+		// Create main output gain node (for backward compatibility)
 		this.output = new Tone.Gain({
 			context: this.context,
 			gain: 1.0,
 		});
+
+		// Create channel splitter to separate stereo into two mono channels
+		this._channelSplitter = new Tone.Split({
+			context: this.context,
+			channels: 2,
+		});
+
+		// Create separate output gain nodes for X and Y channels
+		this.outputX = new Tone.Gain({
+			context: this.context,
+			gain: 1.0,
+		});
+
+		this.outputY = new Tone.Gain({
+			context: this.context,
+			gain: 1.0,
+		});
+
+		// Connect the splitter to the separate outputs
+		this._channelSplitter.connect(this.outputX, 0, 0); // Left channel to outputX
+		this._channelSplitter.connect(this.outputY, 1, 0); // Right channel to outputY
 
 		// Create volume parameter
 		this.volume = new Tone.Param<'normalRange'>({
@@ -194,8 +230,11 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 	 * @param node - The AudioWorkletNode instance
 	 */
 	protected onReady(node: AudioWorkletNode): void {
-		// Connect the worklet to our output
+		// Connect the worklet to our main output (for backward compatibility)
 		Tone.connect(node, this.output);
+		
+		// Connect the worklet to the channel splitter for dual mono outputs
+		Tone.connect(node, this._channelSplitter);
 
 		// Set up parameter synchronization
 		if (node.parameters.has('volume')) {
@@ -251,7 +290,6 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 				type: 'coordinate-data',
 				data: { coordinates: this._coordinates },
 			});
-			console.log(`📊 Sent ${this._coordinates.length} coordinates to worklet`);
 		}
 
 		return this;
@@ -275,7 +313,6 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 
 				this.postMessage({ type: 'start' });
 				this._isPlaying = true;
-				console.log('▶️ ThreeWorkletNode started');
 			}
 		} catch (error) {
 			console.error('🚨 Failed to start ThreeWorkletNode:', error);
@@ -293,7 +330,6 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 			if (this.isReady && this._isPlaying) {
 				this.postMessage({ type: 'stop' });
 				this._isPlaying = false;
-				console.log('⏹️ ThreeWorkletNode stopped');
 			}
 		} catch (error) {
 			console.error('🚨 Failed to stop ThreeWorkletNode:', error);
@@ -391,6 +427,9 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 		this.volume.dispose();
 		this.playbackSpeed.dispose();
 		this.output.dispose();
+		this.outputX.dispose();
+		this.outputY.dispose();
+		this._channelSplitter.dispose();
 
 		// Clear coordinate data
 		this._coordinates = [];

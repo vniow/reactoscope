@@ -11,6 +11,7 @@ import type { Edge } from '@xyflow/react';
  * - No need to update this hook when adding new node types
  * - Automatically handles both single and multi-instance nodes
  * - Uses handle-based routing for multi-instance targets (e.g., 'audio-in-X' -> channel 'X')
+ * - Supports multiple outputs per source (e.g., outputX, outputY)
  * - Scales efficiently as the application grows
  */
 export function useToneConnections(nodeId: string) {
@@ -20,6 +21,23 @@ export function useToneConnections(nodeId: string) {
 	// Get the source node's instance to trigger re-connection when it changes
 	const sourceNodeData = audioNodes[nodeId];
 	const sourceInstance = sourceNodeData?.instance;
+
+	// Helper function to get source instance based on handle
+	const getSourceInstance = (instance: unknown, handle: string | null | undefined) => {
+		if (!instance || typeof instance !== 'object') return instance;
+		
+		// If no specific handle, return the main instance
+		if (!handle) return instance;
+		
+		// Check if the instance has the requested output
+		const obj = instance as Record<string, unknown>;
+		if (handle in obj) {
+			return obj[handle];
+		}
+		
+		// Fallback to main instance
+		return instance;
+	};
 
 	useEffect(() => {
 		// Find all React Flow edges where this node is the source
@@ -36,14 +54,15 @@ export function useToneConnections(nodeId: string) {
 			);
 
 			if (sourceNode && targetNode) {
-				// Get source instance (type-agnostic)
-				const sourceInstance = sourceNode.instance;
+				// Get source instance with handle support (type-agnostic)
+				const sourceInstance = getSourceInstance(sourceNode.instance, edge.sourceHandle);
 
 				console.log(
 					`🔗 Connection: ${sourceNode.type} (${sourceNode.id}) -> ${targetNode.type} (${targetNode.id})`,
 					{
 						hasSourceInstance: !!sourceInstance,
 						sourceInstanceType: sourceInstance?.constructor?.name,
+						sourceHandle: edge.sourceHandle,
 					}
 				);
 
@@ -72,10 +91,18 @@ export function useToneConnections(nodeId: string) {
 
 				if (sourceInstance && targetInstance) {
 					try {
-						sourceInstance.connect(targetInstance);
-						console.log(
-							`✅ Connected ${sourceNode.type} -> ${targetNode.type}`
-						);
+						// Ensure sourceInstance has a connect method (Tone.js node)
+						if (typeof sourceInstance === 'object' && 'connect' in sourceInstance && typeof sourceInstance.connect === 'function') {
+							sourceInstance.connect(targetInstance);
+							console.log(
+								`✅ Connected ${sourceNode.type} -> ${targetNode.type}`
+							);
+						} else {
+							console.warn(`⚠️ Source instance does not have connect method`, {
+								sourceType: sourceNode.type,
+								sourceHandle: edge.sourceHandle,
+							});
+						}
 					} catch (error) {
 						console.error('Failed to connect audio nodes:', error);
 					}
@@ -85,6 +112,7 @@ export function useToneConnections(nodeId: string) {
 						hasTarget: !!targetInstance,
 						sourceType: sourceNode.type,
 						targetType: targetNode.type,
+						sourceHandle: edge.sourceHandle,
 						targetHandle: edge.targetHandle,
 					});
 				}
@@ -98,8 +126,8 @@ export function useToneConnections(nodeId: string) {
 				const targetNode = audioNodes[edge.target];
 
 				if (sourceNode && targetNode) {
-					// Get source instance (type-agnostic)
-					const sourceInstance = sourceNode.instance;
+					// Get source instance with handle support (type-agnostic)
+					const sourceInstance = getSourceInstance(sourceNode.instance, edge.sourceHandle);
 
 					// Get target instance (type-agnostic with multi-instance support)
 					let targetInstance;
@@ -115,10 +143,13 @@ export function useToneConnections(nodeId: string) {
 
 					if (sourceInstance && targetInstance) {
 						try {
-							sourceInstance.disconnect(targetInstance);
-							console.log(
-								`🔌 Disconnected ${sourceNode.type} -> ${targetNode.type}`
-							);
+							// Ensure sourceInstance has a disconnect method (Tone.js node)
+							if (typeof sourceInstance === 'object' && 'disconnect' in sourceInstance && typeof sourceInstance.disconnect === 'function') {
+								sourceInstance.disconnect(targetInstance);
+								console.log(
+									`🔌 Disconnected ${sourceNode.type} -> ${targetNode.type}`
+								);
+							}
 						} catch (error) {
 							console.error('Failed to disconnect audio nodes:', error);
 						}

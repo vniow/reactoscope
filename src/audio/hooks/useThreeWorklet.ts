@@ -68,7 +68,6 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 					isPlaying: false,
 					volume: 1,
 				});
-				console.log(`📊 Initialized audio node in store: ${nodeId}`);
 			} catch (error) {
 				console.error(`🚨 Failed to initialize audio node ${nodeId}:`, error);
 			}
@@ -90,8 +89,6 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 
 				// Wait for worklet to be ready
 				await workletRef.current.ready;
-
-				console.log(`🔊 Created three worklet for node ${nodeId}`);
 
 				// Store worklet instance in Zustand
 				setAudioNodeInstance(nodeId, workletRef.current);
@@ -171,7 +168,6 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 
 				// Update store
 				updateAudioNode(nodeId, { isPlaying: true });
-				console.log(`▶️ Started three worklet: ${nodeId}`);
 			}
 		} catch (error) {
 			console.error(`🚨 Failed to start three worklet ${nodeId}:`, error);
@@ -190,7 +186,6 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 
 				// Update store
 				updateAudioNode(nodeId, { isPlaying: false });
-				console.log(`⏹️ Stopped three worklet: ${nodeId}`);
 			}
 		} catch (error) {
 			console.error(`🚨 Failed to stop three worklet ${nodeId}:`, error);
@@ -212,9 +207,6 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 
 				// Update store
 				updateAudioNode(nodeId, { volume });
-				console.log(
-					`🔊 Set volume for ${nodeId}: ${Math.round(volume * 100)}%`
-				);
 			} catch (error) {
 				console.error(`🚨 Failed to set volume for ${nodeId}:`, error);
 			}
@@ -237,7 +229,6 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 
 				// Update store
 				updateAudioNode(nodeId, { playbackSpeed: speed });
-				console.log(`⚡ Set playback speed for ${nodeId}: ${speed}x`);
 			} catch (error) {
 				console.error(`🚨 Failed to set playback speed for ${nodeId}:`, error);
 			}
@@ -250,7 +241,6 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 			try {
 				if (workletRef.current && workletRef.current.isReady) {
 					workletRef.current.setCoordinates(coordinates);
-					console.log(`📊 Set ${coordinates.length} coordinates for ${nodeId}`);
 				}
 			} catch (error) {
 				console.error(`🚨 Failed to set coordinates for ${nodeId}:`, error);

@@ -64,8 +64,6 @@ export const threeProcessorWorklet = /* javascript */ `
 			 * @private
 			 */
 			this._interpolationFactor = 0.0;
-			
-			console.log('🎵 ThreeProcessor initialized for coordinate-based stereo audio');
 		}
 		
 		/**
@@ -171,7 +169,6 @@ export const threeProcessorWorklet = /* javascript */ `
 							flatCoords.push(coord.x, coord.y);
 						}
 						this._coordinateBuffer = new Float32Array(flatCoords);
-						console.log('📊 Received coordinate buffer:', this._coordinateBuffer.length / 2, 'points');
 					}
 					break;
 				case 'param-update':
