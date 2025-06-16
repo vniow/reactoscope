@@ -7,7 +7,7 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import * as Tone from 'tone';
-import { ThreeWorkletNode } from '../worklets';
+import { ThreeWorkletNode, type CoordinatePoint } from '../worklets';
 import { useAppStore } from '../../shared/stores/appStore';
 import type { ThreeWorkletParams } from '../stores/audioSlice';
 
@@ -15,6 +15,8 @@ export interface ThreeWorkletControls {
 	start: () => void;
 	stop: () => void;
 	setVolume: (volume: number) => void;
+	setPlaybackSpeed: (speed: number) => void;
+	setCoordinates: (coordinates: CoordinatePoint[]) => void;
 	isPlaying: boolean;
 	isReady: boolean;
 	params: ThreeWorkletParams;
@@ -49,10 +51,11 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 		removeAudioNodeInstance,
 	} = useAppStore();
 
-	// Initialize default parameters if node doesn't exist
+	// Default parameters need to include playbackSpeed
 	const defaultParams: ThreeWorkletParams = {
 		isPlaying: false,
 		volume: 0.5,
+		playbackSpeed: 1.0,
 	};
 
 	const params = (audioNode?.params as ThreeWorkletParams) || defaultParams;
@@ -63,7 +66,7 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 			try {
 				addAudioNode(nodeId, 'three-worklet', {
 					isPlaying: false,
-					volume: 0.5,
+					volume: 1,
 				});
 				console.log(`📊 Initialized audio node in store: ${nodeId}`);
 			} catch (error) {
@@ -135,6 +138,14 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 				workletRef.current.setVolume(params.volume);
 			}
 
+			// Sync playback speed parameter
+			if (
+				params.playbackSpeed &&
+				workletRef.current.playbackSpeed.value !== params.playbackSpeed
+			) {
+				workletRef.current.setPlaybackSpeed(params.playbackSpeed);
+			}
+
 			// Sync playing state
 			if (params.isPlaying && !workletRef.current.isPlaying) {
 				workletRef.current.start();
@@ -144,7 +155,7 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 				isStartedRef.current = false;
 			}
 		}
-	}, [params.volume, params.isPlaying]);
+	}, [params.volume, params.playbackSpeed, params.isPlaying]);
 
 	// Control functions
 	const start = useCallback(async (): Promise<void> => {
@@ -211,10 +222,49 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 		[nodeId, updateAudioNode]
 	);
 
+	const setPlaybackSpeed = useCallback(
+		(speed: number): void => {
+			// Input validation
+			if (typeof speed !== 'number' || speed <= 0) {
+				console.error(`🚨 Invalid playback speed value for ${nodeId}:`, speed);
+				return;
+			}
+
+			try {
+				if (workletRef.current && workletRef.current.isReady) {
+					workletRef.current.setPlaybackSpeed(speed);
+				}
+
+				// Update store
+				updateAudioNode(nodeId, { playbackSpeed: speed });
+				console.log(`⚡ Set playback speed for ${nodeId}: ${speed}x`);
+			} catch (error) {
+				console.error(`🚨 Failed to set playback speed for ${nodeId}:`, error);
+			}
+		},
+		[nodeId, updateAudioNode]
+	);
+
+	const setCoordinates = useCallback(
+		(coordinates: CoordinatePoint[]): void => {
+			try {
+				if (workletRef.current && workletRef.current.isReady) {
+					workletRef.current.setCoordinates(coordinates);
+					console.log(`📊 Set ${coordinates.length} coordinates for ${nodeId}`);
+				}
+			} catch (error) {
+				console.error(`🚨 Failed to set coordinates for ${nodeId}:`, error);
+			}
+		},
+		[nodeId]
+	);
+
 	return {
 		start,
 		stop,
 		setVolume,
+		setPlaybackSpeed,
+		setCoordinates,
 		isPlaying: params.isPlaying,
 		isReady: workletRef.current?.isReady || false,
 		params,

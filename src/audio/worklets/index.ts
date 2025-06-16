@@ -41,7 +41,10 @@ export type {
 export { NoiseWorkletNode } from './nodes/NoiseWorkletNode';
 export type { NoiseWorkletNodeOptions } from './nodes/NoiseWorkletNode';
 export { ThreeWorkletNode } from './nodes/ThreeWorkletNode';
-export type { ThreeWorkletNodeOptions } from './nodes/ThreeWorkletNode';
+export type {
+	ThreeWorkletNodeOptions,
+	CoordinatePoint,
+} from './nodes/ThreeWorkletNode';
 export { CoordinateAudioWorkletNode } from './nodes/CoordinateAudioWorkletNode';
 export type { CoordinateAudioWorkletNodeOptions } from './nodes/CoordinateAudioWorkletNode';
 

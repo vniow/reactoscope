@@ -49,11 +49,12 @@ export interface NoiseWorkletParams {
 
 /**
  * Parameters for a ThreeWorklet audio node.
- * Defines settings for generating three worklet audio.
+ * Defines settings for coordinate-based stereo audio generation.
  */
 export interface ThreeWorkletParams {
 	readonly isPlaying: boolean;
 	readonly volume: number; // Linear gain value (0 to 1)
+	readonly playbackSpeed?: number; // Speed multiplier for coordinate traversal (optional)
 }
 
 /**

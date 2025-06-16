@@ -17,7 +17,7 @@ import '../processors/ThreeProcessor.worklet';
  */
 export interface ThreeWorkletNodeOptions extends WorkletBaseOptions {
 	/**
-	 * Whether to start generating three immediately
+	 * Whether to start generating audio immediately
 	 * @default false
 	 */
 	autostart?: boolean;
@@ -27,25 +27,45 @@ export interface ThreeWorkletNodeOptions extends WorkletBaseOptions {
 	 * @default 0.5
 	 */
 	volume?: number;
+
+	/**
+	 * Playback speed for coordinate traversal
+	 * @default 1.0
+	 */
+	playbackSpeed?: number;
 }
 
 /**
- * White three generator audio node using AudioWorklet
+ * Interface for coordinate data
+ */
+export interface CoordinatePoint {
+	x: number;
+	y: number;
+}
+
+/**
+ * Coordinate-based stereo audio generator using AudioWorklet
  *
  * @example
  * ```typescript
  * // Basic usage
- * const three = new ThreeWorkletNode();
+ * const coordGen = new ThreeWorkletNode();
  * const gainNode = new Tone.Gain(0.5).toDestination();
- * three.connect(gainNode);
+ * coordGen.connect(gainNode);
  *
- * // Wait for worklet to be ready, then start
- * three.ready.then(() => {
- *   three.start();
+ * // Wait for worklet to be ready, then send coordinates
+ * coordGen.ready.then(() => {
+ *   const coords = [
+ *     { x: -0.5, y: 0.8 },
+ *     { x: 0.5, y: -0.8 },
+ *     { x: 0.0, y: 0.8 }
+ *   ];
+ *   coordGen.setCoordinates(coords);
+ *   coordGen.start();
  * });
  *
- * // Stop three
- * three.stop();
+ * // Stop playback
+ * coordGen.stop();
  * ```
  */
 export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
@@ -62,14 +82,24 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 	readonly output: Tone.Gain;
 
 	/**
-	 * Volume parameter for controlling three amplitude
+	 * Volume parameter for controlling audio amplitude
 	 */
 	readonly volume: Tone.Param<'normalRange'>;
 
 	/**
-	 * Track if the three is currently playing
+	 * Playback speed parameter for coordinate traversal
+	 */
+	readonly playbackSpeed: Tone.Param<'positive'>;
+
+	/**
+	 * Track if the audio is currently playing
 	 */
 	private _isPlaying: boolean = false;
+
+	/**
+	 * Current coordinate buffer
+	 */
+	private _coordinates: CoordinatePoint[] = [];
 
 	/**
 	 * Create a new ThreeWorkletNode
@@ -89,6 +119,17 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 				options.volume
 			);
 			throw new Error('Volume must be a number between 0 and 1');
+		}
+
+		if (
+			options.playbackSpeed !== undefined &&
+			(typeof options.playbackSpeed !== 'number' || options.playbackSpeed <= 0)
+		) {
+			console.error(
+				'🚨 ThreeWorkletNode: Invalid playbackSpeed value',
+				options.playbackSpeed
+			);
+			throw new Error('PlaybackSpeed must be a positive number');
 		}
 
 		// Merge default options with provided options
@@ -114,6 +155,15 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 			swappable: true,
 		});
 
+		// Create playback speed parameter
+		this.playbackSpeed = new Tone.Param<'positive'>({
+			context: this.context,
+			value: opts.playbackSpeed ?? 1.0,
+			units: 'positive',
+			param: this._dummyParam,
+			swappable: true,
+		});
+
 		// Auto-start if requested
 		if (opts.autostart) {
 			this.ready
@@ -122,7 +172,10 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 				})
 				.catch((error) => {
 					if (this.debug) {
-						console.error('❌ Failed to auto-start three:', error);
+						console.error(
+							'❌ Failed to auto-start coordinate generator:',
+							error
+						);
 					}
 				});
 		}
@@ -147,19 +200,79 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 		// Set up parameter synchronization
 		if (node.parameters.has('volume')) {
 			const volumeParam = node.parameters.get('volume')!;
-			// Sync initial value
 			volumeParam.value = this.volume.value;
+		}
+
+		if (node.parameters.has('playbackSpeed')) {
+			const speedParam = node.parameters.get('playbackSpeed')!;
+			speedParam.value = this.playbackSpeed.value;
 		}
 	}
 
 	/**
-	 * Start generating three
+	 * Set coordinate data for audio generation
+	 *
+	 * @param coordinates - Array of coordinate points
+	 * @returns This instance for method chaining
+	 */
+	setCoordinates(coordinates: CoordinatePoint[]): this {
+		// Input validation
+		if (!Array.isArray(coordinates)) {
+			console.error('🚨 ThreeWorkletNode: coordinates must be an array');
+			throw new Error('Coordinates must be an array');
+		}
+
+		if (coordinates.length === 0) {
+			console.warn('⚠️ ThreeWorkletNode: empty coordinate array provided');
+			return this;
+		}
+
+		// Validate coordinate format
+		for (let i = 0; i < coordinates.length; i++) {
+			const coord = coordinates[i];
+			if (
+				typeof coord !== 'object' ||
+				typeof coord.x !== 'number' ||
+				typeof coord.y !== 'number'
+			) {
+				console.error(
+					`🚨 ThreeWorkletNode: invalid coordinate at index ${i}:`,
+					coord
+				);
+				throw new Error(`Invalid coordinate format at index ${i}`);
+			}
+		}
+
+		this._coordinates = [...coordinates];
+
+		// Send to worklet if ready
+		if (this.isReady) {
+			this.postMessage({
+				type: 'coordinate-data',
+				data: { coordinates: this._coordinates },
+			});
+			console.log(`📊 Sent ${this._coordinates.length} coordinates to worklet`);
+		}
+
+		return this;
+	}
+
+	/**
+	 * Start generating audio from coordinates
 	 *
 	 * @returns This instance for method chaining
 	 */
 	start(): this {
 		try {
 			if (this.isReady && !this._isPlaying) {
+				// Send coordinates if we have them
+				if (this._coordinates.length > 0) {
+					this.postMessage({
+						type: 'coordinate-data',
+						data: { coordinates: this._coordinates },
+					});
+				}
+
 				this.postMessage({ type: 'start' });
 				this._isPlaying = true;
 				console.log('▶️ ThreeWorkletNode started');
@@ -171,7 +284,7 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 	}
 
 	/**
-	 * Stop generating three
+	 * Stop generating audio
 	 *
 	 * @returns This instance for method chaining
 	 */
@@ -189,19 +302,32 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 	}
 
 	/**
-	 * Check if three is currently playing
+	 * Check if audio is currently playing
 	 */
 	get isPlaying(): boolean {
 		return this._isPlaying;
 	}
 
 	/**
-	 * Update the worklet's volume parameter to match our Tone.js parameter
+	 * Get current coordinates
 	 */
-	private updateWorkletVolume(): void {
-		if (this.isReady && this.workletNode?.parameters.has('volume')) {
-			const volumeParam = this.workletNode.parameters.get('volume')!;
-			volumeParam.value = this.volume.value;
+	get coordinates(): CoordinatePoint[] {
+		return [...this._coordinates];
+	}
+
+	/**
+	 * Update the worklet's parameters to match our Tone.js parameters
+	 */
+	private updateWorkletParameters(): void {
+		if (this.isReady && this.workletNode) {
+			if (this.workletNode.parameters.has('volume')) {
+				const volumeParam = this.workletNode.parameters.get('volume')!;
+				volumeParam.value = this.volume.value;
+			}
+			if (this.workletNode.parameters.has('playbackSpeed')) {
+				const speedParam = this.workletNode.parameters.get('playbackSpeed')!;
+				speedParam.value = this.playbackSpeed.value;
+			}
 		}
 	}
 
@@ -219,7 +345,25 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 		}
 
 		this.volume.value = value;
-		this.updateWorkletVolume();
+		this.updateWorkletParameters();
+		return this;
+	}
+
+	/**
+	 * Set the playback speed
+	 *
+	 * @param value - Playback speed (positive number)
+	 * @returns This instance for method chaining
+	 */
+	setPlaybackSpeed(value: number): this {
+		// Input validation
+		if (typeof value !== 'number' || value <= 0) {
+			console.error('🚨 ThreeWorkletNode: Invalid playbackSpeed value', value);
+			throw new Error('PlaybackSpeed must be a positive number');
+		}
+
+		this.playbackSpeed.value = value;
+		this.updateWorkletParameters();
 		return this;
 	}
 
@@ -230,6 +374,7 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 		return Object.assign(ToneWorkletBase.getDefaults(), {
 			autostart: false,
 			volume: 0.5,
+			playbackSpeed: 1.0,
 		});
 	}
 
@@ -237,14 +382,18 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 	 * Clean up and release resources
 	 */
 	dispose(): this {
-		// Stop three generation if playing
+		// Stop audio generation if playing
 		if (this._isPlaying) {
 			this.stop();
 		}
 
 		// Dispose of Tone.js components
 		this.volume.dispose();
+		this.playbackSpeed.dispose();
 		this.output.dispose();
+
+		// Clear coordinate data
+		this._coordinates = [];
 
 		// Call parent dispose
 		super.dispose();
