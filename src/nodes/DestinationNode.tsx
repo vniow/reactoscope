@@ -1,16 +1,12 @@
 import { type NodeProps, Position } from '@xyflow/react';
+import { useCallback, type JSX } from 'react';
 
 import { BaseNode } from '../shared/components/BaseNode';
 import { GridBlock } from '../shared/components/GridBlock';
 import { GridNodeHandle } from '../shared/components/GridNodeHandle';
 import { useToneDestination } from '../audio/hooks/useToneDestination';
 import { useNodeOperations } from '../flow/hooks/useNodeOperations';
-import type { DestinationNode } from './types';
-
-/**
- * Destination Node - Audio output endpoint
- * Updated with grid-based layout and styling consistency
- */
+import type { DestinationNode as DestinationNodeType } from './types';
 
 // Grid configuration for destination node
 const DESTINATION_NODE_CONFIG = {
@@ -18,18 +14,37 @@ const DESTINATION_NODE_CONFIG = {
 	gridHeight: 3,
 } as const;
 
+/**
+ * React component for a Destination audio node in the React Flow graph.
+ * Represents the final audio output endpoint where all audio signals are routed.
+ * Provides visual feedback for connected sources and manages audio routing to the system output.
+ *
+ * @param id - The unique identifier of the node.
+ * @param data - Data associated with the node, including label and variant.
+ * @param selected - Boolean indicating if the node is currently selected.
+ * @returns A JSX element representing the destination node.
+ */
 export function DestinationNode({
 	id,
 	data,
-	selected,
-}: NodeProps<DestinationNode>) {
+	selected = false,
+}: NodeProps<DestinationNodeType>): JSX.Element {
 	// Use custom hook for node operations
 	const { deleteNode } = useNodeOperations();
 
-	// Event handlers
-	const handleDelete = () => deleteNode(id as string);
 	// Initialize destination connection management
 	const { getConnectedSources } = useToneDestination(id);
+
+	/**
+	 * Handles node deletion with proper cleanup.
+	 */
+	const handleDelete = useCallback((): void => {
+		deleteNode(id);
+	}, [deleteNode, id]);
+
+	/**
+	 * Gets the current connected sources for display.
+	 */
 	const connectedSources = getConnectedSources();
 
 	return (
@@ -37,7 +52,7 @@ export function DestinationNode({
 			variant='core'
 			gridWidth={DESTINATION_NODE_CONFIG.gridWidth}
 			gridHeight={DESTINATION_NODE_CONFIG.gridHeight}
-			nodeId={id as string}
+			nodeId={id}
 			selected={selected}
 			onDelete={handleDelete}
 			title={data.label || 'Audio Destination'}
@@ -83,7 +98,7 @@ export function DestinationNode({
 				type='target'
 				position={Position.Top}
 				mode='floating'
-				nodeId={id as string}
+				nodeId={id}
 				gridX={DESTINATION_NODE_CONFIG.gridWidth / 2} // Center horizontally
 				gridY={0} // Top edge
 				size='md'

@@ -1,7 +1,7 @@
 /**
- * NoiseWorkletNode - React Flow node component for noise generator worklet
+ * ThreeWorkletNode - React Flow node component for three worklet generator
  *
- * This component provides a user interface for controlling a noise generator AudioWorklet
+ * This component provides a user interface for controlling a three worklet generator AudioWorklet
  * within the React Flow canvas.
  */
 
@@ -13,32 +13,32 @@ import { GridNodeHandle } from '../shared/components/GridNodeHandle';
 import { GridSlider } from '../shared/components/ui/GridSlider';
 import { GridButton } from '../shared/components/ui/GridButton';
 import { useToneConnections } from '../audio/hooks/useToneConnections';
-import { useNoiseWorklet } from '../audio/hooks/useNoiseWorklet';
-import type { NoiseWorkletNode } from './types';
+import { useThreeWorklet } from '../audio/hooks/useThreeWorklet';
+import type { ThreeWorkletNode } from './types';
 
-// Grid configuration for noise worklet node
-const NOISE_WORKLET_NODE_CONFIG = {
+// Grid configuration for three worklet node
+const THREE_WORKLET_NODE_CONFIG = {
 	gridWidth: 4,
 	gridHeight: 4,
 } as const;
 
 /**
- * NoiseWorkletNode - React Flow node component for noise generator worklet
+ * ThreeWorkletNode - React Flow node component for three worklet generator
  *
- * This component provides a user interface for controlling a noise generator AudioWorklet
+ * This component provides a user interface for controlling a three worklet generator AudioWorklet
  * within the React Flow canvas, with comprehensive accessibility and error handling.
  *
  * @param props - React Flow node properties
- * @returns JSX element representing the noise worklet node
+ * @returns JSX element representing the three worklet node
  */
-export function NoiseWorkletNode({
+export function ThreeWorkletNode({
 	id,
 	data,
 	selected = false,
-}: NodeProps<NoiseWorkletNode>) {
+}: NodeProps<ThreeWorkletNode>) {
 	// Hooks must be called first, before any conditional logic
 	const { start, stop, setVolume, isPlaying, isReady, params } =
-		useNoiseWorklet(id);
+		useThreeWorklet(id);
 
 	// Handle audio connections to other nodes
 	useToneConnections(id);
@@ -72,19 +72,19 @@ export function NoiseWorkletNode({
 
 	// Input validation after hooks
 	if (!id || typeof id !== 'string') {
-		console.error('🚨 NoiseWorkletNode: Invalid id provided', { id });
+		console.error('🚨 ThreeWorkletNode: Invalid id provided', { id });
 		return <div>Error: Invalid node ID</div>;
 	}
 
 	return (
 		<BaseNode
 			variant={data.variant || 'source'} // Use variant from data, default to source
-			gridWidth={NOISE_WORKLET_NODE_CONFIG.gridWidth}
-			gridHeight={NOISE_WORKLET_NODE_CONFIG.gridHeight}
+			gridWidth={THREE_WORKLET_NODE_CONFIG.gridWidth}
+			gridHeight={THREE_WORKLET_NODE_CONFIG.gridHeight}
 			nodeId={id}
 			selected={selected}
 			onDelete={removeNode}
-			title={data.label || 'Noise Generator'}
+			title={data.label || 'Three Worklet'}
 		>
 			<div className='relative w-full h-full overflow-visible'>
 				{/* Play/Stop Button */}
@@ -100,7 +100,9 @@ export function NoiseWorkletNode({
 					onClick={handlePlayToggle}
 					disabled={!isReady}
 					aria-label={
-						isPlaying ? 'Stop noise generation' : 'Start noise generation'
+						isPlaying
+							? 'Stop three worklet generation'
+							: 'Start three worklet generation'
 					}
 				/>
 

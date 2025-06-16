@@ -65,6 +65,14 @@ export interface NoiseWorkletParams extends BaseWorkletParams {
 }
 
 /**
+ * Three worklet generator worklet parameters
+ */
+export interface ThreeWorkletParams extends BaseWorkletParams {
+	isPlaying: boolean;
+	volume: number;
+}
+
+/**
  * Bit crusher worklet parameters
  */
 export interface BitCrusherWorkletParams extends BaseWorkletParams {
@@ -86,6 +94,7 @@ export interface DelayWorkletParams extends BaseWorkletParams {
  */
 export type WorkletParams =
 	| NoiseWorkletParams
+	| ThreeWorkletParams
 	| BitCrusherWorkletParams
 	| DelayWorkletParams;
 
@@ -94,6 +103,7 @@ export type WorkletParams =
  */
 export type WorkletNodeType =
 	| 'noise-worklet'
+	| 'three-worklet'
 	| 'bitcrusher-worklet'
 	| 'delay-worklet';
 

@@ -18,6 +18,10 @@ export type DebugNode = Node<DebugNodeData, 'debug'>;
 export type OscillatorNode = Node<BaseNodeData & AudioNodeData, 'oscillator'>;
 export type GainNode = Node<BaseNodeData & AudioNodeData, 'gain'>;
 export type VisualizerNode = Node<BaseNodeData & AudioNodeData, 'visualizer'>;
+export type VisualizerNodeModular = Node<
+	BaseNodeData & AudioNodeData,
+	'visualizer-modular'
+>;
 export type DestinationNode = Node<BaseNodeData, 'destination'>;
 
 // Worklet node types
@@ -25,6 +29,8 @@ export type NoiseWorkletNode = Node<
 	BaseNodeData & AudioNodeData,
 	'noise-worklet'
 >;
+
+export type SimpleNoiseWorkletNode = Node<BaseNodeData, 'simple-noise-worklet'>;
 export type BitCrusherWorkletNode = Node<
 	BaseNodeData & AudioNodeData,
 	'bitcrusher-worklet'
@@ -32,6 +38,11 @@ export type BitCrusherWorkletNode = Node<
 export type DelayWorkletNode = Node<
 	BaseNodeData & AudioNodeData,
 	'delay-worklet'
+>;
+
+export type ThreeWorkletNode = Node<
+	BaseNodeData & AudioNodeData,
+	'three-worklet'
 >;
 
 export type ThreeFiberDemoNode = Node<BaseNodeData, 'threejs-demo'>;
@@ -43,9 +54,12 @@ export type AppNode =
 	| OscillatorNode
 	| GainNode
 	| VisualizerNode
+	| VisualizerNodeModular
 	| DestinationNode
 	| NoiseWorkletNode
+	| SimpleNoiseWorkletNode
 	| BitCrusherWorkletNode
 	| DelayWorkletNode
+	| ThreeWorkletNode
 	| ThreeFiberDemoNode
 	| FileLoaderNode;

@@ -1,7 +1,7 @@
 /**
- * NoiseWorkletNode - White noise generator using AudioWorklet
+ * ThreeWorkletNode - White three generator using AudioWorklet
  *
- * This node wraps a white noise generator AudioWorklet processor within the Tone.js ecosystem
+ * This node wraps a white three generator AudioWorklet processor within the Tone.js ecosystem
  * for use in Reactoscope.
  */
 
@@ -10,14 +10,14 @@ import { ToneWorkletBase } from '../ToneWorkletBase';
 import type { WorkletBaseOptions } from '../WorkletTypes';
 
 // Import the processor to ensure it's registered
-import '../processors/NoiseProcessor.worklet';
+import '../processors/ThreeProcessor.worklet';
 
 /**
- * Configuration options for the NoiseWorkletNode
+ * Configuration options for the ThreeWorkletNode
  */
-export interface NoiseWorkletNodeOptions extends WorkletBaseOptions {
+export interface ThreeWorkletNodeOptions extends WorkletBaseOptions {
 	/**
-	 * Whether to start generating noise immediately
+	 * Whether to start generating three immediately
 	 * @default false
 	 */
 	autostart?: boolean;
@@ -30,26 +30,26 @@ export interface NoiseWorkletNodeOptions extends WorkletBaseOptions {
 }
 
 /**
- * White noise generator audio node using AudioWorklet
+ * White three generator audio node using AudioWorklet
  *
  * @example
  * ```typescript
  * // Basic usage
- * const noise = new NoiseWorkletNode();
+ * const three = new ThreeWorkletNode();
  * const gainNode = new Tone.Gain(0.5).toDestination();
- * noise.connect(gainNode);
+ * three.connect(gainNode);
  *
  * // Wait for worklet to be ready, then start
- * noise.ready.then(() => {
- *   noise.start();
+ * three.ready.then(() => {
+ *   three.start();
  * });
  *
- * // Stop noise
- * noise.stop();
+ * // Stop three
+ * three.stop();
  * ```
  */
-export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
-	readonly name: string = 'NoiseWorkletNode';
+export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
+	readonly name: string = 'ThreeWorkletNode';
 
 	/**
 	 * This is a source node, so input is undefined
@@ -62,21 +62,21 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 	readonly output: Tone.Gain;
 
 	/**
-	 * Volume parameter for controlling noise amplitude
+	 * Volume parameter for controlling three amplitude
 	 */
 	readonly volume: Tone.Param<'normalRange'>;
 
 	/**
-	 * Track if the noise is currently playing
+	 * Track if the three is currently playing
 	 */
 	private _isPlaying: boolean = false;
 
 	/**
-	 * Create a new NoiseWorkletNode
+	 * Create a new ThreeWorkletNode
 	 *
 	 * @param options - Configuration options
 	 */
-	constructor(options: Partial<NoiseWorkletNodeOptions> = {}) {
+	constructor(options: Partial<ThreeWorkletNodeOptions> = {}) {
 		// Input validation
 		if (
 			options.volume !== undefined &&
@@ -85,7 +85,7 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 				options.volume > 1)
 		) {
 			console.error(
-				'🚨 NoiseWorkletNode: Invalid volume value',
+				'🚨 ThreeWorkletNode: Invalid volume value',
 				options.volume
 			);
 			throw new Error('Volume must be a number between 0 and 1');
@@ -93,7 +93,7 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 
 		// Merge default options with provided options
 		const opts = {
-			...NoiseWorkletNode.getDefaults(),
+			...ThreeWorkletNode.getDefaults(),
 			...options,
 		};
 
@@ -122,7 +122,7 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 				})
 				.catch((error) => {
 					if (this.debug) {
-						console.error('❌ Failed to auto-start noise:', error);
+						console.error('❌ Failed to auto-start three:', error);
 					}
 				});
 		}
@@ -132,7 +132,7 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 	 * Provide the name of the AudioWorklet processor to use
 	 */
 	protected _audioWorkletName(): string {
-		return 'noise-processor';
+		return 'three-processor';
 	}
 
 	/**
@@ -153,7 +153,7 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 	}
 
 	/**
-	 * Start generating noise
+	 * Start generating three
 	 *
 	 * @returns This instance for method chaining
 	 */
@@ -162,16 +162,16 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 			if (this.isReady && !this._isPlaying) {
 				this.postMessage({ type: 'start' });
 				this._isPlaying = true;
-				console.log('▶️ NoiseWorkletNode started');
+				console.log('▶️ ThreeWorkletNode started');
 			}
 		} catch (error) {
-			console.error('🚨 Failed to start NoiseWorkletNode:', error);
+			console.error('🚨 Failed to start ThreeWorkletNode:', error);
 		}
 		return this;
 	}
 
 	/**
-	 * Stop generating noise
+	 * Stop generating three
 	 *
 	 * @returns This instance for method chaining
 	 */
@@ -180,16 +180,16 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 			if (this.isReady && this._isPlaying) {
 				this.postMessage({ type: 'stop' });
 				this._isPlaying = false;
-				console.log('⏹️ NoiseWorkletNode stopped');
+				console.log('⏹️ ThreeWorkletNode stopped');
 			}
 		} catch (error) {
-			console.error('🚨 Failed to stop NoiseWorkletNode:', error);
+			console.error('🚨 Failed to stop ThreeWorkletNode:', error);
 		}
 		return this;
 	}
 
 	/**
-	 * Check if noise is currently playing
+	 * Check if three is currently playing
 	 */
 	get isPlaying(): boolean {
 		return this._isPlaying;
@@ -214,7 +214,7 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 	setVolume(value: number): this {
 		// Input validation
 		if (typeof value !== 'number' || value < 0 || value > 1) {
-			console.error('🚨 NoiseWorkletNode: Invalid volume value', value);
+			console.error('🚨 ThreeWorkletNode: Invalid volume value', value);
 			throw new Error('Volume must be a number between 0 and 1');
 		}
 
@@ -224,9 +224,9 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 	}
 
 	/**
-	 * Get default options for NoiseWorkletNode
+	 * Get default options for ThreeWorkletNode
 	 */
-	static getDefaults(): NoiseWorkletNodeOptions {
+	static getDefaults(): ThreeWorkletNodeOptions {
 		return Object.assign(ToneWorkletBase.getDefaults(), {
 			autostart: false,
 			volume: 0.5,
@@ -237,7 +237,7 @@ export class NoiseWorkletNode extends ToneWorkletBase<NoiseWorkletNodeOptions> {
 	 * Clean up and release resources
 	 */
 	dispose(): this {
-		// Stop noise generation if playing
+		// Stop three generation if playing
 		if (this._isPlaying) {
 			this.stop();
 		}

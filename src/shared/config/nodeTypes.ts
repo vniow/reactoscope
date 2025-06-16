@@ -1,4 +1,4 @@
-import type { AppNode } from '../nodes/types';
+import type { AppNode } from '../../nodes/types';
 import type { ComponentVariant } from '../types/ui';
 
 export interface NodeTypeOption {
@@ -90,6 +90,25 @@ export const AUDIO_NODES: NodeTypeOption[] = [
 			label: 'Visualizer',
 		},
 	},
+	{
+		type: 'visualizer-modular',
+		name: 'Modular Visualizer',
+		description:
+			'Real-time waveform visualization with independent X/Y channel control',
+		emoji: '📈',
+		variant: 'signal', // Analysis/visualization -> signal category
+		category: 'audio',
+		defaultData: {
+			id: '',
+			type: 'visualizer-modular' as const,
+			params: {
+				size: 1024,
+				smoothing: 0.8,
+				isConnected: false,
+			},
+			label: 'Modular Visualizer',
+		},
+	},
 	// Worklet nodes
 	{
 		type: 'noise-worklet',
@@ -106,6 +125,36 @@ export const AUDIO_NODES: NodeTypeOption[] = [
 				volume: 0.5,
 			},
 			label: 'Noise Generator',
+		},
+	},
+	{
+		type: 'simple-noise-worklet',
+		name: 'Simple Noise',
+		description: 'Direct AudioWorklet noise generator with minimal overhead',
+		emoji: '🎯',
+		variant: 'source',
+		category: 'audio',
+		defaultData: {
+			id: '',
+			type: 'simple-noise-worklet' as const,
+			label: 'Simple Noise',
+		},
+	},
+	{
+		type: 'three-worklet',
+		name: 'Three Worklet',
+		description: 'AudioWorklet-based three worklet generator',
+		emoji: '🎲',
+		variant: 'source',
+		category: 'audio',
+		defaultData: {
+			id: '',
+			type: 'three-worklet' as const,
+			params: {
+				isPlaying: false,
+				volume: 0.5,
+			},
+			label: 'Three Worklet',
 		},
 	},
 ];
@@ -149,7 +198,10 @@ export const isAudioNode = (nodeType: string): boolean => {
 		'oscillator',
 		'gain',
 		'visualizer',
+		'visualizer-modular',
 		'noise-worklet',
+		'simple-noise-worklet',
+		'three-worklet',
 		'bitcrusher-worklet',
 		'delay-worklet',
 	].includes(nodeType);

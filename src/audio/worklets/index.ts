@@ -28,6 +28,7 @@ export type {
 	WorkletParameterDescriptor,
 	BaseWorkletParams,
 	NoiseWorkletParams,
+	ThreeWorkletParams,
 	BitCrusherWorkletParams,
 	DelayWorkletParams,
 	WorkletParams,
@@ -39,8 +40,11 @@ export type {
 // Worklet nodes
 export { NoiseWorkletNode } from './nodes/NoiseWorkletNode';
 export type { NoiseWorkletNodeOptions } from './nodes/NoiseWorkletNode';
+export { ThreeWorkletNode } from './nodes/ThreeWorkletNode';
+export type { ThreeWorkletNodeOptions } from './nodes/ThreeWorkletNode';
 export { CoordinateAudioWorkletNode } from './nodes/CoordinateAudioWorkletNode';
 export type { CoordinateAudioWorkletNodeOptions } from './nodes/CoordinateAudioWorkletNode';
 
 // Worklet processors (these are imported for side effects to register them)
 export { workletName as noiseProcessorName } from './processors/NoiseProcessor.worklet';
+export { workletName as threeProcessorName } from './processors/ThreeProcessor.worklet';

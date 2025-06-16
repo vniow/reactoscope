@@ -1,4 +1,5 @@
 import { type NodeProps, Position } from '@xyflow/react';
+import { useCallback, type JSX, type ChangeEvent } from 'react';
 
 import { BaseNode } from '../shared/components/BaseNode';
 import { GridNodeHandle } from '../shared/components/GridNodeHandle';
@@ -7,12 +8,7 @@ import { GridButton } from '../shared/components/ui/GridButton';
 import { useToneGain } from '../audio/hooks/useToneGain';
 import { useToneConnections } from '../audio/hooks/useToneConnections';
 import { useNodeOperations } from '../flow/hooks/useNodeOperations';
-import type { GainNode } from './types';
-
-/**
- * Gain Node - Controls audio signal amplitude
- * Updated with grid-based layout and components
- */
+import type { GainNode as GainNodeType } from './types';
 
 // Grid configuration for gain node
 const GAIN_NODE_CONFIG = {
@@ -20,12 +16,23 @@ const GAIN_NODE_CONFIG = {
 	gridHeight: 4,
 } as const;
 
-export function GainNode({ id, data, selected }: NodeProps<GainNode>) {
+/**
+ * React component for a Gain audio node in the React Flow graph.
+ * Controls audio signal amplitude with gain and mute functionality.
+ * Provides UI controls for adjusting gain level and toggling mute state.
+ *
+ * @param id - The unique identifier of the node.
+ * @param data - Data associated with the node, including label and variant.
+ * @param selected - Boolean indicating if the node is currently selected.
+ * @returns A JSX element representing the gain node.
+ */
+export function GainNode({
+	id,
+	data,
+	selected = false,
+}: NodeProps<GainNodeType>): JSX.Element {
 	// Use custom hook for node operations
 	const { deleteNode } = useNodeOperations();
-
-	// Event handlers
-	const handleDelete = () => deleteNode(id as string);
 
 	// Initialize gain controls
 	const { updateGain, updateMute, params } = useToneGain(id);
@@ -33,15 +40,45 @@ export function GainNode({ id, data, selected }: NodeProps<GainNode>) {
 	// Handle audio connections to other nodes
 	useToneConnections(id);
 
-	const handleMuteToggle = () => {
+	/**
+	 * Handles node deletion with proper cleanup.
+	 */
+	const handleDelete = useCallback((): void => {
+		deleteNode(id);
+	}, [deleteNode, id]);
+
+	/**
+	 * Handles mute toggle functionality.
+	 */
+	const handleMuteToggle = useCallback((): void => {
 		updateMute(!params.mute);
-	};
+	}, [updateMute, params.mute]);
+
+	/**
+	 * Handles gain slider changes.
+	 * @param event - The input change event.
+	 */
+	const handleGainChange = useCallback(
+		(event: ChangeEvent<HTMLInputElement>): void => {
+			updateGain(parseFloat(event.target.value));
+		},
+		[updateGain]
+	);
+
+	/**
+	 * Formats the gain value for display.
+	 * @param value - The gain value.
+	 * @returns Formatted string with two decimal places.
+	 */
+	const formatGainValue = useCallback((value: number): string => {
+		return value.toFixed(2);
+	}, []);
 
 	return (
 		<BaseNode
 			gridWidth={GAIN_NODE_CONFIG.gridWidth}
 			gridHeight={GAIN_NODE_CONFIG.gridHeight}
-			nodeId={id as string}
+			nodeId={id}
 			selected={selected}
 			onDelete={handleDelete}
 			title={data.label || 'Gain'}
@@ -59,8 +96,8 @@ export function GainNode({ id, data, selected }: NodeProps<GainNode>) {
 						min: 0,
 						max: 1,
 						step: 0.01,
-						formatValue: (val) => val.toFixed(2),
-						onChange: (e) => updateGain(parseFloat(e.target.value)),
+						formatValue: formatGainValue,
+						onChange: handleGainChange,
 						disabled: params.mute,
 						showMinMax: true,
 						'aria-label': 'Gain control',

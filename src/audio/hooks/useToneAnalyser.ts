@@ -14,10 +14,22 @@ export interface ToneAnalyserControls {
 }
 
 /**
- * Custom hook for managing Tone.js Analyser nodes for X/Y axis audio visualization
- * Handles lifecycle, parameter updates, and state synchronization using Zustand as single source of truth
+ * useToneAnalyser - React hook for managing Tone.js Analyser nodes for audio visualization
+ *
+ * This hook provides a comprehensive interface for managing dual-axis (X/Y) Tone.js Analyser nodes
+ * within the Reactoscope ecosystem, handling lifecycle, parameter updates, and state synchronization.
+ *
+ * @param nodeId - Unique identifier for the audio node
+ * @returns Controls and state for the analyser nodes
  */
 export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
+	// Input validation
+	if (!nodeId || typeof nodeId !== 'string') {
+		console.error('🚨 useToneAnalyser: nodeId must be a non-empty string', {
+			nodeId,
+		});
+		throw new Error('Invalid nodeId provided to useToneAnalyser');
+	}
 	// Store actions for managing both UI state and Tone.js instances
 	const {
 		audioNodes,
@@ -55,7 +67,15 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 	// Initialize audio node in store if it doesn't exist
 	useEffect(() => {
 		if (!audioNode) {
-			addAudioNode(nodeId, 'visualizer', defaultParams);
+			try {
+				addAudioNode(nodeId, 'visualizer', defaultParams);
+				console.log(`📊 Initialized analyser node in store: ${nodeId}`);
+			} catch (error) {
+				console.error(
+					`🚨 Failed to initialize analyser node ${nodeId}:`,
+					error
+				);
+			}
 		}
 	}, [nodeId, audioNode, addAudioNode, defaultParams]);
 
@@ -86,7 +106,10 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 					setAudioNodeInstance(nodeId, newAnalyserY, 'Y');
 				}
 			} catch (error) {
-				console.error(`Failed to create analyser nodes for ${nodeId}:`, error);
+				console.error(
+					`🚨 Failed to create analyser nodes for ${nodeId}:`,
+					error
+				);
 			}
 		};
 
@@ -98,7 +121,7 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 				try {
 					analyserX.dispose();
 				} catch (error) {
-					console.error(`Error disposing analyser X for ${nodeId}:`, error);
+					console.error(`🚨 Error disposing analyser X for ${nodeId}:`, error);
 				}
 				removeAudioNodeInstance(nodeId, 'X');
 			}
@@ -106,7 +129,7 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 				try {
 					analyserY.dispose();
 				} catch (error) {
-					console.error(`Error disposing analyser Y for ${nodeId}:`, error);
+					console.error(`🚨 Error disposing analyser Y for ${nodeId}:`, error);
 				}
 				removeAudioNodeInstance(nodeId, 'Y');
 			}
@@ -132,30 +155,63 @@ export const useToneAnalyser = (nodeId: string): ToneAnalyserControls => {
 			analyserY.size = params.size;
 			analyserY.smoothing = params.smoothing;
 		} catch (error) {
-			console.error(`Error updating analyser parameters for ${nodeId}:`, error);
+			console.error(
+				`🚨 Error updating analyser parameters for ${nodeId}:`,
+				error
+			);
 		}
 	}, [analyserX, analyserY, params, nodeId]);
 
-	// Control functions
+	// Control functions with improved error handling and validation
 	const updateSize = useCallback(
-		(size: number) => {
-			updateAudioNode(nodeId, { size } as Partial<AnalyserParams>);
+		(size: number): void => {
+			// Input validation
+			if (typeof size !== 'number' || size <= 0 || !Number.isInteger(size)) {
+				console.error('🚨 Invalid FFT size value:', size);
+				return;
+			}
+
+			// Check if size is a power of 2
+			if ((size & (size - 1)) !== 0) {
+				console.error('🚨 FFT size must be a power of 2:', size);
+				return;
+			}
+
+			try {
+				updateAudioNode(nodeId, { size } as Partial<AnalyserParams>);
+				console.log(`📊 Updated FFT size for ${nodeId}: ${size}`);
+			} catch (error) {
+				console.error(`🚨 Failed to update FFT size for ${nodeId}:`, error);
+			}
 		},
 		[nodeId, updateAudioNode]
 	);
 
 	const updateSmoothing = useCallback(
-		(smoothing: number) => {
-			updateAudioNode(nodeId, { smoothing } as Partial<AnalyserParams>);
+		(smoothing: number): void => {
+			// Input validation
+			if (typeof smoothing !== 'number' || smoothing < 0 || smoothing > 1) {
+				console.error('🚨 Invalid smoothing value (must be 0-1):', smoothing);
+				return;
+			}
+
+			try {
+				updateAudioNode(nodeId, { smoothing } as Partial<AnalyserParams>);
+				console.log(
+					`📊 Updated smoothing for ${nodeId}: ${smoothing.toFixed(2)}`
+				);
+			} catch (error) {
+				console.error(`🚨 Failed to update smoothing for ${nodeId}:`, error);
+			}
 		},
 		[nodeId, updateAudioNode]
 	);
 
-	const getAnalyserX = useCallback(() => {
+	const getAnalyserX = useCallback((): Tone.Analyser | null => {
 		return analyserX || null;
 	}, [analyserX]);
 
-	const getAnalyserY = useCallback(() => {
+	const getAnalyserY = useCallback((): Tone.Analyser | null => {
 		return analyserY || null;
 	}, [analyserY]);
 

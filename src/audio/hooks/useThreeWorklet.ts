@@ -1,42 +1,42 @@
 /**
- * useNoiseWorklet - React hook for managing noise generator worklet nodes
+ * useThreeWorklet - React hook for managing three generator worklet nodes
  *
- * This hook provides a consistent interface for managing NoiseWorkletNode instances
+ * This hook provides a consistent interface for managing ThreeWorkletNode instances
  * within the Reactoscope ecosystem, handling lifecycle, parameters, and store integration.
  */
 
 import { useEffect, useCallback, useRef } from 'react';
 import * as Tone from 'tone';
-import { NoiseWorkletNode } from '../worklets';
+import { ThreeWorkletNode } from '../worklets';
 import { useAppStore } from '../../shared/stores/appStore';
-import type { NoiseWorkletParams } from '../stores/audioSlice';
+import type { ThreeWorkletParams } from '../stores/audioSlice';
 
-export interface NoiseWorkletControls {
+export interface ThreeWorkletControls {
 	start: () => void;
 	stop: () => void;
 	setVolume: (volume: number) => void;
 	isPlaying: boolean;
 	isReady: boolean;
-	params: NoiseWorkletParams;
-	workletNode: NoiseWorkletNode | null;
+	params: ThreeWorkletParams;
+	workletNode: ThreeWorkletNode | null;
 }
 
 /**
- * Custom hook for managing a NoiseWorkletNode
+ * Custom hook for managing a ThreeWorkletNode
  * Handles lifecycle, parameter updates, and state synchronization
  *
  * @param nodeId - Unique identifier for the audio node
- * @returns Controls and state for the noise worklet
+ * @returns Controls and state for the three worklet
  */
-export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
+export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 	// Input validation
 	if (!nodeId || typeof nodeId !== 'string') {
-		console.error('🚨 useNoiseWorklet: nodeId must be a non-empty string', {
+		console.error('🚨 useThreeWorklet: nodeId must be a non-empty string', {
 			nodeId,
 		});
-		throw new Error('Invalid nodeId provided to useNoiseWorklet');
+		throw new Error('Invalid nodeId provided to useThreeWorklet');
 	}
-	const workletRef = useRef<NoiseWorkletNode | null>(null);
+	const workletRef = useRef<ThreeWorkletNode | null>(null);
 	const isStartedRef = useRef(false);
 
 	// Get audio node data from store
@@ -50,18 +50,18 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 	} = useAppStore();
 
 	// Initialize default parameters if node doesn't exist
-	const defaultParams: NoiseWorkletParams = {
+	const defaultParams: ThreeWorkletParams = {
 		isPlaying: false,
 		volume: 0.5,
 	};
 
-	const params = (audioNode?.params as NoiseWorkletParams) || defaultParams;
+	const params = (audioNode?.params as ThreeWorkletParams) || defaultParams;
 
 	// Initialize audio node in store if it doesn't exist
 	useEffect(() => {
 		if (!audioNode) {
 			try {
-				addAudioNode(nodeId, 'noise-worklet', {
+				addAudioNode(nodeId, 'three-worklet', {
 					isPlaying: false,
 					volume: 0.5,
 				});
@@ -79,8 +79,8 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 				// Ensure audio context is started
 				await initializeAudioContext();
 
-				// Create new noise worklet
-				workletRef.current = new NoiseWorkletNode({
+				// Create new three worklet
+				workletRef.current = new ThreeWorkletNode({
 					debug: true,
 					volume: 0.5, // Will be synced later
 				});
@@ -88,13 +88,13 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 				// Wait for worklet to be ready
 				await workletRef.current.ready;
 
-				console.log(`🔊 Created noise worklet for node ${nodeId}`);
+				console.log(`🔊 Created three worklet for node ${nodeId}`);
 
 				// Store worklet instance in Zustand
 				setAudioNodeInstance(nodeId, workletRef.current);
 			} catch (error) {
 				console.error(
-					`🚨 Failed to create noise worklet for node ${nodeId}:`,
+					`🚨 Failed to create three worklet for node ${nodeId}:`,
 					error
 				);
 			}
@@ -113,7 +113,7 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 					removeAudioNodeInstance(nodeId);
 				} catch (error) {
 					console.error(
-						`🚨 Error cleaning up noise worklet for node ${nodeId}:`,
+						`🚨 Error cleaning up three worklet for node ${nodeId}:`,
 						error
 					);
 				}
@@ -160,10 +160,10 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 
 				// Update store
 				updateAudioNode(nodeId, { isPlaying: true });
-				console.log(`▶️ Started noise worklet: ${nodeId}`);
+				console.log(`▶️ Started three worklet: ${nodeId}`);
 			}
 		} catch (error) {
-			console.error(`🚨 Failed to start noise worklet ${nodeId}:`, error);
+			console.error(`🚨 Failed to start three worklet ${nodeId}:`, error);
 		}
 	}, [nodeId, updateAudioNode, params.isPlaying]);
 
@@ -179,10 +179,10 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 
 				// Update store
 				updateAudioNode(nodeId, { isPlaying: false });
-				console.log(`⏹️ Stopped noise worklet: ${nodeId}`);
+				console.log(`⏹️ Stopped three worklet: ${nodeId}`);
 			}
 		} catch (error) {
-			console.error(`🚨 Failed to stop noise worklet ${nodeId}:`, error);
+			console.error(`🚨 Failed to stop three worklet ${nodeId}:`, error);
 		}
 	}, [nodeId, updateAudioNode, params.isPlaying]);
 

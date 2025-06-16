@@ -48,6 +48,15 @@ export interface NoiseWorkletParams {
 }
 
 /**
+ * Parameters for a ThreeWorklet audio node.
+ * Defines settings for generating three worklet audio.
+ */
+export interface ThreeWorkletParams {
+	readonly isPlaying: boolean;
+	readonly volume: number; // Linear gain value (0 to 1)
+}
+
+/**
  * Parameters for a BitCrusherWorklet audio node.
  * Defines settings for bit crushing effect.
  */
@@ -91,6 +100,8 @@ export type AudioNodeType =
 	| 'visualizer' // Represents a node dedicated to visualizing audio data
 	| 'destination' // Represents the final audio output (e.g., speakers)
 	| 'noise-worklet'
+	| 'three-worklet'
+	| 'simple-noise-worklet'
 	| 'bitcrusher-worklet'
 	| 'delay-worklet'
 	| 'coordinate-audio-worklet';
@@ -106,6 +117,7 @@ export type AudioNodeParams =
 	| GainParams
 	| AnalyserParams
 	| NoiseWorkletParams
+	| ThreeWorkletParams
 	| BitCrusherWorkletParams
 	| DelayWorkletParams
 	| CoordinateAudioWorkletParams
@@ -312,6 +324,11 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 
 	// --- Getter ---
 	getAudioNode: (nodeId) => get().audioNodes[nodeId], // Implementation of stable getter
+
+	getAudioNodeParams: (nodeId) => {
+		const node = get().audioNodes[nodeId];
+		return node ? node.params : undefined;
+	},
 
 	// --- Audio Node Actions ---
 	addAudioNode: (nodeId, type, params) => {
@@ -650,11 +667,8 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 				);
 				return;
 			}
-
-			// Establish the connection
 			try {
 				// The @ts-expect-error might still be needed if Tone.js types are not perfectly aligned for all connect scenarios (e.g. connecting to an AudioParam directly)
-				// @ts-expect-error Tone.js connect can take AudioParam, but types might not fully align for all nodes.
 				sourceInstance.connect(targetInstance);
 				updateConnectionStatus(connection.id, 'connected');
 				// console.log(`✅ Connected: ${sourceNodeData.type} (${connection.sourceHandle}) -> ${targetNodeData.type} (${connection.targetHandle})`);

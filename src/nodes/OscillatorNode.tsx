@@ -4,7 +4,7 @@ import {
 	Position,
 	type Edge,
 } from '@xyflow/react'; // Import Position as a value
-import { useCallback, type ChangeEvent } from 'react'; // Use type-only import for ChangeEvent
+import { useCallback, type ChangeEvent, type JSX } from 'react'; // Use type-only import for ChangeEvent
 
 import { BaseNode } from '../shared/components/BaseNode';
 import { GridNodeHandle } from '../shared/components/GridNodeHandle';
@@ -13,7 +13,6 @@ import {
 	type SliderProps,
 } from '../shared/components/ui/GridSlider'; // Assuming SliderProps is exported
 import { GridButton } from '../shared/components/ui/GridButton';
-import type { ComponentSize } from '../shared/types/ui'; // Corrected import path
 import { useToneConnections } from '../audio/hooks/useToneConnections';
 import {
 	useToneOscillator,
@@ -239,13 +238,13 @@ export function OscillatorNode({
 
 				{/* Play/Stop Button */}
 				<GridButton
-					gridWidth={OSCILLATOR_NODE_GRID_CONFIG.gridWidth - 1} // Adjusted width
-					gridHeight={1.25} // Adjusted height
-					gridX={0.5} // Centered
+					gridWidth={OSCILLATOR_NODE_GRID_CONFIG.gridWidth - 1}
+					gridHeight={1.25}
+					gridX={0.5}
 					gridY={7}
 					buttonLabel={isPlaying ? 'Stop' : 'Play'}
-					variant={isPlaying ? 'danger' : 'success'} // Use valid variants
-					size={'default' as ComponentSize} // Use a valid ComponentSize, e.g., 'md' or 'default' if defined
+					variant={isPlaying ? 'danger' : 'success'}
+					size='md'
 					layout='fill'
 					onClick={handlePlayStopClick}
 					aria-label={isPlaying ? 'Stop oscillator' : 'Play oscillator'}
@@ -256,13 +255,9 @@ export function OscillatorNode({
 			<GridNodeHandle
 				type='source'
 				position={Position.Right}
-				id={`${id}-audio-out`} // Consistent handle ID
-				// Positioning of handle is now relative to BaseNode content area via gridX/gridY on BaseNode itself
-				// Or, if BaseNode has specific slots or props for handle positioning, use those.
-				// For simplicity, assuming BaseNode handles centering or specific placement.
-				// Defaulting to a common pattern if BaseNode doesn't auto-place based on type.
-				gridX={0} // Example: Place near the right edge
-				gridY={OSCILLATOR_NODE_GRID_CONFIG.gridHeight / 2} // Example: Vertically centered
+				id={`${id}-audio-out`}
+				gridX={0}
+				gridY={OSCILLATOR_NODE_GRID_CONFIG.gridHeight / 2}
 			/>
 		</BaseNode>
 	);
