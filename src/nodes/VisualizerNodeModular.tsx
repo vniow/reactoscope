@@ -1,12 +1,14 @@
-import { useMemo, memo, useEffect } from 'react';
+import { useMemo, memo, useEffect, useCallback } from 'react';
 import type { NodeProps } from '@xyflow/react';
 import { Position } from '@xyflow/react';
 import { BaseNode } from '../shared/components/BaseNode';
 import { GridBlock } from '../shared/components/GridBlock';
 import { GridNodeHandle } from '../shared/components/GridNodeHandle';
-import { AudioVisualizer } from '../audio/AudioVisualizer';
+import AudioVisualizer from '../audio/AudioVisualizer';
 import { useToneAnalyserModular } from '../audio/hooks/useToneAnalyserModular';
-import { useAppStore } from '../shared/stores/appStore'; // Added for addAudioNode
+import { useAppStore } from '../shared/stores/appStore';
+import { useNodeOperations } from '../flow/hooks/useNodeOperations';
+import type { VisualizerNodeModular as VisualizerNodeModularType } from './types';
 
 // Grid configuration for visualizer node
 const VISUALIZER_NODE_CONFIG = {
@@ -20,9 +22,17 @@ const VISUALIZER_NODE_CONFIG = {
  * This component demonstrates the modular approach by using two instances of the
  * useToneAnalyserModular hook to manage X and Y channel analysers independently.
  * The analysers are registered under the main node ID in the `instances` map.
+ *
+ * @param props - React Flow node properties
+ * @returns React element representing the modular visualizer node
  */
-export const VisualizerNodeModular = memo(({ id }: NodeProps) => {
+function VisualizerNodeModular({
+	id,
+	data,
+	selected = false,
+}: NodeProps<VisualizerNodeModularType>) {
 	const { addAudioNode, audioNodes } = useAppStore();
+	const { deleteNode } = useNodeOperations();
 
 	// Initialize the main audio node entry if it doesn't exist.
 	// This is crucial for the connection system to find the parent node.
@@ -33,28 +43,98 @@ export const VisualizerNodeModular = memo(({ id }: NodeProps) => {
 		}
 	}, [id, audioNodes, addAudioNode]);
 
+	/**
+	 * Event handler for node deletion with proper error handling
+	 * Follows defensive programming principles
+	 */
+	const handleDelete = useCallback((): void => {
+		try {
+			deleteNode(id);
+			console.log(`🗑️ Deleted modular visualizer node: ${id}`);
+		} catch (error) {
+			console.error(
+				`🚨 Failed to delete modular visualizer node ${id}:`,
+				error
+			);
+		}
+	}, [deleteNode, id]);
+
 	// Use two instances of the modular analyser hook for X and Y channels
 	// Pass the correct targetHandle IDs: 'audio-in-X' and 'audio-in-Y'
 	const analyserX = useToneAnalyserModular(id, 'X', 'audio-in-X');
 	const analyserY = useToneAnalyserModular(id, 'Y', 'audio-in-Y');
 
-	// Control functions for X channel
+	// Control functions for X channel with error handling
 	const xControls = useMemo(
 		() => ({
-			updateSize: analyserX.updateSize,
-			updateSmoothing: analyserX.updateSmoothing,
+			updateSize: (size: number) => {
+				try {
+					analyserX.updateSize(size);
+					console.log(`🎛️ Updated X channel FFT size for ${id}: ${size}`);
+				} catch (error) {
+					console.error(
+						`🚨 Failed to update X channel FFT size for ${id}:`,
+						error
+					);
+				}
+			},
+			updateSmoothing: (smoothing: number) => {
+				try {
+					analyserX.updateSmoothing(smoothing);
+					console.log(
+						`🎛️ Updated X channel smoothing for ${id}: ${smoothing.toFixed(2)}`
+					);
+				} catch (error) {
+					console.error(
+						`🚨 Failed to update X channel smoothing for ${id}:`,
+						error
+					);
+				}
+			},
 		}),
-		[analyserX.updateSize, analyserX.updateSmoothing]
+		[analyserX, id]
 	);
 
-	// Control functions for Y channel
+	// Control functions for Y channel with error handling
 	const yControls = useMemo(
 		() => ({
-			updateSize: analyserY.updateSize,
-			updateSmoothing: analyserY.updateSmoothing,
+			updateSize: (size: number) => {
+				try {
+					analyserY.updateSize(size);
+					console.log(`🎛️ Updated Y channel FFT size for ${id}: ${size}`);
+				} catch (error) {
+					console.error(
+						`🚨 Failed to update Y channel FFT size for ${id}:`,
+						error
+					);
+				}
+			},
+			updateSmoothing: (smoothing: number) => {
+				try {
+					analyserY.updateSmoothing(smoothing);
+					console.log(
+						`🎛️ Updated Y channel smoothing for ${id}: ${smoothing.toFixed(2)}`
+					);
+				} catch (error) {
+					console.error(
+						`🚨 Failed to update Y channel smoothing for ${id}:`,
+						error
+					);
+				}
+			},
 		}),
-		[analyserY.updateSize, analyserY.updateSmoothing]
+		[analyserY, id]
 	);
+
+	// Input validation after hooks - defensive programming
+	if (!id || typeof id !== 'string') {
+		console.error('🚨 VisualizerNodeModular: Invalid id provided', { id });
+		return (
+			<div className='text-destructive p-4 text-center'>
+				Error: Invalid node ID provided
+			</div>
+		);
+	}
 
 	// Get analyser instances for the visualizer
 	const analyserXInstance = analyserX.getAnalyser();
@@ -75,7 +155,9 @@ export const VisualizerNodeModular = memo(({ id }: NodeProps) => {
 			gridWidth={VISUALIZER_NODE_CONFIG.gridWidth}
 			gridHeight={VISUALIZER_NODE_CONFIG.gridHeight}
 			nodeId={id}
-			title='Visualizer (Modular)'
+			selected={selected}
+			onDelete={handleDelete}
+			title={data?.label || 'Visualizer (Modular)'}
 		>
 			<div className='relative w-full h-full overflow-visible'>
 				{/* Visualizer Display */}
@@ -107,7 +189,7 @@ export const VisualizerNodeModular = memo(({ id }: NodeProps) => {
 					gridWidth={12}
 					gridHeight={4}
 					gridX={0}
-					gridY={10}
+					gridY={13}
 					showDimensions={false}
 				>
 					<div className='flex flex-col gap-2 p-2 bg-background-secondary rounded h-full'>
@@ -138,7 +220,8 @@ export const VisualizerNodeModular = memo(({ id }: NodeProps) => {
 										onChange={(e) =>
 											xControls.updateSize(parseInt(e.target.value))
 										}
-										className='w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer'
+										className='w-full h-1 bg-border rounded-lg appearance-none cursor-pointer'
+										aria-label='X Channel FFT Size'
 									/>
 									<div className='flex items-center justify-between'>
 										<span className='text-xs text-text-secondary'>Smooth:</span>
@@ -155,7 +238,8 @@ export const VisualizerNodeModular = memo(({ id }: NodeProps) => {
 										onChange={(e) =>
 											xControls.updateSmoothing(parseFloat(e.target.value))
 										}
-										className='w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer'
+										className='w-full h-1 bg-border rounded-lg appearance-none cursor-pointer'
+										aria-label='X Channel Smoothing'
 									/>
 								</div>
 							</div>
@@ -181,7 +265,8 @@ export const VisualizerNodeModular = memo(({ id }: NodeProps) => {
 										onChange={(e) =>
 											yControls.updateSize(parseInt(e.target.value))
 										}
-										className='w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer'
+										className='w-full h-1 bg-border rounded-lg appearance-none cursor-pointer'
+										aria-label='Y Channel FFT Size'
 									/>
 									<div className='flex items-center justify-between'>
 										<span className='text-xs text-text-secondary'>Smooth:</span>
@@ -198,7 +283,8 @@ export const VisualizerNodeModular = memo(({ id }: NodeProps) => {
 										onChange={(e) =>
 											yControls.updateSmoothing(parseFloat(e.target.value))
 										}
-										className='w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer'
+										className='w-full h-1 bg-border rounded-lg appearance-none cursor-pointer'
+										aria-label='Y Channel Smoothing'
 									/>
 								</div>
 							</div>
@@ -209,8 +295,8 @@ export const VisualizerNodeModular = memo(({ id }: NodeProps) => {
 							<span
 								className={`px-2 py-1 rounded ${
 									analyserX.params.isConnected
-										? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-										: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+										? 'bg-success/10 text-success dark:bg-success/20 dark:text-success'
+										: 'bg-muted text-muted-foreground'
 								}`}
 							>
 								X: {analyserX.params.isConnected ? 'Connected' : 'Disconnected'}
@@ -218,8 +304,8 @@ export const VisualizerNodeModular = memo(({ id }: NodeProps) => {
 							<span
 								className={`px-2 py-1 rounded ${
 									analyserY.params.isConnected
-										? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-										: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+										? 'bg-success/10 text-success dark:bg-success/20 dark:text-success'
+										: 'bg-muted text-muted-foreground'
 								}`}
 							>
 								Y: {analyserY.params.isConnected ? 'Connected' : 'Disconnected'}
@@ -252,6 +338,9 @@ export const VisualizerNodeModular = memo(({ id }: NodeProps) => {
 			/>
 		</BaseNode>
 	);
-});
+}
+
+// Export memoized version following React best practices
+export default memo(VisualizerNodeModular);
 
 VisualizerNodeModular.displayName = 'VisualizerNodeModular';
