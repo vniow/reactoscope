@@ -55,6 +55,7 @@ export interface ThreeWorkletParams {
 	readonly isPlaying: boolean;
 	readonly volume: number; // Linear gain value (0 to 1)
 	readonly playbackSpeed?: number; // Speed multiplier for coordinate traversal (optional)
+	readonly interpolationStep?: number; // Interpolation step factor for smooth transitions (0.001 to 1.0)
 }
 
 /**

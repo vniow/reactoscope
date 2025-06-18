@@ -5,41 +5,52 @@
  * within the Reactoscope ecosystem, handling lifecycle, parameters, and store integration.
  */
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import * as Tone from 'tone';
 import { ThreeWorkletNode, type CoordinatePoint } from '../worklets';
 import { useAppStore } from '../../shared/stores/appStore';
 import type { ThreeWorkletParams } from '../stores/audioSlice';
 
 export interface ThreeWorkletControls {
-	start: () => void;
+	start: () => Promise<void>;
 	stop: () => void;
 	setVolume: (volume: number) => void;
 	setPlaybackSpeed: (speed: number) => void;
+	setInterpolationStep: (step: number) => void;
 	setCoordinates: (coordinates: CoordinatePoint[]) => void;
 	isPlaying: boolean;
 	isReady: boolean;
 	params: ThreeWorkletParams;
 	workletNode: ThreeWorkletNode | null;
+	// Add error state
+	error: Error | null;
 }
 
 /**
  * Custom hook for managing a ThreeWorkletNode
  * Handles lifecycle, parameter updates, and state synchronization
+ * Enhanced with better error handling and type safety
  *
  * @param nodeId - Unique identifier for the audio node
  * @returns Controls and state for the three worklet
  */
 export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
-	// Input validation
-	if (!nodeId || typeof nodeId !== 'string') {
-		console.error('🚨 useThreeWorklet: nodeId must be a non-empty string', {
-			nodeId,
-		});
-		throw new Error('Invalid nodeId provided to useThreeWorklet');
+	// Input validation with better error messages
+	if (!nodeId?.trim()) {
+		throw new Error('useThreeWorklet: nodeId must be a non-empty string');
 	}
+
 	const workletRef = useRef<ThreeWorkletNode | null>(null);
 	const isStartedRef = useRef(false);
+	const [error, setError] = useState<Error | null>(null);
+
+	// Utility function to safely convert unknown error to Error
+	const handleError = useCallback((error: unknown, context: string) => {
+		const errorInstance =
+			error instanceof Error ? error : new Error(String(error));
+		console.error(`🚨 ${context}:`, errorInstance);
+		setError(errorInstance);
+	}, []);
 
 	// Get audio node data from store
 	const audioNode = useAppStore((state) => state.audioNodes[nodeId]);
@@ -51,11 +62,12 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 		removeAudioNodeInstance,
 	} = useAppStore();
 
-	// Default parameters need to include playbackSpeed
+	// Default parameters need to include playbackSpeed and interpolationStep
 	const defaultParams: ThreeWorkletParams = {
 		isPlaying: false,
 		volume: 0.5,
 		playbackSpeed: 1.0,
+		interpolationStep: 0.1,
 	};
 
 	const params = (audioNode?.params as ThreeWorkletParams) || defaultParams;
@@ -93,10 +105,7 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 				// Store worklet instance in Zustand
 				setAudioNodeInstance(nodeId, workletRef.current);
 			} catch (error) {
-				console.error(
-					`🚨 Failed to create three worklet for node ${nodeId}:`,
-					error
-				);
+				handleError(error, `Failed to create three worklet for node ${nodeId}`);
 			}
 		};
 
@@ -125,22 +134,38 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 		initializeAudioContext,
 		setAudioNodeInstance,
 		removeAudioNodeInstance,
+		handleError,
 	]);
 
 	// Sync parameters with worklet
 	useEffect(() => {
 		if (workletRef.current && workletRef.current.isReady) {
-			// Sync volume parameter
-			if (workletRef.current.volume.value !== params.volume) {
-				workletRef.current.setVolume(params.volume);
+			// Sync volume parameter - use a small tolerance for floating point comparison
+			const volumeDiff = Math.abs(
+				workletRef.current.volume.value - params.volume
+			);
+			if (volumeDiff > 0.001) {
+				workletRef.current.volume.value = params.volume;
 			}
 
 			// Sync playback speed parameter
-			if (
-				params.playbackSpeed &&
-				workletRef.current.playbackSpeed.value !== params.playbackSpeed
-			) {
-				workletRef.current.setPlaybackSpeed(params.playbackSpeed);
+			if (params.playbackSpeed) {
+				const speedDiff = Math.abs(
+					workletRef.current.playbackSpeed.value - params.playbackSpeed
+				);
+				if (speedDiff > 0.001) {
+					workletRef.current.playbackSpeed.value = params.playbackSpeed;
+				}
+			}
+
+			// Sync interpolation step parameter
+			if (params.interpolationStep) {
+				const interpDiff = Math.abs(
+					workletRef.current.interpolationStep.value - params.interpolationStep
+				);
+				if (interpDiff > 0.0001) {
+					workletRef.current.interpolationStep.value = params.interpolationStep;
+				}
 			}
 
 			// Sync playing state
@@ -152,7 +177,12 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 				isStartedRef.current = false;
 			}
 		}
-	}, [params.volume, params.playbackSpeed, params.isPlaying]);
+	}, [
+		params.volume,
+		params.playbackSpeed,
+		params.interpolationStep,
+		params.isPlaying,
+	]);
 
 	// Control functions
 	const start = useCallback(async (): Promise<void> => {
@@ -170,9 +200,9 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 				updateAudioNode(nodeId, { isPlaying: true });
 			}
 		} catch (error) {
-			console.error(`🚨 Failed to start three worklet ${nodeId}:`, error);
+			handleError(error, `Failed to start three worklet ${nodeId}`);
 		}
-	}, [nodeId, updateAudioNode, params.isPlaying]);
+	}, [nodeId, updateAudioNode, params.isPlaying, handleError]);
 
 	const stop = useCallback((): void => {
 		try {
@@ -188,9 +218,9 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 				updateAudioNode(nodeId, { isPlaying: false });
 			}
 		} catch (error) {
-			console.error(`🚨 Failed to stop three worklet ${nodeId}:`, error);
+			handleError(error, `Failed to stop three worklet ${nodeId}`);
 		}
-	}, [nodeId, updateAudioNode, params.isPlaying]);
+	}, [nodeId, updateAudioNode, params.isPlaying, handleError]);
 
 	const setVolume = useCallback(
 		(volume: number): void => {
@@ -208,10 +238,10 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 				// Update store
 				updateAudioNode(nodeId, { volume });
 			} catch (error) {
-				console.error(`🚨 Failed to set volume for ${nodeId}:`, error);
+				handleError(error, `Failed to set volume for ${nodeId}`);
 			}
 		},
-		[nodeId, updateAudioNode]
+		[nodeId, updateAudioNode, handleError]
 	);
 
 	const setPlaybackSpeed = useCallback(
@@ -230,10 +260,35 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 				// Update store
 				updateAudioNode(nodeId, { playbackSpeed: speed });
 			} catch (error) {
-				console.error(`🚨 Failed to set playback speed for ${nodeId}:`, error);
+				handleError(error, `Failed to set playback speed for ${nodeId}`);
 			}
 		},
-		[nodeId, updateAudioNode]
+		[nodeId, updateAudioNode, handleError]
+	);
+
+	const setInterpolationStep = useCallback(
+		(step: number): void => {
+			// Input validation
+			if (typeof step !== 'number' || step <= 0) {
+				console.error(
+					`🚨 Invalid interpolation step value for ${nodeId}:`,
+					step
+				);
+				return;
+			}
+
+			try {
+				if (workletRef.current && workletRef.current.isReady) {
+					workletRef.current.setInterpolationStep(step);
+				}
+
+				// Update store
+				updateAudioNode(nodeId, { interpolationStep: step });
+			} catch (error) {
+				handleError(error, `Failed to set interpolation step for ${nodeId}`);
+			}
+		},
+		[nodeId, updateAudioNode, handleError]
 	);
 
 	const setCoordinates = useCallback(
@@ -243,10 +298,10 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 					workletRef.current.setCoordinates(coordinates);
 				}
 			} catch (error) {
-				console.error(`🚨 Failed to set coordinates for ${nodeId}:`, error);
+				handleError(error, `Failed to set coordinates for ${nodeId}`);
 			}
 		},
-		[nodeId]
+		[nodeId, handleError]
 	);
 
 	return {
@@ -254,10 +309,12 @@ export const useThreeWorklet = (nodeId: string): ThreeWorkletControls => {
 		stop,
 		setVolume,
 		setPlaybackSpeed,
+		setInterpolationStep,
 		setCoordinates,
 		isPlaying: params.isPlaying,
 		isReady: workletRef.current?.isReady || false,
 		params,
 		workletNode: workletRef.current,
+		error,
 	};
 };

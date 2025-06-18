@@ -85,6 +85,13 @@ export const threeProcessorWorklet = /* javascript */ `
 					minValue: 0.1,
 					maxValue: 4.0,
 					automationRate: 'a-rate'
+				},
+				{
+					name: 'interpolationStep',
+					defaultValue: 0.1,
+					minValue: 0.001,
+					maxValue: 1.0,
+					automationRate: 'a-rate'
 				}
 			];
 		}
@@ -104,9 +111,10 @@ export const threeProcessorWorklet = /* javascript */ `
 			
 			const volume = params.volume || 0.5;
 			const playbackSpeed = params.playbackSpeed || 1.0;
+			const interpolationStep = params.interpolationStep || 0.1;
 			
-			// Update playback position
-			this._interpolationFactor += playbackSpeed * 0.001; // Adjust speed factor as needed
+			// Update playback position using the interpolation step parameter
+			this._interpolationFactor += playbackSpeed * interpolationStep;
 			
 			if (this._interpolationFactor >= 1.0) {
 				this._bufferPosition += 2; // Move to next coordinate pair (x, y)

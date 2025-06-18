@@ -33,6 +33,12 @@ export interface ThreeWorkletNodeOptions extends WorkletBaseOptions {
 	 * @default 1.0
 	 */
 	playbackSpeed?: number;
+
+	/**
+	 * Interpolation step factor for smooth coordinate transitions
+	 * @default 0.1
+	 */
+	interpolationStep?: number;
 }
 
 /**
@@ -105,6 +111,11 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 	 * Playback speed parameter for coordinate traversal
 	 */
 	readonly playbackSpeed: Tone.Param<'positive'>;
+
+	/**
+	 * Interpolation step parameter for smooth coordinate transitions
+	 */
+	readonly interpolationStep: Tone.Param<'positive'>;
 
 	/**
 	 * Track if the audio is currently playing
@@ -200,6 +211,15 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 			swappable: true,
 		});
 
+		// Create interpolation step parameter
+		this.interpolationStep = new Tone.Param<'positive'>({
+			context: this.context,
+			value: opts.interpolationStep ?? 0.1,
+			units: 'positive',
+			param: this._dummyParam,
+			swappable: true,
+		});
+
 		// Auto-start if requested
 		if (opts.autostart) {
 			this.ready
@@ -232,7 +252,7 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 	protected onReady(node: AudioWorkletNode): void {
 		// Connect the worklet to our main output (for backward compatibility)
 		Tone.connect(node, this.output);
-		
+
 		// Connect the worklet to the channel splitter for dual mono outputs
 		Tone.connect(node, this._channelSplitter);
 
@@ -246,10 +266,16 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 			const speedParam = node.parameters.get('playbackSpeed')!;
 			speedParam.value = this.playbackSpeed.value;
 		}
+
+		if (node.parameters.has('interpolationStep')) {
+			const interpParam = node.parameters.get('interpolationStep')!;
+			interpParam.value = this.interpolationStep.value;
+		}
 	}
 
 	/**
 	 * Set coordinate data for audio generation
+	 * Optimized to reduce memory allocations and improve performance
 	 *
 	 * @param coordinates - Array of coordinate points
 	 * @returns This instance for method chaining
@@ -266,20 +292,35 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 			return this;
 		}
 
-		// Validate coordinate format
-		for (let i = 0; i < coordinates.length; i++) {
-			const coord = coordinates[i];
-			if (
+		// Validate coordinate format more efficiently
+		const firstInvalidIndex = coordinates.findIndex(
+			(coord) =>
 				typeof coord !== 'object' ||
 				typeof coord.x !== 'number' ||
-				typeof coord.y !== 'number'
-			) {
-				console.error(
-					`🚨 ThreeWorkletNode: invalid coordinate at index ${i}:`,
-					coord
-				);
-				throw new Error(`Invalid coordinate format at index ${i}`);
-			}
+				typeof coord.y !== 'number' ||
+				!Number.isFinite(coord.x) ||
+				!Number.isFinite(coord.y)
+		);
+
+		if (firstInvalidIndex !== -1) {
+			console.error(
+				`🚨 ThreeWorkletNode: invalid coordinate at index ${firstInvalidIndex}:`,
+				coordinates[firstInvalidIndex]
+			);
+			throw new Error(
+				`Invalid coordinate format at index ${firstInvalidIndex}`
+			);
+		}
+
+		// Avoid unnecessary copying if coordinates haven't changed
+		if (
+			this._coordinates.length === coordinates.length &&
+			this._coordinates.every(
+				(coord, i) =>
+					coord.x === coordinates[i].x && coord.y === coordinates[i].y
+			)
+		) {
+			return this; // No change, skip update
 		}
 
 		this._coordinates = [...coordinates];
@@ -364,6 +405,11 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 				const speedParam = this.workletNode.parameters.get('playbackSpeed')!;
 				speedParam.value = this.playbackSpeed.value;
 			}
+			if (this.workletNode.parameters.has('interpolationStep')) {
+				const interpParam =
+					this.workletNode.parameters.get('interpolationStep')!;
+				interpParam.value = this.interpolationStep.value;
+			}
 		}
 	}
 
@@ -404,6 +450,27 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 	}
 
 	/**
+	 * Set the interpolation step factor
+	 *
+	 * @param value - Interpolation step factor (positive number, typically 0.001 to 1.0)
+	 * @returns This instance for method chaining
+	 */
+	setInterpolationStep(value: number): this {
+		// Input validation
+		if (typeof value !== 'number' || value <= 0) {
+			console.error(
+				'🚨 ThreeWorkletNode: Invalid interpolationStep value',
+				value
+			);
+			throw new Error('InterpolationStep must be a positive number');
+		}
+
+		this.interpolationStep.value = value;
+		this.updateWorkletParameters();
+		return this;
+	}
+
+	/**
 	 * Get default options for ThreeWorkletNode
 	 */
 	static getDefaults(): ThreeWorkletNodeOptions {
@@ -411,6 +478,7 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 			autostart: false,
 			volume: 0.5,
 			playbackSpeed: 1.0,
+			interpolationStep: 0.1,
 		});
 	}
 
@@ -426,6 +494,7 @@ export class ThreeWorkletNode extends ToneWorkletBase<ThreeWorkletNodeOptions> {
 		// Dispose of Tone.js components
 		this.volume.dispose();
 		this.playbackSpeed.dispose();
+		this.interpolationStep.dispose();
 		this.output.dispose();
 		this.outputX.dispose();
 		this.outputY.dispose();
