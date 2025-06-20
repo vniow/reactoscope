@@ -13,7 +13,6 @@ import {
 	type SliderProps,
 } from '../shared/components/ui/GridSlider'; // Assuming SliderProps is exported
 import { GridButton } from '../shared/components/ui/GridButton';
-import { useToneConnections } from '../audio/hooks/useToneConnections';
 import {
 	useToneOscillator,
 	type ToneOscillatorControls,
@@ -52,9 +51,6 @@ export function OscillatorNode({
 		isPlaying,
 		params,
 	}: ToneOscillatorControls = useToneOscillator(id);
-
-	// Hook to manage audio connections for this node
-	useToneConnections(id);
 
 	// Correctly type the React Flow instance.
 	const reactFlowInstance = useReactFlow<

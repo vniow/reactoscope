@@ -12,7 +12,6 @@ import { BaseNode } from '../shared/components/BaseNode';
 import { GridNodeHandle } from '../shared/components/GridNodeHandle';
 import { GridSlider } from '../shared/components/ui/GridSlider';
 import { GridButton } from '../shared/components/ui/GridButton';
-import { useToneConnections } from '../audio/hooks/useToneConnections';
 import { useNoiseWorklet } from '../audio/hooks/useNoiseWorklet';
 import type { NoiseWorkletNode } from './types';
 
@@ -39,9 +38,6 @@ export function NoiseWorkletNode({
 	// Hooks must be called first, before any conditional logic
 	const { start, stop, setVolume, isPlaying, isReady, params } =
 		useNoiseWorklet(id);
-
-	// Handle audio connections to other nodes
-	useToneConnections(id);
 
 	// Get the React Flow instance for node management
 	const reactFlowInstance = useReactFlow();

@@ -18,7 +18,6 @@ import { GridNodeHandle } from '../shared/components/GridNodeHandle';
 import { GridSlider } from '../shared/components/ui/GridSlider';
 import { GridButton } from '../shared/components/ui/GridButton';
 import { GridSelect } from '../shared/components/ui/GridSelect';
-import { useToneConnections } from '../audio/hooks/useToneConnections';
 import { useThreeWorklet } from '../audio/hooks/useThreeWorklet';
 import type { ThreeWorkletNode } from './types';
 import type { CoordinatePoint } from '../audio/worklets';
@@ -76,6 +75,11 @@ export function ThreeWorkletNode({
 	const throttleHitCountRef = useRef<number>(0);
 	const bufferCreationTimeRef = useRef<Map<number, number>>(new Map());
 
+	// Use ref for stable function reference to prevent infinite re-renders
+	const smoothAndBufferCoordinatesRef = useRef<(newCoords: Vector2[]) => void>(
+		() => {}
+	);
+
 	// Hooks must be called first, before any conditional logic
 	const {
 		start,
@@ -89,8 +93,9 @@ export function ThreeWorkletNode({
 		params,
 	} = useThreeWorklet(id);
 
-	// Handle audio connections to other nodes
-	useToneConnections(id);
+	// Audio connections are now handled centrally by the store
+	// The store's syncWithReactFlowEdges method is called automatically
+	// when React Flow edges change through the global useAudioSync hook
 
 	// Get the React Flow instance for node management
 	const reactFlowInstance = useReactFlow();
@@ -215,12 +220,16 @@ export function ThreeWorkletNode({
 		[isReady, setCoordinates, bufferSize, updateBufferStats]
 	);
 
+	// Keep the ref updated with the latest function
+	smoothAndBufferCoordinatesRef.current = smoothAndBufferCoordinates;
+
 	// Update coordinates when scene coordinates change
+	// Use ref to avoid infinite re-renders caused by function dependency
 	useEffect(() => {
-		if (sceneCoords.length > 0) {
-			smoothAndBufferCoordinates(sceneCoords);
+		if (sceneCoords.length > 0 && smoothAndBufferCoordinatesRef.current) {
+			smoothAndBufferCoordinatesRef.current(sceneCoords);
 		}
-	}, [sceneCoords, smoothAndBufferCoordinates]);
+	}, [sceneCoords]);
 
 	// Handle coordinate updates from the scene tracker
 	const handleCoordinatesUpdate = useCallback((coords: Vector2[]) => {

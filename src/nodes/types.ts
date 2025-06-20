@@ -30,7 +30,6 @@ export type NoiseWorkletNode = Node<
 	'noise-worklet'
 >;
 
-export type SimpleNoiseWorkletNode = Node<BaseNodeData, 'simple-noise-worklet'>;
 export type BitCrusherWorkletNode = Node<
 	BaseNodeData & AudioNodeData,
 	'bitcrusher-worklet'
@@ -57,7 +56,6 @@ export type AppNode =
 	| VisualizerNodeModular
 	| DestinationNode
 	| NoiseWorkletNode
-	| SimpleNoiseWorkletNode
 	| BitCrusherWorkletNode
 	| DelayWorkletNode
 	| ThreeWorkletNode

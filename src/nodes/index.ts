@@ -14,13 +14,10 @@ import type { NodeTypes } from '@xyflow/react';
 import { DebugNode } from './DebugNode';
 import { OscillatorNode } from './OscillatorNode';
 import { GainNode } from './GainNode';
-import { VisualizerNode } from './VisualizerNode';
 import VisualizerNodeModular from './VisualizerNodeModular';
 import { DestinationNode } from './DestinationNode';
 import { NoiseWorkletNode } from './NoiseWorkletNode';
-import { SimpleNoiseWorkletNode } from './SimpleNoiseWorkletNode';
 import { ThreeWorkletNode } from './ThreeWorkletNode';
-import { ThreeFiberDemoNode } from './ThreeFiberDemoNode';
 
 // Type imports
 import type { AppNode } from './types';
@@ -67,18 +64,16 @@ export const nodeTypes = {
 	// Audio generator nodes
 	oscillator: OscillatorNode,
 	'noise-worklet': NoiseWorkletNode,
-	'simple-noise-worklet': SimpleNoiseWorkletNode,
 
 	// Audio processing nodes
 	gain: GainNode,
 
 	// Visualizer nodes
-	visualizer: VisualizerNode,
+
 	'visualizer-modular': VisualizerNodeModular,
 
 	// Three.js integration nodes
 	'three-worklet': ThreeWorkletNode,
-	'threejs-demo': ThreeFiberDemoNode,
 
 	// Add any custom nodes here following the same pattern
 } as NodeTypes;

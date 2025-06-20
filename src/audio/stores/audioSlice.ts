@@ -621,6 +621,26 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 			getAudioNodeInstance,
 		} = get();
 
+		// Helper function to get source instance based on handle
+		const getSourceInstance = (
+			instance: Tone.ToneAudioNode | undefined,
+			handle: string | null | undefined
+		): Tone.ToneAudioNode | undefined => {
+			if (!instance) return undefined;
+
+			// If no specific handle, return the main instance
+			if (!handle) return instance;
+
+			// Check if the instance has the requested output
+			const obj = instance as unknown as Record<string, unknown>;
+			if (handle in obj && obj[handle] instanceof Tone.ToneAudioNode) {
+				return obj[handle] as Tone.ToneAudioNode;
+			}
+
+			// Fallback to main instance
+			return instance;
+		};
+
 		audioConnections.forEach((connection) => {
 			const sourceNodeData = audioNodes[connection.sourceNodeId];
 			const targetNodeData = audioNodes[connection.targetNodeId];
@@ -634,29 +654,34 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 				return;
 			}
 
-			const sourceInstance = getAudioNodeInstance(
-				sourceNodeData.id /*, potentially a key from sourceHandle */
+			// Get base source instance
+			const baseSourceInstance = getAudioNodeInstance(sourceNodeData.id);
+
+			// Apply handle-based routing for source
+			const sourceInstance = getSourceInstance(
+				baseSourceInstance,
+				connection.sourceHandle
 			);
 
 			if (!sourceInstance) {
 				updateConnectionStatus(
 					connection.id,
 					'error',
-					`Source instance for ${sourceNodeData.type} (${sourceNodeData.id}) not found`
+					`Source instance for ${sourceNodeData.type} (${sourceNodeData.id}) not found (handle: ${connection.sourceHandle})`
 				);
 				return;
 			}
 
 			// Determine the actual Tone.js target instance
-			let targetInstance: Tone.ToneAudioNode | undefined; // Corrected type
+			let targetInstance: Tone.ToneAudioNode | undefined;
 
 			if (targetNodeData.type === 'destination') {
 				targetInstance = Tone.getDestination();
 			} else if (targetNodeData.instances && connection.targetHandle) {
-				const handleKey = connection.targetHandle.startsWith('audio-in-')
-					? connection.targetHandle.substring('audio-in-'.length)
-					: connection.targetHandle;
-				targetInstance = getAudioNodeInstance(targetNodeData.id, handleKey);
+				// Extract channel from handle (e.g., 'audio-in-X' -> 'X')
+				const channelMatch = connection.targetHandle.match(/audio-in-(.+)$/);
+				const channel = channelMatch ? channelMatch[1] : 'default';
+				targetInstance = getAudioNodeInstance(targetNodeData.id, channel);
 			} else {
 				targetInstance = getAudioNodeInstance(targetNodeData.id);
 			}
@@ -669,11 +694,26 @@ export const createAudioSlice: StateCreator<AudioSlice, [], [], AudioSlice> = (
 				);
 				return;
 			}
+
 			try {
-				// The @ts-expect-error might still be needed if Tone.js types are not perfectly aligned for all connect scenarios (e.g. connecting to an AudioParam directly)
-				sourceInstance.connect(targetInstance);
-				updateConnectionStatus(connection.id, 'connected');
-				// console.log(`✅ Connected: ${sourceNodeData.type} (${connection.sourceHandle}) -> ${targetNodeData.type} (${connection.targetHandle})`);
+				// Ensure sourceInstance has a connect method (Tone.js node)
+				if (
+					typeof sourceInstance === 'object' &&
+					'connect' in sourceInstance &&
+					typeof sourceInstance.connect === 'function'
+				) {
+					sourceInstance.connect(targetInstance);
+					updateConnectionStatus(connection.id, 'connected');
+					console.log(
+						`✅ Store Connected: ${sourceNodeData.type} (${connection.sourceHandle}) -> ${targetNodeData.type} (${connection.targetHandle})`
+					);
+				} else {
+					updateConnectionStatus(
+						connection.id,
+						'error',
+						'Source instance does not have connect method'
+					);
+				}
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error ? error.message : 'Unknown connection error';

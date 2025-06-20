@@ -13,12 +13,8 @@ export type { ThreeWorkletControls } from './useThreeWorklet';
 
 // Other hooks
 export { useCoordinateAudioWorklet } from './useCoordinateAudioWorklet';
-export { useSimpleNoiseWorklet } from './useSimpleNoiseWorklet';
-export { useSimpleNoiseWorkletStore } from './useSimpleNoiseWorkletStore';
 export { useToneAnalyser } from './useToneAnalyser';
 export { useToneAnalyserModular } from './useToneAnalyserModular';
-export { useToneConnections } from './useToneConnections';
-export { useToneConnectionsZustand } from './useToneConnectionsZustand';
 export { useToneDestination } from './useToneDestination';
 export { useToneGain } from './useToneGain';
 export { useToneOscillator } from './useToneOscillator';

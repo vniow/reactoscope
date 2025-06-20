@@ -16,6 +16,7 @@ import { FlowControls } from './flow/components/FlowControls';
 import { ThemedMiniMap } from './flow/components/ThemedMiniMap';
 import { type AppNode } from './nodes/types';
 import { useAppStore } from './shared/stores/appStore';
+import { AudioSyncComponent } from './audio/components/AudioSyncComponent';
 
 import { GRID_UNIT } from './shared/config/grid';
 
@@ -67,41 +68,6 @@ export default function App() {
 	return (
 		<ThemeProvider>
 			<div className='w-full h-screen'>
-				{/* Debug button - temporary */}
-				<button
-					onClick={() => {
-						console.log('=== DEBUG BUTTON CLICKED ===');
-						// Debug Zustand audio state instead of toneRegistry
-						const audioNodes = useAppStore.getState().audioNodes;
-						console.log('Audio Nodes State:', audioNodes);
-						console.log('Audio Nodes Count:', Object.keys(audioNodes).length);
-						Object.entries(audioNodes).forEach(([nodeId, node]) => {
-							console.log(`Node ${nodeId}:`, {
-								type: node.type,
-								hasInstance: !!node.instance,
-								hasInstances: !!node.instances,
-								instancesCount: node.instances
-									? Object.keys(node.instances).length
-									: 0,
-								params: node.params,
-							});
-						});
-					}}
-					style={{
-						position: 'fixed',
-						top: '10px',
-						right: '10px',
-						zIndex: 1000,
-						padding: '8px 16px',
-						backgroundColor: '#f59e0b',
-						color: 'white',
-						border: 'none',
-						borderRadius: '4px',
-						cursor: 'pointer',
-					}}
-				>
-					Debug Audio State
-				</button>
 				<ReactFlow
 					nodes={nodes}
 					nodeTypes={nodeTypes}
@@ -118,6 +84,9 @@ export default function App() {
 					maxZoom={4}
 					proOptions={{ hideAttribution: true }}
 				>
+					{/* Audio sync component - handles centralized audio connections */}
+					<AudioSyncComponent />
+
 					<Background
 						gap={GRID_UNIT}
 						size={6}

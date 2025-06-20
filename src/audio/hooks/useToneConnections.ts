@@ -18,23 +18,22 @@ export function useToneConnections(nodeId: string) {
 	const { audioNodes } = useAudioNodes();
 	const edges = useEdges();
 
-	// Get the source node's instance to trigger re-connection when it changes
-	const sourceNodeData = audioNodes[nodeId];
-	const sourceInstance = sourceNodeData?.instance;
-
 	// Helper function to get source instance based on handle
-	const getSourceInstance = (instance: unknown, handle: string | null | undefined) => {
+	const getSourceInstance = (
+		instance: unknown,
+		handle: string | null | undefined
+	) => {
 		if (!instance || typeof instance !== 'object') return instance;
-		
+
 		// If no specific handle, return the main instance
 		if (!handle) return instance;
-		
+
 		// Check if the instance has the requested output
 		const obj = instance as Record<string, unknown>;
 		if (handle in obj) {
 			return obj[handle];
 		}
-		
+
 		// Fallback to main instance
 		return instance;
 	};
@@ -55,7 +54,10 @@ export function useToneConnections(nodeId: string) {
 
 			if (sourceNode && targetNode) {
 				// Get source instance with handle support (type-agnostic)
-				const sourceInstance = getSourceInstance(sourceNode.instance, edge.sourceHandle);
+				const sourceInstance = getSourceInstance(
+					sourceNode.instance,
+					edge.sourceHandle
+				);
 
 				console.log(
 					`🔗 Connection: ${sourceNode.type} (${sourceNode.id}) -> ${targetNode.type} (${targetNode.id})`,
@@ -92,7 +94,11 @@ export function useToneConnections(nodeId: string) {
 				if (sourceInstance && targetInstance) {
 					try {
 						// Ensure sourceInstance has a connect method (Tone.js node)
-						if (typeof sourceInstance === 'object' && 'connect' in sourceInstance && typeof sourceInstance.connect === 'function') {
+						if (
+							typeof sourceInstance === 'object' &&
+							'connect' in sourceInstance &&
+							typeof sourceInstance.connect === 'function'
+						) {
 							sourceInstance.connect(targetInstance);
 							console.log(
 								`✅ Connected ${sourceNode.type} -> ${targetNode.type}`
@@ -127,7 +133,10 @@ export function useToneConnections(nodeId: string) {
 
 				if (sourceNode && targetNode) {
 					// Get source instance with handle support (type-agnostic)
-					const sourceInstance = getSourceInstance(sourceNode.instance, edge.sourceHandle);
+					const sourceInstance = getSourceInstance(
+						sourceNode.instance,
+						edge.sourceHandle
+					);
 
 					// Get target instance (type-agnostic with multi-instance support)
 					let targetInstance;
@@ -144,7 +153,11 @@ export function useToneConnections(nodeId: string) {
 					if (sourceInstance && targetInstance) {
 						try {
 							// Ensure sourceInstance has a disconnect method (Tone.js node)
-							if (typeof sourceInstance === 'object' && 'disconnect' in sourceInstance && typeof sourceInstance.disconnect === 'function') {
+							if (
+								typeof sourceInstance === 'object' &&
+								'disconnect' in sourceInstance &&
+								typeof sourceInstance.disconnect === 'function'
+							) {
 								sourceInstance.disconnect(targetInstance);
 								console.log(
 									`🔌 Disconnected ${sourceNode.type} -> ${targetNode.type}`
@@ -157,7 +170,7 @@ export function useToneConnections(nodeId: string) {
 				}
 			});
 		};
-	}, [nodeId, audioNodes, edges, sourceInstance]);
+	}, [nodeId, audioNodes, edges]); // Remove sourceInstance to prevent infinite reconnection loops
 
 	return {
 		getOutgoingConnections: () => {

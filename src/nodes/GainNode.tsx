@@ -6,7 +6,6 @@ import { GridNodeHandle } from '../shared/components/GridNodeHandle';
 import { GridSlider } from '../shared/components/ui/GridSlider';
 import { GridButton } from '../shared/components/ui/GridButton';
 import { useToneGain } from '../audio/hooks/useToneGain';
-import { useToneConnections } from '../audio/hooks/useToneConnections';
 import { useNodeOperations } from '../flow/hooks/useNodeOperations';
 import type { GainNode as GainNodeType } from './types';
 
@@ -36,9 +35,6 @@ export function GainNode({
 
 	// Initialize gain controls
 	const { updateGain, updateMute, params } = useToneGain(id);
-
-	// Handle audio connections to other nodes
-	useToneConnections(id);
 
 	/**
 	 * Handles node deletion with proper cleanup.
