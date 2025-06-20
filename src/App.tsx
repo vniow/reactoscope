@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import {
 	ReactFlow,
 	Background,
@@ -21,6 +21,9 @@ import { AudioSyncComponent } from './audio/components/AudioSyncComponent';
 import { GRID_UNIT } from './shared/config/grid';
 
 export default function App() {
+	// Global effect counter for debugging infinite loops
+	const globalEffectCounterRef = useRef(0);
+
 	// Use Zustand store for flow state management
 	const nodes = useAppStore((state) => state.nodes);
 	const edges = useAppStore((state) => state.edges);
@@ -37,7 +40,21 @@ export default function App() {
 
 	// Initialize flow state on component mount
 	useEffect(() => {
+		globalEffectCounterRef.current++;
+		console.log(
+			`🔍 [App] useEffect ENTRY #${globalEffectCounterRef.current} - Initialize flow`,
+			{
+				nodesCount: initialNodes.length,
+				edgesCount: initialEdges.length,
+				stack: new Error().stack?.split('\n').slice(1, 4).join('\n'),
+			}
+		);
+
 		initializeFlow(initialNodes as AppNode[], initialEdges);
+
+		console.log(
+			`🔍 [App] useEffect EXIT #${globalEffectCounterRef.current} - Initialize flow`
+		);
 	}, [initializeFlow]);
 
 	// Calculate background color based on theme

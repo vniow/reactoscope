@@ -59,8 +59,20 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 
 	// Initialize audio node in store if it doesn't exist
 	useEffect(() => {
+		console.log(
+			`🔍 [useNoiseWorklet-${nodeId}] useEffect ENTRY - Initialize audio node`,
+			{
+				nodeId,
+				hasAudioNode: !!audioNode,
+				stack: new Error().stack?.split('\n').slice(1, 4).join('\n'),
+			}
+		);
+
 		if (!audioNode) {
 			try {
+				console.log(
+					`🔍 [useNoiseWorklet-${nodeId}] ADDING audio node to store`
+				);
 				addAudioNode(nodeId, 'noise-worklet', {
 					isPlaying: false,
 					volume: 0.5,
@@ -69,11 +81,29 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 			} catch (error) {
 				console.error(`🚨 Failed to initialize audio node ${nodeId}:`, error);
 			}
+		} else {
+			console.log(
+				`🔍 [useNoiseWorklet-${nodeId}] SKIPPING - audio node already exists`
+			);
 		}
-	}, [nodeId, audioNode, addAudioNode]);
+
+		console.log(
+			`🔍 [useNoiseWorklet-${nodeId}] useEffect EXIT - Initialize audio node`
+		);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [nodeId, addAudioNode]); // Remove audioNode to prevent infinite loop
 
 	// Create and configure worklet
 	useEffect(() => {
+		console.log(
+			`🔍 [useNoiseWorklet-${nodeId}] useEffect ENTRY - Create worklet`,
+			{
+				nodeId,
+				hasWorkletRef: !!workletRef.current,
+				stack: new Error().stack?.split('\n').slice(1, 4).join('\n'),
+			}
+		);
+
 		const createWorklet = async (): Promise<void> => {
 			try {
 				// Ensure audio context is started
@@ -104,11 +134,18 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 
 		// Cleanup on unmount
 		return () => {
+			console.log(`🔍 [useNoiseWorklet-${nodeId}] useEffect CLEANUP starting`);
 			if (workletRef.current) {
 				try {
 					if (isStartedRef.current) {
+						console.log(
+							`🔍 [useNoiseWorklet-${nodeId}] Stopping worklet before disposal`
+						);
 						workletRef.current.stop();
 					}
+					console.log(
+						`🔍 [useNoiseWorklet-${nodeId}] Disposing worklet instance`
+					);
 					workletRef.current.dispose();
 					removeAudioNodeInstance(nodeId);
 				} catch (error) {
@@ -119,32 +156,53 @@ export const useNoiseWorklet = (nodeId: string): NoiseWorkletControls => {
 				}
 				workletRef.current = null;
 			}
+			console.log(`🔍 [useNoiseWorklet-${nodeId}] useEffect CLEANUP completed`);
 		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
 		nodeId,
-		initializeAudioContext,
-		setAudioNodeInstance,
-		removeAudioNodeInstance,
+		// Removed store functions from deps to prevent infinite re-renders
+		// These are not stable references but the effect only needs to run once per nodeId
 	]);
 
 	// Sync parameters with worklet
 	useEffect(() => {
+		console.log(
+			`🔍 [useNoiseWorklet-${nodeId}] useEffect ENTRY - Sync params`,
+			{
+				nodeId,
+				hasWorklet: !!workletRef.current,
+				isReady: workletRef.current?.isReady,
+				volume: params.volume,
+				isPlaying: params.isPlaying,
+				workletIsPlaying: workletRef.current?.isPlaying,
+				stack: new Error().stack?.split('\n').slice(1, 4).join('\n'),
+			}
+		);
+
 		if (workletRef.current && workletRef.current.isReady) {
 			// Sync volume parameter
 			if (workletRef.current.volume.value !== params.volume) {
+				console.log(
+					`🔍 [useNoiseWorklet-${nodeId}] Updating volume: ${params.volume}`
+				);
 				workletRef.current.setVolume(params.volume);
 			}
 
 			// Sync playing state
 			if (params.isPlaying && !workletRef.current.isPlaying) {
+				console.log(`🔍 [useNoiseWorklet-${nodeId}] Starting worklet`);
 				workletRef.current.start();
 				isStartedRef.current = true;
 			} else if (!params.isPlaying && workletRef.current.isPlaying) {
+				console.log(`🔍 [useNoiseWorklet-${nodeId}] Stopping worklet`);
 				workletRef.current.stop();
 				isStartedRef.current = false;
 			}
 		}
-	}, [params.volume, params.isPlaying]);
+
+		console.log(`🔍 [useNoiseWorklet-${nodeId}] useEffect EXIT - Sync params`);
+	}, [params.volume, params.isPlaying, nodeId]);
 
 	// Control functions
 	const start = useCallback(async (): Promise<void> => {

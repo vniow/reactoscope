@@ -81,11 +81,33 @@ export const useToneAnalyserModular = (
 	}, [edges, nodeId, targetHandle]);
 
 	useEffect(() => {
+		console.log(
+			`🔍 [useToneAnalyserModular-${nodeId}-${channel}] useEffect ENTRY - Setup analyser`,
+			{
+				nodeId,
+				channel,
+				targetHandle,
+				initialSize,
+				initialSmoothing,
+				isAnalyserReady,
+				hasAnalyserRef: !!analyserRef.current,
+				stack: new Error().stack?.split('\n').slice(1, 4).join('\n'),
+			}
+		);
+
 		let didDispose = false;
 
 		const setupAnalyser = async () => {
+			console.log(
+				`🔍 [useToneAnalyserModular-${nodeId}-${channel}] Starting analyser setup`
+			);
 			await initializeAudioContext();
-			if (didDispose) return;
+			if (didDispose) {
+				console.log(
+					`🔍 [useToneAnalyserModular-${nodeId}-${channel}] Setup cancelled - component disposed`
+				);
+				return;
+			}
 
 			// Check if an instance already exists in the store for this nodeId/channel
 			// This can happen with HMR or if the parent node already has this instance.
@@ -130,6 +152,9 @@ export const useToneAnalyserModular = (
 		setupAnalyser();
 
 		return () => {
+			console.log(
+				`🔍 [useToneAnalyserModular-${nodeId}-${channel}] useEffect CLEANUP starting`
+			);
 			didDispose = true;
 			// console.log(\`🧹 Attempting to dispose modular analyser: ${nodeId}_${channel}\`);
 			if (analyserRef.current) {
@@ -138,49 +163,75 @@ export const useToneAnalyserModular = (
 					// This check might be complex if another hook instance adopted it.
 					// For now, assume if analyserRef.current is set, this hook owns it.
 					analyserRef.current.dispose();
+					console.log(
+						`🔍 [useToneAnalyserModular-${nodeId}-${channel}] Disposed analyser instance`
+					);
 					// console.log(\`🧹 Disposed modular analyser: ${nodeId}_${channel}\`);
-					// eslint-disable-next-line @typescript-eslint/no-unused-vars
 				} catch (e) {
-					// console.error(
-					// \`🚨 Error disposing analyser ${nodeId}_${channel}:\`,
-					// e
-					// );
+					console.error(
+						`🔍 [useToneAnalyserModular-${nodeId}-${channel}] Error disposing analyser:`,
+						e
+					);
 				}
 			}
 			removeAudioNodeInstance(nodeId, channel); // Remove from store
 			analyserRef.current = null;
 			setIsAnalyserReady(false);
+			console.log(
+				`🔍 [useToneAnalyserModular-${nodeId}-${channel}] useEffect CLEANUP completed`
+			);
 			// console.log(
 			// \`🗑️ Removed modular analyser instance from store: ${nodeId}_${channel}\`
 			// );
 		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
 		nodeId,
 		channel,
 		initialSize,
 		initialSmoothing,
-		initializeAudioContext,
-		getAudioNodeInstance,
-		setAudioNodeInstance,
-		removeAudioNodeInstance,
-		size, // Add size and smoothing to re-run if they change from parent,
-		smoothing, // though they are managed by internal useState here.
+		// Removed store functions from deps to prevent infinite re-renders
+		// These functions are not stable references and cause the effect to run constantly
+		// The functions themselves don't change in meaningful ways, only their references
 	]);
 
 	// Effect to update Tone.Analyser instance when local size/smoothing state changes
 	useEffect(() => {
+		console.log(
+			`🔍 [useToneAnalyserModular-${nodeId}-${channel}] useEffect ENTRY - Update params`,
+			{
+				size,
+				smoothing,
+				isAnalyserReady,
+				hasAnalyserRef: !!analyserRef.current,
+				currentSize: analyserRef.current?.size,
+				currentSmoothing: analyserRef.current?.smoothing,
+				stack: new Error().stack?.split('\n').slice(1, 4).join('\n'),
+			}
+		);
+
 		if (analyserRef.current && isAnalyserReady) {
 			if (analyserRef.current.size !== size) {
 				analyserRef.current.size = size;
+				console.log(
+					`🔍 [useToneAnalyserModular-${nodeId}-${channel}] Updated size: ${size}`
+				);
 				// console.log(\`🎛️ Updated analyser ${nodeId}_${channel} size to: ${size}\`);
 			}
 			if (analyserRef.current.smoothing !== smoothing) {
 				analyserRef.current.smoothing = smoothing;
+				console.log(
+					`🔍 [useToneAnalyserModular-${nodeId}-${channel}] Updated smoothing: ${smoothing.toFixed(1)}`
+				);
 				// console.log(
 				// \`🎛️ Updated analyser ${nodeId}_${channel} smoothing to: ${smoothing.toFixed(1)}\`
 				// );
 			}
 		}
+
+		console.log(
+			`🔍 [useToneAnalyserModular-${nodeId}-${channel}] useEffect EXIT - Update params`
+		);
 	}, [size, smoothing, isAnalyserReady, nodeId, channel]); // Added nodeId, channel for logging context
 
 	const updateSizeCallback = useCallback(

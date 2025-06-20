@@ -1,4 +1,4 @@
-import { useMemo, memo, useEffect, useCallback } from 'react';
+import { useMemo, memo, useEffect, useCallback, useRef } from 'react';
 import type { NodeProps } from '@xyflow/react';
 import { Position } from '@xyflow/react';
 import { BaseNode } from '../shared/components/BaseNode';
@@ -9,6 +9,7 @@ import { useToneAnalyserModular } from '../audio/hooks/useToneAnalyserModular';
 import { useAppStore } from '../shared/stores/appStore';
 import { useNodeOperations } from '../flow/hooks/useNodeOperations';
 import type { VisualizerNodeModular as VisualizerNodeModularType } from './types';
+import { trackEffect } from '../shared/utils/effectDebugger';
 
 // Grid configuration for visualizer node
 const VISUALIZER_NODE_CONFIG = {
@@ -34,14 +35,51 @@ function VisualizerNodeModular({
 	const { addAudioNode, audioNodes } = useAppStore();
 	const { deleteNode } = useNodeOperations();
 
+	// Track if we've already initialized this node to prevent re-initialization
+	const isInitializedRef = useRef(false);
+
 	// Initialize the main audio node entry if it doesn't exist.
 	// This is crucial for the connection system to find the parent node.
 	useEffect(() => {
-		if (!audioNodes[id]) {
+		const effectId = trackEffect(
+			'VisualizerNodeModular',
+			`Initialize audio node for ${id}`,
+			true
+		);
+
+		console.log(
+			`🔍 [VisualizerNodeModular-${id}] useEffect ENTRY - Initialize audio node`,
+			{
+				effectId,
+				nodeId: id,
+				hasAudioNode: !!audioNodes[id],
+				isInitialized: isInitializedRef.current,
+				audioNodesCount: Object.keys(audioNodes).length,
+				stack: new Error().stack?.split('\n').slice(1, 4).join('\n'),
+			}
+		);
+
+		if (!audioNodes[id] && !isInitializedRef.current) {
+			console.log(
+				`🔍 [VisualizerNodeModular-${id}] ADDING audio node to store`
+			);
 			addAudioNode(id, 'visualizer', {}); // Type 'visualizer' with empty params
+			isInitializedRef.current = true;
 			console.log(`📊 Initialized main visualizer node in store: ${id}`);
+		} else {
+			console.log(
+				`🔍 [VisualizerNodeModular-${id}] SKIPPING audio node creation`,
+				{
+					reason: audioNodes[id] ? 'already exists' : 'already initialized',
+				}
+			);
 		}
-	}, [id, audioNodes, addAudioNode]);
+
+		console.log(
+			`🔍 [VisualizerNodeModular-${id}] useEffect EXIT - Initialize audio node`
+		);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [id, addAudioNode]); // Intentionally exclude audioNodes to prevent infinite loop
 
 	/**
 	 * Event handler for node deletion with proper error handling

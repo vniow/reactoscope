@@ -6,7 +6,7 @@
  * and converts them into stereo audio output. Features coordinate smoothing, buffering, and real-time
  * visualization with animated 3D geometry.
  */
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useState, useCallback, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Vector2 } from 'three';
 
@@ -74,11 +74,6 @@ export function ThreeWorkletNode({
 	// Simplified refs - debug tracking moved to custom hook
 	const throttleHitCountRef = useRef<number>(0);
 	const bufferCreationTimeRef = useRef<Map<number, number>>(new Map());
-
-	// Use ref for stable function reference to prevent infinite re-renders
-	const smoothAndBufferCoordinatesRef = useRef<(newCoords: Vector2[]) => void>(
-		() => {}
-	);
 
 	// Hooks must be called first, before any conditional logic
 	const {
@@ -220,21 +215,21 @@ export function ThreeWorkletNode({
 		[isReady, setCoordinates, bufferSize, updateBufferStats]
 	);
 
-	// Keep the ref updated with the latest function
-	smoothAndBufferCoordinatesRef.current = smoothAndBufferCoordinates;
-
-	// Update coordinates when scene coordinates change
-	// Use ref to avoid infinite re-renders caused by function dependency
-	useEffect(() => {
-		if (sceneCoords.length > 0 && smoothAndBufferCoordinatesRef.current) {
-			smoothAndBufferCoordinatesRef.current(sceneCoords);
-		}
-	}, [sceneCoords]);
-
 	// Handle coordinate updates from the scene tracker
-	const handleCoordinatesUpdate = useCallback((coords: Vector2[]) => {
-		setSceneCoords(coords);
-	}, []);
+	// DIRECT CALLBACK - no state involved, no useEffect needed
+	const handleCoordinatesUpdate = useCallback(
+		(coords: Vector2[]) => {
+			// Store the coordinates for display purposes only
+			setSceneCoords(coords);
+
+			// Process coordinates immediately - no useEffect needed
+			if (coords.length > 0) {
+				// console.log(`🔍 [ThreeWorkletNode-${id}] Direct coordinate processing: ${coords.length} points`);
+				smoothAndBufferCoordinates(coords);
+			}
+		},
+		[smoothAndBufferCoordinates, id]
+	);
 
 	// Input validation after hooks
 	if (!id || typeof id !== 'string') {
