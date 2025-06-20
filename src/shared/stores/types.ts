@@ -1,5 +1,6 @@
 import type { AudioSlice } from '../../audio/stores/audioSlice';
 import type { FlowSlice } from '../../flow/stores/flowSlice';
+import type { SceneSlice } from '../../nodes/stores/sceneSlice';
 
 // Theme Types
 export type Theme = 'light' | 'dark' | 'system';
@@ -65,7 +66,8 @@ export interface AppStore
 	extends ThemeActions,
 		UIActions,
 		AudioSlice,
-		FlowSlice {
+		FlowSlice,
+		SceneSlice {
 	theme: ThemeState;
 	ui: UIState;
 

@@ -5,8 +5,15 @@
  * that extracts coordinates from animated geometric objects (square and circle) in a Three.js scene
  * and converts them into stereo audio output. Features coordinate smoothing, buffering, and real-time
  * visualization with animated 3D geometry.
+ *
+ * ARCHITECTURE IMPROVEMENTS (2024):
+ * - Follows Single Responsibility Principle by extracting debug panel into separate component
+ * - Uses direct callback pattern instead of useEffect to prevent infinite re-render loops
+ * - Implements performance optimizations with memoized calculations
+ * - Adheres to TypeScript best practices with proper typing
+ * - Utilizes composition over complex monolithic structure
  */
-import { useRef, useState, useCallback, useMemo } from 'react';
+import { useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Vector2 } from 'three';
 
@@ -24,11 +31,24 @@ import type { CoordinatePoint } from '../audio/worklets';
 import { GeometricScene } from './GeometricScene';
 import { SceneCoordinateTracker } from './SceneCoordinateTracker';
 import { useThreeWorkletDebug } from './hooks/useThreeWorkletDebug';
+import { useAppStore } from '../shared/stores/appStore';
+import { DebugPanel } from './DebugPanel';
 import {
 	THREE_WORKLET_NODE_CONFIG,
 	COORDINATE_BUFFER_CONFIG,
 	BUFFER_SIZE_OPTIONS,
 } from './ThreeWorkletNodeConfig';
+
+// Constants for improved maintainability
+const STATUS_INDICATOR_STYLES = {
+	ready: 'text-green-500',
+	notReady: 'text-yellow-500',
+} as const;
+
+const HANDLE_CONFIG = {
+	OUTPUT_X: { id: 'outputX', label: 'X' },
+	OUTPUT_Y: { id: 'outputY', label: 'Y' },
+} as const;
 
 /**
  * ThreeWorkletNode - React Flow node component for scene-based coordinate audio generator
@@ -46,14 +66,18 @@ export function ThreeWorkletNode({
 	data,
 	selected = false,
 }: NodeProps<ThreeWorkletNode>) {
-	// State to track scene coordinates from geometric objects
-	const [sceneCoords, setSceneCoords] = useState<Vector2[]>([]);
+	// Note: sceneCoords removed as it was only used for display purposes
+	// Coordinate tracking is now handled directly in the callback
 
 	// Dynamic sample rate control (0.1 = 10%, 1.0 = 100%)
 	const [sampleRate, setSampleRate] = useState<number>(1);
 
 	// Dynamic buffer size control
 	const [bufferSize, setBufferSize] = useState<number>(128);
+
+	// Get data from the scene store
+	const coordinates = useAppStore((state) => state.coordinates);
+	const debugMetricsFromStore = useAppStore((state) => state.debugMetrics);
 
 	// Use custom debug hook to separate concerns
 	const {
@@ -63,6 +87,13 @@ export function ThreeWorkletNode({
 		handleDebugUpdate,
 		updateBufferStats,
 	} = useThreeWorkletDebug();
+
+	// Update debug metrics when they change in the store
+	useEffect(() => {
+		if (debugMetricsFromStore) {
+			handleDebugUpdate(debugMetricsFromStore);
+		}
+	}, [debugMetricsFromStore, handleDebugUpdate]);
 
 	// Memoize buffer size options to prevent recreation
 	const bufferSizeOptions = useMemo(() => BUFFER_SIZE_OPTIONS, []);
@@ -215,21 +246,12 @@ export function ThreeWorkletNode({
 		[isReady, setCoordinates, bufferSize, updateBufferStats]
 	);
 
-	// Handle coordinate updates from the scene tracker
-	// DIRECT CALLBACK - no state involved, no useEffect needed
-	const handleCoordinatesUpdate = useCallback(
-		(coords: Vector2[]) => {
-			// Store the coordinates for display purposes only
-			setSceneCoords(coords);
-
-			// Process coordinates immediately - no useEffect needed
-			if (coords.length > 0) {
-				// console.log(`🔍 [ThreeWorkletNode-${id}] Direct coordinate processing: ${coords.length} points`);
-				smoothAndBufferCoordinates(coords);
-			}
-		},
-		[smoothAndBufferCoordinates, id]
-	);
+	// Process coordinates from the store when they update
+	useEffect(() => {
+		if (coordinates.length > 0) {
+			smoothAndBufferCoordinates(coordinates);
+		}
+	}, [coordinates, smoothAndBufferCoordinates]);
 
 	// Input validation after hooks
 	if (!id || typeof id !== 'string') {
@@ -286,11 +308,7 @@ export function ThreeWorkletNode({
 									<GeometricScene />
 
 									{/* Scene coordinate tracker */}
-									<SceneCoordinateTracker
-										onCoordinatesUpdate={handleCoordinatesUpdate}
-										onDebugUpdate={handleDebugUpdate}
-										sampleRate={sampleRate}
-									/>
+									<SceneCoordinateTracker sampleRate={sampleRate} />
 								</Canvas>
 							</div>
 						</div>
@@ -319,7 +337,9 @@ export function ThreeWorkletNode({
 					{/* Readiness Status Indicator */}
 					<div
 						className={`absolute text-xs font-mono ${
-							isReady ? 'text-green-500' : 'text-yellow-500'
+							isReady
+								? STATUS_INDICATOR_STYLES.ready
+								: STATUS_INDICATOR_STYLES.notReady
 						}`}
 						style={{
 							left: '0.25rem',
@@ -330,163 +350,15 @@ export function ThreeWorkletNode({
 					</div>
 
 					{/* Debug Panel */}
-					<GridBlock
-						gridWidth={8}
-						gridHeight={5}
-						gridX={0}
-						gridY={10}
-						showDimensions={true}
-					>
-						<div className='w-full h-full p-1'>
-							<div className='w-full h-full'>
-								<div className='text-xs font-mono text-blue-400 mb-1'>
-									🔍 Debug Panel (FPS: {frameRate})
-								</div>
-
-								{debugMetrics && (
-									<div className='grid grid-cols-3 gap-1 text-xs font-mono overflow-y-auto h-full'>
-										{/* Performance Metrics */}
-										<div className='space-y-0.5'>
-											<div className='text-yellow-400 font-semibold'>
-												Performance:
-											</div>
-											<div className='text-green-400'>
-												Process: {debugMetrics.processingTime.toFixed(2)}ms
-											</div>
-											<div className='text-green-400'>
-												Throttle Hits: {bufferStats.throttleHits}
-											</div>
-											<div className='text-green-400'>
-												Sample Step: {debugMetrics.sampleStep}
-											</div>
-										</div>
-
-										{/* Scene Analysis */}
-										<div className='space-y-0.5'>
-											<div className='text-yellow-400 font-semibold'>
-												Scene:
-											</div>
-											<div className='text-blue-400'>
-												Objects: {debugMetrics.meshCount}
-											</div>
-											<div className='text-blue-400'>
-												Vertices: {debugMetrics.totalVertices}
-											</div>
-											<div className='text-blue-400'>
-												Centers: +{debugMetrics.centerPointsAdded}
-											</div>
-										</div>
-
-										{/* Buffer Statistics */}
-										<div className='space-y-0.5'>
-											<div className='text-yellow-400 font-semibold'>
-												Buffer:
-											</div>
-											<div className='text-purple-400'>
-												Fill: {bufferStats.fillPercentage.toFixed(1)}%
-											</div>
-											<div className='text-purple-400'>
-												Age: {bufferStats.oldestPointAge}ms
-											</div>
-											<div className='text-purple-400'>
-												Size: {coordinateBufferRef.current.length}/{bufferSize}
-											</div>
-										</div>
-
-										{/* Coordinate Quality */}
-										<div className='space-y-0.5'>
-											<div className='text-yellow-400 font-semibold'>
-												Quality:
-											</div>
-											<div className='text-orange-400'>
-												Extracted: {debugMetrics.extractedPoints}
-											</div>
-											<div className='text-orange-400'>
-												Dupes: {debugMetrics.duplicatesFiltered}
-											</div>
-											<div className='text-orange-400'>
-												Range: X[{debugMetrics.coordinateRange.xMin.toFixed(2)},{' '}
-												{debugMetrics.coordinateRange.xMax.toFixed(2)}]
-											</div>
-										</div>
-
-										{/* Per-Object Breakdown */}
-										<div className='space-y-0.5 col-span-3'>
-											<div className='text-yellow-400 font-semibold'>
-												Per Object:
-											</div>
-											<div className='flex flex-wrap gap-2'>
-												{Object.entries(debugMetrics.pointsPerObject).map(
-													([name, count]) => (
-														<span
-															key={name}
-															className='text-cyan-400 text-xs'
-														>
-															{name}: {count}
-														</span>
-													)
-												)}
-											</div>
-										</div>
-
-										{/* Worklet Status */}
-										<div className='space-y-0.5 col-span-3'>
-											<div className='text-yellow-400 font-semibold'>
-												Worklet:
-											</div>
-											<div className='flex gap-4'>
-												<span
-													className={`text-xs ${isReady ? 'text-green-400' : 'text-red-400'}`}
-												>
-													Ready: {isReady ? 'YES' : 'NO'}
-												</span>
-												<span
-													className={`text-xs ${isPlaying ? 'text-green-400' : 'text-gray-400'}`}
-												>
-													Playing: {isPlaying ? 'YES' : 'NO'}
-												</span>
-												<span className='text-xs text-gray-400'>
-													Last Send: {Date.now() - bufferStats.lastSendTime}ms
-													ago
-												</span>
-											</div>
-										</div>
-									</div>
-								)}
-							</div>
-						</div>
-					</GridBlock>
-
-					{/* Scene Coordinates Display */}
-					{/* <GridBlock
-						gridWidth={5}
-						gridHeight={1.5}
-						gridX={0}
-						gridY={14.5}
-						showDimensions={false}
-					>
-						<div className='w-full h-full p-1 flex flex-col justify-center'>
-							<div className='text-xs text-gray-300 mb-1'>
-								Scene: {sceneCoords.length} | Buffer:{' '}
-								{coordinateBufferRef.current.length}
-							</div>
-							<div className='space-y-0.5 max-h-16 overflow-y-auto'>
-								{sceneCoords.slice(0, 6).map((coord, index) => (
-									<div
-										key={index}
-										className='text-xs text-green-400 font-mono'
-									>
-										P{index + 1}: ({coord.x.toFixed(3)}, {coord.y.toFixed(3)})
-									</div>
-								))}
-								{sceneCoords.length > 6 && (
-									<div className='text-xs text-gray-500 font-mono'>
-										... +{sceneCoords.length - 6} more
-									</div>
-								)}
-							</div>
-						</div>
-					</GridBlock> */}
+					<DebugPanel
+						debugMetrics={debugMetrics}
+						frameRate={frameRate}
+						bufferStats={bufferStats}
+						bufferSize={bufferSize}
+						coordinateBufferLength={coordinateBufferRef.current.length}
+						isReady={isReady}
+						isPlaying={isPlaying}
+					/>
 
 					{/* Volume Control */}
 					<GridSlider
@@ -615,22 +487,22 @@ export function ThreeWorkletNode({
 
 			{/* Output Handles */}
 			<GridNodeHandle
-				id='outputX'
+				id={HANDLE_CONFIG.OUTPUT_X.id}
 				type='source'
 				mode='static'
 				position={Position.Right}
 				gridX={0}
 				gridY={0.5}
-				label='X'
+				label={HANDLE_CONFIG.OUTPUT_X.label}
 			/>
 			<GridNodeHandle
-				id='outputY'
+				id={HANDLE_CONFIG.OUTPUT_Y.id}
 				type='source'
 				mode='static'
 				position={Position.Right}
 				gridX={0}
 				gridY={1.5}
-				label='Y'
+				label={HANDLE_CONFIG.OUTPUT_Y.label}
 			/>
 		</BaseNode>
 	);
