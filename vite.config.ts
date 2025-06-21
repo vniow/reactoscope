@@ -20,6 +20,10 @@ export default defineConfig({
 		hmr: {
 			overlay: false,
 		},
+		headers: {
+			'Cross-Origin-Opener-Policy': 'same-origin',
+			'Cross-Origin-Embedder-Policy': 'require-corp',
+		},
 	},
 	build: {
 		sourcemap: false, // Disable source maps for build
@@ -43,5 +47,8 @@ export default defineConfig({
 		'process.env.NODE_ENV': JSON.stringify(
 			process.env.NODE_ENV || 'development'
 		),
+	},
+	optimizeDeps: {
+		exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util'],
 	},
 });

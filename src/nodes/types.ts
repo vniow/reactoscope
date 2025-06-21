@@ -47,6 +47,8 @@ export type ThreeWorkletNode = Node<
 export type ThreeFiberDemoNode = Node<BaseNodeData, 'threejs-demo'>;
 export type FileLoaderNode = Node<BaseNodeData, 'file-loader'>;
 
+export type VertexSonifierNode = Node<BaseNodeData & AudioNodeData, 'sonifier'>;
+
 export type AppNode =
 	| BuiltInNode
 	| DebugNode
@@ -60,4 +62,5 @@ export type AppNode =
 	| DelayWorkletNode
 	| ThreeWorkletNode
 	| ThreeFiberDemoNode
-	| FileLoaderNode;
+	| FileLoaderNode
+	| VertexSonifierNode;

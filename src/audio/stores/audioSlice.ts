@@ -89,6 +89,17 @@ export interface CoordinateAudioWorkletParams {
 	readonly isReady: boolean; // Indicates if the worklet is initialized and ready
 }
 
+/**
+ * Parameters for a SonifierWorklet (vertex sonification).
+ * Defines settings for vertex data to audio conversion.
+ */
+export interface SonifierWorkletParams {
+	readonly isPlaying: boolean;
+	readonly volume: number; // Linear gain value (0 to 1)
+	readonly playbackSpeed: number; // Playback speed multiplier (0.1 to 5.0)
+	readonly interpolationStep: number; // Number of interpolation points per frame (1 to 10)
+}
+
 // --- Core Audio Slice Types ---
 
 /**
@@ -103,6 +114,7 @@ export type AudioNodeType =
 	| 'destination' // Represents the final audio output (e.g., speakers)
 	| 'noise-worklet'
 	| 'three-worklet'
+	| 'sonifier-worklet'
 	| 'simple-noise-worklet'
 	| 'bitcrusher-worklet'
 	| 'delay-worklet'
@@ -123,6 +135,7 @@ export type AudioNodeParams =
 	| BitCrusherWorkletParams
 	| DelayWorkletParams
 	| CoordinateAudioWorkletParams
+	| SonifierWorkletParams
 	| Record<string, never>; // For nodes like 'destination' or 'visualizer' if they have no params
 
 /**

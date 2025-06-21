@@ -47,7 +47,10 @@ export type {
 } from './nodes/ThreeWorkletNode';
 export { CoordinateAudioWorkletNode } from './nodes/CoordinateAudioWorkletNode';
 export type { CoordinateAudioWorkletNodeOptions } from './nodes/CoordinateAudioWorkletNode';
+export { SonifierWorkletNode } from './nodes/SonifierWorkletNode';
+export type { SonifierWorkletNodeOptions } from './nodes/SonifierWorkletNode';
 
 // Worklet processors (these are imported for side effects to register them)
 export { workletName as noiseProcessorName } from './processors/NoiseProcessor.worklet';
 export { workletName as threeProcessorName } from './processors/ThreeProcessor.worklet';
+export { workletName as sonifierProcessorName } from './processors/SonifierProcessor.worklet';

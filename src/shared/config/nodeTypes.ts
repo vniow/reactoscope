@@ -2,7 +2,7 @@ import type { AppNode } from '../../nodes/types';
 import type { ComponentVariant } from '../types/ui';
 
 export interface NodeTypeOption {
-	type: AppNode['type'];
+	type: AppNode['type'] | 'sonifier';
 	name: string;
 	description: string;
 	emoji: string;
@@ -128,19 +128,6 @@ export const AUDIO_NODES: NodeTypeOption[] = [
 		},
 	},
 	{
-		type: 'simple-noise-worklet',
-		name: 'Simple Noise',
-		description: 'Direct AudioWorklet noise generator with minimal overhead',
-		emoji: '🎯',
-		variant: 'source',
-		category: 'audio',
-		defaultData: {
-			id: '',
-			type: 'simple-noise-worklet' as const,
-			label: 'Simple Noise',
-		},
-	},
-	{
 		type: 'three-worklet',
 		name: 'Three Worklet',
 		description: 'AudioWorklet-based three worklet generator',
@@ -157,9 +144,37 @@ export const AUDIO_NODES: NodeTypeOption[] = [
 			label: 'Three Worklet',
 		},
 	},
+	{
+		type: 'file-loader',
+		name: 'File Loader',
+		description: 'Loads and plays audio files',
+		emoji: '📂',
+		variant: 'source',
+		category: 'audio',
+		defaultData: {
+			id: '',
+			type: 'file-loader' as const,
+			params: {
+				isPlaying: false,
+				volume: 0.5,
+			},
+			label: 'File Loader',
+		},
+	},
+	{
+		type: 'sonifier',
+		name: 'Vertex Sonifier',
+		description: 'Generates audio from 3D vertex data.',
+		emoji: '✨',
+		variant: 'source',
+		category: 'audio',
+		defaultData: {
+			label: 'Vertex Sonifier',
+		},
+	},
 ];
 
-// Utility nodes
+// Utility and control nodes
 export const UTILITY_NODES: NodeTypeOption[] = [
 	{
 		type: 'destination',
@@ -204,6 +219,7 @@ export const isAudioNode = (nodeType: string): boolean => {
 		'three-worklet',
 		'bitcrusher-worklet',
 		'delay-worklet',
+		'sonifier',
 	].includes(nodeType);
 };
 

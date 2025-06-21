@@ -18,6 +18,7 @@ import VisualizerNodeModular from './VisualizerNodeModular';
 import { DestinationNode } from './DestinationNode';
 import { NoiseWorkletNode } from './NoiseWorkletNode';
 import { ThreeWorkletNode } from './ThreeWorkletNode';
+import { VertexSonifierNode } from './VertexSonifierNode';
 
 // Type imports
 import type { AppNode } from './types';
@@ -74,6 +75,9 @@ export const nodeTypes = {
 
 	// Three.js integration nodes
 	'three-worklet': ThreeWorkletNode,
+
+	// Custom nodes
+	sonifier: VertexSonifierNode,
 
 	// Add any custom nodes here following the same pattern
 } as NodeTypes;
