@@ -1,29 +1,18 @@
-import type { Node, BuiltInNode, Position } from '@xyflow/react';
-import type { AudioNodeData } from '../stores/slices/audioSlice';
+import type { Node } from '@xyflow/react';
+import type { CustomNodeData } from '../shared/types';
 
-export interface BaseNodeData extends Record<string, unknown> {
-	label?: string;
-	gridWidth?: number;
-	gridHeight?: number;
-	handlePositions?: { [handleId: string]: Position };
+export interface OscillatorNodeData extends CustomNodeData {
+	frequency: number;
+	type: 'sine' | 'square' | 'sawtooth' | 'triangle';
+	playing: boolean;
+	[key: string]: unknown;
 }
 
-export type PositionLoggerNode = Node<
-	BaseNodeData & { label: string },
-	'position-logger'
->;
-export type ThemeDebugNode = Node<BaseNodeData, 'theme-debug'>;
-export type OscillatorNode = Node<BaseNodeData & AudioNodeData, 'oscillator'>;
-export type GainNode = Node<BaseNodeData & AudioNodeData, 'gain'>;
-export type VisualizerNode = Node<BaseNodeData & AudioNodeData, 'visualizer'>;
-export type DestinationNode = Node<BaseNodeData, 'destination'>;
-export type R3FDebugNode = Node<BaseNodeData, 'r3f-debug'>;
-export type AppNode =
-	| BuiltInNode
-	| PositionLoggerNode
-	| ThemeDebugNode
-	| OscillatorNode
-	| GainNode
-	| VisualizerNode
-	| DestinationNode
-	| R3FDebugNode;
+export interface DestinationNodeData extends CustomNodeData {
+	volume: number;
+	muted: boolean;
+	[key: string]: unknown;
+}
+
+export type OscillatorNode = Node<OscillatorNodeData>;
+export type DestinationNodeType = Node<DestinationNodeData>;

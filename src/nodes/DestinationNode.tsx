@@ -1,67 +1,69 @@
-import { Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { useState } from 'react';
+import { updateDestinationGain } from '../audio/stores/audioSlice';
+import type { CustomNode } from '../shared/types';
 
-import { BaseNode } from '../components/BaseNode';
-import { NodeHandle } from '../components/NodeHandle';
-import { useHandlePosition } from '../hooks/useHandlePositions';
-import { useNodes } from '../hooks/useAppStore';
-import { useToneDestination } from '../hooks/useToneDestination';
-import type { DestinationNode } from './types';
+export function DestinationNode({ id, data }: NodeProps<CustomNode>) {
+	const [volume, setVolume] = useState((data?.volume as number) || 0.7);
+	const [muted, setMuted] = useState((data?.muted as boolean) || false);
 
-export function DestinationNode({
-	id,
-	data,
-	selected,
-}: NodeProps<DestinationNode>) {
-	// Handle positions from the Zustand store
-	const inputPosition = useHandlePosition(id, 'audio-in', Position.Top);
+	const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const newVolume = parseFloat(e.target.value);
+		setVolume(newVolume);
+		updateDestinationGain(id, newVolume);
+	};
 
-	// Get the removeNode function from the store
-	const { removeNode } = useNodes();
-
-	// Initialize destination connection management
-	const { getConnectedSources } = useToneDestination(id);
-	const connectedSources = getConnectedSources();
+	const toggleMute = () => {
+		setMuted(!muted);
+		updateDestinationGain(id, muted ? volume : 0);
+	};
 
 	return (
-		<BaseNode
-			variant='audio'
-			gridWidth={data.gridWidth ?? 3}
-			gridHeight={data.gridHeight ?? 2}
-			nodeId={id}
-			selected={selected}
-			onDelete={removeNode}
-			title={data.label || 'Audio Destination'}
-		>
-			<div className='flex flex-col items-center justify-center h-full'>
-				{/* Audio Destination Icon */}
-				<div className='text-3xl mb-2'>🔊</div>
-
-				{/* Description */}
-				<div className='text-center'>
-					<div className='text-sm font-medium text-orange-800 dark:text-orange-200'>
-						Master Output
-					</div>
-					<div className='text-xs text-gray-600 dark:text-gray-400 mt-1'>
-						Audio destination endpoint
-					</div>
-
-					{/* Connection Status */}
-					{connectedSources.length > 0 && (
-						<div className='text-xs text-green-600 dark:text-green-400 mt-1'>
-							{connectedSources.length} source
-							{connectedSources.length !== 1 ? 's' : ''} connected
-						</div>
-					)}
-				</div>
+		<div className='react-flow__node-default bg-white dark:bg-gray-800 border-2 border-green-500 rounded-lg p-4 min-w-48'>
+			<div className='text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2'>
+				Destination
 			</div>
 
-			{/* Audio Input Handle */}
-			<NodeHandle
-				id='audio-in'
+			<div className='space-y-2'>
+				<div>
+					<label className='block text-xs text-gray-600 dark:text-gray-400 mb-1'>
+						Volume
+					</label>
+					<input
+						type='range'
+						min='0'
+						max='1'
+						step='0.01'
+						value={volume}
+						onChange={handleVolumeChange}
+						className='w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer'
+					/>
+					<span className='text-xs text-gray-500'>
+						{muted ? 'Muted' : `${Math.round(volume * 100)}%`}
+					</span>
+				</div>
+
+				<button
+					onClick={toggleMute}
+					className={`w-full px-3 py-1 text-xs rounded ${
+						muted
+							? 'bg-red-500 hover:bg-red-600 text-white'
+							: 'bg-gray-500 hover:bg-gray-600 text-white'
+					}`}
+				>
+					{muted ? 'Unmute' : 'Mute'}
+				</button>
+
+				<div className='text-xs text-center text-gray-500'>🔊 Audio Output</div>
+			</div>
+
+			{/* Input handle */}
+			<Handle
 				type='target'
-				position={inputPosition}
-				variant='audio'
+				position={Position.Left}
+				id='audio-in-0'
+				className='w-3 h-3 bg-green-500 border-2 border-white'
 			/>
-		</BaseNode>
+		</div>
 	);
 }

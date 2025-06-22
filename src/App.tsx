@@ -1,114 +1,96 @@
-import { useCallback, useEffect, useRef } from 'react';
-import {
-	ReactFlow,
-	Background,
-	MiniMap,
-	// addEdge, // Removed: Handled by Zustand store
-	// useNodesState, // Removed: Replaced by Zustand store
-	// useEdgesState, // Removed: Replaced by Zustand store
-	// type OnConnect, // Removed: Handled by useFlowActions hook
-	type NodeChange, // Keep for handleNodesChange, will be passed to store action
-	BackgroundVariant,
-} from '@xyflow/react';
+import { ReactFlow, Background, Controls, MiniMap } from '@xyflow/react';
 
-import '@xyflow/react/dist/base.css';
+import '@xyflow/react/dist/style.css';
 
-import { initialNodes, nodeTypes } from './nodes';
-import { initialEdges, edgeTypes } from './edges';
-import { ThemeProvider } from './contexts/ZustandThemeProvider';
-import { FlowControls } from './components/FlowControls';
-// import { StoreDebugPanel } from './components/StoreDebugPanel';
-import { NodeAddPanel } from './components/NodeAddPanel';
-import { type AppNode } from './nodes/types';
-import { useFlowNodes, useFlowEdges, useFlowActions } from './hooks/useFlow';
-
-import { GRID_UNIT } from './config/grid';
+import { nodeTypes } from './nodes';
+import { edgeTypes } from './flow/edges';
+import { useStore } from './shared/stores/useStore';
+import { debugAudioRegistry } from './audio/stores/audioSlice';
 
 export default function App() {
-	const nodes = useFlowNodes();
-	const edges = useFlowEdges();
-	const {
-		setNodes,
-		setEdges,
-		onNodesChange,
-		onEdgesChange,
-		onConnect,
-		onViewportChange,
-		onReconnectStart,
-		onReconnect,
-		onReconnectEnd,
-	} = useFlowActions();
-
-	// Track initialization to prevent re-initialization
-	const isInitialized = useRef(false);
-
-	// Initialize the store when the component mounts
-	useEffect(() => {
-		// Only initialize once
-		if (!isInitialized.current) {
-			console.log('🚀 Initializing Zustand store with empty data');
-
-			setNodes(initialNodes); // Will be empty array
-			setEdges(initialEdges); // Will be empty array
-
-			isInitialized.current = true;
-			console.log('✅ Store initialization complete');
-		}
-	}, [setNodes, setEdges]);
-
-	// Custom nodes change handler to update handle positions after node movements
-	// This logic needs to be adapted to use store actions
-	const handleNodesChange = useCallback(
-		(changes: NodeChange<AppNode>[]) => {
-			onNodesChange(changes); // Pass changes to the store action
-
-			// The logic for handle positions and forcing edge updates will be managed within the store
-			// or by specific actions triggered by node changes.
-			// For example, the store's updateNode or a dedicated position change action
-			// could trigger recalculateAllHandlePositions.
-		},
-		[onNodesChange]
+	const nodes = useStore((state) => state.nodes);
+	const edges = useStore((state) => state.edges);
+	const onNodesChange = useStore((state) => state.onNodesChange);
+	const onEdgesChange = useStore((state) => state.onEdgesChange);
+	const onConnect = useStore((state) => state.onConnect);
+	const addNode = useStore((state) => state.addNode);
+	const addOscillatorDestinationPair = useStore(
+		(state) => state.addOscillatorDestinationPair
 	);
 
+	const handleAddOscillator = () => {
+		addNode('oscillator', { x: Math.random() * 400, y: Math.random() * 400 });
+	};
+
+	const handleAddDestination = () => {
+		addNode('destination', { x: Math.random() * 400, y: Math.random() * 400 });
+	};
+
+	const handleAddOscDestPair = () => {
+		addOscillatorDestinationPair();
+	};
+
+	const handleDebug = () => {
+		debugAudioRegistry();
+	};
+
 	return (
-		<ThemeProvider>
-			<div className='w-full h-screen'>
-				<ReactFlow
-					nodes={nodes}
-					nodeTypes={nodeTypes}
-					onNodesChange={handleNodesChange} // Updated to use new handler
-					edges={edges}
-					edgeTypes={edgeTypes}
-					onEdgesChange={onEdgesChange} // Directly use store action
-					onConnect={onConnect} // Directly use store action
-					onReconnect={onReconnect} // Enable edge reconnection
-					onReconnectStart={onReconnectStart} // Track reconnection start
-					onReconnectEnd={onReconnectEnd} // Handle reconnection end/delete
-					// Viewport state is managed by React Flow, we only sync changes back to store
-					onViewportChange={onViewportChange} // Update store when viewport changes
-					fitView
-					snapToGrid
-					snapGrid={[GRID_UNIT / 2, GRID_UNIT / 2]}
-					proOptions={{ hideAttribution: true }}
+		<div style={{ width: '100vw', height: '100vh' }}>
+			<div
+				style={{
+					position: 'absolute',
+					top: 10,
+					left: 10,
+					zIndex: 4,
+					background: 'white',
+					padding: '10px',
+					borderRadius: '8px',
+					boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+				}}
+			>
+				<button
+					onClick={handleAddOscDestPair}
+					style={{
+						marginRight: '10px',
+						backgroundColor: '#007acc',
+						color: 'white',
+						border: 'none',
+						padding: '8px 12px',
+						borderRadius: '4px',
+						cursor: 'pointer',
+					}}
 				>
-					<Background
-						gap={GRID_UNIT}
-						size={6}
-						lineWidth={2}
-						offset={3}
-						variant={BackgroundVariant.Cross}
-						className='bg-gray-100 dark:bg-gray-900'
-					/>
-					<NodeAddPanel />
-					<FlowControls />
-					{/* <StoreDebugPanel /> */}
-					<MiniMap
-						pannable={true}
-						bgColor='bg-gray-100/50 dark:bg-gray-800'
-						ariaLabel={'MiniMap'}
-					/>
-				</ReactFlow>
+					🎵 Add Synth Setup
+				</button>
+				<button
+					onClick={handleAddOscillator}
+					style={{ marginRight: '10px' }}
+				>
+					Add Oscillator
+				</button>
+				<button
+					onClick={handleAddDestination}
+					style={{ marginRight: '10px' }}
+				>
+					Add Destination
+				</button>
+				<button onClick={handleDebug}>Debug Audio</button>
 			</div>
-		</ThemeProvider>
+
+			<ReactFlow
+				nodes={nodes}
+				nodeTypes={nodeTypes}
+				onNodesChange={onNodesChange}
+				edges={edges}
+				edgeTypes={edgeTypes}
+				onEdgesChange={onEdgesChange}
+				onConnect={onConnect}
+				fitView
+			>
+				<Background />
+				<MiniMap />
+				<Controls />
+			</ReactFlow>
+		</div>
 	);
 }
