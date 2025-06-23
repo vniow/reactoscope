@@ -116,7 +116,6 @@ export const createFlowSlice: StateCreator<AppState, [], [], FlowSlice> = (
 			get().addAudioNode(oscillatorNode);
 			get().addAudioNode(destinationNode);
 
-			// Add a small delay to ensure audio nodes are created before connecting
 			// Connect the audio nodes immediately, no timeout needed
 			get().connect({
 				source: oscId,
@@ -124,6 +123,52 @@ export const createFlowSlice: StateCreator<AppState, [], [], FlowSlice> = (
 				sourceHandle: null,
 				targetHandle: null,
 			});
+		},
+		addMultiOscillator: () => {
+			const existingNodes = get().nodes;
+			const yOffset = existingNodes.length * 150;
+
+			const multiOscNode: CustomNode = {
+				id: nanoid(),
+				type: 'multioscillator',
+				position: { x: 100, y: 100 + yOffset },
+				data: {
+					oscillators: [
+						{ frequency: 220, type: 'sine', playing: false },
+						{ frequency: 440, type: 'square', playing: false },
+						{ frequency: 880, type: 'sawtooth', playing: false },
+					],
+					label: 'Multi-Oscillator',
+				},
+			};
+
+			set((state) => ({
+				nodes: [...state.nodes, multiOscNode],
+			}));
+
+			get().addAudioNode(multiOscNode);
+		},
+		addOscilloscope: () => {
+			const existingNodes = get().nodes;
+			const yOffset = existingNodes.length * 150;
+
+			const scopeNode: CustomNode = {
+				id: nanoid(),
+				type: 'oscilloscope',
+				position: { x: 500, y: 100 + yOffset },
+				data: {
+					scale: 1.0,
+					color: '#00ff41',
+					gridVisible: true,
+					label: 'Oscilloscope',
+				},
+			};
+
+			set((state) => ({
+				nodes: [...state.nodes, scopeNode],
+			}));
+
+			get().addAudioNode(scopeNode);
 		},
 	};
 };

@@ -33,6 +33,8 @@ export interface FlowSlice {
 	onConnect: OnConnect;
 	addNode: (type: string, position: { x: number; y: number }) => void;
 	addOscillatorDestinationPair: () => void;
+	addMultiOscillator: () => void;
+	addOscilloscope: () => void;
 }
 
 export interface AudioSlice {

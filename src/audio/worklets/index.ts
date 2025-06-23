@@ -1,1 +1,2 @@
-// Placeholder for audio worklets
+// Audio worklets
+export { ToneNoiseGenerator } from './ToneNoiseGenerator';
