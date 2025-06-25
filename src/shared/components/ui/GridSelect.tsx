@@ -23,10 +23,6 @@ export interface GridSelectProps extends Omit<GridBlockProps, 'children'> {
 }
 
 export function GridSelect({
-	gridWidth,
-	gridHeight,
-	gridX,
-	gridY,
 	showDimensions = false,
 	className = '',
 	selectProps,
@@ -74,10 +70,6 @@ export function GridSelect({
 
 	return (
 		<GridBlock
-			gridWidth={gridWidth}
-			gridHeight={gridHeight}
-			gridX={gridX}
-			gridY={gridY}
 			showDimensions={showDimensions}
 			className={combineClasses('p-0', className)}
 			transparentBackground={true}

@@ -6,4 +6,4 @@ export { NodeDeleteButton } from './NodeDeleteButton';
 export { VariantButton } from './VariantButton';
 
 // Flow controls and components
-export { ThemedMiniMap } from '../ThemedMiniMap';
+export { ThemedMiniMap } from '../../../flow/components/ThemedMiniMap';

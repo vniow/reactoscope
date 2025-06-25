@@ -1,30 +1,11 @@
 import { Handle, Position } from '@xyflow/react';
 import type { CSSProperties } from 'react';
-import { GRID_UNIT } from '../config/grid';
-import { useFloatingHandles } from '../../flow/hooks/useFloatingPositions';
 
-// Props interface for the GridNodeHandle
-interface GridNodeHandleProps {
+// Simplified props interface - no grid positioning
+interface NodeHandleProps {
 	id: string;
 	type: 'source' | 'target';
-
-	// === POSITIONING MODE ===
-	/**
-	 * Determines if the handle uses static grid positioning or dynamic floating positioning
-	 * - 'static': Uses gridX/gridY for fixed grid-based positioning
-	 * - 'floating': Uses floating logic to dynamically position based on connections
-	 */
-	mode?: 'static' | 'floating';
-
-	// === STATIC GRID-BASED POSITIONING (required when mode='static') ===
-	position?: Position; // React Flow position (required for static mode)
-	gridX?: number; // Grid column position (required for static mode)
-	gridY?: number; // Grid row position (required for static mode)
-
-	// === FLOATING POSITIONING OPTIONS (used when mode='floating') ===
-	nodeId?: string; // Node ID for floating calculations (required for floating mode)
-	minDistanceThreshold?: number; // Minimum distance for floating positioning
-	showDebugInfo?: boolean; // Show debug information for floating handles
+	position: Position;
 
 	// === STYLING OPTIONS ===
 	style?: CSSProperties;
@@ -37,82 +18,27 @@ interface GridNodeHandleProps {
 }
 
 /**
- * GridNodeHandle component - a unified handle system supporting both static and floating positioning
+ * NodeHandle component - simplified positioning with CSS
  *
  * VISUAL DESIGN:
  * - Source handles: Large pointed arrow SVG icons that can contain text labels
- *   Arrow points start their angle at the edge of the node where the handle is positioned
- *   Sized to accommodate labels: sm(64x32), md(80x40), lg(96x48)
  * - Target handles: Circle SVG icons indicating input connections
  * - Uses CSS custom properties for theming and color consistency
  *
- * STATIC MODE (mode='static'):
- * - gridX: Grid column position (required) - multiplied by GRID_UNIT (64px)
- * - gridY: Grid row position (required) - multiplied by GRID_UNIT (64px)
- * - position: React Flow position (required)
- * - Positioning is relative to the edge specified by the 'position' prop:
- *   • Position.Top/Left: Relative to top-left corner
- *   • Position.Right: gridX is relative to right edge, gridY to top edge
- *   • Position.Bottom: gridX is relative to left edge, gridY to bottom edge
- *
- * FLOATING MODE (mode='floating'):
- * - nodeId: Node ID for floating calculations (required)
- * - minDistanceThreshold: Minimum distance for optimal positioning
- * - showDebugInfo: Show debug information overlay
- * - Position is calculated dynamically based on connected nodes
- *
- * LABEL FUNCTIONALITY (source handles only):
- * - label: Text to display inside the arrow handle
- * - showLabel: Control label visibility (default: true if label is provided)
- *
- * EXAMPLES:
- * Static: gridX={1}, gridY={0}, position={Position.Top} = 64px from left, at top edge
- * Floating: nodeId="node-1", minDistanceThreshold={50} = dynamic positioning
- * With Label: label="Audio Out", showLabel={true} = displays text inside source arrow
+ * POSITIONING:
+ * - Uses React Flow's built-in positioning system
+ * - Position can be customized via style prop if needed
  */
 export function GridNodeHandle({
 	id,
 	type,
-	mode = 'static',
 	position,
-	gridX,
-	gridY,
-	nodeId,
-	minDistanceThreshold = 50,
-	showDebugInfo = false,
 	style = {},
 	className,
 	size = 'md',
 	label,
 	showLabel = true,
-}: GridNodeHandleProps) {
-	// Get floating positions if in floating mode
-	const floatingPositions = useFloatingHandles(
-		mode === 'floating' ? nodeId : undefined,
-		{
-			minDistanceThreshold,
-		}
-	);
-
-	// Determine the final position to use
-	const finalPosition =
-		mode === 'floating' ? floatingPositions[type] : position;
-
-	// Validation for required props based on mode
-	if (mode === 'static') {
-		if (!position || gridX === undefined || gridY === undefined) {
-			console.error(
-				'GridNodeHandle: Static mode requires position, gridX, and gridY props'
-			);
-			return null;
-		}
-	} else if (mode === 'floating') {
-		if (!nodeId) {
-			console.error('GridNodeHandle: Floating mode requires nodeId prop');
-			return null;
-		}
-	}
-
+}: NodeHandleProps) {
 	// Size variants - both source and target handles use same arrow dimensions
 	const sizeClasses = {
 		sm: 'w-16 h-8',
@@ -160,7 +86,7 @@ export function GridNodeHandle({
 			>
 				{/* Single arrow path with simple styling */}
 				{getArrowPath(
-					finalPosition,
+					position,
 					fillColor,
 					strokeColor,
 					svgDimensions,
@@ -278,7 +204,7 @@ export function GridNodeHandle({
 
 	// Handle styling for SVG container - simplified since we're using SVG icons
 	const handleClasses = [
-		sizeClasses[size],
+		sizeClasses[size] || sizeClasses.md, // Safe access with fallback
 		'transition-colors',
 		'duration-150',
 		// Remove border and background since SVG handles its own styling
@@ -294,83 +220,24 @@ export function GridNodeHandle({
 
 	// Background style - simplified since SVG handles visual appearance
 	const backgroundStyle: CSSProperties = {
-		// Remove background color since SVG handles it
 		backgroundColor: 'transparent',
 	};
 
-	// Calculate positioning style
-	const positionStyle: CSSProperties = {
-		position: 'absolute',
-	};
-
-	// Apply positioning based on mode
-	if (
-		mode === 'static' &&
-		position &&
-		gridX !== undefined &&
-		gridY !== undefined
-	) {
-		// Static grid-based positioning
-		switch (position) {
-			case Position.Top:
-			case Position.Left:
-				positionStyle.left = `${gridX * GRID_UNIT}px`;
-				positionStyle.top = `${gridY * GRID_UNIT}px`;
-				break;
-			case Position.Right:
-				positionStyle.right = `${gridX * GRID_UNIT}px`;
-				positionStyle.top = `${gridY * GRID_UNIT}px`;
-				break;
-			case Position.Bottom:
-				positionStyle.left = `${gridX * GRID_UNIT}px`;
-				positionStyle.bottom = `${gridY * GRID_UNIT}px`;
-				break;
-		}
-	}
-	// For floating mode, React Flow handles the positioning automatically
-
-	// Merge styles - combine positioning, background, and custom styles
-	const finalStyle = { ...positionStyle, ...backgroundStyle, ...style };
+	// Merge styles - combine background and custom styles (no positioning calculations)
+	const finalStyle = { ...backgroundStyle, ...style };
 
 	return (
 		<>
 			<Handle
 				id={id}
 				type={type}
-				position={finalPosition!}
+				position={position}
 				style={finalStyle}
 				className={handleClasses}
 			>
 				{/* Render SVG icon inside the handle */}
 				{createHandleIcon()}
 			</Handle>
-
-			{/* Debug info for floating mode */}
-			{mode === 'floating' && showDebugInfo && (
-				<div
-					style={{
-						position: 'absolute',
-						fontSize: '8px',
-						color: 'var(--node-accent, #6366f1)',
-						backgroundColor:
-							'color-mix(in srgb, var(--node-accent, #6366f1) 10%, light-dark(white, #1e293b))',
-						padding: '3px 6px',
-						borderRadius: '4px',
-						border: '1px solid var(--node-accent, #6366f1)',
-						pointerEvents: 'none',
-						fontWeight: 'bold',
-						fontFamily: 'ui-monospace, monospace',
-						boxShadow:
-							'0 2px 4px color-mix(in srgb, var(--node-accent, #6366f1) 20%, transparent)',
-						zIndex: 1000,
-						...(type === 'source'
-							? { bottom: '-22px', right: '-10px' }
-							: { top: '-22px', left: '-10px' }),
-					}}
-				>
-					FLOATING {type}: {finalPosition?.toLowerCase()}
-				</div>
-			)}
 		</>
 	);
 }

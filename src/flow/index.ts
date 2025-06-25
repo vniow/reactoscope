@@ -4,8 +4,6 @@ export * from './components/FlowDebugPanel';
 export * from './components/ThemedMiniMap';
 export * from './components/SaveRestoreModal';
 export * from './components/NodeAddPanel';
-export * from './hooks/useFloatingPositions';
-export * from './hooks/useNodeOperations';
 export * from './hooks/useViewportSize';
 export * from './stores/flowSlice';
 export * from './stores/uiSlice';

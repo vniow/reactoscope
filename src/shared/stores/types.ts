@@ -1,6 +1,6 @@
-import type { AudioSlice } from '../../audio/stores/audioSlice';
 import type { FlowSlice } from '../../flow/stores/flowSlice';
 import type { SceneSlice } from '../../nodes/stores/sceneSlice';
+import type { Position } from '@xyflow/react';
 
 // Theme Types
 export type Theme = 'light' | 'dark' | 'system';
@@ -13,19 +13,14 @@ export interface ThemeState {
 	metallicBackground: MetallicTheme;
 }
 
-// Grid Handle Types - Aligned with React Flow best practices
-export interface GridHandle {
+// Handle Types - Aligned with React Flow best practices
+export interface Handle {
 	id: string; // Unique handle identifier (required for React Flow)
 	type: 'source' | 'target'; // Handle type (required for React Flow)
-	// Grid positioning system - converts to React Flow's position + style approach
-	gridX: number; // Grid X coordinate
-	gridY: number; // Grid Y coordinate
-	// Optional positioning refinements
-	positionX?: number; // Additional X position offset in grid units (default: 0)
-	positionY?: number; // Additional Y position offset in grid units (default: 0)
+	// Positioning refinements - now uses standard React Flow position
+	position: Position; // React Flow position (Left, Right, Top, Bottom)
 	// Visual and behavioral options
 	variant?: 'default' | 'primary' | 'debug' | 'secondary' | 'audio'; // Visual theme
-	floating?: boolean; // Whether handle uses floating positioning (default: true)
 }
 
 // UI Types
@@ -35,14 +30,6 @@ export interface UIState {
 	selectedEdges: string[];
 	isConnecting: boolean;
 	isNodeAddPanelExpanded: boolean; // Add state for NodeAddPanel visibility
-}
-
-// Audio Types
-export interface AudioState {
-	audioSlices: AudioSlice[];
-	isPlaying: boolean;
-	currentTime: number;
-	duration: number;
 }
 
 // Action Types
@@ -65,7 +52,6 @@ export interface UIActions {
 export interface AppStore
 	extends ThemeActions,
 		UIActions,
-		AudioSlice,
 		FlowSlice,
 		SceneSlice {
 	theme: ThemeState;

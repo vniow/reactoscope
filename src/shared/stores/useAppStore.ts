@@ -44,30 +44,15 @@ export const useUIState = () => {
 	);
 };
 
-// Audio hooks with performance optimization
-export const useAudioNodes = () => {
+// Flow operations hooks
+export const useFlowOperations = () => {
 	return useAppStore(
 		useShallow((state) => ({
-			audioNodes: state.audioNodes,
-			addAudioNode: state.addAudioNode,
-			updateAudioNode: state.updateAudioNode,
-			removeAudioNode: state.removeAudioNode,
-			setAudioNodeInstance: state.setAudioNodeInstance,
-			removeAudioNodeInstance: state.removeAudioNodeInstance,
-			getAudioNodeInstance: state.getAudioNodeInstance,
-		}))
-	);
-};
-
-export const useAudioConnections = () => {
-	return useAppStore(
-		useShallow((state) => ({
-			audioConnections: state.audioConnections,
-			connectAudioNodes: state.connectAudioNodes,
-			disconnectAudioNodes: state.disconnectAudioNodes,
-			updateConnectionStatus: state.updateConnectionStatus,
-			establishAllConnections: state.establishAllConnections,
-			syncWithReactFlowEdges: state.syncWithReactFlowEdges,
+			removeNode: state.removeNode,
+			updateNode: state.updateNode,
+			addNode: state.addNode,
+			setNodes: state.setNodes,
+			setEdges: state.setEdges,
 		}))
 	);
 };

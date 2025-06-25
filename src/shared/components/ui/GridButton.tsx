@@ -42,48 +42,44 @@ export interface GridButtonProps extends Omit<GridBlockProps, 'children'> {
  *
  * // Node-variant button (inherits parent node's colors)
  * <GridButton
- *   gridWidth={2} gridHeight={1} gridX={0} gridY={0}
  *   buttonLabel="Node Action"
  *   variant="node-variant"
  *   onClick={handleClick}
+ *   className="w-32 h-16"
  * />
  *
  * // Success button with icon
  * <GridButton
- *   gridWidth={3} gridHeight={1} gridX={1} gridY={5}
  *   buttonLabel="Play"
  *   variant="success"
  *   icon="▶️"
  *   layout="fill"
  *   onClick={handlePlay}
+ *   className="w-48 h-16"
  * />
  *
  * // Danger button for stop action
  * <GridButton
- *   gridWidth={3} gridHeight={1} gridX={1} gridY={5}
  *   buttonLabel="Stop"
  *   variant="danger"
  *   icon="⏹️"
  *   layout="fill"
  *   onClick={handleStop}
+ *   className="w-48 h-16"
  * />
  *
  * // Secondary button with compact layout
  * <GridButton
- *   gridWidth={2} gridHeight={1} gridX={0} gridY={2}
  *   buttonLabel="Reset"
  *   variant="secondary"
  *   layout="compact"
  *   size="sm"
  *   onClick={handleReset}
+ *   className="w-32 h-16"
  * />
  */
 
 export function GridButton({
-	gridWidth,
-	gridHeight,
-	gridX,
-	gridY,
 	showDimensions = false,
 	className = '',
 	buttonLabel,
@@ -223,10 +219,6 @@ export function GridButton({
 
 	return (
 		<GridBlock
-			gridWidth={gridWidth}
-			gridHeight={gridHeight}
-			gridX={gridX}
-			gridY={gridY}
 			showDimensions={showDimensions}
 			className={combineClasses(
 				layout === 'fill' ? 'p-0' : 'flex items-center justify-center p-1',

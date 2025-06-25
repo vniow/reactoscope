@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand';
-import type { AppStore } from '../types';
+import type { AppStore } from '../../shared/stores/types';
 
 type UISliceProps = Pick<
 	AppStore,

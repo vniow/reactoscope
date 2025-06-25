@@ -63,11 +63,7 @@ export function DebugPanel({
 }: DebugPanelProps) {
 	return (
 		<GridBlock
-			gridWidth={8}
-			gridHeight={5}
-			gridX={0}
-			gridY={10}
-			showDimensions={true}
+			className="w-grid-8 h-grid-5 mt-grid-3" // 8×5 grid units with 3-unit top margin
 		>
 			<div className='w-full h-full p-1'>
 				<div className='w-full h-full'>

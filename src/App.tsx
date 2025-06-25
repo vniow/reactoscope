@@ -16,9 +16,6 @@ import { FlowControls } from './flow/components/FlowControls';
 import { ThemedMiniMap } from './flow/components/ThemedMiniMap';
 import { type AppNode } from './nodes/types';
 import { useAppStore } from './shared/stores/appStore';
-import { AudioSyncComponent } from './audio/components/AudioSyncComponent';
-
-import { GRID_UNIT } from './shared/config/grid';
 
 export default function App() {
 	// Global effect counter for debugging infinite loops
@@ -96,16 +93,16 @@ export default function App() {
 					onReconnect={onReconnect}
 					fitView
 					snapToGrid
-					snapGrid={[GRID_UNIT / 2, GRID_UNIT / 2]}
+					snapGrid={[32, 32]}
 					minZoom={0.1}
 					maxZoom={4}
 					proOptions={{ hideAttribution: true }}
 				>
 					{/* Audio sync component - handles centralized audio connections */}
-					<AudioSyncComponent />
+			
 
 					<Background
-						gap={GRID_UNIT}
+						gap={64}
 						size={6}
 						lineWidth={2}
 						offset={3}

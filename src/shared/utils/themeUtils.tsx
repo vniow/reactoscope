@@ -120,44 +120,25 @@ export function ThemeCard({
 }
 
 /**
- * Example 3: Grid-based component using theme variables
+ * Example 3: Explicit layout component using theme variables
  */
-export function ThemeGridBlock({
-	gridX = 0,
-	gridY = 0,
-	gridWidth = 1,
-	gridHeight = 1,
+export function ThemeLayoutBlock({
 	variant = 'core',
 	children,
+	className = '',
 	...props
 }: {
-	gridX?: number;
-	gridY?: number;
-	gridWidth?: number;
-	gridHeight?: number;
 	variant?: ComponentVariant;
 	children: React.ReactNode;
+	className?: string;
 } & React.HTMLAttributes<HTMLDivElement>) {
-	// Calculate position and size using theme variables
-	const gridStyle: React.CSSProperties = {
-		'--grid-x': gridX,
-		'--grid-y': gridY,
-		'--grid-width': gridWidth,
-		'--grid-height': gridHeight,
-		position: 'absolute',
-		left: `calc(var(--grid-x) * var(--spacing-grid-unit))`,
-		top: `calc(var(--grid-y) * var(--spacing-grid-unit))`,
-		width: `calc(var(--grid-width) * var(--spacing-grid-unit))`,
-		height: `calc(var(--grid-height) * var(--spacing-grid-unit))`,
-	} as React.CSSProperties;
-
 	return (
 		<div
-			style={gridStyle}
 			className={buildThemeClasses(
-				'grid-block',
+				'layout-block',
 				createVariantClass(variant),
-				'p-2 flex flex-col'
+				'p-2 flex flex-col',
+				className
 			)}
 			{...props}
 		>

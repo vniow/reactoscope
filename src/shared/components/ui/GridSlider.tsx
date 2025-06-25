@@ -42,10 +42,6 @@ export interface GridSliderProps extends Omit<GridBlockProps, 'children'> {
  */
 
 export function GridSlider({
-	gridWidth,
-	gridHeight,
-	gridX,
-	gridY,
 	showDimensions = false,
 	className = '',
 	sliderProps,
@@ -91,10 +87,6 @@ export function GridSlider({
 
 	return (
 		<GridBlock
-			gridWidth={gridWidth}
-			gridHeight={gridHeight}
-			gridX={gridX}
-			gridY={gridY}
 			showDimensions={showDimensions}
 			className={combineClasses('p-0', className)}
 			transparentBackground={true}

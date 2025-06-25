@@ -6,27 +6,21 @@ import {
 	useReactFlow,
 	BaseEdge,
 } from '@xyflow/react';
-import { useHybridEdgePositions } from '../hooks/useFloatingPositions';
 import { NodeDeleteButton } from '../../shared/components/ui/NodeDeleteButton';
-
 import { useEdgeColors } from '../../shared/utils/useVariantColors';
 
 // Hardcoded edge styling
 const EDGE_STROKE_WIDTH = 7;
 
-// Remove hardcoded gradient colors - now using dynamic inheritance
-// const GRADIENT_START_COLOR = '#3b82f6'; // blue-500
-// const GRADIENT_END_COLOR = '#8b5cf6'; // violet-500
-
-// Type for edge data configuration
-interface FloatingEdgeData {
-	minDistanceThreshold?: number;
+// Simplified edge data configuration - removed dynamic positioning options
+interface EdgeData {
 	showLabel?: boolean;
 	showDebug?: boolean;
 	borderRadius?: number;
 	offset?: number;
 	labelClassName?: string;
-	colorMode?: 'source' | 'target' | 'gradient' | 'mixed'; // Add color inheritance mode
+	colorMode?: 'source' | 'target' | 'gradient' | 'mixed';
+	pathType?: 'smooth' | 'straight'; // Allow manual path type selection
 }
 
 export function FloatingEdge(props: EdgeProps) {
@@ -39,13 +33,13 @@ export function FloatingEdge(props: EdgeProps) {
 		label,
 		data,
 		selected = false,
-		// Destructure React Flow specific props to prevent passing to DOM
+		// Use standard React Flow positioning - no dynamic calculations
 		sourceX,
 		sourceY,
 		targetX,
 		targetY,
-		sourcePosition: _sourcePosition,
-		targetPosition: _targetPosition,
+		sourcePosition,
+		targetPosition,
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		sourceHandleId,
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -62,13 +56,13 @@ export function FloatingEdge(props: EdgeProps) {
 	const { setEdges } = useReactFlow();
 
 	// Extract configuration from data with proper typing
-	const edgeData = data as FloatingEdgeData | undefined;
-	const minDistanceThreshold = edgeData?.minDistanceThreshold ?? 50;
+	const edgeData = data as EdgeData | undefined;
 	const showLabel = edgeData?.showLabel ?? false;
 	const showDebug = edgeData?.showDebug ?? false;
 	const borderRadius = edgeData?.borderRadius ?? 5;
 	const offset = edgeData?.offset ?? 16;
 	const colorMode = edgeData?.colorMode ?? 'gradient';
+	const pathType = edgeData?.pathType ?? 'smooth'; // Default to smooth step
 
 	// Get dynamic colors based on connected nodes
 	const {
@@ -82,57 +76,44 @@ export function FloatingEdge(props: EdgeProps) {
 		edgeData?.labelClassName ??
 		'text-xs font-medium bg-white px-2 py-1 rounded shadow-sm border';
 
-	// Use the hybrid hook for edge position calculations that handles both floating and static ends
-	const { sourcePosition, targetPosition, sourcePoint, targetPoint } =
-		useHybridEdgePositions(
-			source,
-			target,
-			{
-				sourcePosition: _sourcePosition,
-				targetPosition: _targetPosition,
-				sourceX,
-				sourceY,
-				targetX,
-				targetY,
-			},
-			{
-				minDistanceThreshold,
-			}
-		);
+	// Use standard React Flow positioning - no dynamic calculations
+	const sourcePoint = { x: sourceX, y: sourceY };
+	const targetPoint = { x: targetX, y: targetY };
 
-	// Calculate if the edge should be rendered as a straight line
-	const isHorizontallyAligned = Math.abs(sourcePoint.y - targetPoint.y) < 1;
-	const isVerticallyAligned = Math.abs(sourcePoint.x - targetPoint.x) < 1;
-	const shouldUseStraightPath = isHorizontallyAligned || isVerticallyAligned;
+	// Determine path type - allow manual override via data, otherwise use simple heuristic
+	const shouldUseStraightPath = 
+		pathType === 'straight' || 
+		(pathType === 'smooth' ? false : // Default to smooth when 'smooth' is specified
+		Math.abs(sourceX - targetX) < 10 || Math.abs(sourceY - targetY) < 10); // Simple alignment check
 
-	// Generate path based on alignment
+	// Generate path based on type preference
 	let edgePath: string;
 	let labelX: number;
 	let labelY: number;
 
 	if (shouldUseStraightPath) {
-		// Use straight path for vertical or horizontal alignment
+		// Use straight path
 		[edgePath, labelX, labelY] = getStraightPath({
-			sourceX: sourcePoint.x,
-			sourceY: sourcePoint.y,
-			targetX: targetPoint.x,
-			targetY: targetPoint.y,
+			sourceX,
+			sourceY,
+			targetX,
+			targetY,
 		});
 	} else {
-		// Use smooth step path for all other cases
+		// Use smooth step path
 		[edgePath, labelX, labelY] = getSmoothStepPath({
-			sourceX: sourcePoint.x,
-			sourceY: sourcePoint.y,
+			sourceX,
+			sourceY,
 			sourcePosition,
-			targetX: targetPoint.x,
-			targetY: targetPoint.y,
+			targetX,
+			targetY,
 			targetPosition,
 			borderRadius,
 			offset,
 		});
 	}
 
-	// Calculate debug information
+	// Calculate debug information - simplified without dynamic positioning
 	const debugInfo = showDebug
 		? {
 				edgeId: id,
@@ -149,12 +130,10 @@ export function FloatingEdge(props: EdgeProps) {
 				sourcePosition,
 				targetPosition,
 				isStraightLine: shouldUseStraightPath,
-				isHorizontallyAligned,
-				isVerticallyAligned,
-				pathType: shouldUseStraightPath ? 'straight' : 'stepped',
-				hasGradient: true, // Both path types now have gradients
+				pathType: shouldUseStraightPath ? 'straight' : 'smooth',
+				hasGradient: colorMode === 'gradient',
 				gradientId: `gradient-${id}`,
-				selected, // Include edge selection state
+				selected,
 			}
 		: null;
 
@@ -247,12 +226,7 @@ export function FloatingEdge(props: EdgeProps) {
 									</div>
 									<div className='text-xs'>Path Type: {debugInfo.pathType}</div>
 									<div className='text-xs'>
-										Alignment:{' '}
-										{debugInfo.isHorizontallyAligned
-											? '↔️ Horizontal'
-											: debugInfo.isVerticallyAligned
-												? '↕️ Vertical'
-												: '❌ None'}
+										Source: {debugInfo.sourcePosition} → Target: {debugInfo.targetPosition}
 									</div>
 									{debugInfo.hasGradient && (
 										<div className='text-purple-600 text-xs'>

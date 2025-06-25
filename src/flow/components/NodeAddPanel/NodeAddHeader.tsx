@@ -10,16 +10,13 @@ export function NodeAddHeader({
 	isExpanded,
 	onToggleExpanded,
 }: NodeAddHeaderProps) {
-	const { gridX, gridY, gridWidth, gridHeight } = PANEL_LAYOUT.sections.header;
+	const { height } = PANEL_LAYOUT.sections.header;
 
 	return (
 		<GridBlock
-			gridWidth={gridWidth}
-			gridHeight={gridHeight}
-			gridX={gridX}
-			gridY={gridY}
 			showBorder={false}
 			transparentBackground={true}
+			style={{ height }}
 		>
 			<button
 				onClick={onToggleExpanded}

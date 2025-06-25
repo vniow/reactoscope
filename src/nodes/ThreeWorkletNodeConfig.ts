@@ -5,10 +5,10 @@
  * and to avoid mixing component definitions with constant exports.
  */
 
-// Grid configuration for three worklet node
+// Layout configuration for three worklet node (using grid utility classes)
 export const THREE_WORKLET_NODE_CONFIG = {
-	gridWidth: 12,
-	gridHeight: 16,
+	className: 'w-grid-12 h-grid-16', // 12×16 grid units (768px × 1024px)
+	gridUnits: { width: 12, height: 16 }, // For documentation/reference
 } as const;
 
 // Enhanced configuration for coordinate smoothing and buffering

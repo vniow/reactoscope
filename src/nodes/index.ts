@@ -12,13 +12,7 @@ import type { NodeTypes } from '@xyflow/react';
 
 // Internal node component imports
 import { DebugNode } from './DebugNode';
-import { OscillatorNode } from './OscillatorNode';
-import { GainNode } from './GainNode';
-import VisualizerNodeModular from './VisualizerNodeModular';
-import { DestinationNode } from './DestinationNode';
-import { NoiseWorkletNode } from './NoiseWorkletNode';
-import { ThreeWorkletNode } from './ThreeWorkletNode';
-import { VertexSonifierNode } from './VertexSonifierNode';
+import { FileLoaderNode } from './FileLoaderNode';
 
 // Type imports
 import type { AppNode } from './types';
@@ -45,39 +39,14 @@ export const initialNodes: AppNode[] = [
  *
  * Available node types:
  * - `debug`: Development and debugging utilities
- * - `oscillator`: Audio oscillator generators
- * - `gain`: Audio gain/volume controls
- * - `visualizer`: Standard audio visualizer
- * - `visualizer-modular`: Modular dual-channel visualizer
- * - `destination`: Audio output destination
- * - `noise-worklet`: Noise generation worklet
- * - `simple-noise-worklet`: Simplified noise worklet
- * - `three-worklet`: Three.js integration worklet
- * - `threejs-demo`: Three.js demonstration node
+ * - `file-loader`: File loading utilities
  *
  * @type {NodeTypes}
  */
 export const nodeTypes = {
 	// Core system nodes
 	debug: DebugNode,
-	destination: DestinationNode,
-
-	// Audio generator nodes
-	oscillator: OscillatorNode,
-	'noise-worklet': NoiseWorkletNode,
-
-	// Audio processing nodes
-	gain: GainNode,
-
-	// Visualizer nodes
-
-	'visualizer-modular': VisualizerNodeModular,
-
-	// Three.js integration nodes
-	'three-worklet': ThreeWorkletNode,
-
-	// Custom nodes
-	sonifier: VertexSonifierNode,
+	'file-loader': FileLoaderNode,
 
 	// Add any custom nodes here following the same pattern
 } as NodeTypes;

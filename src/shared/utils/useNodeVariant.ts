@@ -1,7 +1,7 @@
 import { useNodes, useNodeId } from '@xyflow/react';
 import { useMemo } from 'react';
 import type { ComponentVariant } from '../types/ui';
-import type { BaseNodeData } from '../nodes/types';
+import type { BaseNodeData } from '../../nodes/types';
 
 /**
  * Hook to get the variant of a specific node by ID

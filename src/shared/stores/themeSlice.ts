@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand';
-import type { AppStore, Theme, ActualTheme, MetallicTheme } from '../types';
+import type { AppStore, Theme, ActualTheme, MetallicTheme } from './types';
 
 export const createThemeSlice: StateCreator<
 	AppStore,

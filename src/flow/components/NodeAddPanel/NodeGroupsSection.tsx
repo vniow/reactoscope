@@ -19,8 +19,7 @@ export function NodeGroupsSection({
 	onAddNode,
 	isVisible,
 }: NodeGroupsSectionProps) {
-	const { gridX, gridY, gridWidth, gridHeight } =
-		PANEL_LAYOUT.sections.nodeGroups;
+	const { height } = PANEL_LAYOUT.sections.nodeGroups;
 	const nodeGroups = groupNodesByVariant();
 	const variantOrder = getVariantDisplayOrder();
 
@@ -35,13 +34,10 @@ export function NodeGroupsSection({
 
 	return (
 		<GridBlock
-			gridWidth={gridWidth}
-			gridHeight={gridHeight}
-			gridX={gridX}
-			gridY={gridY}
 			showBorder={false}
 			transparentBackground={true}
 			className={`overflow-hidden ${!isVisible ? 'pointer-events-none' : ''}`}
+			style={{ height }}
 		>
 			<div
 				className={`

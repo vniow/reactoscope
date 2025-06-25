@@ -4,7 +4,6 @@ import { BaseNode } from '../shared/components/BaseNode';
 import { GridButton } from '../shared/components/ui/GridButton';
 import { GridBlock } from '../shared/components/GridBlock';
 // import { createTypeValidator, createSizeValidator } from '../shared/utils/fileUtils';
-import { useNodeOperations } from '../flow/hooks/useNodeOperations';
 import type { NodeProps } from '@xyflow/react';
 import type { FileLoaderNode as FileLoaderNodeType } from './types';
 
@@ -13,8 +12,6 @@ export function FileLoaderNode({
 	// data,
 	selected,
 }: NodeProps<FileLoaderNodeType>) {
-	const { deleteNode } = useNodeOperations();
-
 	// Node state
 	const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 	const [errors, setErrors] = useState<string[]>([]);
@@ -55,19 +52,13 @@ export function FileLoaderNode({
 		<BaseNode
 			nodeId={id as string}
 			selected={selected as boolean}
-			onDelete={deleteNode}
 			title='File Loader'
 			variant='signal'
-			gridWidth={4}
-			gridHeight={6}
+			className="w-grid-4 h-grid-6" // 4×6 grid units (256px × 384px)
 		>
 			{/* Main file input area - TODO: Implement GridFileInput component */}
 			<GridBlock
-				gridWidth={4}
-				gridHeight={3}
-				gridX={0}
-				gridY={1}
-				className='p-2'
+				className='p-2 h-48'
 			>
 				<div className='w-full h-full flex flex-col justify-center items-center text-xs text-gray-600 dark:text-gray-400'>
 					<div>📁 File Input</div>
@@ -77,25 +68,18 @@ export function FileLoaderNode({
 
 			{/* Action button */}
 			<GridButton
-				gridWidth={4}
-				gridHeight={1}
-				gridX={0}
-				gridY={4}
 				buttonLabel='Clear All Files'
 				variant='warning'
 				icon='🗑️'
 				onClick={handleClearFiles}
 				disabled={selectedFiles.length === 0}
 				aria-label='Clear all files'
+				className="w-full h-16 mt-2"
 			/>
 
 			{/* Status/Info display */}
 			<GridBlock
-				gridWidth={4}
-				gridHeight={2}
-				gridX={0}
-				gridY={4.5}
-				className='p-2 bg-[var(--node-bg-secondary,light-dark(#f9fafb,#374151))] rounded'
+				className='p-2 bg-[var(--node-bg-secondary,light-dark(#f9fafb,#374151))] rounded h-32 mt-2'
 			>
 				<div className='w-full h-full flex flex-col justify-center text-xs text-[var(--node-text-secondary,light-dark(#6b7280,#d1d5db))]'>
 					{/* File count and size info */}

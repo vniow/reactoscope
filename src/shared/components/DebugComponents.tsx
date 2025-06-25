@@ -1,4 +1,4 @@
-import { formatDebugValue } from '../shared/utils/debugUtils';
+import { formatDebugValue } from '../utils/debugUtils';
 
 /**
  * Presenter component for debug information blocks

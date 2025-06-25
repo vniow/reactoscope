@@ -4,18 +4,11 @@ import { type DebugNode } from './types';
 import { BaseNode } from '../shared/components/BaseNode';
 import { GridBlock } from '../shared/components/GridBlock';
 import { GridNodeHandle } from '../shared/components/GridNodeHandle';
-import { useNodeOperations } from '../flow/hooks/useNodeOperations';
 
 /**
  * Debug Node - Displays node position and connection information
  * Updated with consistent design standards and larger text
  */
-
-// Grid configuration for debug node
-const DEBUG_NODE_CONFIG = {
-	gridWidth: 6,
-	gridHeight: 5,
-} as const;
 
 export function DebugNode({
 	id,
@@ -24,12 +17,6 @@ export function DebugNode({
 	data,
 	selected = false,
 }: NodeProps<DebugNode>) {
-	// Use custom hook for node operations
-	const { deleteNode } = useNodeOperations();
-
-	// Event handlers
-	const handleDelete = () => deleteNode(id as string);
-
 	// Format position values
 	const x = Math.round(positionAbsoluteX || 0);
 	const y = Math.round(positionAbsoluteY || 0);
@@ -37,20 +24,15 @@ export function DebugNode({
 	return (
 		<BaseNode
 			variant='unit'
-			gridWidth={DEBUG_NODE_CONFIG.gridWidth}
-			gridHeight={DEBUG_NODE_CONFIG.gridHeight}
 			nodeId={id as string}
 			selected={selected}
-			onDelete={handleDelete}
 			title={data.label || 'Debug Info'}
+			className="w-grid-4 h-grid-3" // 4×3 grid units (256px × 192px)
 		>
 			<div className='relative w-full h-full overflow-visible'>
 				{/* Position Display */}
 				<GridBlock
-					gridWidth={5}
-					gridHeight={3.5}
-					gridX={0.5}
-					gridY={1}
+					className="p-3 w-full h-full"
 					showDimensions={false}
 					transparentBackground={true}
 				>
@@ -81,24 +63,18 @@ export function DebugNode({
 				</GridBlock>
 			</div>
 
-			{/* Input handle - grid aligned */}
+			{/* Input handle - left side */}
 			<GridNodeHandle
 				id={`${id}-debug-in`}
 				type='target'
-				mode='static'
 				position={Position.Left}
-				gridX={0}
-				gridY={DEBUG_NODE_CONFIG.gridHeight / 2}
 				size='md'
 			/>
-			{/* Output handle - grid aligned */}
+			{/* Output handle - right side */}
 			<GridNodeHandle
 				id={`${id}-debug-out`}
 				type='source'
-				mode='static'
 				position={Position.Right}
-				gridX={0}
-				gridY={DEBUG_NODE_CONFIG.gridHeight / 2}
 				size='md'
 			/>
 		</BaseNode>

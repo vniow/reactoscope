@@ -6,7 +6,6 @@ import { NodeGroupsSection } from './NodeAddPanel/NodeGroupsSection';
 import { SaveRestoreModal } from './SaveRestoreModal';
 import { createNode } from '../../shared/utils/nodeFactory';
 import type { NodeTypeOption } from '../../shared/config/nodeTypes';
-import { GRID_UNIT } from '../../shared/config/grid';
 import { useEffect, useRef, useState } from 'react';
 
 export function FlowControls() {
@@ -215,8 +214,8 @@ export function FlowControls() {
 							}
 						`}
 						style={{
-							width: `${GRID_UNIT * 7}px`, // Match controls width
-							height: `${GRID_UNIT * 7}px`, // Increased height as requested
+							width: '448px', // Match controls width (7 * 64px)
+							height: '448px', // Increased height as requested (7 * 64px)
 							pointerEvents: 'auto', // Ensure interactions work
 							transformOrigin: 'bottom center', // Animate from bottom (near controls)
 						}}
@@ -236,8 +235,8 @@ export function FlowControls() {
 				<div
 					className='relative glass-panel-enhanced rounded-xl transition-all duration-300 ease-in-out'
 					style={{
-						width: `${GRID_UNIT * 7}px`, // Wider to accommodate 7 controls (added save/restore)
-						height: `${GRID_UNIT}px`, // Single row height
+						width: '448px', // Wider to accommodate 7 controls (added save/restore) (7 * 64px)
+						height: '64px', // Single row height
 					}}
 				>
 					<div className='flex items-center justify-center h-full gap-2 px-2'>

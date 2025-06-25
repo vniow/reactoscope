@@ -1,16 +1,14 @@
-import { GRID_UNIT } from './grid';
-
 // Panel layout configuration
 export const PANEL_LAYOUT = {
 	// Main panel dimensions
-	width: GRID_UNIT * 6, // 384px (match the w-96 class which is 24rem = 384px)
-	heightCollapsed: GRID_UNIT * 1, // 128px - just the header when collapsed
-	heightExpanded: GRID_UNIT * 8, // 512px - reasonable height for scrollable content
+	width: '384px', // 384px (match the w-96 class which is 24rem = 384px)
+	heightCollapsed: '64px', // 64px - just the header when collapsed
+	heightExpanded: '512px', // 512px - reasonable height for scrollable content
 
-	// Grid positions for each section
+	// Layout configuration for each section (no longer grid-based)
 	sections: {
-		header: { gridX: 0, gridY: 0, gridWidth: 6, gridHeight: 1 },
-		nodeGroups: { gridX: 0, gridY: 1, gridWidth: 6, gridHeight: 7 }, // Reduced height to fit within expanded panel
+		header: { height: '64px' },
+		nodeGroups: { height: '448px' }, // Reduced height to fit within expanded panel
 	},
 
 	// Node group configuration
@@ -22,6 +20,6 @@ export const PANEL_LAYOUT = {
 
 // Calculate section heights for easier access
 export const SECTION_HEIGHTS = {
-	header: PANEL_LAYOUT.sections.header.gridHeight * GRID_UNIT,
-	nodeGroups: PANEL_LAYOUT.sections.nodeGroups.gridHeight * GRID_UNIT,
+	header: '64px',
+	nodeGroups: '448px',
 } as const;

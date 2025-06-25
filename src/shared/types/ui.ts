@@ -21,23 +21,6 @@ export type ComponentColor = 'default' | 'orange' | 'green' | 'red' | 'blue';
 export type SliderSize = 'sm' | 'md' | 'lg';
 export type SliderColor = 'default' | 'orange' | 'green' | 'red' | 'blue';
 
-// Grid positioning interface
-export interface GridPosition {
-	gridX: number;
-	gridY: number;
-	gridWidth: number;
-	gridHeight: number;
-}
-
-// Base props for grid-based components
-export interface BaseGridProps extends GridPosition {
-	className?: string;
-	variant?: ComponentVariant;
-	showDimensions?: boolean;
-	showBorder?: boolean;
-	transparentBackground?: boolean;
-}
-
 // Style system types
 export interface VariantStyles {
 	border: string;
