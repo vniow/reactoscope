@@ -1,4 +1,3 @@
-import { GridBlock } from '../../../shared/components/GridBlock';
 import { PANEL_LAYOUT } from '../../../shared/config/panelLayout';
 
 interface NodeAddHeaderProps {
@@ -13,11 +12,7 @@ export function NodeAddHeader({
 	const { height } = PANEL_LAYOUT.sections.header;
 
 	return (
-		<GridBlock
-			showBorder={false}
-			transparentBackground={true}
-			style={{ height }}
-		>
+		<div style={{ height }}>
 			<button
 				onClick={onToggleExpanded}
 				className='flex items-center justify-between w-full px-4 py-2 text-left transition-colors duration-200 hover:bg-black/5 dark:hover:bg-white/5 group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset'
@@ -56,6 +51,6 @@ export function NodeAddHeader({
 					</div>
 				</div>
 			</button>
-		</GridBlock>
+		</div>
 	);
 }

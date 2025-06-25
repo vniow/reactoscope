@@ -7,7 +7,7 @@ export interface NodeTypeOption {
 	description: string;
 	emoji: string;
 	variant: ComponentVariant;
-	category: 'debug' | 'utility';
+	category: 'debug' | 'utility' | 'placeholder';
 	defaultData: Record<string, unknown>;
 }
 
@@ -15,6 +15,7 @@ export interface NodeTypeOption {
 export const NODE_CATEGORIES = {
 	debug: 'Debug & Development',
 	utility: 'Utility & Controls',
+	placeholder: 'Placeholder Nodes',
 } as const;
 
 // Variant display names
@@ -59,10 +60,103 @@ export const UTILITY_NODES: NodeTypeOption[] = [
 	},
 ];
 
+// Placeholder nodes for each variant
+export const PLACEHOLDER_NODES: NodeTypeOption[] = [
+	{
+		type: 'core',
+		name: 'Core System',
+		description: 'Master context, destinations, and core audio infrastructure',
+		emoji: '⚙️',
+		variant: 'core',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Core System',
+		},
+	},
+	{
+		type: 'source',
+		name: 'Audio Source',
+		description: 'Oscillators, players, microphones, and input sources',
+		emoji: '🎵',
+		variant: 'source',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Audio Source',
+		},
+	},
+	{
+		type: 'instrument',
+		name: 'Instrument',
+		description: 'Synthesizers, samplers, and musical instruments',
+		emoji: '🎹',
+		variant: 'instrument',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Instrument',
+		},
+	},
+	{
+		type: 'effect',
+		name: 'Audio Effect',
+		description: 'Reverb, delay, filters, and audio processing effects',
+		emoji: '🎛️',
+		variant: 'effect',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Audio Effect',
+		},
+	},
+	{
+		type: 'component',
+		name: 'Signal Component',
+		description: 'Gain, panner, mixer, and signal routing components',
+		emoji: '🔧',
+		variant: 'component',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Signal Component',
+		},
+	},
+	{
+		type: 'signal',
+		name: 'Signal Processor',
+		description: 'Analyzers, FFT, meters, and signal analysis tools',
+		emoji: '📊',
+		variant: 'signal',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Signal Processor',
+		},
+	},
+	{
+		type: 'event',
+		name: 'Event Controller',
+		description: 'Sequences, parts, transport, and timing control',
+		emoji: '⏰',
+		variant: 'event',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Event Controller',
+		},
+	},
+	{
+		type: 'unit',
+		name: 'Utility',
+		description: 'Frequency converters, time utilities, and helper tools',
+		emoji: '🔨',
+		variant: 'unit',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Utility',
+		},
+	},
+];
+
 // Combined list of all available nodes
 export const ALL_NODES: NodeTypeOption[] = [
 	...DEBUG_NODES,
 	...UTILITY_NODES,
+	...PLACEHOLDER_NODES,
 ];
 
 // Group nodes by variant for organized display

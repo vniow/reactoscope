@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
 import { BaseNode } from '../shared/components/BaseNode';
 // import { GridFileInput } from '../shared/components/ui/GridFileInput';
-import { GridButton } from '../shared/components/ui/GridButton';
-import { GridBlock } from '../shared/components/GridBlock';
+import { GridControl } from '../shared/components/ui/GridControl';
 // import { createTypeValidator, createSizeValidator } from '../shared/utils/fileUtils';
 import type { NodeProps } from '@xyflow/react';
 import type { FileLoaderNode as FileLoaderNodeType } from './types';
@@ -57,17 +56,16 @@ export function FileLoaderNode({
 			className="w-grid-4 h-grid-6" // 4×6 grid units (256px × 384px)
 		>
 			{/* Main file input area - TODO: Implement GridFileInput component */}
-			<GridBlock
-				className='p-2 h-48'
-			>
-				<div className='w-full h-full flex flex-col justify-center items-center text-xs text-gray-600 dark:text-gray-400'>
+			<div className='p-2 h-48'>
+				<div className='w-full h-full flex flex-col justify-center items-center text-xs' style={{ color: 'var(--node-text-secondary)' }}>
 					<div>📁 File Input</div>
 					<div>TODO: GridFileInput component</div>
 				</div>
-			</GridBlock>
+			</div>
 
 			{/* Action button */}
-			<GridButton
+			<GridControl
+				type="button"
 				buttonLabel='Clear All Files'
 				variant='warning'
 				icon='🗑️'
@@ -78,10 +76,8 @@ export function FileLoaderNode({
 			/>
 
 			{/* Status/Info display */}
-			<GridBlock
-				className='p-2 bg-[var(--node-bg-secondary,light-dark(#f9fafb,#374151))] rounded h-32 mt-2'
-			>
-				<div className='w-full h-full flex flex-col justify-center text-xs text-[var(--node-text-secondary,light-dark(#6b7280,#d1d5db))]'>
+			<div className='p-2 rounded h-32 mt-2' style={{ backgroundColor: 'var(--node-bg-interactive)' }}>
+				<div className='w-full h-full flex flex-col justify-center text-xs' style={{ color: 'var(--node-text-secondary)' }}>
 					{/* File count and size info */}
 					<div className='flex justify-between items-center mb-1'>
 						<span>Files: {selectedFiles.length}</span>
@@ -95,7 +91,7 @@ export function FileLoaderNode({
 
 					{/* Error display */}
 					{errors.length > 0 && (
-						<div className='text-red-500 text-xs'>
+						<div className='text-xs' style={{ color: 'var(--node-text-highlight)' }}>
 							{errors.map((error, index) => (
 								<div key={index}>⚠️ {error}</div>
 							))}
@@ -104,7 +100,7 @@ export function FileLoaderNode({
 
 					{/* Success message */}
 					{selectedFiles.length > 0 && errors.length === 0 && (
-						<div className='text-green-500 text-xs'>
+						<div className='text-xs' style={{ color: 'var(--node-accent)' }}>
 							✅ {selectedFiles.length} file
 							{selectedFiles.length !== 1 ? 's' : ''} ready
 						</div>
@@ -115,7 +111,7 @@ export function FileLoaderNode({
 						Accepts: Audio & Images (max 50 MB)
 					</div>
 				</div>
-			</GridBlock>
+			</div>
 		</BaseNode>
 	);
 }

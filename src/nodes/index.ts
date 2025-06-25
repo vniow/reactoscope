@@ -13,6 +13,16 @@ import type { NodeTypes } from '@xyflow/react';
 // Internal node component imports
 import { DebugNode } from './DebugNode';
 import { FileLoaderNode } from './FileLoaderNode';
+import { 
+	CoreNodeComponent,
+	SourceNodeComponent,
+	InstrumentNodeComponent,
+	EffectNodeComponent,
+	ComponentNodeComponent,
+	SignalNodeComponent,
+	EventNodeComponent,
+	UtilityNodeComponent
+} from './PlaceholderNodes';
 
 // Type imports
 import type { AppNode } from './types';
@@ -40,6 +50,8 @@ export const initialNodes: AppNode[] = [
  * Available node types:
  * - `debug`: Development and debugging utilities
  * - `file-loader`: File loading utilities
+ * - Placeholder nodes for each variant: `core`, `source`, `instrument`, 
+ *   `effect`, `component`, `signal`, `event`, `unit`
  *
  * @type {NodeTypes}
  */
@@ -47,6 +59,16 @@ export const nodeTypes = {
 	// Core system nodes
 	debug: DebugNode,
 	'file-loader': FileLoaderNode,
+	
+	// Placeholder nodes for each variant
+	core: CoreNodeComponent,
+	source: SourceNodeComponent,
+	instrument: InstrumentNodeComponent,
+	effect: EffectNodeComponent,
+	component: ComponentNodeComponent,
+	signal: SignalNodeComponent,
+	event: EventNodeComponent,
+	unit: UtilityNodeComponent,
 
 	// Add any custom nodes here following the same pattern
 } as NodeTypes;

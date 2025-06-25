@@ -11,7 +11,33 @@ export interface DebugNodeData extends BaseNodeData {
 	label?: string;
 }
 
+export interface PlaceholderNodeData extends BaseNodeData {
+	label?: string;
+	description?: string;
+}
+
 export type DebugNode = Node<DebugNodeData, 'debug'>;
 export type FileLoaderNode = Node<BaseNodeData, 'file-loader'>;
 
-export type AppNode = BuiltInNode | DebugNode | FileLoaderNode;
+// Placeholder node types for each variant
+export type CoreNode = Node<PlaceholderNodeData, 'core'>;
+export type SourceNode = Node<PlaceholderNodeData, 'source'>;
+export type InstrumentNode = Node<PlaceholderNodeData, 'instrument'>;
+export type EffectNode = Node<PlaceholderNodeData, 'effect'>;
+export type ComponentNode = Node<PlaceholderNodeData, 'component'>;
+export type SignalNode = Node<PlaceholderNodeData, 'signal'>;
+export type EventNode = Node<PlaceholderNodeData, 'event'>;
+export type UtilityNode = Node<PlaceholderNodeData, 'unit'>;
+
+export type AppNode = 
+	| BuiltInNode 
+	| DebugNode 
+	| FileLoaderNode
+	| CoreNode
+	| SourceNode
+	| InstrumentNode
+	| EffectNode
+	| ComponentNode
+	| SignalNode
+	| EventNode
+	| UtilityNode;

@@ -48,33 +48,21 @@ export function BaseNode({
 
 	return (
 		<div
-			className={`relative transition-all duration-200 ${selected ? 'scale-105' : ''} ${className}`}
+			className={`relative transition-all duration-200 ${className}`}
 			data-variant={variant}
 			style={style}
 		>
-			<div
-				className={`w-full h-full flex flex-col rounded-xl backdrop-blur-md
-				bg-gradient-to-br from-white/10 via-white/5 to-transparent
-				border border-white/20 dark:border-gray-700/50
-				${
-					selected
-						? 'shadow-2xl shadow-blue-500/25 ring-2 ring-blue-500/50'
-						: 'shadow-lg shadow-black/10 dark:shadow-black/25'
-				}
-				hover:shadow-xl hover:shadow-black/15 dark:hover:shadow-black/30
-				transition-shadow duration-200`}
+			<div 
+				className={`
+					bg-node-primary border-2 border-node rounded-xl shadow-node
+					hover:shadow-node-hover hover:border-node-hover
+					transition-all duration-200 p-4 min-h-16
+					${selected ? 'shadow-node-selected border-node-accent' : ''}
+				`}
 			>
 				{/* Header section */}
 				{title && (
-					<div className={`
-						flex items-center justify-center font-semibold text-lg
-						text-gray-800 dark:text-gray-200
-						bg-white/5 backdrop-blur-sm
-						border-b border-white/10 dark:border-gray-700/30
-						shadow-sm
-						flex-none
-						px-4 py-2
-					`.trim().replace(/\s+/g, ' ')}>
+					<div className="text-node-primary font-semibold text-xl mb-2 border-b border-node pb-2">
 						{title}
 					</div>
 				)}
@@ -85,7 +73,7 @@ export function BaseNode({
 				)}
 
 				{/* Content area */}
-				<div className='flex-1 overflow-hidden rounded-b-xl'>{children}</div>
+				<div className="text-node-primary">{children}</div>
 			</div>
 		</div>
 	);

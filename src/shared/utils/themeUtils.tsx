@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import type { ComponentVariant, ComponentSize } from '../types/ui';
+import type { ComponentVariant } from '../types/ui';
 
 /* === UTILITY FUNCTIONS === */
 
@@ -45,7 +45,7 @@ export function ThemeButton({
 	...props
 }: {
 	variant?: ComponentVariant;
-	size?: ComponentSize;
+	size?: 'sm' | 'md' | 'lg';
 	children: React.ReactNode;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
 	const sizeClasses = {

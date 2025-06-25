@@ -2,8 +2,8 @@
 
 /* === TAILWIND V4 THEME CONFIGURATION === */
 @theme {
-	/* === SEMANTIC COLOR PALETTE === */
-
+	/* === COLOR SYSTEM === */
+	
 	/* Base application colors */
 	--color-canvas: light-dark(#f8fafc, #0f172a);
 	--color-surface: light-dark(#ffffff, #1e293b);
@@ -11,41 +11,25 @@
 
 	/* Node variant colors using light-dark() - Tone.js categories */
 	--color-variant-core: light-dark(#64748b, #94a3b8); /* Gray - Core system */
-	--color-variant-source: light-dark(
-		#22c55e,
-		#4ade80
-	); /* Green - Audio sources */
-	--color-variant-instrument: light-dark(
-		#f97316,
-		#fb923c
-	); /* Orange - Instruments */
+	--color-variant-source: light-dark(#22c55e, #4ade80); /* Green - Audio sources */
+	--color-variant-instrument: light-dark(#f97316, #fb923c); /* Orange - Instruments */
 	--color-variant-effect: light-dark(#a855f7, #c084fc); /* Purple - Effects */
-	--color-variant-component: light-dark(
-		#3b82f6,
-		#60a5fa
-	); /* Blue - Components */
-	--color-variant-signal: light-dark(
-		#06b6d4,
-		#67e8f9
-	); /* Cyan - Signal processing */
-	--color-variant-event: light-dark(
-		#fbbf24,
-		#fde68a
-	); /* Pastel Yellow - Events */
-	--color-variant-unit: light-dark(
-		#ef4444,
-		#f87171
-	); /* Red - Units/Utilities */
+	--color-variant-component: light-dark(#3b82f6, #60a5fa); /* Blue - Components */
+	--color-variant-signal: light-dark(#06b6d4, #67e8f9); /* Cyan - Signal processing */
+	--color-variant-event: light-dark(#fbbf24, #fde68a); /* Yellow - Events */
+	--color-variant-unit: light-dark(#ef4444, #f87171); /* Red - Units/Utilities */
 
-	/* Grid and interactive colors */
+	/* Interactive and grid colors */
 	--color-grid-line: light-dark(#e2e8f0, #334155);
 	--color-interactive-border: light-dark(#cbd5e1, #475569);
 	--color-interactive-border-focus: #22c55e;
 
-	/* === SPACING SCALE === */
+	/* === SPACING SYSTEM === */
+	
+	/* Standard spacing scale */
 	--spacing-grid-unit: 20px;
 	
-	/* === GRID-BASED SPACING (64px multiples) === */
+	/* Grid-based spacing (64px multiples for node sizing) */
 	--spacing-grid-1: 64px;   /* 1 grid unit */
 	--spacing-grid-2: 128px;  /* 2 grid units */
 	--spacing-grid-3: 192px;  /* 3 grid units */
@@ -69,8 +53,15 @@
 	--z-modal: 30;
 	--z-tooltip: 50;
 
+	/* === ANIMATION TIMING === */
+	--duration-fast: 150ms;
+	--duration-normal: 200ms;
+	--duration-slow: 300ms;
+	--duration-rainbow: 6s;
+
 	/* === RAINBOW COLOR SYSTEM === */
-	/* Rainbow colors using Tailwind variants (-100 for light, -600 for dark) */
+	
+	/* Rainbow colors for special effects */
 	--color-rainbow-red: light-dark(#fee2e2, #dc2626);
 	--color-rainbow-orange: light-dark(#fed7aa, #ea580c);
 	--color-rainbow-amber: light-dark(#fef3c7, #d97706);
@@ -88,276 +79,222 @@
 	--color-rainbow-fuchsia: light-dark(#fae8ff, #c026d3);
 	--color-rainbow-pink: light-dark(#fce7f3, #db2777);
 	--color-rainbow-rose: light-dark(#ffe4e6, #e11d48);
-
-	/* Rainbow gradients */
-	--gradient-rainbow-linear: linear-gradient(
-		90deg,
-		var(--color-rainbow-red) 0%,
-		var(--color-rainbow-orange) 5.88%,
-		var(--color-rainbow-amber) 11.76%,
-		var(--color-rainbow-yellow) 17.64%,
-		var(--color-rainbow-lime) 23.52%,
-		var(--color-rainbow-green) 29.4%,
-		var(--color-rainbow-emerald) 35.28%,
-		var(--color-rainbow-teal) 41.16%,
-		var(--color-rainbow-cyan) 47.04%,
-		var(--color-rainbow-sky) 52.92%,
-		var(--color-rainbow-blue) 58.8%,
-		var(--color-rainbow-indigo) 64.68%,
-		var(--color-rainbow-violet) 70.56%,
-		var(--color-rainbow-purple) 76.44%,
-		var(--color-rainbow-fuchsia) 82.32%,
-		var(--color-rainbow-pink) 88.2%,
-		var(--color-rainbow-rose) 94.08%,
-		var(--color-rainbow-red) 100%
-	);
-
-	/* Rainbow metallic gradient - integrates with existing metallic system */
-	--gradient-rainbow-metallic: linear-gradient(
-		135deg,
-		color-mix(
-				in srgb,
-				var(--color-rainbow-red) 70%,
-				light-dark(#c0c0c0, #6b7280)
-			)
-			0%,
-		color-mix(
-				in srgb,
-				var(--color-rainbow-orange) 70%,
-				light-dark(#c0c0c0, #6b7280)
-			)
-			14.28%,
-		color-mix(
-				in srgb,
-				var(--color-rainbow-yellow) 70%,
-				light-dark(#c0c0c0, #6b7280)
-			)
-			28.56%,
-		color-mix(
-				in srgb,
-				var(--color-rainbow-green) 70%,
-				light-dark(#c0c0c0, #6b7280)
-			)
-			42.84%,
-		color-mix(
-				in srgb,
-				var(--color-rainbow-cyan) 70%,
-				light-dark(#c0c0c0, #6b7280)
-			)
-			57.12%,
-		color-mix(
-				in srgb,
-				var(--color-rainbow-blue) 70%,
-				light-dark(#c0c0c0, #6b7280)
-			)
-			71.4%,
-		color-mix(
-				in srgb,
-				var(--color-rainbow-violet) 70%,
-				light-dark(#c0c0c0, #6b7280)
-			)
-			85.68%,
-		color-mix(
-				in srgb,
-				var(--color-rainbow-red) 70%,
-				light-dark(#c0c0c0, #6b7280)
-			)
-			100%
-	);
-
-	/* Animation timing */
-	--duration-rainbow: 6s;
 }
+
 
 /* === VARIANT-SPECIFIC CUSTOM PROPERTIES === */
 [data-variant='core'] {
+	/* Core variant - Gray/Slate theme */
 	--node-accent: var(--color-variant-core);
-	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
-	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
-	--node-text-on-accent: light-dark(
-		#ffffff,
-		#000000
-	); /* High contrast text on accent backgrounds */
-	--node-text-primary: light-dark(
-		#1f2937,
-		#f9fafb
-	); /* Primary text with high contrast */
-	--node-bg-from: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
-	--node-bg-via: color-mix(
-		in srgb,
-		var(--node-accent) 10%,
-		light-dark(#ffffff, #1e293b)
-	);
-	--node-bg-to: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
+	--node-bg-primary: color-mix(in srgb, var(--color-variant-core) 10%, light-dark(#ffffff, #1e293b));
+	--node-bg-secondary: color-mix(in srgb, var(--color-variant-core) 5%, light-dark(#f8fafc, #0f172a));
+	--node-bg-interactive: color-mix(in srgb, var(--color-variant-core) 15%, light-dark(#f1f5f9, #334155));
+	--node-border: color-mix(in srgb, var(--color-variant-core) 30%, light-dark(#e2e8f0, #475569));
+	--node-border-hover: color-mix(in srgb, var(--color-variant-core) 50%, light-dark(#cbd5e1, #64748b));
+	--node-text-primary: light-dark(#1f2937, #f9fafb);
+	--node-text-secondary: color-mix(in srgb, var(--color-variant-core) 70%, light-dark(#4b5563, #d1d5db));
+	--node-text-on-accent: light-dark(#ffffff, #1f2937);
+	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-core) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-core) 25%, transparent);
+	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-core) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-core) 20%, transparent);
 }
 
 [data-variant='source'] {
+	/* Source variant - Green theme */
 	--node-accent: var(--color-variant-source);
-	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
-	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
-	--node-text-on-accent: light-dark(#ffffff, #000000);
+	--node-bg-primary: color-mix(in srgb, var(--color-variant-source) 10%, light-dark(#ffffff, #1e293b));
+	--node-bg-secondary: color-mix(in srgb, var(--color-variant-source) 5%, light-dark(#f8fafc, #0f172a));
+	--node-bg-interactive: color-mix(in srgb, var(--color-variant-source) 15%, light-dark(#f0fdf4, #14532d));
+	--node-border: color-mix(in srgb, var(--color-variant-source) 30%, light-dark(#bbf7d0, #166534));
+	--node-border-hover: color-mix(in srgb, var(--color-variant-source) 50%, light-dark(#86efac, #22c55e));
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
-	--node-bg-from: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
-	--node-bg-via: color-mix(
-		in srgb,
-		var(--node-accent) 10%,
-		light-dark(#ffffff, #1e293b)
-	);
-	--node-bg-to: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
+	--node-text-secondary: color-mix(in srgb, var(--color-variant-source) 70%, light-dark(#166534, #bbf7d0));
+	--node-text-on-accent: light-dark(#ffffff, #1f2937);
+	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-source) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-source) 25%, transparent);
+	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-source) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-source) 20%, transparent);
 }
 
 [data-variant='instrument'] {
+	/* Instrument variant - Orange theme */
 	--node-accent: var(--color-variant-instrument);
-	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
-	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
-	--node-text-on-accent: light-dark(#ffffff, #000000);
+	--node-bg-primary: color-mix(in srgb, var(--color-variant-instrument) 10%, light-dark(#ffffff, #1e293b));
+	--node-bg-secondary: color-mix(in srgb, var(--color-variant-instrument) 5%, light-dark(#f8fafc, #0f172a));
+	--node-bg-interactive: color-mix(in srgb, var(--color-variant-instrument) 15%, light-dark(#fff7ed, #9a3412));
+	--node-border: color-mix(in srgb, var(--color-variant-instrument) 30%, light-dark(#fed7aa, #c2410c));
+	--node-border-hover: color-mix(in srgb, var(--color-variant-instrument) 50%, light-dark(#fdba74, #f97316));
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
-	--node-bg-from: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
-	--node-bg-via: color-mix(
-		in srgb,
-		var(--node-accent) 10%,
-		light-dark(#ffffff, #1e293b)
-	);
-	--node-bg-to: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
+	--node-text-secondary: color-mix(in srgb, var(--color-variant-instrument) 70%, light-dark(#9a3412, #fed7aa));
+	--node-text-on-accent: light-dark(#ffffff, #1f2937);
+	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-instrument) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-instrument) 25%, transparent);
+	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-instrument) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-instrument) 20%, transparent);
 }
 
 [data-variant='effect'] {
+	/* Effect variant - Purple theme */
 	--node-accent: var(--color-variant-effect);
-	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
-	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
-	--node-text-on-accent: light-dark(#ffffff, #000000);
+	--node-bg-primary: color-mix(in srgb, var(--color-variant-effect) 10%, light-dark(#ffffff, #1e293b));
+	--node-bg-secondary: color-mix(in srgb, var(--color-variant-effect) 5%, light-dark(#f8fafc, #0f172a));
+	--node-bg-interactive: color-mix(in srgb, var(--color-variant-effect) 15%, light-dark(#faf5ff, #581c87));
+	--node-border: color-mix(in srgb, var(--color-variant-effect) 30%, light-dark(#e9d5ff, #7c3aed));
+	--node-border-hover: color-mix(in srgb, var(--color-variant-effect) 50%, light-dark(#d8b4fe, #a855f7));
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
-	--node-bg-from: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
-	--node-bg-via: color-mix(
-		in srgb,
-		var(--node-accent) 10%,
-		light-dark(#ffffff, #1e293b)
-	);
-	--node-bg-to: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
+	--node-text-secondary: color-mix(in srgb, var(--color-variant-effect) 70%, light-dark(#581c87, #e9d5ff));
+	--node-text-on-accent: light-dark(#ffffff, #1f2937);
+	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-effect) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-effect) 25%, transparent);
+	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-effect) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-effect) 20%, transparent);
 }
 
 [data-variant='component'] {
+	/* Component variant - Blue theme */
 	--node-accent: var(--color-variant-component);
-	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
-	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
-	--node-text-on-accent: light-dark(#ffffff, #000000);
+	--node-bg-primary: color-mix(in srgb, var(--color-variant-component) 10%, light-dark(#ffffff, #1e293b));
+	--node-bg-secondary: color-mix(in srgb, var(--color-variant-component) 5%, light-dark(#f8fafc, #0f172a));
+	--node-bg-interactive: color-mix(in srgb, var(--color-variant-component) 15%, light-dark(#eff6ff, #1e3a8a));
+	--node-border: color-mix(in srgb, var(--color-variant-component) 30%, light-dark(#bfdbfe, #2563eb));
+	--node-border-hover: color-mix(in srgb, var(--color-variant-component) 50%, light-dark(#93c5fd, #3b82f6));
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
-	--node-bg-from: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
-	--node-bg-via: color-mix(
-		in srgb,
-		var(--node-accent) 10%,
-		light-dark(#ffffff, #1e293b)
-	);
-	--node-bg-to: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
+	--node-text-secondary: color-mix(in srgb, var(--color-variant-component) 70%, light-dark(#1e3a8a, #bfdbfe));
+	--node-text-on-accent: light-dark(#ffffff, #1f2937);
+	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-component) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-component) 25%, transparent);
+	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-component) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-component) 20%, transparent);
 }
 
 [data-variant='signal'] {
+	/* Signal variant - Cyan theme */
 	--node-accent: var(--color-variant-signal);
-	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
-	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
-	--node-text-on-accent: light-dark(#ffffff, #000000);
+	--node-bg-primary: color-mix(in srgb, var(--color-variant-signal) 10%, light-dark(#ffffff, #1e293b));
+	--node-bg-secondary: color-mix(in srgb, var(--color-variant-signal) 5%, light-dark(#f8fafc, #0f172a));
+	--node-bg-interactive: color-mix(in srgb, var(--color-variant-signal) 15%, light-dark(#ecfeff, #164e63));
+	--node-border: color-mix(in srgb, var(--color-variant-signal) 30%, light-dark(#a5f3fc, #0891b2));
+	--node-border-hover: color-mix(in srgb, var(--color-variant-signal) 50%, light-dark(#67e8f9, #06b6d4));
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
-	--node-bg-from: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
-	--node-bg-via: color-mix(
-		in srgb,
-		var(--node-accent) 10%,
-		light-dark(#ffffff, #1e293b)
-	);
-	--node-bg-to: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
+	--node-text-secondary: color-mix(in srgb, var(--color-variant-signal) 70%, light-dark(#164e63, #a5f3fc));
+	--node-text-on-accent: light-dark(#ffffff, #1f2937);
+	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-signal) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-signal) 25%, transparent);
+	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-signal) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-signal) 20%, transparent);
 }
 
 [data-variant='event'] {
+	/* Event variant - Yellow theme */
 	--node-accent: var(--color-variant-event);
-	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
-	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
-	--node-text-on-accent: light-dark(#ffffff, #000000);
+	--node-bg-primary: color-mix(in srgb, var(--color-variant-event) 15%, light-dark(#ffffff, #1e293b));
+	--node-bg-secondary: color-mix(in srgb, var(--color-variant-event) 8%, light-dark(#f8fafc, #0f172a));
+	--node-bg-interactive: color-mix(in srgb, var(--color-variant-event) 20%, light-dark(#fefce8, #713f12));
+	--node-border: color-mix(in srgb, var(--color-variant-event) 40%, light-dark(#fde68a, #a16207));
+	--node-border-hover: color-mix(in srgb, var(--color-variant-event) 60%, light-dark(#fcd34d, #d97706));
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
-	--node-bg-from: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
-	--node-bg-via: color-mix(
-		in srgb,
-		var(--node-accent) 10%,
-		light-dark(#ffffff, #1e293b)
-	);
-	--node-bg-to: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
+	--node-text-secondary: color-mix(in srgb, var(--color-variant-event) 80%, light-dark(#713f12, #fde68a));
+	--node-text-on-accent: light-dark(#92400e, #fef3c7);
+	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-event) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-event) 25%, transparent);
+	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-event) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-event) 20%, transparent);
 }
 
 [data-variant='unit'] {
+	/* Unit variant - Red theme */
 	--node-accent: var(--color-variant-unit);
-	--node-border: color-mix(in srgb, var(--node-accent) 60%, transparent);
-	--node-shadow: color-mix(in srgb, var(--node-accent) 40%, transparent);
-	--node-text-on-accent: light-dark(#ffffff, #000000);
+	--node-bg-primary: color-mix(in srgb, var(--color-variant-unit) 10%, light-dark(#ffffff, #1e293b));
+	--node-bg-secondary: color-mix(in srgb, var(--color-variant-unit) 5%, light-dark(#f8fafc, #0f172a));
+	--node-bg-interactive: color-mix(in srgb, var(--color-variant-unit) 15%, light-dark(#fef2f2, #7f1d1d));
+	--node-border: color-mix(in srgb, var(--color-variant-unit) 30%, light-dark(#fecaca, #dc2626));
+	--node-border-hover: color-mix(in srgb, var(--color-variant-unit) 50%, light-dark(#fca5a5, #ef4444));
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
-	--node-bg-from: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
-	--node-bg-via: color-mix(
-		in srgb,
-		var(--node-accent) 10%,
-		light-dark(#ffffff, #1e293b)
-	);
-	--node-bg-to: color-mix(
-		in srgb,
-		var(--node-accent) 20%,
-		light-dark(#f1f5f9, #334155)
-	);
+	--node-text-secondary: color-mix(in srgb, var(--color-variant-unit) 70%, light-dark(#7f1d1d, #fecaca));
+	--node-text-on-accent: light-dark(#ffffff, #1f2937);
+	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-unit) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-unit) 25%, transparent);
+	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-unit) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-unit) 20%, transparent);
+}
+
+/* === BASE NODE STYLING FOR ALL VARIANTS === */
+
+/* Base node container styling using variant custom properties */
+[data-variant] .base-node-container {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	border-radius: 0.75rem;
+	backdrop-filter: blur(12px);
+	background: linear-gradient(135deg, var(--node-bg-from), var(--node-bg-via), var(--node-bg-to));
+	border: 1px solid var(--node-border);
+	box-shadow: 0 10px 15px -3px var(--node-shadow), 0 4px 6px -4px var(--node-shadow);
+	transition: all 0.2s ease-in-out;
+}
+
+/* Selected state for base nodes */
+[data-variant] .base-node-container.selected {
+	transform: scale(1.05);
+	box-shadow: 0 25px 50px -12px var(--node-shadow), 0 25px 25px -5px var(--node-shadow);
+	outline: 2px solid var(--node-accent);
+	outline-offset: 2px;
+}
+
+/* Hover state for base nodes */
+[data-variant] .base-node-container:hover {
+	box-shadow: 0 20px 25px -5px var(--node-shadow), 0 10px 10px -5px var(--node-shadow);
+}
+
+/* Base node header styling using variant properties */
+[data-variant] .base-node-header {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 600;
+	font-size: 1.125rem;
+	flex-shrink: 0;
+	padding: 0.5rem 1rem;
+	color: var(--node-text-primary);
+	background: linear-gradient(135deg, var(--node-accent)/5%, transparent);
+	border-bottom: 1px solid var(--node-border);
+	backdrop-filter: blur(4px);
+}
+
+/* Base node content area */
+[data-variant] .base-node-content {
+	flex: 1;
+	overflow: hidden;
+	border-bottom-left-radius: 0.75rem;
+	border-bottom-right-radius: 0.75rem;
+}
+
+/* === DEBUG NODE SPECIFIC STYLING === */
+
+/* Debug node title styling */
+[data-variant='unit'] .debug-title {
+	color: var(--node-text-highlight);
+	font-weight: 700;
+	font-size: 1.25rem;
+	margin-bottom: 0.5rem;
+}
+
+/* Debug node text styling */
+[data-variant='unit'] .debug-text {
+	color: var(--node-text-secondary);
+	font-size: 1.125rem;
+}
+
+/* Debug node value display */
+[data-variant='unit'] .debug-value {
+	font-family: monospace;
+	background-color: var(--node-bg-interactive);
+	padding: 0.25rem 0.75rem;
+	border-radius: 0.375rem;
+	font-size: 1.125rem;
+	color: var(--node-text-primary);
+}
+
+/* Debug node label styling */
+[data-variant='unit'] .debug-label {
+	color: var(--node-text-highlight);
+	font-size: 0.875rem;
+	font-weight: 600;
+	margin-top: 0.5rem;
 }
 
 /* === RAINBOW METALLIC UTILITIES === */
@@ -414,25 +351,21 @@
 	}
 }
 
-@custom-variant dark (&:where(.dark, .dark *));
+/* Global monospace font using standard CSS */
+* {
+	font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+}
 
-/* Global monospace font using Tailwind */
-@layer base {
-	* {
-		@apply font-mono;
-	}
+/* Prevent React Flow node dragging on interactive elements */
+.nodrag {
+	pointer-events: all;
+}
 
-	/* Prevent React Flow node dragging on interactive elements */
-	.nodrag {
-		pointer-events: all;
-	}
-
-	input,
-	button,
-	select,
-	textarea {
-		pointer-events: all;
-	}
+input,
+button,
+select,
+textarea {
+	pointer-events: all;
 }
 
 /* R3F Canvas fixes for ReactFlow integration */
@@ -832,4 +765,198 @@
 	.pl-grid-2 { padding-left: var(--spacing-grid-2); }
 	.pr-grid-1 { padding-right: var(--spacing-grid-1); }
 	.pr-grid-2 { padding-right: var(--spacing-grid-2); }
+}
+
+/* === VARIANT-AWARE TAILWIND UTILITIES === */
+
+/* Background utilities using variant custom properties */
+.bg-node-primary {
+	background-color: var(--node-bg-primary);
+}
+
+.bg-node-secondary {
+	background-color: var(--node-bg-secondary);
+}
+
+.bg-node-interactive {
+	background-color: var(--node-bg-interactive);
+}
+
+.bg-node-accent {
+	background-color: var(--node-accent);
+}
+
+/* Text color utilities using variant custom properties */
+.text-node-primary {
+	color: var(--node-text-primary);
+}
+
+.text-node-secondary {
+	color: var(--node-text-secondary);
+}
+
+.text-node-on-accent {
+	color: var(--node-text-on-accent);
+}
+
+/* Border utilities using variant custom properties */
+.border-node {
+	border-color: var(--node-border);
+}
+
+.border-node-hover {
+	border-color: var(--node-border-hover);
+}
+
+.border-node-accent {
+	border-color: var(--node-accent);
+}
+
+/* Shadow utilities using variant custom properties */
+.shadow-node {
+	box-shadow: var(--node-shadow);
+}
+
+.shadow-node-hover {
+	box-shadow: var(--node-shadow-hover);
+}
+
+.shadow-node-selected {
+	box-shadow: var(--node-shadow-selected);
+}
+
+/* Interactive state utilities */
+.hover\:bg-node-interactive:hover {
+	background-color: var(--node-bg-interactive);
+}
+
+.hover\:border-node-hover:hover {
+	border-color: var(--node-border-hover);
+}
+
+.hover\:shadow-node-hover:hover {
+	box-shadow: var(--node-shadow-hover);
+}
+
+.focus\:border-node-accent:focus {
+	border-color: var(--node-accent);
+}
+
+/* Ring utilities for focus states */
+.ring-node-accent {
+	--tw-ring-color: var(--node-accent);
+}
+
+.ring-node-accent\/20 {
+	--tw-ring-color: color-mix(in srgb, var(--node-accent) 20%, transparent);
+}
+
+/* Accent color variants for buttons and controls */
+.bg-node-accent-10 {
+	background-color: color-mix(in srgb, var(--node-accent) 10%, transparent);
+}
+
+.bg-node-accent-20 {
+	background-color: color-mix(in srgb, var(--node-accent) 20%, transparent);
+}
+
+.bg-node-accent-40 {
+	background-color: color-mix(in srgb, var(--node-accent) 40%, transparent);
+}
+
+/* === COMPONENT-SPECIFIC UTILITIES === */
+
+/* Button variants that work with node themes */
+.btn-node-primary {
+	background-color: var(--node-accent);
+	color: var(--node-text-on-accent);
+	border: 1px solid var(--node-accent);
+	border-radius: 0.375rem;
+	padding: 0.5rem 0.75rem;
+	font-weight: 500;
+	transition: all 0.2s ease-in-out;
+}
+
+.btn-node-primary:hover {
+	background-color: var(--node-accent);
+	box-shadow: var(--node-shadow-hover);
+	transform: scale(1.05);
+}
+
+.btn-node-secondary {
+	background-color: var(--node-bg-interactive);
+	color: var(--node-text-primary);
+	border: 1px solid var(--node-border);
+	border-radius: 0.375rem;
+	padding: 0.5rem 0.75rem;
+	font-weight: 500;
+	transition: all 0.2s ease-in-out;
+}
+
+.btn-node-secondary:hover {
+	background-color: var(--node-bg-accent-20);
+	border-color: var(--node-border-hover);
+}
+
+/* Input field variants */
+.input-node {
+	background-color: var(--node-bg-secondary);
+	border: 1px solid var(--node-border);
+	border-radius: 0.375rem;
+	padding: 0.5rem 0.75rem;
+	color: var(--node-text-primary);
+}
+
+.input-node::placeholder {
+	color: var(--node-text-secondary);
+}
+
+.input-node:focus {
+	outline: none;
+	box-shadow: 0 0 0 2px var(--node-accent);
+	border-color: var(--node-accent);
+}
+
+/* Panel/card variants */
+.panel-node {
+	background-color: var(--node-bg-secondary);
+	border: 1px solid var(--node-border);
+	border-radius: 0.5rem;
+	padding: 1rem;
+	box-shadow: var(--node-shadow);
+}
+
+.card-node {
+	background-color: var(--node-bg-primary);
+	border: 1px solid var(--node-border);
+	border-radius: 0.5rem;
+	box-shadow: var(--node-shadow);
+	transition: all 0.2s ease-in-out;
+}
+
+.card-node:hover {
+	box-shadow: var(--node-shadow-hover);
+}
+
+/* Handle/connector styles */
+.handle-node {
+	background-color: var(--node-accent);
+	border: 2px solid var(--node-bg-primary);
+	border-radius: 50%;
+	transition: all 0.2s ease-in-out;
+}
+
+.handle-node:hover {
+	background-color: var(--node-accent);
+	transform: scale(1.1);
+}
+
+/* Text emphasis utilities */
+.text-node-accent {
+	color: var(--node-accent);
+}
+
+.text-node-muted {
+	color: var(--node-text-secondary);
+	opacity: 0.75;
 }

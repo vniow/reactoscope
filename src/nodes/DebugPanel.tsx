@@ -3,7 +3,6 @@
  * Extracted for better separation of concerns and reusability
  */
 import { useState, useEffect } from 'react';
-import { GridBlock } from '../shared/components/GridBlock';
 import type { BufferStats } from './hooks/useThreeWorkletDebug';
 import type { SceneDebugMetrics } from './SceneCoordinateTracker';
 
@@ -62,12 +61,10 @@ export function DebugPanel({
 	isPlaying,
 }: DebugPanelProps) {
 	return (
-		<GridBlock
-			className="w-grid-8 h-grid-5 mt-grid-3" // 8×5 grid units with 3-unit top margin
-		>
+		<div className="w-grid-8 h-grid-5 mt-grid-3 p-2 rounded-lg" style={{ backgroundColor: 'var(--node-bg-interactive)', color: 'var(--node-text-primary)' }}>
 			<div className='w-full h-full p-1'>
 				<div className='w-full h-full'>
-					<div className='text-xs font-mono text-blue-400 mb-1'>
+					<div className='text-xs font-mono mb-1' style={{ color: 'var(--node-text-highlight)' }}>
 						🔍 Debug Panel (FPS: {frameRate})
 					</div>
 
@@ -172,6 +169,6 @@ export function DebugPanel({
 					)}
 				</div>
 			</div>
-		</GridBlock>
+		</div>
 	);
 }

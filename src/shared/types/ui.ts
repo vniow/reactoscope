@@ -13,8 +13,6 @@ export type ComponentVariant =
 	| 'event' // Event-based (Sequence, Part, Transport, etc.)
 	| 'unit'; // Utilities and units (Frequency, Time, etc.)
 
-export type ComponentSize = 'sm' | 'md' | 'lg';
-
 export type ComponentColor = 'default' | 'orange' | 'green' | 'red' | 'blue';
 
 // Slider types

@@ -1,4 +1,3 @@
-import { GridBlock } from '../../../shared/components/GridBlock';
 import { PANEL_LAYOUT } from '../../../shared/config/panelLayout';
 import {
 	groupNodesByVariant,
@@ -33,9 +32,7 @@ export function NodeGroupsSection({
 	};
 
 	return (
-		<GridBlock
-			showBorder={false}
-			transparentBackground={true}
+		<div
 			className={`overflow-hidden ${!isVisible ? 'pointer-events-none' : ''}`}
 			style={{ height }}
 		>
@@ -75,7 +72,7 @@ export function NodeGroupsSection({
 					})}
 				</div>
 			</div>
-		</GridBlock>
+		</div>
 	);
 }
 
