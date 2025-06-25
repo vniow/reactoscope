@@ -47,17 +47,7 @@ export const DEBUG_NODES: NodeTypeOption[] = [
 
 // Utility nodes
 export const UTILITY_NODES: NodeTypeOption[] = [
-	{
-		type: 'file-loader',
-		name: 'File Loader',
-		description: 'Load and process files',
-		emoji: '📁',
-		variant: 'unit',
-		category: 'utility',
-		defaultData: {
-			label: 'File Loader',
-		},
-	},
+	// No utility nodes currently - file loader removed
 ];
 
 // Placeholder nodes for each variant

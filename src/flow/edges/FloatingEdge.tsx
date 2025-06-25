@@ -7,7 +7,7 @@ import {
 	BaseEdge,
 } from '@xyflow/react';
 import { NodeDeleteButton } from '../../shared/components/ui/NodeDeleteButton';
-import { useEdgeColors } from '../../shared/utils/useVariantColors';
+import { useNodeVariant } from '../../shared/utils/useNodeVariant';
 
 // Hardcoded edge styling
 const EDGE_STROKE_WIDTH = 7;
@@ -64,12 +64,20 @@ export function FloatingEdge(props: EdgeProps) {
 	const colorMode = edgeData?.colorMode ?? 'gradient';
 	const pathType = edgeData?.pathType ?? 'smooth'; // Default to smooth step
 
-	// Get dynamic colors based on connected nodes
-	const {
-		stroke: dynamicStroke,
-		gradient,
-		gradientId,
-	} = useEdgeColors(source, target, colorMode);
+	// Get variant colors for source and target nodes
+	const sourceVariant = useNodeVariant(source);
+	const targetVariant = useNodeVariant(target);
+	
+	// Create gradient colors based on node variants
+	const getVariantColor = (variant: string | undefined) => {
+		if (!variant) return '#94a3b8'; // Default gray
+		return `var(--color-variant-${variant})`;
+	};
+	
+	const sourceColor = getVariantColor(sourceVariant);
+	const targetColor = getVariantColor(targetVariant);
+	const gradientId = `edge-gradient-${source}-${target}`;
+	const gradient = { from: sourceColor, to: targetColor };
 
 	// Label styling
 	const labelClassName =
@@ -137,9 +145,8 @@ export function FloatingEdge(props: EdgeProps) {
 			}
 		: null;
 
-	// All edges now use gradients
-	const edgeStroke =
-		colorMode === 'gradient' ? `url(#${gradientId})` : dynamicStroke;
+	// All edges now use gradients based on connected node colors
+	const edgeStroke = `url(#${gradientId})`;
 	const edgeStrokeWidth = selected ? EDGE_STROKE_WIDTH + 2 : EDGE_STROKE_WIDTH; // Make selected edges slightly thicker
 
 	return (

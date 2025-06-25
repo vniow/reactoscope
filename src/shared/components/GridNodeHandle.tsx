@@ -21,9 +21,10 @@ interface NodeHandleProps {
  * NodeHandle component - simplified positioning with CSS
  *
  * VISUAL DESIGN:
- * - Source handles: Large pointed arrow SVG icons that can contain text labels
- * - Target handles: Circle SVG icons indicating input connections
+ * - Source handles: Arrow-shaped SVG icons pointing outward that can contain text labels
+ * - Target handles: Oval/circle SVG icons indicating input connections
  * - Uses CSS custom properties for theming and color consistency
+ * - Different shapes clearly distinguish between inputs (targets) and outputs (sources)
  *
  * POSITIONING:
  * - Uses React Flow's built-in positioning system
@@ -68,86 +69,87 @@ export function GridNodeHandle({
 	const createHandleIcon = () => {
 		// Simplified styling with variant-aware colors
 		const strokeColor = 'var(--node-accent, #3b82f6)';
-		const fillColor =
-			type === 'source'
-				? 'color-mix(in srgb, var(--node-accent, #3b82f6) 25%, light-dark(white, #1e293b))'
-				: 'color-mix(in srgb, var(--node-accent, #3b82f6) 35%, light-dark(white, #1e293b))';
+		const fillColor = 'color-mix(in srgb, var(--node-accent, #3b82f6) 25%, light-dark(white, #1e293b))';
 
-		// Clean arrow shapes with simple translucency
-		return (
-			<svg
-				width={svgDimensions.width}
-				height={svgDimensions.height}
-				viewBox={`0 0 ${svgDimensions.width} ${svgDimensions.height}`}
-				style={{
-					pointerEvents: 'none',
-					filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))',
-				}}
-			>
-				{/* Single arrow path with simple styling */}
-				{getArrowPath(
-					position,
-					fillColor,
-					strokeColor,
-					svgDimensions,
-					type
-				)}
+		if (type === 'source') {
+			// Source handles: Arrow shapes pointing outward
+			return (
+				<svg
+					width={svgDimensions.width}
+					height={svgDimensions.height}
+					viewBox={`0 0 ${svgDimensions.width} ${svgDimensions.height}`}
+					style={{
+						pointerEvents: 'none',
+						filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))',
+					}}
+				>
+					{/* Arrow path for source handles */}
+					{getSourceArrowPath(position, fillColor, strokeColor, svgDimensions)}
 
-				{/* Add label text inside the arrow if provided */}
-				{label && showLabel && (
-					<text
-						x={svgDimensions.width / 2}
-						y={svgDimensions.height / 2 + 1}
-						textAnchor='middle'
-						dominantBaseline='middle'
-						fill='var(--node-text-primary, light-dark(#374151, #f9fafb))'
-						fontSize={size === 'sm' ? '10' : size === 'md' ? '12' : '14'}
-						fontWeight='600'
-						fontFamily='ui-sans-serif, system-ui, sans-serif'
-						style={{ userSelect: 'none' }}
-					>
-						{label}
-					</text>
-				)}
-			</svg>
-		);
+					{/* Add label text inside the arrow if provided */}
+					{label && showLabel && (
+						<text
+							x={svgDimensions.width / 2}
+							y={svgDimensions.height / 2 + 1}
+							textAnchor='middle'
+							dominantBaseline='middle'
+							fill='var(--node-text-primary, light-dark(#374151, #f9fafb))'
+							fontSize={size === 'sm' ? '10' : size === 'md' ? '12' : '14'}
+							fontWeight='600'
+							fontFamily='ui-sans-serif, system-ui, sans-serif'
+							style={{ userSelect: 'none' }}
+						>
+							{label}
+						</text>
+					)}
+				</svg>
+			);
+		} else {
+			// Target handles: Circle/oval shapes for inputs
+			return (
+				<svg
+					width={svgDimensions.width}
+					height={svgDimensions.height}
+					viewBox={`0 0 ${svgDimensions.width} ${svgDimensions.height}`}
+					style={{
+						pointerEvents: 'none',
+						filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))',
+					}}
+				>
+					{/* Circle/oval path for target handles */}
+					{getTargetCirclePath(fillColor, strokeColor, svgDimensions)}
+
+					{/* Add label text inside the circle if provided */}
+					{label && showLabel && (
+						<text
+							x={svgDimensions.width / 2}
+							y={svgDimensions.height / 2 + 1}
+							textAnchor='middle'
+							dominantBaseline='middle'
+							fill='var(--node-text-primary, light-dark(#374151, #f9fafb))'
+							fontSize={size === 'sm' ? '8' : size === 'md' ? '10' : '12'}
+							fontWeight='600'
+							fontFamily='ui-sans-serif, system-ui, sans-serif'
+							style={{ userSelect: 'none' }}
+						>
+							{label}
+						</text>
+					)}
+				</svg>
+			);
+		}
 	};
 
-	// Helper function to create arrow path based on position and handle type
-	// Target handles point in the opposite direction of source handles
-	const getArrowPath = (
+	// Helper function to create arrow path for source handles
+	const getSourceArrowPath = (
 		position: Position | undefined,
 		fillColor: string,
 		strokeColor: string,
-		dimensions: { width: number; height: number },
-		handleType: 'source' | 'target'
+		dimensions: { width: number; height: number }
 	) => {
 		const { width, height } = dimensions;
 		const centerX = width / 2;
 		const centerY = height / 2;
-
-		// Determine arrow direction based on handle type and position
-		const getArrowDirection = (pos: Position | undefined) => {
-			if (handleType === 'source') {
-				return pos; // Source handles point in their natural direction
-			} else {
-				// Target handles point in the opposite direction
-				switch (pos) {
-					case Position.Right:
-						return Position.Left;
-					case Position.Left:
-						return Position.Right;
-					case Position.Bottom:
-						return Position.Top;
-					case Position.Top:
-						return Position.Bottom;
-					default:
-						return Position.Left; // Default opposite of right
-				}
-			}
-		};
-
-		const arrowDirection = getArrowDirection(position);
 
 		// Simple styling without complex filters
 		const pathStyles = {
@@ -158,7 +160,7 @@ export function GridNodeHandle({
 			opacity: '0.9',
 		};
 
-		switch (arrowDirection) {
+		switch (position) {
 			case Position.Right:
 				// Arrow pointing right - elongated to fit label
 				return (
@@ -192,14 +194,47 @@ export function GridNodeHandle({
 					/>
 				);
 			default:
-				// Default left-pointing arrow (opposite of default right for source)
+				// Default right-pointing arrow
 				return (
 					<path
-						d={`M ${width - 4} 4 L 12 4 L 4 ${centerY} L 12 ${height - 4} L ${width - 4} ${height - 4} Z`}
+						d={`M 4 4 L ${width - 12} 4 L ${width - 4} ${centerY} L ${width - 12} ${height - 4} L 4 ${height - 4} Z`}
 						{...pathStyles}
 					/>
 				);
 		}
+	};
+
+	// Helper function to create circle/oval path for target handles
+	const getTargetCirclePath = (
+		fillColor: string,
+		strokeColor: string,
+		dimensions: { width: number; height: number }
+	) => {
+		const { width, height } = dimensions;
+		const centerX = width / 2;
+		const centerY = height / 2;
+		
+		// Create an oval that fits the dimensions
+		const radiusX = (width - 8) / 2; // Leave some padding
+		const radiusY = (height - 8) / 2; // Leave some padding
+
+		// Simple styling without complex filters
+		const pathStyles = {
+			fill: fillColor,
+			stroke: strokeColor,
+			strokeWidth: '2',
+			opacity: '0.9',
+		};
+
+		return (
+			<ellipse
+				cx={centerX}
+				cy={centerY}
+				rx={radiusX}
+				ry={radiusY}
+				{...pathStyles}
+			/>
+		);
 	};
 
 	// Handle styling for SVG container - simplified since we're using SVG icons

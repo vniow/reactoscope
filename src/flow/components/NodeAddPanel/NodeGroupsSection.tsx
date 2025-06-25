@@ -5,7 +5,6 @@ import {
 	VARIANT_DISPLAY_NAMES,
 	type NodeTypeOption,
 } from '../../../shared/config/nodeTypes';
-import { VariantButton } from '../../../shared/components/ui/VariantButton';
 import type { ComponentVariant } from '../../../shared/types/ui';
 import { useEffect } from 'react';
 
@@ -112,16 +111,14 @@ function VariantSection({
 					id={sectionId}
 					className='text-sm font-semibold px-3 py-2 rounded transition-colors border-l-4'
 					style={{
-						// Use high contrast primary text color
-						color: 'var(--node-text-primary, light-dark(#1f2937, #f9fafb))',
-						// Subtle background that doesn't interfere with text readability
-						backgroundColor:
-							'color-mix(in srgb, var(--node-accent) 8%, light-dark(#f8fafc, #1e293b))',
+						// Use theme-aware text color
+						color: 'light-dark(#1f2937, #f9fafb)',
+						// Variant-aware background with subtle opacity
+						backgroundColor: 'color-mix(in srgb, var(--node-accent) 8%, light-dark(#f8fafc, #1e293b))',
 						// Accent border for visual association
 						borderLeftColor: 'var(--node-accent)',
-						// Add subtle border for better definition
-						border:
-							'1px solid color-mix(in srgb, var(--node-accent) 20%, light-dark(#e2e8f0, #374151))',
+						// Theme-aware border
+						border: '1px solid color-mix(in srgb, var(--node-accent) 20%, light-dark(#e2e8f0, #374151))',
 					}}
 				>
 					{variantName}
@@ -135,16 +132,20 @@ function VariantSection({
 				aria-labelledby={sectionId}
 			>
 				{nodes.map((option, buttonIndex) => (
-					<VariantButton
+					<button
 						key={option.type}
-						variant={option.variant}
-						size='lg'
+						data-variant={option.variant}
 						onClick={() => onAddNode(option)}
 						title={option.description}
 						aria-label={`Add ${option.name} node. ${option.description}`}
-						icon={<span className='text-sm'>{option.emoji}</span>}
-						useCustomColors={true}
 						className={`
+							h-16 min-h-16 text-base px-4 py-3
+							flex flex-col items-center justify-center text-center 
+							rounded-lg transition-all duration-200 
+							focus:outline-none focus:ring-2 focus:ring-offset-2
+							hover:scale-105 transform 
+							border border-transparent
+							font-medium shadow-md
 							transition-all duration-300 ease-in-out
 							${
 								isVisible
@@ -152,15 +153,23 @@ function VariantSection({
 									: 'opacity-0 translate-y-1 scale-95'
 							}
 							text-xs
+							btn-node-primary
 						`}
 						style={{
 							transitionDelay: isVisible
 								? `${animationDelay + buttonIndex * 30}ms`
 								: '0ms',
-						}}
+							// Ensure proper focus ring color using CSS custom property
+							'--tw-ring-color': 'var(--node-accent)',
+						} as React.CSSProperties}
 					>
-						{option.name.split(' ').slice(0, 2).join(' ')}
-					</VariantButton>
+						<div className='mb-1' aria-hidden='true'>
+							<span className='text-sm'>{option.emoji}</span>
+						</div>
+						<div className='leading-tight'>
+							{option.name.split(' ').slice(0, 2).join(' ')}
+						</div>
+					</button>
 				))}
 			</div>
 		</section>

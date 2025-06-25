@@ -12,7 +12,6 @@ import type { NodeTypes } from '@xyflow/react';
 
 // Internal node component imports
 import { DebugNode } from './DebugNode';
-import { FileLoaderNode } from './FileLoaderNode';
 import { 
 	CoreNodeComponent,
 	SourceNodeComponent,
@@ -58,7 +57,6 @@ export const initialNodes: AppNode[] = [
 export const nodeTypes = {
 	// Core system nodes
 	debug: DebugNode,
-	'file-loader': FileLoaderNode,
 	
 	// Placeholder nodes for each variant
 	core: CoreNodeComponent,

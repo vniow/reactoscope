@@ -17,7 +17,6 @@ export interface PlaceholderNodeData extends BaseNodeData {
 }
 
 export type DebugNode = Node<DebugNodeData, 'debug'>;
-export type FileLoaderNode = Node<BaseNodeData, 'file-loader'>;
 
 // Placeholder node types for each variant
 export type CoreNode = Node<PlaceholderNodeData, 'core'>;
@@ -32,7 +31,6 @@ export type UtilityNode = Node<PlaceholderNodeData, 'unit'>;
 export type AppNode = 
 	| BuiltInNode 
 	| DebugNode 
-	| FileLoaderNode
 	| CoreNode
 	| SourceNode
 	| InstrumentNode

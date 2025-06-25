@@ -86,53 +86,54 @@ export function SaveRestoreModal({ isOpen, onClose }: SaveRestoreModalProps) {
 
 	return (
 		<div
-			className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'
+			className='fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50'
 			onClick={onClose}
 		>
 			<div
-				className='bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto m-4'
+				className='bg-canvas border border-interactive rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto m-4 shadow-xl'
 				onClick={(e) => e.stopPropagation()}
+				data-variant='core'
 			>
-				<div className='flex justify-between items-center mb-4'>
-					<h2 className='text-xl font-semibold text-gray-900 dark:text-gray-100'>
+				<div className='flex justify-between items-center mb-6'>
+					<h2 className='text-xl font-semibold text-node-primary'>
 						Flow State Manager
 					</h2>
 					<button
 						onClick={onClose}
-						className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+						className='text-node-secondary hover:text-node-primary transition-colors p-1 rounded'
 					>
 						✕
 					</button>
 				</div>
 
 				{/* Mode Tabs */}
-				<div className='flex border-b border-gray-200 dark:border-gray-700 mb-4'>
+				<div className='flex border-b border-node mb-6'>
 					<button
 						onClick={() => setMode('save')}
-						className={`px-4 py-2 text-sm font-medium ${
+						className={`px-4 py-2 text-sm font-medium transition-colors ${
 							mode === 'save'
-								? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
-								: 'text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
+								? 'text-node-accent border-b-2 border-node-accent'
+								: 'text-node-secondary hover:text-node-primary'
 						}`}
 					>
 						Save Current
 					</button>
 					<button
 						onClick={() => setMode('restore')}
-						className={`px-4 py-2 text-sm font-medium ${
+						className={`px-4 py-2 text-sm font-medium transition-colors ${
 							mode === 'restore'
-								? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
-								: 'text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
+								? 'text-node-accent border-b-2 border-node-accent'
+								: 'text-node-secondary hover:text-node-primary'
 						}`}
 					>
 						Restore ({savedStates.length})
 					</button>
 					<button
 						onClick={() => setMode('import-export')}
-						className={`px-4 py-2 text-sm font-medium ${
+						className={`px-4 py-2 text-sm font-medium transition-colors ${
 							mode === 'import-export'
-								? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
-								: 'text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
+								? 'text-node-accent border-b-2 border-node-accent'
+								: 'text-node-secondary hover:text-node-primary'
 						}`}
 					>
 						Import/Export
@@ -143,7 +144,7 @@ export function SaveRestoreModal({ isOpen, onClose }: SaveRestoreModalProps) {
 				{mode === 'save' && (
 					<div className='space-y-4'>
 						<div>
-							<label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+							<label className='block text-sm font-medium text-node-primary mb-2'>
 								Save Name *
 							</label>
 							<input
@@ -151,11 +152,11 @@ export function SaveRestoreModal({ isOpen, onClose }: SaveRestoreModalProps) {
 								value={saveName}
 								onChange={(e) => setSaveName(e.target.value)}
 								placeholder='Enter a name for this save...'
-								className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+								className='w-full px-3 py-2 bg-node-secondary border border-node rounded-lg text-node-primary placeholder:text-node-secondary focus:outline-none focus:ring-2 focus:ring-node-accent focus:border-node-accent transition-colors'
 							/>
 						</div>
 						<div>
-							<label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+							<label className='block text-sm font-medium text-node-primary mb-2'>
 								Description (optional)
 							</label>
 							<textarea
@@ -163,14 +164,15 @@ export function SaveRestoreModal({ isOpen, onClose }: SaveRestoreModalProps) {
 								onChange={(e) => setSaveDescription(e.target.value)}
 								placeholder='Describe this flow state...'
 								rows={3}
-								className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+								className='w-full px-3 py-2 bg-node-secondary border border-node rounded-lg text-node-primary placeholder:text-node-secondary focus:outline-none focus:ring-2 focus:ring-node-accent focus:border-node-accent transition-colors resize-none'
 							/>
 						</div>
 						<button
 							onClick={handleSave}
-							className='w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium'
+							className='w-full px-4 py-3 bg-node-accent hover:bg-node-accent/80 text-node-on-accent rounded-lg font-medium transition-colors shadow-sm hover:shadow-md flex items-center justify-center gap-2'
 						>
-							💾 Save Current State
+							<span>💾</span>
+							Save Current State
 						</button>
 					</div>
 				)}
@@ -179,45 +181,56 @@ export function SaveRestoreModal({ isOpen, onClose }: SaveRestoreModalProps) {
 				{mode === 'restore' && (
 					<div className='space-y-3'>
 						{savedStates.length === 0 ? (
-							<p className='text-gray-600 dark:text-gray-400 text-center py-8'>
-								No saved states yet. Create some saves first!
-							</p>
+							<div className='text-center py-12'>
+								<div className='text-4xl mb-4 opacity-50'>📁</div>
+								<p className='text-node-secondary'>
+									No saved states yet. Create some saves first!
+								</p>
+							</div>
 						) : (
 							savedStates.map((savedState) => (
 								<div
 									key={savedState.id}
-									className='border border-gray-200 dark:border-gray-700 rounded-lg p-4'
+									className='bg-node-secondary border border-node rounded-lg p-4 hover:bg-node-interactive transition-colors'
 								>
 									<div className='flex justify-between items-start'>
 										<div className='flex-1'>
-											<h3 className='font-medium text-gray-900 dark:text-gray-100'>
+											<h3 className='font-medium text-node-primary'>
 												{savedState.name}
 											</h3>
-											<p className='text-sm text-gray-600 dark:text-gray-400'>
+											<p className='text-sm text-node-secondary'>
 												{formatDate(savedState.timestamp)}
 											</p>
 											{savedState.description && (
-												<p className='text-sm text-gray-700 dark:text-gray-300 mt-1'>
+												<p className='text-sm text-node-primary mt-1 opacity-90'>
 													{savedState.description}
 												</p>
 											)}
-											<div className='text-xs text-gray-500 dark:text-gray-500 mt-1'>
-												{savedState.nodes.length} nodes,{' '}
-												{savedState.edges.length} edges
+											<div className='text-xs text-node-secondary mt-2 flex items-center gap-4'>
+												<span className='flex items-center gap-1'>
+													<span>🔴</span>
+													{savedState.nodes.length} nodes
+												</span>
+												<span className='flex items-center gap-1'>
+													<span>🔗</span>
+													{savedState.edges.length} edges
+												</span>
 											</div>
 										</div>
 										<div className='flex gap-2 ml-4'>
 											<button
 												onClick={() => handleRestore(savedState)}
-												className='px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700'
+												className='px-3 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium flex items-center gap-1'
 											>
-												📋 Restore
+												<span>📋</span>
+												Restore
 											</button>
 											<button
 												onClick={() => handleDelete(savedState)}
-												className='px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700'
+												className='px-3 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center gap-1'
 											>
-												🗑️ Delete
+												<span>🗑️</span>
+												Delete
 											</button>
 										</div>
 									</div>
@@ -229,27 +242,30 @@ export function SaveRestoreModal({ isOpen, onClose }: SaveRestoreModalProps) {
 
 				{/* Import/Export Mode */}
 				{mode === 'import-export' && (
-					<div className='space-y-4'>
+					<div className='space-y-6'>
 						<div>
-							<h3 className='text-lg font-medium text-gray-900 dark:text-gray-100 mb-2'>
+							<h3 className='text-lg font-medium text-node-primary mb-3 flex items-center gap-2'>
+								<span>📤</span>
 								Export Current State
 							</h3>
-							<p className='text-sm text-gray-600 dark:text-gray-400 mb-3'>
+							<p className='text-sm text-node-secondary mb-4'>
 								Download your current flow as a JSON file to share or backup.
 							</p>
 							<button
 								onClick={handleExport}
-								className='w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium'
+								className='w-full px-4 py-3 bg-node-accent hover:bg-node-accent/80 text-node-on-accent rounded-lg font-medium transition-colors shadow-sm hover:shadow-md flex items-center justify-center gap-2'
 							>
-								📤 Export & Download
+								<span>📤</span>
+								Export & Download
 							</button>
 						</div>
 
-						<div className='border-t border-gray-200 dark:border-gray-700 pt-4'>
-							<h3 className='text-lg font-medium text-gray-900 dark:text-gray-100 mb-2'>
+						<div className='border-t border-node pt-6'>
+							<h3 className='text-lg font-medium text-node-primary mb-3 flex items-center gap-2'>
+								<span>📥</span>
 								Import State
 							</h3>
-							<p className='text-sm text-gray-600 dark:text-gray-400 mb-3'>
+							<p className='text-sm text-node-secondary mb-4'>
 								Paste the JSON data from an exported flow to load it.
 							</p>
 							<textarea
@@ -257,13 +273,14 @@ export function SaveRestoreModal({ isOpen, onClose }: SaveRestoreModalProps) {
 								onChange={(e) => setImportData(e.target.value)}
 								placeholder='Paste exported JSON data here...'
 								rows={8}
-								className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-sm'
+								className='w-full px-3 py-2 bg-node-secondary border border-node rounded-lg text-node-primary placeholder:text-node-secondary focus:outline-none focus:ring-2 focus:ring-node-accent focus:border-node-accent transition-colors font-mono text-sm resize-none'
 							/>
 							<button
 								onClick={handleImport}
-								className='w-full mt-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium'
+								className='w-full mt-3 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow-md flex items-center justify-center gap-2'
 							>
-								📥 Import Flow State
+								<span>📥</span>
+								Import Flow State
 							</button>
 						</div>
 					</div>

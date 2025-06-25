@@ -826,10 +826,6 @@ textarea {
 }
 
 /* Interactive state utilities */
-.hover\:bg-node-interactive:hover {
-	background-color: var(--node-bg-interactive);
-}
-
 .hover\:border-node-hover:hover {
 	border-color: var(--node-border-hover);
 }
@@ -878,9 +874,9 @@ textarea {
 }
 
 .btn-node-primary:hover {
-	background-color: var(--node-accent);
+	background-color: color-mix(in srgb, var(--node-accent) 80%, transparent);
 	box-shadow: var(--node-shadow-hover);
-	transform: scale(1.05);
+	transform: scale(1.02);
 }
 
 .btn-node-secondary {
@@ -894,7 +890,7 @@ textarea {
 }
 
 .btn-node-secondary:hover {
-	background-color: var(--node-bg-accent-20);
+	background-color: color-mix(in srgb, var(--node-accent) 20%, var(--node-bg-interactive));
 	border-color: var(--node-border-hover);
 }
 
@@ -959,4 +955,45 @@ textarea {
 .text-node-muted {
 	color: var(--node-text-secondary);
 	opacity: 0.75;
+}
+
+/* === GLASS PANEL UTILITIES === */
+
+/* Enhanced glass panel for complex interfaces like node add panel */
+.glass-panel-enhanced {
+	background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+	backdrop-filter: blur(16px) saturate(1.2);
+	border: 1px solid color-mix(in srgb, var(--color-interactive-border) 60%, transparent);
+	box-shadow: 
+		0 4px 6px -1px color-mix(in srgb, #000000 10%, transparent),
+		0 2px 4px -2px color-mix(in srgb, #000000 10%, transparent),
+		inset 0 1px 0 0 color-mix(in srgb, #ffffff 10%, transparent);
+}
+
+/* Scrollbar styling for glass panels */
+.scrollbar-glass {
+	scrollbar-width: thin;
+	scrollbar-color: color-mix(in srgb, var(--color-interactive-border) 60%, transparent) transparent;
+}
+
+.scrollbar-glass::-webkit-scrollbar {
+	width: 6px;
+}
+
+.scrollbar-glass::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.scrollbar-glass::-webkit-scrollbar-thumb {
+	background-color: color-mix(in srgb, var(--color-interactive-border) 60%, transparent);
+	border-radius: 3px;
+}
+
+.scrollbar-glass::-webkit-scrollbar-thumb:hover {
+	background-color: color-mix(in srgb, var(--color-interactive-border) 80%, transparent);
+}
+
+/* Interactive hover utilities for panels */
+.hover\:bg-node-interactive:hover {
+	background-color: var(--node-bg-interactive);
 }
