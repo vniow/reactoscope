@@ -45,6 +45,12 @@ export const DEBUG_NODES: NodeTypeOption[] = [
 	},
 ];
 
+// Audio source nodes
+export const SOURCE_NODES: NodeTypeOption[] = [];
+
+// Audio effect nodes
+export const EFFECT_NODES: NodeTypeOption[] = [];
+
 // Utility nodes
 export const UTILITY_NODES: NodeTypeOption[] = [
 	// No utility nodes currently - file loader removed
@@ -145,12 +151,17 @@ export const PLACEHOLDER_NODES: NodeTypeOption[] = [
 // Combined list of all available nodes
 export const ALL_NODES: NodeTypeOption[] = [
 	...DEBUG_NODES,
+	...SOURCE_NODES,
+	...EFFECT_NODES,
 	...UTILITY_NODES,
 	...PLACEHOLDER_NODES,
 ];
 
 // Group nodes by variant for organized display
-export const groupNodesByVariant = (): Record<ComponentVariant, NodeTypeOption[]> => {
+export const groupNodesByVariant = (): Record<
+	ComponentVariant,
+	NodeTypeOption[]
+> => {
 	const groups: Record<ComponentVariant, NodeTypeOption[]> = {
 		core: [],
 		source: [],

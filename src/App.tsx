@@ -102,8 +102,6 @@ export default function App() {
 				maxZoom={4}
 				proOptions={{ hideAttribution: true }}
 			>
-				{/* Audio sync component - handles centralized audio connections */}
-
 				<Background
 					gap={64}
 					size={6}

@@ -28,9 +28,11 @@ export type SignalNode = Node<PlaceholderNodeData, 'signal'>;
 export type EventNode = Node<PlaceholderNodeData, 'event'>;
 export type UtilityNode = Node<PlaceholderNodeData, 'unit'>;
 
-export type AppNode = 
-	| BuiltInNode 
-	| DebugNode 
+export type AppNodeData = DebugNodeData;
+
+export type AppNode =
+	| BuiltInNode
+	| DebugNode
 	| CoreNode
 	| SourceNode
 	| InstrumentNode

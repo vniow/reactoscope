@@ -1,5 +1,6 @@
 import type { FlowSlice } from '../../flow/stores/flowSlice';
 import type { Position } from '@xyflow/react';
+import type { AudioSlice } from './audioSlice';
 
 // Theme Types
 export type Theme = 'light' | 'dark' | 'system';
@@ -48,7 +49,11 @@ export interface UIActions {
 }
 
 // Main Store Interface - Uses composition pattern for better maintainability
-export interface AppStore extends ThemeActions, UIActions, FlowSlice {
+export interface AppStore
+	extends ThemeActions,
+		UIActions,
+		FlowSlice,
+		AudioSlice {
 	theme: ThemeState;
 	ui: UIState;
 
