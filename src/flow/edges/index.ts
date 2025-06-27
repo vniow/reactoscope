@@ -1,5 +1,5 @@
 import type { Edge, EdgeTypes } from '@xyflow/react';
-import { FloatingEdge } from './FloatingEdge';
+import { GradientEdge } from './GradientEdge';
 
 export const initialEdges: Edge[] = [
 	// Start with no initial edges - users can create connections as needed
@@ -7,5 +7,5 @@ export const initialEdges: Edge[] = [
 ];
 
 export const edgeTypes = {
-	floating: FloatingEdge,
+	gradient: GradientEdge,
 } satisfies EdgeTypes;

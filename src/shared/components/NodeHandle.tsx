@@ -30,7 +30,7 @@ interface NodeHandleProps {
  * - Uses React Flow's built-in positioning system
  * - Position can be customized via style prop if needed
  */
-export function GridNodeHandle({
+export function NodeHandle({
 	id,
 	type,
 	position,
@@ -69,7 +69,8 @@ export function GridNodeHandle({
 	const createHandleIcon = () => {
 		// Simplified styling with variant-aware colors
 		const strokeColor = 'var(--node-accent, #3b82f6)';
-		const fillColor = 'color-mix(in srgb, var(--node-accent, #3b82f6) 25%, light-dark(white, #1e293b))';
+		const fillColor =
+			'color-mix(in srgb, var(--node-accent, #3b82f6) 25%, light-dark(white, #1e293b))';
 
 		if (type === 'source') {
 			// Source handles: Arrow shapes pointing outward
@@ -213,7 +214,7 @@ export function GridNodeHandle({
 		const { width, height } = dimensions;
 		const centerX = width / 2;
 		const centerY = height / 2;
-		
+
 		// Create an oval that fits the dimensions
 		const radiusX = (width - 8) / 2; // Leave some padding
 		const radiusY = (height - 8) / 2; // Leave some padding

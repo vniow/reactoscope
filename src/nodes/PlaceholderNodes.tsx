@@ -1,6 +1,14 @@
+/**
+ * Placeholder node components for the node system
+ *
+ * These components serve as temporary placeholders while the full audio system is being developed.
+ * They follow the component composition pattern and demonstrate proper variant usage.
+ *
+ * @module PlaceholderNodes
+ */
 import { Position, type NodeProps, type Node } from '@xyflow/react';
 import { BaseNode } from '../shared/components/BaseNode';
-import { GridNodeHandle } from '../shared/components/GridNodeHandle';
+import { NodeHandle } from '../shared/components/NodeHandle';
 import { GridControl } from '../shared/components/ui/GridControl';
 import type { ComponentVariant } from '../shared/types/ui';
 import type { BaseNodeData } from './types';
@@ -21,19 +29,29 @@ export type SignalNode = Node<PlaceholderNodeData, 'signal'>;
 export type EventNode = Node<PlaceholderNodeData, 'event'>;
 export type UtilityNode = Node<PlaceholderNodeData, 'unit'>;
 
-// Generic placeholder node component
-function PlaceholderNode({ 
-	id, 
-	selected = false, 
-	data, 
+/**
+ * Generic placeholder node component following component composition pattern
+ * Uses BaseNode for consistent styling and behavior
+ *
+ * @param id - Node identifier
+ * @param selected - Whether the node is currently selected
+ * @param data - Node data containing label and description
+ * @param variant - Component variant for styling
+ * @param title - Default title if not provided in data
+ * @param description - Node description text
+ */
+function PlaceholderNode({
+	id,
+	selected = false,
+	data,
 	variant,
 	title,
-	description
+	description,
 }: {
 	id: string;
 	selected?: boolean;
 	data: PlaceholderNodeData;
-	variant: ComponentVariant; 
+	variant: ComponentVariant;
 	title: string;
 	description: string;
 }) {
@@ -43,45 +61,43 @@ function PlaceholderNode({
 			nodeId={id as string}
 			selected={selected}
 			title={data.label || title}
-			className="w-grid-4 h-grid-4"
+			className='w-grid-4 h-grid-4'
 		>
-			<div className="flex flex-col space-y-2 p-2">
-				<div className="text-node-secondary text-xs">
-					{description}
-				</div>
-				
-				<div className="flex items-center space-x-2">
-					<div 
-						className="w-3 h-3 rounded-full"
+			<div className='flex flex-col space-y-2 p-2'>
+				<div className='text-node-secondary text-xs'>{description}</div>
+
+				<div className='flex items-center space-x-2'>
+					<div
+						className='w-3 h-3 rounded-full'
 						style={{ backgroundColor: 'var(--node-accent)' }}
 					/>
-					<span className="text-node-primary text-xs font-medium">
+					<span className='text-node-primary text-xs font-medium'>
 						{variant.toUpperCase()}
 					</span>
 				</div>
 
 				<GridControl
-					type="button"
-					buttonLabel="Configure"
+					type='button'
+					buttonLabel='Configure'
 					onClick={() => console.log(`Configuring ${variant} node:`, id)}
-					variant="node-variant"
-					className="w-full h-6 text-xs"
+					variant='node-variant'
+					className='w-full h-6 text-xs'
 				/>
 			</div>
 
 			{/* Input handle */}
-			<GridNodeHandle
+			<NodeHandle
 				id={`${id}-in`}
-				type="target"
+				type='target'
 				position={Position.Left}
-				size="sm"
+				size='sm'
 			/>
 			{/* Output handle */}
-			<GridNodeHandle
+			<NodeHandle
 				id={`${id}-out`}
-				type="source"
+				type='source'
 				position={Position.Right}
-				size="sm"
+				size='sm'
 			/>
 		</BaseNode>
 	);
@@ -98,9 +114,9 @@ export function CoreNodeComponent({
 			id={id as string}
 			data={data}
 			selected={selected}
-			variant="core"
-			title="Core System"
-			description="Master context, destinations, and core audio infrastructure"
+			variant='core'
+			title='Core System'
+			description='Master context, destinations, and core audio infrastructure'
 		/>
 	);
 }
@@ -116,9 +132,9 @@ export function SourceNodeComponent({
 			id={id as string}
 			data={data}
 			selected={selected}
-			variant="source"
-			title="Audio Source"
-			description="Oscillators, players, microphones, and input sources"
+			variant='source'
+			title='Audio Source'
+			description='Oscillators, players, microphones, and input sources'
 		/>
 	);
 }
@@ -134,9 +150,9 @@ export function InstrumentNodeComponent({
 			id={id as string}
 			data={data}
 			selected={selected}
-			variant="instrument"
-			title="Instrument"
-			description="Synthesizers, samplers, and musical instruments"
+			variant='instrument'
+			title='Instrument'
+			description='Synthesizers, samplers, and musical instruments'
 		/>
 	);
 }
@@ -152,9 +168,9 @@ export function EffectNodeComponent({
 			id={id as string}
 			data={data}
 			selected={selected}
-			variant="effect"
-			title="Audio Effect"
-			description="Reverb, delay, filters, and audio processing effects"
+			variant='effect'
+			title='Audio Effect'
+			description='Reverb, delay, filters, and audio processing effects'
 		/>
 	);
 }
@@ -170,9 +186,9 @@ export function ComponentNodeComponent({
 			id={id as string}
 			data={data}
 			selected={selected}
-			variant="component"
-			title="Signal Component"
-			description="Gain, panner, mixer, and signal routing components"
+			variant='component'
+			title='Signal Component'
+			description='Gain, panner, mixer, and signal routing components'
 		/>
 	);
 }
@@ -188,9 +204,9 @@ export function SignalNodeComponent({
 			id={id as string}
 			data={data}
 			selected={selected}
-			variant="signal"
-			title="Signal Processor"
-			description="Analyzers, FFT, meters, and signal analysis tools"
+			variant='signal'
+			title='Signal Processor'
+			description='Analyzers, FFT, meters, and signal analysis tools'
 		/>
 	);
 }
@@ -206,9 +222,9 @@ export function EventNodeComponent({
 			id={id as string}
 			data={data}
 			selected={selected}
-			variant="event"
-			title="Event Controller"
-			description="Sequences, parts, transport, and timing control"
+			variant='event'
+			title='Event Controller'
+			description='Sequences, parts, transport, and timing control'
 		/>
 	);
 }
@@ -224,9 +240,9 @@ export function UtilityNodeComponent({
 			id={id as string}
 			data={data}
 			selected={selected}
-			variant="unit"
-			title="Utility"
-			description="Frequency converters, time utilities, and helper tools"
+			variant='unit'
+			title='Utility'
+			description='Frequency converters, time utilities, and helper tools'
 		/>
 	);
 }

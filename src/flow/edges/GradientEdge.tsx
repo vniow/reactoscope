@@ -23,7 +23,7 @@ interface EdgeData {
 	pathType?: 'smooth' | 'straight'; // Allow manual path type selection
 }
 
-export function FloatingEdge(props: EdgeProps) {
+export function GradientEdge(props: EdgeProps) {
 	const {
 		id,
 		source,
@@ -67,13 +67,13 @@ export function FloatingEdge(props: EdgeProps) {
 	// Get variant colors for source and target nodes
 	const sourceVariant = useNodeVariant(source);
 	const targetVariant = useNodeVariant(target);
-	
+
 	// Create gradient colors based on node variants
 	const getVariantColor = (variant: string | undefined) => {
 		if (!variant) return '#94a3b8'; // Default gray
 		return `var(--color-variant-${variant})`;
 	};
-	
+
 	const sourceColor = getVariantColor(sourceVariant);
 	const targetColor = getVariantColor(targetVariant);
 	const gradientId = `edge-gradient-${source}-${target}`;
@@ -89,10 +89,11 @@ export function FloatingEdge(props: EdgeProps) {
 	const targetPoint = { x: targetX, y: targetY };
 
 	// Determine path type - allow manual override via data, otherwise use simple heuristic
-	const shouldUseStraightPath = 
-		pathType === 'straight' || 
-		(pathType === 'smooth' ? false : // Default to smooth when 'smooth' is specified
-		Math.abs(sourceX - targetX) < 10 || Math.abs(sourceY - targetY) < 10); // Simple alignment check
+	const shouldUseStraightPath =
+		pathType === 'straight' ||
+		(pathType === 'smooth'
+			? false // Default to smooth when 'smooth' is specified
+			: Math.abs(sourceX - targetX) < 10 || Math.abs(sourceY - targetY) < 10); // Simple alignment check
 
 	// Generate path based on type preference
 	let edgePath: string;
@@ -233,7 +234,8 @@ export function FloatingEdge(props: EdgeProps) {
 									</div>
 									<div className='text-xs'>Path Type: {debugInfo.pathType}</div>
 									<div className='text-xs'>
-										Source: {debugInfo.sourcePosition} → Target: {debugInfo.targetPosition}
+										Source: {debugInfo.sourcePosition} → Target:{' '}
+										{debugInfo.targetPosition}
 									</div>
 									{debugInfo.hasGradient && (
 										<div className='text-purple-600 text-xs'>

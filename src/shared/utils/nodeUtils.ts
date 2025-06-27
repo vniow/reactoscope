@@ -1,5 +1,20 @@
 /**
+ * Node utility functions following functional programming principles
+ *
+ * This module provides pure functions for node operations:
+ * - ID generation with collision avoidance
+ * - Position calculation with random offsets
+ * - Helper functions for node creation
+ *
+ * All functions are pure (no side effects) and follow the DRY principle.
+ *
+ * @module nodeUtils
+ */
+
+/**
  * Generate a unique ID for a new node
+ * Uses timestamp + random string to ensure uniqueness across sessions
+ *
  * @returns A unique node ID string in the format: node-{timestamp}-{random}
  */
 export function generateNodeId(): string {

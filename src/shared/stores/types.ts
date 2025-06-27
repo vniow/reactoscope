@@ -1,5 +1,4 @@
 import type { FlowSlice } from '../../flow/stores/flowSlice';
-import type { SceneSlice } from '../../nodes/stores/sceneSlice';
 import type { Position } from '@xyflow/react';
 
 // Theme Types
@@ -48,21 +47,22 @@ export interface UIActions {
 	toggleNodeAddPanel: () => void; // Add toggle action for convenience
 }
 
-// Main Store Interface
-export interface AppStore
-	extends ThemeActions,
-		UIActions,
-		FlowSlice,
-		SceneSlice {
+// Main Store Interface - Uses composition pattern for better maintainability
+export interface AppStore extends ThemeActions, UIActions, FlowSlice {
 	theme: ThemeState;
 	ui: UIState;
 
-	// Actions (flattened for easier access)
+	// Explicitly declare all actions for better IntelliSense and type safety
+	// Theme actions
 	setTheme: ThemeActions['setTheme'];
+	setMetallicBackground: ThemeActions['setMetallicBackground'];
 	initializeTheme: ThemeActions['initializeTheme'];
 
+	// UI actions
 	setSelectedNodes: UIActions['setSelectedNodes'];
 	setSelectedEdges: UIActions['setSelectedEdges'];
 	setIsNodeDragging: UIActions['setIsNodeDragging'];
 	setIsConnecting: UIActions['setIsConnecting'];
+	setIsNodeAddPanelExpanded: UIActions['setIsNodeAddPanelExpanded'];
+	toggleNodeAddPanel: UIActions['toggleNodeAddPanel'];
 }

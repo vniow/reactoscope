@@ -1,3 +1,17 @@
+/**
+ * Theme Store Slice - Manages application theming state
+ *
+ * This slice handles:
+ * - Light/dark/system theme management
+ * - Metallic background variants
+ * - DOM theme updates
+ * - localStorage persistence
+ * - System theme detection
+ *
+ * Follows the single responsibility principle by focusing solely on theme management.
+ *
+ * @module themeSlice
+ */
 import type { StateCreator } from 'zustand';
 import type { AppStore, Theme, ActualTheme, MetallicTheme } from './types';
 
@@ -103,7 +117,8 @@ export const createThemeSlice: StateCreator<
 		}
 
 		const metallicBackground =
-			(localStorage.getItem('metallicBackground') as MetallicTheme) || 'titanium';
+			(localStorage.getItem('metallicBackground') as MetallicTheme) ||
+			'titanium';
 
 		set({
 			theme: {

@@ -1,14 +1,33 @@
+/**
+ * Flow Store Slice - Manages React Flow state and operations
+ *
+ * This slice handles:
+ * - Node and edge state management
+ * - Flow operations (add, remove, update)
+ * - Save/restore functionality
+ * - Persistence to localStorage
+ *
+ * Follows the sliced store architecture pattern for predictable state management.
+ *
+ * @module flowSlice
+ */
 import type { StateCreator } from 'zustand';
 import type { Edge, NodeChange, EdgeChange, Connection } from '@xyflow/react';
 import { applyNodeChanges, applyEdgeChanges, addEdge } from '@xyflow/react';
 import type { AppNode } from '../../nodes/types';
 
+/**
+ * Flow state interface containing nodes, edges, and saved states
+ */
 export interface FlowState {
 	nodes: AppNode[];
 	edges: Edge[];
 	savedStates: SavedFlowState[];
 }
 
+/**
+ * Saved flow state for persistence functionality
+ */
 export interface SavedFlowState {
 	id: string;
 	name: string;
@@ -18,19 +37,33 @@ export interface SavedFlowState {
 	description?: string;
 }
 
+/**
+ * Flow actions interface defining all available operations
+ * Following the action-based updates pattern
+ */
 export interface FlowActions {
+	// Basic setters
 	setNodes: (nodes: AppNode[]) => void;
 	setEdges: (edges: Edge[]) => void;
+
+	// React Flow event handlers
 	onNodesChange: (changes: NodeChange[]) => void;
 	onEdgesChange: (changes: EdgeChange[]) => void;
 	onConnect: (connection: Connection) => void;
+
+	// Node operations
 	addNode: (node: AppNode) => void;
 	removeNode: (nodeId: string) => void;
 	updateNode: (nodeId: string, data: Partial<AppNode['data']>) => void;
+
+	// Edge operations
 	addEdgeConnection: (edge: Edge) => void;
 	removeEdge: (edgeId: string) => void;
+
+	// Flow management
 	initializeFlow: (initialNodes: AppNode[], initialEdges: Edge[]) => void;
 	resetFlow: () => void;
+
 	// Save/Restore functionality
 	saveFlowState: (name: string, description?: string) => string;
 	restoreFlowState: (savedStateId: string) => boolean;
@@ -165,7 +198,7 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
 		console.log('🔌 Creating new connection:', connection);
 		set((state) => {
 			const newEdges = addEdge(
-				{ ...connection, type: 'floating' },
+				{ ...connection, type: 'gradient' },
 				state.edges
 			);
 			saveCurrentFlowState(state.nodes, newEdges);

@@ -1,10 +1,11 @@
 /**
- * Debug panel component for displaying Three.js worklet metrics
+ * Debug panel component for displaying worklet metrics
  * Extracted for better separation of concerns and reusability
  */
 import { useState, useEffect } from 'react';
-import type { BufferStats } from './hooks/useThreeWorkletDebug';
-import type { SceneDebugMetrics } from './SceneCoordinateTracker';
+
+// Type imports
+import type { ComponentVariant } from '../shared/types/ui';
 
 // Constants for improved maintainability
 const DISPLAY_UPDATE_INTERVAL = 100; // ms
@@ -16,9 +17,30 @@ const WORKLET_STATUS_STYLES = {
 	stopped: 'text-gray-400',
 } as const;
 
+export interface BufferStats {
+	fillPercentage: number;
+	oldestPointAge: number;
+	lastSendTime: number;
+	throttleHits: number;
+}
+
+export interface DebugMetrics {
+	objectCount: number;
+	totalDataPoints: number;
+	sampleStep: number;
+	extractedPoints: number;
+	duplicatesFiltered: number;
+	pointsPerObject: { [key: string]: number };
+	dataRange: { xMin: number; xMax: number; yMin: number; yMax: number };
+	processingTime: number;
+	centerPointsAdded: number;
+}
+
 /**
  * Performance-optimized component for displaying last send time
  * Uses useEffect with interval to avoid recalculating on every render
+ *
+ * @param lastSendTime - Timestamp of the last send operation
  */
 function LastSendTimeDisplay({ lastSendTime }: { lastSendTime: number }) {
 	const [timeDiff, setTimeDiff] = useState<number>(0);
@@ -38,11 +60,11 @@ function LastSendTimeDisplay({ lastSendTime }: { lastSendTime: number }) {
 }
 
 /**
- * Debug panel component for displaying Three.js worklet metrics
+ * Debug panel component for displaying worklet metrics
  * Extracted for better separation of concerns and reusability
  */
 interface DebugPanelProps {
-	debugMetrics: SceneDebugMetrics | null;
+	debugMetrics: DebugMetrics | null;
 	frameRate: number;
 	bufferStats: BufferStats;
 	bufferSize: number;
@@ -51,6 +73,18 @@ interface DebugPanelProps {
 	isPlaying: boolean;
 }
 
+/**
+ * Debug panel component for displaying worklet metrics
+ * Follows component composition pattern and uses semantic CSS custom properties
+ *
+ * @param debugMetrics - Current debug metrics data
+ * @param frameRate - Current frame rate
+ * @param bufferStats - Buffer statistics
+ * @param bufferSize - Size of the buffer
+ * @param coordinateBufferLength - Current coordinate buffer length
+ * @param isReady - Whether the worklet is ready
+ * @param isPlaying - Whether the worklet is currently playing
+ */
 export function DebugPanel({
 	debugMetrics,
 	frameRate,
@@ -61,10 +95,19 @@ export function DebugPanel({
 	isPlaying,
 }: DebugPanelProps) {
 	return (
-		<div className="w-grid-8 h-grid-5 mt-grid-3 p-2 rounded-lg" style={{ backgroundColor: 'var(--node-bg-interactive)', color: 'var(--node-text-primary)' }}>
+		<div
+			className='w-grid-8 h-grid-5 mt-grid-3 p-2 rounded-lg'
+			style={{
+				backgroundColor: 'var(--node-bg-interactive)',
+				color: 'var(--node-text-primary)',
+			}}
+		>
 			<div className='w-full h-full p-1'>
 				<div className='w-full h-full'>
-					<div className='text-xs font-mono mb-1' style={{ color: 'var(--node-text-highlight)' }}>
+					<div
+						className='text-xs font-mono mb-1'
+						style={{ color: 'var(--node-text-highlight)' }}
+					>
 						🔍 Debug Panel (FPS: {frameRate})
 					</div>
 
@@ -88,12 +131,12 @@ export function DebugPanel({
 
 							{/* Scene Analysis */}
 							<div className='space-y-0.5'>
-								<div className='text-yellow-400 font-semibold'>Scene:</div>
+								<div className='text-yellow-400 font-semibold'>Data:</div>
 								<div className='text-blue-400'>
-									Objects: {debugMetrics.meshCount}
+									Objects: {debugMetrics.objectCount}
 								</div>
 								<div className='text-blue-400'>
-									Vertices: {debugMetrics.totalVertices}
+									Points: {debugMetrics.totalDataPoints}
 								</div>
 								<div className='text-blue-400'>
 									Centers: +{debugMetrics.centerPointsAdded}
@@ -124,8 +167,8 @@ export function DebugPanel({
 									Dupes: {debugMetrics.duplicatesFiltered}
 								</div>
 								<div className='text-orange-400'>
-									Range: X[{debugMetrics.coordinateRange.xMin.toFixed(2)},
-									{debugMetrics.coordinateRange.xMax.toFixed(2)}]
+									Range: X[{debugMetrics.dataRange.xMin.toFixed(2)},
+									{debugMetrics.dataRange.xMax.toFixed(2)}]
 								</div>
 							</div>
 
