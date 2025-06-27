@@ -5,13 +5,13 @@ import type { ComponentVariant } from '../types/ui';
 
 /**
  * BaseNode - Simplified common node wrapper with built-in functionality
- * 
+ *
  * This component handles all common node behaviors:
  * - Automatic delete functionality via centralized flowSlice operations
  * - Consistent styling and theming
  * - Header display with title
  * - Selection states and visual feedback
- * 
+ *
  * Usage: Simply wrap your node content and provide nodeId and selected props.
  * The delete functionality is automatically handled using the centralized state management.
  */
@@ -52,17 +52,17 @@ export function BaseNode({
 			data-variant={variant}
 			style={style}
 		>
-			<div 
+			<div
 				className={`
 					bg-node-primary border-2 border-node rounded-xl shadow-node
 					hover:shadow-node-hover hover:border-node-hover
-					transition-all duration-200 p-4 min-h-16
+					transition-all duration-200 p-4 
 					${selected ? 'shadow-node-selected border-node-accent' : ''}
 				`}
 			>
 				{/* Header section */}
 				{title && (
-					<div className="text-node-primary font-semibold text-xl mb-2 border-b border-node pb-2">
+					<div className='text-node-primary font-semibold text-xl mb-2 border-b border-node pb-2'>
 						{title}
 					</div>
 				)}
@@ -73,7 +73,7 @@ export function BaseNode({
 				)}
 
 				{/* Content area */}
-				<div className="text-node-primary">{children}</div>
+				<div className='text-node-primary'>{children}</div>
 			</div>
 		</div>
 	);

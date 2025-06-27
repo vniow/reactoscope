@@ -5,8 +5,52 @@ import { useUIState } from '../../shared/stores/useAppStore';
 import { NodeGroupsSection } from './NodeAddPanel/NodeGroupsSection';
 import { SaveRestoreModal } from './SaveRestoreModal';
 import { createNode } from '../../shared/utils/nodeFactory';
+import { combineClasses } from '../../shared/utils/styleUtils';
 import type { NodeTypeOption } from '../../shared/config/nodeTypes';
 import { useEffect, useRef, useState } from 'react';
+
+/**
+ * Reusable control button component following design patterns
+ */
+interface ControlButtonProps {
+	onClick: () => void;
+	title: string;
+	children: React.ReactNode;
+	isActive?: boolean;
+	isRainbow?: boolean;
+}
+
+function ControlButton({
+	onClick,
+	title,
+	children,
+	isActive = false,
+	isRainbow = false,
+}: ControlButtonProps) {
+	const buttonClasses = combineClasses(
+		// Base button styles
+		'flex items-center justify-center w-12 h-12 rounded-lg',
+		'transition-all duration-200',
+		// Hover and focus states
+		'hover:bg-black/5 dark:hover:bg-white/5',
+		'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset',
+		// Active state
+		isActive && 'bg-blue-500/10 border border-blue-500/30 shadow-md',
+		// Rainbow special styling with gradient background
+		isRainbow &&
+			'text-white shadow-lg bg-gradient-to-br from-pink-500 via-orange-400 to-cyan-400'
+	);
+
+	return (
+		<button
+			onClick={onClick}
+			title={title}
+			className={buttonClasses}
+		>
+			{children}
+		</button>
+	);
+}
 
 export function FlowControls() {
 	const { theme, setTheme } = useTheme();
@@ -29,129 +73,29 @@ export function FlowControls() {
 	const handleAddNode = (nodeTypeOption: NodeTypeOption) => {
 		const newNode = createNode(nodeTypeOption);
 		reactFlowInstance.setNodes((nodes) => [...nodes, newNode]);
-		console.log(`🎯 Added new ${nodeTypeOption.name} node:`, newNode);
 		// Close the panel after adding a node
 		setIsNodeAddPanelExpanded(false);
 	};
 
-	// Handle click outside to close panel
+	// Handle click outside to close panel - simplified version
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			const target = event.target as HTMLElement;
 
-			// Get the DOM path from target to root
-			const getElementPath = (element: HTMLElement): string[] => {
-				const path: string[] = [];
-				let current = element;
-				while (current && current !== document.body) {
-					const identifier = current.id
-						? `#${current.id}`
-						: current.className
-							? `.${current.className.split(' ').join('.')}`
-							: current.tagName.toLowerCase();
-					path.push(
-						`${current.tagName.toLowerCase()}${identifier !== current.tagName.toLowerCase() ? identifier : ''}`
-					);
-					current = current.parentElement as HTMLElement;
-				}
-				return path;
-			};
-
-			console.log('🖱️ Click detected:', {
-				target: target,
-				targetElement: target?.tagName,
-				targetId: target?.id,
-				targetClassName: target?.className,
-				targetText:
-					target?.textContent?.slice(0, 50) +
-					(target?.textContent && target.textContent.length > 50 ? '...' : ''),
-				elementPath: getElementPath(target),
-				panelContainerExists: !!panelContainerRef.current,
-				isNodeAddPanelExpanded,
-				eventType: event.type,
-				eventPhase: event.eventPhase,
-				bubbles: event.bubbles,
-				cancelable: event.cancelable,
-			});
-
-			// Check if panel container exists and get detailed info
-			if (panelContainerRef.current) {
-				const rect = panelContainerRef.current.getBoundingClientRect();
-				const containsTarget = panelContainerRef.current.contains(target);
-				const isWithinBounds =
-					event.clientX >= rect.left &&
-					event.clientX <= rect.right &&
-					event.clientY >= rect.top &&
-					event.clientY <= rect.bottom;
-
-				console.log('📐 Panel container analysis:', {
-					containerElement: panelContainerRef.current.tagName,
-					containerClassName: panelContainerRef.current.className,
-					containerChildren: panelContainerRef.current.children.length,
-					rect: {
-						x: rect.x,
-						y: rect.y,
-						width: rect.width,
-						height: rect.height,
-						left: rect.left,
-						right: rect.right,
-						top: rect.top,
-						bottom: rect.bottom,
-					},
-					mousePosition: {
-						clientX: event.clientX,
-						clientY: event.clientY,
-						pageX: event.pageX,
-						pageY: event.pageY,
-					},
-					containsTarget,
-					isWithinBounds,
-					containsVsWithinBounds:
-						containsTarget === isWithinBounds ? '✅ Match' : '⚠️ Mismatch',
-				});
-
-				// Log details about the container's children
-				console.log(
-					'🔍 Panel container children:',
-					Array.from(panelContainerRef.current.children).map(
-						(child, index) => ({
-							index,
-							tagName: child.tagName,
-							className: child.className,
-							id: child.id,
-							containsTarget: child.contains(target),
-							rect: child.getBoundingClientRect(),
-						})
-					)
-				);
-			}
-
-			// Decision logic with detailed logging
 			if (
+				isNodeAddPanelExpanded &&
 				panelContainerRef.current &&
 				!panelContainerRef.current.contains(target)
 			) {
-				console.log('❌ Click is outside panel container - closing panel');
 				setIsNodeAddPanelExpanded(false);
-			} else if (
-				panelContainerRef.current &&
-				panelContainerRef.current.contains(target)
-			) {
-				console.log('✅ Click is inside panel container - keeping panel open');
-			} else {
-				console.log('🤔 Panel container not found or undefined state');
 			}
 		};
 
 		if (isNodeAddPanelExpanded) {
-			console.log('👂 Adding click-outside listener for expanded panel');
 			document.addEventListener('mousedown', handleClickOutside);
-		} else {
-			// console.log('🔇 Panel closed - not listening for clicks');
 		}
 
 		return () => {
-			console.log('🧹 Cleaning up click-outside listener');
 			document.removeEventListener('mousedown', handleClickOutside);
 		};
 	}, [isNodeAddPanelExpanded, setIsNodeAddPanelExpanded]);
@@ -192,37 +136,25 @@ export function FlowControls() {
 		>
 			<div
 				ref={panelContainerRef}
-				onClick={(e) => {
-					console.log('📦 Panel container clicked:', {
-						target: (e.target as HTMLElement).tagName,
-						currentTarget: (e.currentTarget as HTMLElement).tagName,
-						stopPropagation: 'called',
-					});
-					e.stopPropagation();
-				}}
+				className='flex flex-col items-center'
 			>
 				{/* Node Selection Panel - slides up from controls when expanded */}
 				{isNodeAddPanelExpanded && (
 					<div
-						className={`
-							mb-2 glass-panel-enhanced rounded-xl overflow-hidden
-							transition-all duration-300 ease-in-out
-							${
-								isNodeAddPanelExpanded
-									? 'opacity-100 translate-y-0 scale-100'
-									: 'opacity-0 translate-y-4 scale-95 pointer-events-none'
-							}
-						`}
-						style={{
-							width: '448px', // Match controls width (7 * 64px)
-							height: '448px', // Increased height as requested (7 * 64px)
-							pointerEvents: 'auto', // Ensure interactions work
-							transformOrigin: 'bottom center', // Animate from bottom (near controls)
-						}}
-						onClick={(e) => {
-							console.log('🎨 Node panel clicked - preventing bubbling');
-							e.stopPropagation();
-						}}
+						className={combineClasses(
+							// Base styles
+							'mb-2 rounded-xl overflow-hidden w-[448px] h-[448px]',
+							// Glass panel styling
+							'backdrop-blur-md bg-white/80 dark:bg-gray-900/80',
+							'border border-gray-200/60 dark:border-gray-700/60',
+							'shadow-lg shadow-gray-500/10 dark:shadow-black/25',
+							// Animation
+							'transition-all duration-300 ease-in-out origin-bottom',
+							// Conditional states
+							isNodeAddPanelExpanded
+								? 'opacity-100 translate-y-0 scale-100'
+								: 'opacity-0 translate-y-4 scale-95 pointer-events-none'
+						)}
 					>
 						<NodeGroupsSection
 							onAddNode={handleAddNode}
@@ -233,34 +165,23 @@ export function FlowControls() {
 
 				{/* Main Controls Container */}
 				<div
-					className='relative glass-panel-enhanced rounded-xl transition-all duration-300 ease-in-out'
-					style={{
-						width: '448px', // Wider to accommodate 7 controls (added save/restore) (7 * 64px)
-						height: '64px', // Single row height
-					}}
+					className={combineClasses(
+						// Layout
+						'relative w-[448px] h-16 rounded-xl',
+						// Glass panel styling
+						'backdrop-blur-md bg-white/80 dark:bg-gray-900/80',
+						'border border-gray-200/60 dark:border-gray-700/60',
+						'shadow-lg shadow-gray-500/10 dark:shadow-black/25',
+						// Animation
+						'transition-all duration-300 ease-in-out'
+					)}
 				>
 					<div className='flex items-center justify-center h-full gap-2 px-2'>
-						{/* Add Node Control - Show node selection */}
-						<button
+						{/* Add Node Control */}
+						<ControlButton
 							onClick={toggleNodeAddPanel}
 							title={`${isNodeAddPanelExpanded ? 'Hide' : 'Show'} node selection`}
-							className={`
-							flex items-center justify-center w-12 h-12 rounded-lg 
-							transition-all duration-200 
-							hover:bg-black/5 dark:hover:bg-white/5 
-							focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset
-							${isNodeAddPanelExpanded ? 'shadow-md' : ''}
-						`}
-							style={{
-								backgroundColor: isNodeAddPanelExpanded
-									? 'rgba(59, 130, 246, 0.1)'
-									: undefined,
-								borderColor: isNodeAddPanelExpanded
-									? 'rgba(59, 130, 246, 0.3)'
-									: 'transparent',
-								borderWidth: '1px',
-								borderStyle: 'solid',
-							}}
+							isActive={isNodeAddPanelExpanded}
 						>
 							<svg
 								width='18'
@@ -269,7 +190,9 @@ export function FlowControls() {
 								fill='none'
 								stroke='currentColor'
 								strokeWidth='2.5'
-								className={`transition-transform duration-200 ${isNodeAddPanelExpanded ? 'rotate-45' : ''}`}
+								className={`transition-transform duration-200 ${
+									isNodeAddPanelExpanded ? 'rotate-45' : ''
+								}`}
 							>
 								<path
 									d='M12 5v14M5 12h14'
@@ -277,73 +200,60 @@ export function FlowControls() {
 									strokeLinejoin='round'
 								/>
 							</svg>
-						</button>
+						</ControlButton>
 
 						{/* Save/Restore Control */}
-						<button
+						<ControlButton
 							onClick={() => setIsSaveRestoreModalOpen(true)}
 							title='Save & Restore Flow States'
-							className='flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset'
 						>
 							<span className='text-lg'>💾</span>
-						</button>
+						</ControlButton>
 
 						{/* Zoom In Control */}
-						<button
+						<ControlButton
 							onClick={() => zoomIn()}
 							title='Zoom In'
-							className='flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset'
 						>
 							<span className='text-lg'>🔍</span>
 							<span className='text-xs ml-1'>+</span>
-						</button>
+						</ControlButton>
 
 						{/* Zoom Out Control */}
-						<button
+						<ControlButton
 							onClick={() => zoomOut()}
 							title='Zoom Out'
-							className='flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset'
 						>
 							<span className='text-lg'>🔍</span>
 							<span className='text-xs ml-1'>-</span>
-						</button>
+						</ControlButton>
 
 						{/* Fit View Control */}
-						<button
+						<ControlButton
 							onClick={() => fitView()}
 							title='Fit View'
-							className='flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset'
 						>
 							<span className='text-lg'>⌕</span>
-						</button>
+						</ControlButton>
+
 						{/* Theme Toggle Control */}
-						<button
+						<ControlButton
 							onClick={handleThemeToggle}
 							title={getThemeTitle()}
-							className='flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset'
 						>
 							<span className='text-lg'>{getThemeIcon()}</span>
-						</button>
+						</ControlButton>
 
 						{/* Rainbow Toggle Control */}
-						<button
+						<ControlButton
 							onClick={toggleRainbowMetallic}
-							title={`Toggle rainbow metallic theme (${metallicBackground === 'rainbow' ? 'on' : 'off'})`}
-							className='flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset'
-							style={{
-								background:
-									metallicBackground === 'rainbow'
-										? 'linear-gradient(135deg, #ff0080, #ff8c00, #40e0d0, #ff0080)'
-										: undefined,
-								color: metallicBackground === 'rainbow' ? 'white' : undefined,
-								textShadow:
-									metallicBackground === 'rainbow'
-										? '0 1px 2px rgba(0,0,0,0.5)'
-										: undefined,
-							}}
+							title={`Toggle rainbow metallic theme (${
+								metallicBackground === 'rainbow' ? 'on' : 'off'
+							})`}
+							isRainbow={metallicBackground === 'rainbow'}
 						>
 							<span className='text-lg'>🌈</span>
-						</button>
+						</ControlButton>
 					</div>
 				</div>
 

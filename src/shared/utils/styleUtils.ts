@@ -2,6 +2,13 @@
  * Simplified style utilities for Tailwind v4 with CSS custom properties
  */
 
+/**
+ * Get a theme variable value for use in JavaScript
+ */
+export function getThemeValue(variable: string): string {
+	return `var(--${variable})`;
+}
+
 export function combineClasses(
 	...classes: (string | undefined | false)[]
 ): string {
@@ -24,26 +31,23 @@ export function getSliderTrackClasses(
 		lg: 'h-3',
 	};
 
-	// Updated to use variant-aware gradient backgrounds that inherit from parent node
-	// Uses the same gradient as the node background for visual consistency
+	// Updated to use simple Tailwind gradient backgrounds
 	const variantAwareBackground = combineClasses(
-		'bg-gradient-to-r',
-		'from-[var(--node-bg-from,light-dark(#f8fafc,#0f172a))]',
-		'via-[var(--node-bg-via,light-dark(#f1f5f9,#1e293b))]',
-		'to-[var(--node-bg-to,light-dark(#e2e8f0,#334155))]',
-		'border border-[var(--node-border,light-dark(#cbd5e1,#475569))]'
+		'bg-gradient-to-r from-slate-50 via-slate-100 to-slate-200',
+		'dark:from-slate-900 dark:via-slate-800 dark:to-slate-700',
+		'border border-slate-300 dark:border-slate-600'
 	);
 
 	const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : '';
 
-	// Custom slider thumb styles using CSS custom properties
+	// Custom slider thumb styles using Tailwind colors
 	const sliderThumbStyles = combineClasses(
 		// Webkit (Chrome, Safari)
 		'[&::-webkit-slider-thumb]:appearance-none',
 		'[&::-webkit-slider-thumb]:w-4',
 		'[&::-webkit-slider-thumb]:h-4',
 		'[&::-webkit-slider-thumb]:rounded-full',
-		'[&::-webkit-slider-thumb]:bg-[var(--node-accent,light-dark(#3b82f6,#60a5fa))]',
+		'[&::-webkit-slider-thumb]:bg-blue-500',
 		'[&::-webkit-slider-thumb]:border-2',
 		'[&::-webkit-slider-thumb]:border-white',
 		'[&::-webkit-slider-thumb]:shadow-lg',
@@ -56,7 +60,7 @@ export function getSliderTrackClasses(
 		'[&::-moz-range-thumb]:w-4',
 		'[&::-moz-range-thumb]:h-4',
 		'[&::-moz-range-thumb]:rounded-full',
-		'[&::-moz-range-thumb]:bg-[var(--node-accent,light-dark(#3b82f6,#60a5fa))]',
+		'[&::-moz-range-thumb]:bg-blue-500',
 		'[&::-moz-range-thumb]:border-2',
 		'[&::-moz-range-thumb]:border-white',
 		'[&::-moz-range-thumb]:cursor-pointer',
@@ -113,5 +117,11 @@ export function getDeleteButtonClasses(): string {
 		'focus:ring-red-500'
 	);
 
-	return combineClasses(baseClasses, colorClasses);
+	const shadowClasses = combineClasses(
+		'shadow-lg shadow-black/25',
+		'hover:shadow-xl hover:shadow-black/30',
+		'drop-shadow-md'
+	);
+
+	return combineClasses(baseClasses, colorClasses, shadowClasses);
 }

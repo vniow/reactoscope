@@ -36,22 +36,14 @@ export function NodeGroupsSection({
 			style={{ height }}
 		>
 			<div
-				className={`
-					w-full h-full p-3 scrollbar-glass
-					transition-all duration-300 ease-in-out
-					${
-						isVisible
-							? 'opacity-100 translate-y-0'
-							: 'opacity-0 -translate-y-4 pointer-events-none'
-					}
-				`}
+				className='w-full h-full p-3 scrollbar-glass max-h-full overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out'
+				style={{
+					opacity: isVisible ? 1 : 0,
+					transform: isVisible ? 'translateY(0)' : 'translateY(-1rem)',
+					pointerEvents: isVisible ? 'auto' : 'none',
+				}}
 				role='region'
 				aria-label='Node types grouped by category'
-				style={{
-					maxHeight: '100%',
-					overflowY: 'auto',
-					overflowX: 'hidden',
-				}}
 			>
 				<div className='space-y-4 pb-2'>
 					{variantOrder.map((variant, index) => {
@@ -109,17 +101,7 @@ function VariantSection({
 			<div className='mb-2'>
 				<h3
 					id={sectionId}
-					className='text-sm font-semibold px-3 py-2 rounded transition-colors border-l-4'
-					style={{
-						// Use theme-aware text color
-						color: 'light-dark(#1f2937, #f9fafb)',
-						// Variant-aware background with subtle opacity
-						backgroundColor: 'color-mix(in srgb, var(--node-accent) 8%, light-dark(#f8fafc, #1e293b))',
-						// Accent border for visual association
-						borderLeftColor: 'var(--node-accent)',
-						// Theme-aware border
-						border: '1px solid color-mix(in srgb, var(--node-accent) 20%, light-dark(#e2e8f0, #374151))',
-					}}
+					className='text-sm font-semibold px-3 py-2 rounded border-l-4 border text-gray-800 transition-colors dark:text-gray-50 border-l-[var(--node-accent)] bg-[color-mix(in_srgb,var(--node-accent)_8%,_#f8fafc)] dark:bg-[color-mix(in_srgb,var(--node-accent)_8%,_#1e293b)] border-[color-mix(in_srgb,var(--node-accent)_20%,_#e2e8f0)] dark:border-[color-mix(in_srgb,var(--node-accent)_20%,_#374151)]'
 				>
 					{variantName}
 				</h3>
@@ -139,31 +121,34 @@ function VariantSection({
 						title={option.description}
 						aria-label={`Add ${option.name} node. ${option.description}`}
 						className={`
-							h-16 min-h-16 text-base px-4 py-3
+							h-16 min-h-16 text-xs px-4 py-3
 							flex flex-col items-center justify-center text-center 
-							rounded-lg transition-all duration-200 
+							rounded-lg transition-all duration-300 ease-in-out
 							focus:outline-none focus:ring-2 focus:ring-offset-2
 							hover:scale-105 transform 
 							border border-transparent
 							font-medium shadow-md
-							transition-all duration-300 ease-in-out
 							${
 								isVisible
 									? 'opacity-100 translate-y-0 scale-100'
 									: 'opacity-0 translate-y-1 scale-95'
 							}
-							text-xs
 							btn-node-primary
 						`}
-						style={{
-							transitionDelay: isVisible
-								? `${animationDelay + buttonIndex * 30}ms`
-								: '0ms',
-							// Ensure proper focus ring color using CSS custom property
-							'--tw-ring-color': 'var(--node-accent)',
-						} as React.CSSProperties}
+						style={
+							{
+								transitionDelay: isVisible
+									? `${animationDelay + buttonIndex * 30}ms`
+									: '0ms',
+								// Ensure proper focus ring color using CSS custom property
+								'--tw-ring-color': 'var(--node-accent)',
+							} as React.CSSProperties
+						}
 					>
-						<div className='mb-1' aria-hidden='true'>
+						<div
+							className='mb-1'
+							aria-hidden='true'
+						>
 							<span className='text-sm'>{option.emoji}</span>
 						</div>
 						<div className='leading-tight'>

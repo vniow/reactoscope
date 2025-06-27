@@ -15,10 +15,7 @@ export function NodeAddHeader({
 		<div style={{ height }}>
 			<button
 				onClick={onToggleExpanded}
-				className='flex items-center justify-between w-full px-4 py-2 text-left transition-colors duration-200 hover:bg-node-interactive group focus:outline-none focus:ring-2 focus:ring-node-accent focus:ring-inset'
-				style={{
-					color: 'light-dark(#1f2937, #f9fafb)',
-				}}
+				className='flex items-center justify-between w-full px-4 py-2 text-left text-gray-800 transition-colors duration-200 hover:bg-node-interactive group focus:outline-none focus:ring-2 focus:ring-node-accent focus:ring-inset dark:text-gray-50'
 				aria-expanded={isExpanded}
 				aria-label={`${isExpanded ? 'Collapse' : 'Expand'} node add panel`}
 			>
@@ -29,29 +26,16 @@ export function NodeAddHeader({
 					>
 						➕
 					</span>
-					<span 
-						className='font-semibold'
-						style={{
-							color: 'light-dark(#1f2937, #f9fafb)',
-						}}
-					>
+					<span className='font-semibold text-gray-800 dark:text-gray-50'>
 						Add Node
 					</span>
 				</div>
 				<div className='flex items-center gap-1'>
-					<span 
-						className='text-xs group-hover:opacity-100 transition-opacity'
-						style={{
-							color: 'light-dark(#4b5563, #d1d5db)',
-						}}
-					>
+					<span className='text-xs text-gray-600 transition-opacity group-hover:opacity-100 dark:text-gray-300'>
 						{isExpanded ? 'Collapse' : 'Expand'}
 					</span>
 					<div
-						className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-						style={{
-							color: 'light-dark(#4b5563, #d1d5db)',
-						}}
+						className={`text-gray-600 transition-transform duration-200 dark:text-gray-300 ${isExpanded ? 'rotate-180' : ''}`}
 						aria-hidden='true'
 					>
 						<svg

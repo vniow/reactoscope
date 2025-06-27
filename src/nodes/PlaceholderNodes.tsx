@@ -67,10 +67,7 @@ function PlaceholderNode({
 				<div className='text-node-secondary text-xs'>{description}</div>
 
 				<div className='flex items-center space-x-2'>
-					<div
-						className='w-3 h-3 rounded-full'
-						style={{ backgroundColor: 'var(--node-accent)' }}
-					/>
+					<div className='w-3 h-3 rounded-full bg-[var(--node-accent)]' />
 					<span className='text-node-primary text-xs font-medium'>
 						{variant.toUpperCase()}
 					</span>

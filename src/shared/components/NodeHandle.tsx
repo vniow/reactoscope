@@ -1,5 +1,4 @@
 import { Handle, Position } from '@xyflow/react';
-import type { CSSProperties } from 'react';
 
 // Simplified props interface - no grid positioning
 interface NodeHandleProps {
@@ -8,7 +7,6 @@ interface NodeHandleProps {
 	position: Position;
 
 	// === STYLING OPTIONS ===
-	style?: CSSProperties;
 	className?: string;
 	size?: 'sm' | 'md' | 'lg';
 
@@ -34,7 +32,6 @@ export function NodeHandle({
 	id,
 	type,
 	position,
-	style = {},
 	className,
 	size = 'md',
 	label,
@@ -67,10 +64,9 @@ export function NodeHandle({
 
 	// Create SVG icon based on handle type
 	const createHandleIcon = () => {
-		// Simplified styling with variant-aware colors
+		// Use Tailwind colors directly for better theming
 		const strokeColor = 'var(--node-accent, #3b82f6)';
-		const fillColor =
-			'color-mix(in srgb, var(--node-accent, #3b82f6) 25%, light-dark(white, #1e293b))';
+		const fillColor = 'var(--node-bg-interactive, transparent)';
 
 		if (type === 'source') {
 			// Source handles: Arrow shapes pointing outward
@@ -79,10 +75,7 @@ export function NodeHandle({
 					width={svgDimensions.width}
 					height={svgDimensions.height}
 					viewBox={`0 0 ${svgDimensions.width} ${svgDimensions.height}`}
-					style={{
-						pointerEvents: 'none',
-						filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))',
-					}}
+					className='drop-shadow-sm pointer-events-none'
 				>
 					{/* Arrow path for source handles */}
 					{getSourceArrowPath(position, fillColor, strokeColor, svgDimensions)}
@@ -94,11 +87,11 @@ export function NodeHandle({
 							y={svgDimensions.height / 2 + 1}
 							textAnchor='middle'
 							dominantBaseline='middle'
-							fill='var(--node-text-primary, light-dark(#374151, #f9fafb))'
+							fill='var(--node-text-primary)'
 							fontSize={size === 'sm' ? '10' : size === 'md' ? '12' : '14'}
 							fontWeight='600'
 							fontFamily='ui-sans-serif, system-ui, sans-serif'
-							style={{ userSelect: 'none' }}
+							className='select-none'
 						>
 							{label}
 						</text>
@@ -112,10 +105,7 @@ export function NodeHandle({
 					width={svgDimensions.width}
 					height={svgDimensions.height}
 					viewBox={`0 0 ${svgDimensions.width} ${svgDimensions.height}`}
-					style={{
-						pointerEvents: 'none',
-						filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))',
-					}}
+					className='drop-shadow-sm pointer-events-none'
 				>
 					{/* Circle/oval path for target handles */}
 					{getTargetCirclePath(fillColor, strokeColor, svgDimensions)}
@@ -127,11 +117,11 @@ export function NodeHandle({
 							y={svgDimensions.height / 2 + 1}
 							textAnchor='middle'
 							dominantBaseline='middle'
-							fill='var(--node-text-primary, light-dark(#374151, #f9fafb))'
+							fill='var(--node-text-primary)'
 							fontSize={size === 'sm' ? '8' : size === 'md' ? '10' : '12'}
 							fontWeight='600'
 							fontFamily='ui-sans-serif, system-ui, sans-serif'
-							style={{ userSelect: 'none' }}
+							className='select-none'
 						>
 							{label}
 						</text>
@@ -254,26 +244,15 @@ export function NodeHandle({
 		.filter(Boolean)
 		.join(' ');
 
-	// Background style - simplified since SVG handles visual appearance
-	const backgroundStyle: CSSProperties = {
-		backgroundColor: 'transparent',
-	};
-
-	// Merge styles - combine background and custom styles (no positioning calculations)
-	const finalStyle = { ...backgroundStyle, ...style };
-
 	return (
-		<>
-			<Handle
-				id={id}
-				type={type}
-				position={position}
-				style={finalStyle}
-				className={handleClasses}
-			>
-				{/* Render SVG icon inside the handle */}
-				{createHandleIcon()}
-			</Handle>
-		</>
+		<Handle
+			id={id}
+			type={type}
+			position={position}
+			className={handleClasses}
+		>
+			{/* Render SVG icon inside the handle */}
+			{createHandleIcon()}
+		</Handle>
 	);
 }

@@ -63,10 +63,7 @@ export function NodeAddPanel() {
 	return (
 		<Panel
 			position='top-left'
-			className='max-w-full'
-			style={{
-				pointerEvents: 'none', // Allow Panel itself to not block events
-			}}
+			className='max-w-full pointer-events-none'
 		>
 			{/* Main container with custom blurred background styling */}
 			<div

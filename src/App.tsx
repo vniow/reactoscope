@@ -11,13 +11,18 @@ import '@xyflow/react/dist/base.css';
 
 import { initialNodes, nodeTypes } from './nodes';
 import { initialEdges, edgeTypes } from './flow/edges';
-import { ThemeProvider } from './contexts/ThemeProvider';
 import { FlowControls } from './flow/components/FlowControls';
-import { ThemedMiniMap } from './flow/components/ThemedMiniMap';
+import { StyledMiniMap } from './flow/components/StyledMiniMap';
 import { type AppNode } from './nodes/types';
 import { useAppStore } from './shared/stores/appStore';
 
 export default function App() {
+	// Initialize theme when the app starts
+	const initializeTheme = useAppStore((state) => state.initializeTheme);
+
+	useEffect(() => {
+		initializeTheme();
+	}, [initializeTheme]);
 	// Global effect counter for debugging infinite loops
 	const globalEffectCounterRef = useRef(0);
 
@@ -80,48 +85,36 @@ export default function App() {
 	);
 
 	return (
-		<ThemeProvider>
-			<div className='w-full h-screen'>
-				<ReactFlow
-					nodes={nodes}
-					nodeTypes={nodeTypes}
-					onNodesChange={onNodesChange}
-					edges={edges}
-					edgeTypes={edgeTypes}
-					onEdgesChange={onEdgesChange}
-					onConnect={onConnect}
-					onReconnect={onReconnect}
-					fitView
-					snapToGrid
-					snapGrid={[32, 32]}
-					minZoom={0.1}
-					maxZoom={4}
-					proOptions={{ hideAttribution: true }}
-				>
-					{/* Audio sync component - handles centralized audio connections */}
-			
+		<div className='w-full h-screen'>
+			<ReactFlow
+				nodes={nodes}
+				nodeTypes={nodeTypes}
+				onNodesChange={onNodesChange}
+				edges={edges}
+				edgeTypes={edgeTypes}
+				onEdgesChange={onEdgesChange}
+				onConnect={onConnect}
+				onReconnect={onReconnect}
+				fitView
+				snapToGrid
+				snapGrid={[32, 32]}
+				minZoom={0.1}
+				maxZoom={4}
+				proOptions={{ hideAttribution: true }}
+			>
+				{/* Audio sync component - handles centralized audio connections */}
 
-					<Background
-						gap={64}
-						size={6}
-						lineWidth={2}
-						offset={3}
-						variant={BackgroundVariant.Cross}
-						color={getBackgroundColor()}
-					/>
-					<FlowControls />
-					{/* <FlowDebugPanel /> */}
-					{/* <StoreDebugPanel /> */}
-					<ThemedMiniMap
-						variant='source'
-						position='bottom-right'
-						pannable={true}
-						nodeStrokeWidth={1.5}
-						nodeBorderRadius={3}
-						ariaLabel='Flow MiniMap'
-					/>
-				</ReactFlow>
-			</div>
-		</ThemeProvider>
+				<Background
+					gap={64}
+					size={6}
+					lineWidth={2}
+					offset={3}
+					variant={BackgroundVariant.Cross}
+					color={getBackgroundColor()}
+				/>
+				<FlowControls />
+				<StyledMiniMap />
+			</ReactFlow>
+		</div>
 	);
 }

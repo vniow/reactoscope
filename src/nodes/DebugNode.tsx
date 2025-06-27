@@ -63,7 +63,7 @@ export function DebugNode({
 			nodeId={id as string}
 			selected={selected}
 			title={data.label || 'Debug Info'}
-			className='w-grid-6 h-grid-8' // Increased size to accommodate new UI elements
+			className='w-grid-6 h-grid-2' // Increased size to accommodate new UI elements
 		>
 			<div className='relative w-full h-full overflow-visible flex flex-col p-2 space-y-3'>
 				{/* Debug Mode Selector */}
@@ -79,10 +79,7 @@ export function DebugNode({
 				</div>
 
 				{/* Position Display */}
-				<div
-					className='flex-shrink-0 p-2 rounded'
-					style={{ backgroundColor: 'var(--node-bg-interactive)' }}
-				>
+				<div className='flex-shrink-0 p-2 rounded bg-[var(--node-bg-interactive)]'>
 					<div className='text-center space-y-1'>
 						<h3 className='debug-title text-sm'>🐛 Position Data</h3>
 						<div className='flex justify-between text-xs'>
