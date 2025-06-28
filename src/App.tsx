@@ -1,11 +1,5 @@
-import { useCallback, useEffect, useRef } from 'react';
-import {
-	ReactFlow,
-	Background,
-	reconnectEdge,
-	type OnReconnect,
-	BackgroundVariant,
-} from '@xyflow/react';
+import { useEffect, useRef } from 'react';
+import { ReactFlow, Background, BackgroundVariant } from '@xyflow/react';
 
 import '@xyflow/react/dist/base.css';
 
@@ -32,6 +26,7 @@ export default function App() {
 	const onNodesChange = useAppStore((state) => state.onNodesChange);
 	const onEdgesChange = useAppStore((state) => state.onEdgesChange);
 	const onConnect = useAppStore((state) => state.onConnect);
+	const onReconnect = useAppStore((state) => state.onReconnect);
 	const initializeFlow = useAppStore((state) => state.initializeFlow);
 
 	// Get theme state for background color
@@ -73,16 +68,6 @@ export default function App() {
 			return '#4b5563'; // gray-600 - lighter for dark theme contrast
 		}
 	};
-
-	// Handle edge reconnection
-	const onReconnect: OnReconnect = useCallback(
-		(oldEdge, newConnection) => {
-			// Use the setEdges action from Zustand to update with reconnected edge
-			const newEdges = reconnectEdge(oldEdge, newConnection, edges);
-			useAppStore.getState().setEdges(newEdges);
-		},
-		[edges]
-	);
 
 	return (
 		<div className='w-full h-screen'>

@@ -357,7 +357,7 @@ export function updateAudioNodeParams(
 
 	try {
 		if (Array.isArray(audioNode)) {
-			// Handle array of nodes (like dualGain)
+			// Handle array of nodes (like dualGain, oscillator with volume, etc.)
 			switch (type) {
 				case 'dualGain': {
 					const gainParams = params as Partial<DualGainParams>;
@@ -369,6 +369,42 @@ export function updateAudioNodeParams(
 					}
 					break;
 				}
+				case 'oscillator': {
+					// Handle oscillator with volume (array of [oscillator, gain])
+					const oscParams = params as Partial<OscillatorParams>;
+					const osc = audioNode[0] as Tone.Oscillator;
+					const gain = audioNode[1] as Tone.Gain;
+
+					if (oscParams.frequency !== undefined) {
+						osc.frequency.value = oscParams.frequency;
+					}
+					if (oscParams.type !== undefined) {
+						osc.type = oscParams.type;
+					}
+					if (oscParams.detune !== undefined) {
+						osc.detune.value = oscParams.detune;
+					}
+					if (oscParams.volume !== undefined) {
+						// Update the gain node (second element in array)
+						gain.gain.value = Tone.dbToGain(oscParams.volume);
+					}
+					break;
+				}
+				case 'noise': {
+					// Handle noise with volume (array of [noise, gain])
+					const noiseParams = params as Partial<NoiseParams>;
+					const noise = audioNode[0] as Tone.Noise;
+					const gain = audioNode[1] as Tone.Gain;
+
+					if (noiseParams.type !== undefined) {
+						noise.type = noiseParams.type;
+					}
+					if (noiseParams.volume !== undefined) {
+						// Update the gain node (second element in array)
+						gain.gain.value = Tone.dbToGain(noiseParams.volume);
+					}
+					break;
+				}
 				default:
 					console.warn(`⚠️ Unknown array audio node type for update: ${type}`);
 			}
@@ -376,6 +412,7 @@ export function updateAudioNodeParams(
 			// Handle single nodes
 			switch (type) {
 				case 'oscillator': {
+					// Handle simple oscillator without volume (single node)
 					const oscParams = params as Partial<OscillatorParams>;
 					const osc = audioNode as Tone.Oscillator;
 					if (oscParams.frequency !== undefined) {
@@ -387,10 +424,20 @@ export function updateAudioNodeParams(
 					if (oscParams.detune !== undefined) {
 						osc.detune.value = oscParams.detune;
 					}
-					if (oscParams.volume !== undefined) {
-						// Access volume through the volume property (Tone.js pattern)
-						(osc as Tone.Oscillator & { volume: Tone.Volume }).volume.value = oscParams.volume;
+					// Note: volume parameter should not be set on single oscillator nodes
+					// as they don't have volume control - only array oscillators do
+					break;
+				}
+
+				case 'noise': {
+					// Handle simple noise without volume (single node)
+					const noiseParams = params as Partial<NoiseParams>;
+					const noise = audioNode as Tone.Noise;
+					if (noiseParams.type !== undefined) {
+						noise.type = noiseParams.type;
 					}
+					// Note: volume parameter should not be set on single noise nodes
+					// as they don't have volume control - only array noise nodes do
 					break;
 				}
 
@@ -410,7 +457,9 @@ export function updateAudioNodeParams(
 						dest.gain.value = Tone.dbToGain(destParams.volume);
 					}
 					if (destParams.mute !== undefined) {
-						dest.gain.value = destParams.mute ? 0 : Tone.dbToGain(destParams.volume || 0);
+						dest.gain.value = destParams.mute
+							? 0
+							: Tone.dbToGain(destParams.volume || 0);
 					}
 					break;
 				}
@@ -488,18 +537,6 @@ export function updateAudioNodeParams(
 					}
 					if (distParams.oversample !== undefined) {
 						dist.oversample = distParams.oversample;
-					}
-					break;
-				}
-
-				case 'noise': {
-					const noiseParams = params as Partial<NoiseParams>;
-					const noise = audioNode as Tone.Noise;
-					if (noiseParams.type !== undefined) {
-						noise.type = noiseParams.type;
-					}
-					if (noiseParams.volume !== undefined) {
-						(noise as Tone.Noise & { volume: Tone.Volume }).volume.value = noiseParams.volume;
 					}
 					break;
 				}

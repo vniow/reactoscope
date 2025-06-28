@@ -200,12 +200,20 @@ export function DestinationNode({
 				/>
 			</div>
 
-			{/* Audio input handle */}
+			{/* Audio input handles - support multiple inputs */}
 			<NodeHandle
 				id='input'
 				type='target'
 				position={Position.Left}
 				label='In'
+				style={{ top: '40%' }}
+			/>
+			<NodeHandle
+				id='input-2'
+				type='target'
+				position={Position.Left}
+				label='In 2'
+				style={{ top: '60%' }}
 			/>
 		</BaseNode>
 	);

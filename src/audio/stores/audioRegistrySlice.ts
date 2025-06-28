@@ -473,6 +473,7 @@ export const createAudioRegistrySlice: StateCreator<
 
 			// Check if source node should be stopped after disconnection
 			// Stop source nodes (oscillators, noise, etc.) if they have no output connections
+			// Processing nodes (like dualGain) should keep running if they have any input or output connections
 			if (sourceEntry) {
 				const updatedSourceEntry = {
 					...sourceEntry,
@@ -488,8 +489,23 @@ export const createAudioRegistrySlice: StateCreator<
 					},
 				};
 
-				// If this source node has no more output connections, stop it
-				if (updatedSourceEntry.connections.outputs.length === 0) {
+				// For true source nodes, stop if no output connections
+				// For processing nodes, keep running if they have any input or output connections
+				const isProcessingNode = [
+					'dualGain',
+					'gain',
+					'filter',
+					'delay',
+					'reverb',
+					'compressor',
+					'distortion',
+				].includes(sourceEntry.type);
+				const shouldStopSourceNode = isProcessingNode
+					? updatedSourceEntry.connections.outputs.length === 0 &&
+						updatedSourceEntry.connections.inputs.length === 0
+					: updatedSourceEntry.connections.outputs.length === 0;
+
+				if (shouldStopSourceNode) {
 					const shouldPlay = get().shouldSourceNodePlay(connection.sourceId);
 
 					if (!shouldPlay) {

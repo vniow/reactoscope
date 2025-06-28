@@ -60,6 +60,7 @@ export interface FlowActions {
 	onNodesChange: (changes: NodeChange[]) => void;
 	onEdgesChange: (changes: EdgeChange[]) => void;
 	onConnect: (connection: Connection) => void;
+	onReconnect: (oldEdge: Edge, newConnection: Connection) => void;
 
 	// Node operations
 	addNode: (node: AppNode) => void;
@@ -249,6 +250,61 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 				connection.target,
 				connection.sourceHandle || undefined,
 				connection.targetHandle || undefined
+			);
+		}
+	},
+
+	onReconnect: (oldEdge, newConnection) => {
+		console.log('🔄 Reconnecting edge:', {
+			oldEdge: oldEdge.id,
+			from: `${oldEdge.source}[${oldEdge.sourceHandle}] → ${oldEdge.target}[${oldEdge.targetHandle}]`,
+			to: `${newConnection.source}[${newConnection.sourceHandle}] → ${newConnection.target}[${newConnection.targetHandle}]`,
+		});
+
+		const appStore = get() as AppStore;
+
+		// Step 1: Unregister the old audio connection
+		if (appStore.unregisterConnection) {
+			console.log(`🔌 Unregistering old audio connection: ${oldEdge.id}`);
+			appStore.unregisterConnection(oldEdge.id);
+		}
+
+		// Step 2: Remove the old edge and add a new one with proper ID generation
+		// This prevents duplicate key issues when handles change
+		const newEdge = {
+			...oldEdge,
+			source: newConnection.source,
+			target: newConnection.target,
+			sourceHandle: newConnection.sourceHandle,
+			targetHandle: newConnection.targetHandle,
+			// Generate a new ID if handles changed to prevent conflicts
+			id:
+				oldEdge.sourceHandle !== newConnection.sourceHandle ||
+				oldEdge.targetHandle !== newConnection.targetHandle
+					? `xy-edge__${newConnection.source}${newConnection.sourceHandle || ''}-${newConnection.target}${newConnection.targetHandle || ''}`
+					: oldEdge.id,
+		};
+
+		set((state) => {
+			const newEdges = state.edges.map((edge) => {
+				if (edge.id === oldEdge.id) {
+					return newEdge;
+				}
+				return edge;
+			});
+			saveCurrentFlowState(state.nodes, newEdges);
+			return { edges: newEdges };
+		});
+
+		// Step 3: Register new audio connection with the correct edge ID
+		if (appStore.registerConnection) {
+			console.log(`🎵 Registering new audio connection: ${newEdge.id}`);
+			appStore.registerConnection(
+				newEdge.id,
+				newConnection.source,
+				newConnection.target,
+				newConnection.sourceHandle || undefined,
+				newConnection.targetHandle || undefined
 			);
 		}
 	},
