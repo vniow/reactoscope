@@ -6,6 +6,7 @@
 
 import type { NodeProps } from '@xyflow/react';
 import { SignalNodeComponent } from '../PlaceholderNodes';
+import { OscilloscopeNode } from './OscilloscopeNode';
 import type { AppNode } from '../types';
 
 export function DynamicSignalNode(props: NodeProps<AppNode>) {
@@ -13,6 +14,8 @@ export function DynamicSignalNode(props: NodeProps<AppNode>) {
 
 	// Route to specific component based on node data
 	switch (data?.label) {
+		case 'Oscilloscope':
+			return <OscilloscopeNode {...props} />;
 		case 'Analyzer':
 		case 'Meter':
 		default: {

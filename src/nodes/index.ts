@@ -16,7 +16,7 @@ import { DynamicSourceNode } from './source/DynamicSourceNode';
 import { DestinationNode } from './core/DestinationNode';
 import { DynamicEffectNode } from './effect/DynamicEffectNode';
 import { DynamicComponentNode } from './component/DynamicComponentNode';
-import { DynamicSignalNode } from './signal/DynamicSignalNode';
+import { OscilloscopeNode } from './signal/OscilloscopeNode';
 
 import {
 	InstrumentNodeComponent,
@@ -65,7 +65,7 @@ export const nodeTypes = {
 	instrument: InstrumentNodeComponent,
 	effect: DynamicEffectNode,
 	component: DynamicComponentNode,
-	signal: DynamicSignalNode,
+	signal: OscilloscopeNode,
 	event: EventNodeComponent,
 	unit: UtilityNodeComponent,
 

@@ -22,6 +22,7 @@ export type AudioNodeType =
 	| 'compressor'
 	| 'distortion'
 	| 'analyzer'
+	| 'oscilloscope'
 	| 'masterOutput'
 	| 'destination'
 	| 'meter'
@@ -52,6 +53,7 @@ export const NODE_TYPE_MAPPING: Record<string, AudioNodeType> = {
 
 	// Signal nodes
 	'signal.analyzer': 'analyzer',
+	'signal.oscilloscope': 'oscilloscope',
 	'signal.meter': 'meter',
 
 	// Core nodes
@@ -128,6 +130,12 @@ export interface AnalyzerParams {
 	size?: number;
 }
 
+export interface OscilloscopeParams {
+	timeWindow?: number; // Time window in seconds
+	triggerLevel?: number; // Trigger level for stable display
+	resolution?: number; // Number of sample points
+}
+
 export interface MeterParams {
 	smoothing?: number;
 }
@@ -165,6 +173,7 @@ export type AudioNodeParams =
 	| CompressorParams
 	| DistortionParams
 	| AnalyzerParams
+	| OscilloscopeParams
 	| MeterParams
 	| EnvelopeParams
 	| LFOParams

@@ -21,6 +21,7 @@ import type {
 	CompressorParams,
 	DistortionParams,
 	AnalyzerParams,
+	OscilloscopeParams,
 	MeterParams,
 	EnvelopeParams,
 	LFOParams,
@@ -166,6 +167,25 @@ export function createAudioNode(
 					type: analyzerParams?.type || 'waveform',
 					size: analyzerParams?.size || 1024,
 				});
+			}
+
+			case 'oscilloscope': {
+				// For oscilloscope, create a gain node for pass-through and an analyzer for visualization
+				const oscilloscopeParams = params as OscilloscopeParams;
+
+				// Create a gain node for pass-through
+				const passThrough = new Tone.Gain(1);
+				const analyzer = new Tone.Analyser({
+					type: 'waveform',
+					size: oscilloscopeParams?.resolution || 512,
+				});
+
+				// Connect pass-through to analyzer for visualization
+				passThrough.connect(analyzer);
+
+				// Return array: [pass-through gain (input/output), analyzer (for data)]
+				// This allows signal to flow through while being monitored
+				return [passThrough, analyzer];
 			}
 
 			case 'meter': {
@@ -405,6 +425,21 @@ export function updateAudioNodeParams(
 					}
 					break;
 				}
+				case 'oscilloscope': {
+					// Handle oscilloscope (array of [passThrough, analyzer])
+					const scopeParams = params as Partial<OscilloscopeParams>;
+
+					if (scopeParams.resolution !== undefined) {
+						// Note: Tone.Analyser doesn't support runtime size changes
+						// This would require recreating the analyzer
+						console.warn(
+							'⚠️ Runtime resolution changes not supported, requires node recreation'
+						);
+					}
+					// Other parameters like timeWindow and triggerLevel are handled by the UI component
+					// No live parameter updates needed for oscilloscope audio nodes
+					break;
+				}
 				default:
 					console.warn(`⚠️ Unknown array audio node type for update: ${type}`);
 			}
@@ -551,6 +586,22 @@ export function updateAudioNodeParams(
 						lfo.type = lfoParams.type;
 					}
 					// Note: amplitude property may need to be accessed differently in Tone.js
+					break;
+				}
+
+				case 'oscilloscope': {
+					// Handle oscilloscope (single analyzer node)
+					const scopeParams = params as Partial<OscilloscopeParams>;
+
+					if (scopeParams.resolution !== undefined) {
+						// Note: Tone.Analyser doesn't support runtime size changes
+						// This would require recreating the analyzer
+						console.warn(
+							'⚠️ Runtime resolution changes not supported, requires node recreation'
+						);
+					}
+					// Other parameters like timeWindow and triggerLevel are handled by the UI component
+					// No live parameter updates needed for oscilloscope audio nodes
 					break;
 				}
 

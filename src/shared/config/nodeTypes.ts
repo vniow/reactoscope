@@ -391,6 +391,25 @@ export const SIGNAL_NODES: NodeTypeOption[] = [
 			},
 		},
 	},
+	{
+		type: 'signal',
+		name: 'Oscilloscope',
+		description: 'Real-time waveform visualization with multiple outputs',
+		emoji: '📈',
+		variant: 'signal',
+		category: 'utility',
+		defaultData: {
+			label: 'Oscilloscope',
+			timeWindow: 50,
+			triggerLevel: 0,
+			resolution: 256,
+			audioParams: {
+				timeWindow: 50,
+				triggerLevel: 0,
+				resolution: 256,
+			},
+		},
+	},
 ];
 
 // Core audio infrastructure nodes
