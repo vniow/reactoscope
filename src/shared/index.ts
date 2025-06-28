@@ -6,7 +6,6 @@ export * from './stores/useAppStore';
 export * from './stores/types';
 export * from './stores/themeSlice';
 export * from './utils/useNodeVariant';
-export * from './utils/fileUtils';
 export * from './utils/nodeFactory';
 export * from './utils/nodeStyles';
 export * from './utils/nodeUtils';

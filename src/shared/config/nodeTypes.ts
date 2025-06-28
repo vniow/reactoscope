@@ -46,40 +46,282 @@ export const DEBUG_NODES: NodeTypeOption[] = [
 ];
 
 // Audio source nodes
-export const SOURCE_NODES: NodeTypeOption[] = [];
-
-// Audio effect nodes
-export const EFFECT_NODES: NodeTypeOption[] = [];
-
-// Utility nodes
-export const UTILITY_NODES: NodeTypeOption[] = [
-	// No utility nodes currently - file loader removed
-];
-
-// Placeholder nodes for each variant
-export const PLACEHOLDER_NODES: NodeTypeOption[] = [
+export const SOURCE_NODES: NodeTypeOption[] = [
 	{
-		type: 'core',
-		name: 'Core System',
-		description: 'Master context, destinations, and core audio infrastructure',
-		emoji: '⚙️',
-		variant: 'core',
+		type: 'source',
+		name: 'Oscillator',
+		description:
+			'Basic waveform generator with frequency, type, and volume controls',
+		emoji: '🌊',
+		variant: 'source',
 		category: 'placeholder',
 		defaultData: {
-			label: 'Core System',
+			label: 'Oscillator',
+			frequency: 440,
+			waveType: 'sine',
+			detune: 0,
+			volume: -12,
+			audioParams: {
+				frequency: 440,
+				type: 'sine',
+				detune: 0,
+				volume: -12,
+			},
 		},
 	},
 	{
 		type: 'source',
-		name: 'Audio Source',
-		description: 'Oscillators, players, microphones, and input sources',
+		name: 'Audio Player',
+		description: 'Audio file player with loop and playback rate controls',
 		emoji: '🎵',
 		variant: 'source',
 		category: 'placeholder',
 		defaultData: {
-			label: 'Audio Source',
+			label: 'Audio Player',
+			url: '',
+			loop: false,
+			volume: 0,
+			playbackRate: 1,
+			audioParams: {
+				url: '',
+				loop: false,
+				volume: 0,
+				playbackRate: 1,
+			},
 		},
 	},
+	{
+		type: 'source',
+		name: 'Noise Generator',
+		description: 'White, brown, and pink noise generator',
+		emoji: '📻',
+		variant: 'source',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Noise Generator',
+			type: 'white',
+			volume: -12,
+			audioParams: {
+				type: 'white',
+				volume: -12,
+			},
+		},
+	},
+	{
+		type: 'source',
+		name: 'Microphone',
+		description: 'Audio input from microphone or line input',
+		emoji: '🎤',
+		variant: 'source',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Microphone',
+			volume: 0,
+			audioParams: {
+				volume: 0,
+			},
+		},
+	},
+];
+
+// Audio effect nodes
+export const EFFECT_NODES: NodeTypeOption[] = [
+	{
+		type: 'effect',
+		name: 'Filter',
+		description: 'Lowpass, highpass, bandpass, and notch filters',
+		emoji: '🔊',
+		variant: 'effect',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Filter',
+			frequency: 1000,
+			type: 'lowpass',
+			Q: 1,
+			gain: 0,
+			audioParams: {
+				frequency: 1000,
+				type: 'lowpass',
+				Q: 1,
+				gain: 0,
+			},
+		},
+	},
+	{
+		type: 'effect',
+		name: 'Delay',
+		description: 'Echo and delay effect with feedback control',
+		emoji: '🔁',
+		variant: 'effect',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Delay',
+			delayTime: 0.25,
+			feedback: 0.5,
+			wet: 0.5,
+			audioParams: {
+				delayTime: 0.25,
+				feedback: 0.5,
+				wet: 0.5,
+			},
+		},
+	},
+	{
+		type: 'effect',
+		name: 'Reverb',
+		description: 'Room and hall reverb with adjustable decay',
+		emoji: '🏛️',
+		variant: 'effect',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Reverb',
+			decay: 1.5,
+			preDelay: 0.01,
+			wet: 0.3,
+			audioParams: {
+				decay: 1.5,
+				preDelay: 0.01,
+				wet: 0.3,
+			},
+		},
+	},
+	{
+		type: 'effect',
+		name: 'Compressor',
+		description: 'Dynamic range compressor with threshold and ratio',
+		emoji: '📉',
+		variant: 'effect',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Compressor',
+			threshold: -24,
+			ratio: 4,
+			attack: 0.003,
+			release: 0.1,
+			knee: 6,
+			audioParams: {
+				threshold: -24,
+				ratio: 4,
+				attack: 0.003,
+				release: 0.1,
+				knee: 6,
+			},
+		},
+	},
+	{
+		type: 'effect',
+		name: 'Distortion',
+		description: 'Harmonic distortion and overdrive effect',
+		emoji: '⚡',
+		variant: 'effect',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Distortion',
+			distortion: 0.4,
+			oversample: '4x',
+			audioParams: {
+				distortion: 0.4,
+				oversample: '4x',
+			},
+		},
+	},
+];
+
+// Signal component nodes
+export const COMPONENT_NODES: NodeTypeOption[] = [
+	{
+		type: 'component',
+		name: 'Gain',
+		description: 'Volume and gain control for audio signals',
+		emoji: '🔈',
+		variant: 'component',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Gain',
+			gain: 1,
+			audioParams: {
+				gain: 1,
+			},
+		},
+	},
+	{
+		type: 'component',
+		name: 'Dual Gain',
+		description: 'Two independent gain controls for dual-channel processing',
+		emoji: '🎚️',
+		variant: 'component',
+		category: 'utility',
+		defaultData: {
+			label: 'Dual Gain',
+			gain1: 1,
+			gain2: 1,
+			audioParams: {
+				gain1: 1,
+				gain2: 1,
+			},
+		},
+	},
+	{
+		type: 'component',
+		name: 'Panner',
+		description: 'Stereo panning control for positioning audio',
+		emoji: '🎚️',
+		variant: 'component',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Panner',
+			pan: 0,
+			audioParams: {
+				pan: 0,
+			},
+		},
+	},
+	{
+		type: 'component',
+		name: 'Envelope',
+		description: 'ADSR envelope generator for modulation',
+		emoji: '📈',
+		variant: 'component',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Envelope',
+			attack: 0.01,
+			decay: 0.1,
+			sustain: 0.8,
+			release: 0.3,
+			audioParams: {
+				attack: 0.01,
+				decay: 0.1,
+				sustain: 0.8,
+				release: 0.3,
+			},
+		},
+	},
+	{
+		type: 'component',
+		name: 'LFO',
+		description: 'Low frequency oscillator for modulation',
+		emoji: '🌀',
+		variant: 'component',
+		category: 'placeholder',
+		defaultData: {
+			label: 'LFO',
+			frequency: 1,
+			type: 'sine',
+			min: 0,
+			max: 1,
+			audioParams: {
+				frequency: 1,
+				type: 'sine',
+				min: 0,
+				max: 1,
+			},
+		},
+	},
+];
+
+// Placeholder nodes for variants without specific implementations
+export const PLACEHOLDER_NODES: NodeTypeOption[] = [
 	{
 		type: 'instrument',
 		name: 'Instrument',
@@ -89,39 +331,6 @@ export const PLACEHOLDER_NODES: NodeTypeOption[] = [
 		category: 'placeholder',
 		defaultData: {
 			label: 'Instrument',
-		},
-	},
-	{
-		type: 'effect',
-		name: 'Audio Effect',
-		description: 'Reverb, delay, filters, and audio processing effects',
-		emoji: '🎛️',
-		variant: 'effect',
-		category: 'placeholder',
-		defaultData: {
-			label: 'Audio Effect',
-		},
-	},
-	{
-		type: 'component',
-		name: 'Signal Component',
-		description: 'Gain, panner, mixer, and signal routing components',
-		emoji: '🔧',
-		variant: 'component',
-		category: 'placeholder',
-		defaultData: {
-			label: 'Signal Component',
-		},
-	},
-	{
-		type: 'signal',
-		name: 'Signal Processor',
-		description: 'Analyzers, FFT, meters, and signal analysis tools',
-		emoji: '📊',
-		variant: 'signal',
-		category: 'placeholder',
-		defaultData: {
-			label: 'Signal Processor',
 		},
 	},
 	{
@@ -148,11 +357,74 @@ export const PLACEHOLDER_NODES: NodeTypeOption[] = [
 	},
 ];
 
+// Signal analyzer and meter nodes
+export const SIGNAL_NODES: NodeTypeOption[] = [
+	{
+		type: 'signal',
+		name: 'Analyzer',
+		description: 'FFT spectrum analyzer for frequency visualization',
+		emoji: '📊',
+		variant: 'signal',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Analyzer',
+			type: 'fft',
+			size: 1024,
+			audioParams: {
+				type: 'fft',
+				size: 1024,
+			},
+		},
+	},
+	{
+		type: 'signal',
+		name: 'Meter',
+		description: 'Level meter for monitoring audio amplitude',
+		emoji: '📏',
+		variant: 'signal',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Meter',
+			smoothing: 0.8,
+			audioParams: {
+				smoothing: 0.8,
+			},
+		},
+	},
+];
+
+// Core audio infrastructure nodes
+export const CORE_NODES: NodeTypeOption[] = [
+	{
+		type: 'core',
+		name: 'Master Output',
+		description: 'Main audio output destination with master controls',
+		emoji: '🎧',
+		variant: 'core',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Master Output',
+			volume: 0,
+			audioParams: {
+				volume: 0,
+			},
+		},
+	},
+];
+
+// Utility nodes
+export const UTILITY_NODES: NodeTypeOption[] = [
+	// No utility nodes currently - file loader removed
+];
+
 // Combined list of all available nodes
 export const ALL_NODES: NodeTypeOption[] = [
 	...DEBUG_NODES,
+	...CORE_NODES,
 	...SOURCE_NODES,
 	...EFFECT_NODES,
+	...COMPONENT_NODES,
+	...SIGNAL_NODES,
 	...UTILITY_NODES,
 	...PLACEHOLDER_NODES,
 ];

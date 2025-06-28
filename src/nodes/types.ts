@@ -1,10 +1,12 @@
 import type { Node, BuiltInNode, Position } from '@xyflow/react';
 import type { ComponentVariant } from '../shared/types/ui';
+import type { AudioNodeParams } from '../audio/types';
 
 export interface BaseNodeData extends Record<string, unknown> {
 	label?: string;
 	handlePositions?: { [handleId: string]: Position };
 	variant?: ComponentVariant; // Add variant to node data for React Flow access
+	audioParams?: AudioNodeParams; // Add audio parameters
 }
 
 export interface DebugNodeData extends BaseNodeData {

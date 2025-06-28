@@ -5,7 +5,14 @@
  * - Node and edge state management
  * - Flow operations (add, remove, update)
  * - Save/restore functionality
- * - Persistence to localStorage
+ * - Persiste			appStore.registerConnection(
+				newEdge.id,
+				connection.source,
+				connection.target,
+				connection.sourceHandle || undefined,
+				connection.targetHandle || undefined
+			);localStorage
+ * - Audio node integration
  *
  * Follows the sliced store architecture pattern for predictable state management.
  *
@@ -15,6 +22,9 @@ import type { StateCreator } from 'zustand';
 import type { Edge, NodeChange, EdgeChange, Connection } from '@xyflow/react';
 import { applyNodeChanges, applyEdgeChanges, addEdge } from '@xyflow/react';
 import type { AppNode } from '../../nodes/types';
+import type { BaseNodeData } from '../../nodes/types';
+import { NODE_TYPE_MAPPING } from '../../audio/types';
+import type { AppStore } from '../../shared/stores/types';
 
 /**
  * Flow state interface containing nodes, edges, and saved states
@@ -150,7 +160,7 @@ const loadFlowState = (): { nodes: AppNode[]; edges: Edge[] } | null => {
 	}
 };
 
-export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
+export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 	set,
 	get
 ) => ({
@@ -187,6 +197,18 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
 
 	onEdgesChange: (changes) => {
 		console.log('🔄 Applying edge changes:', changes);
+
+		// Handle edge removals to unregister audio connections
+		const removeChanges = changes.filter((change) => change.type === 'remove');
+		const appStore = get() as AppStore;
+
+		removeChanges.forEach((change) => {
+			if (change.type === 'remove' && appStore.unregisterConnection) {
+				console.log(`🔌 Unregistering audio connection for edge: ${change.id}`);
+				appStore.unregisterConnection(change.id);
+			}
+		});
+
 		set((state) => {
 			const newEdges = applyEdgeChanges(changes, state.edges);
 			saveCurrentFlowState(state.nodes, newEdges);
@@ -196,14 +218,39 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
 
 	onConnect: (connection) => {
 		console.log('🔌 Creating new connection:', connection);
+
+		// Create the edge with React Flow
+		const newEdge = { ...connection, type: 'gradient' };
+		let addedEdge: Edge | undefined;
+
 		set((state) => {
-			const newEdges = addEdge(
-				{ ...connection, type: 'gradient' },
-				state.edges
+			const newEdges = addEdge(newEdge, state.edges);
+			// Get the actual edge that was added (React Flow generates IDs)
+			addedEdge = newEdges.find(
+				(edge) =>
+					edge.source === connection.source &&
+					edge.target === connection.target &&
+					edge.sourceHandle === connection.sourceHandle &&
+					edge.targetHandle === connection.targetHandle
 			);
 			saveCurrentFlowState(state.nodes, newEdges);
 			return { edges: newEdges };
 		});
+
+		// Create audio connection with the actual edge ID
+		const appStore = get() as AppStore;
+		if (appStore.registerConnection && addedEdge) {
+			console.log(
+				`🎵 Registering audio connection with edge ID: ${addedEdge.id}`
+			);
+			appStore.registerConnection(
+				addedEdge.id,
+				connection.source,
+				connection.target,
+				connection.sourceHandle || undefined,
+				connection.targetHandle || undefined
+			);
+		}
 	},
 
 	addNode: (node) => {
@@ -213,10 +260,44 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
 			saveCurrentFlowState(newNodes, state.edges);
 			return { nodes: newNodes };
 		});
+
+		// Create corresponding audio node if it's an audio node type
+		const nodeData = node.data as BaseNodeData;
+		const nodeTypeKey = `${nodeData.variant || node.type}.${node.type}`;
+		const audioNodeType = NODE_TYPE_MAPPING[nodeTypeKey];
+
+		if (audioNodeType) {
+			console.log(
+				`🎵 Creating audio node for: ${nodeTypeKey} → ${audioNodeType}`
+			);
+			const appStore = get() as AppStore;
+			appStore.registerAudioNode(node.id, audioNodeType, nodeData.audioParams);
+		}
 	},
 
 	removeNode: (nodeId) => {
 		console.log(`🗑️ Removing node: ${nodeId}`);
+
+		// Get edges that will be removed
+		const state = get();
+		const edgesToRemove = state.edges.filter(
+			(edge) => edge.source === nodeId || edge.target === nodeId
+		);
+
+		// Unregister audio connections for affected edges first
+		const appStore = get() as AppStore;
+		edgesToRemove.forEach((edge) => {
+			if (appStore.unregisterConnection) {
+				console.log(`🔌 Unregistering audio connection for edge: ${edge.id}`);
+				appStore.unregisterConnection(edge.id);
+			}
+		});
+
+		// Unregister audio node
+		if (appStore.unregisterAudioNode) {
+			appStore.unregisterAudioNode(nodeId);
+		}
+
 		set((state) => {
 			const newNodes = state.nodes.filter((node) => node.id !== nodeId);
 			// Also remove edges connected to this node
@@ -250,6 +331,14 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
 
 	removeEdge: (edgeId) => {
 		console.log(`✂️ Removing edge: ${edgeId}`);
+
+		// Unregister audio connection first
+		const appStore = get() as AppStore;
+		if (appStore.unregisterConnection) {
+			console.log(`🔌 Unregistering audio connection for edge: ${edgeId}`);
+			appStore.unregisterConnection(edgeId);
+		}
+
 		set((state) => {
 			const newEdges = state.edges.filter((edge) => edge.id !== edgeId);
 			saveCurrentFlowState(state.nodes, newEdges);
@@ -267,7 +356,7 @@ export const createFlowSlice: StateCreator<FlowSlice, [], [], FlowSlice> = (
 			// console.log('📋 Using saved flow state from localStorage');
 			set(() => savedState);
 		} else {
-			console.log('🆕 Using initial flow state');
+			// console.log('🆕 Using initial flow state');
 			const newState = {
 				nodes: initialNodes,
 				edges: initialEdges,

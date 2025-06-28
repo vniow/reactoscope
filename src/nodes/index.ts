@@ -12,14 +12,14 @@ import type { NodeTypes } from '@xyflow/react';
 
 // Internal node component imports
 import { DebugNode } from './DebugNode';
+import { DynamicSourceNode } from './source/DynamicSourceNode';
+import { DestinationNode } from './core/DestinationNode';
+import { DynamicEffectNode } from './effect/DynamicEffectNode';
+import { DynamicComponentNode } from './component/DynamicComponentNode';
+import { DynamicSignalNode } from './signal/DynamicSignalNode';
 
 import {
-	CoreNodeComponent,
-	SourceNodeComponent,
 	InstrumentNodeComponent,
-	EffectNodeComponent,
-	ComponentNodeComponent,
-	SignalNodeComponent,
 	EventNodeComponent,
 	UtilityNodeComponent,
 } from './PlaceholderNodes';
@@ -59,13 +59,13 @@ export const nodeTypes = {
 	// Core system nodes
 	debug: DebugNode,
 
-	// Placeholder nodes for each variant
-	core: CoreNodeComponent,
-	source: SourceNodeComponent,
+	// Dynamic routing nodes for each variant
+	core: DestinationNode,
+	source: DynamicSourceNode,
 	instrument: InstrumentNodeComponent,
-	effect: EffectNodeComponent,
-	component: ComponentNodeComponent,
-	signal: SignalNodeComponent,
+	effect: DynamicEffectNode,
+	component: DynamicComponentNode,
+	signal: DynamicSignalNode,
 	event: EventNodeComponent,
 	unit: UtilityNodeComponent,
 

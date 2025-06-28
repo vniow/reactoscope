@@ -54,9 +54,9 @@ export default function App() {
 
 		initializeFlow(initialNodes as AppNode[], initialEdges);
 
-		console.log(
-			`🔍 [App] useEffect EXIT #${globalEffectCounterRef.current} - Initialize flow`
-		);
+		// console.log(
+		// 	`🔍 [App] useEffect EXIT #${globalEffectCounterRef.current} - Initialize flow`
+		// );
 	}, [initializeFlow]);
 
 	// Calculate background color based on theme

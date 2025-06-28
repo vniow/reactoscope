@@ -1,0 +1,529 @@
+/**
+ * Audio Node Factory
+ *
+ * Factory function to create Tone.js audio nodes with proper configuration
+ * and lifecycle management.
+ */
+
+import * as Tone from 'tone';
+import type {
+	AudioNodeType,
+	AudioNodeParams,
+	OscillatorParams,
+	PlayerParams,
+	NoiseParams,
+	FilterParams,
+	DelayParams,
+	ReverbParams,
+	GainParams,
+	DualGainParams,
+	PannerParams,
+	CompressorParams,
+	DistortionParams,
+	AnalyzerParams,
+	MeterParams,
+	EnvelopeParams,
+	LFOParams,
+	DestinationParams,
+} from '../types';
+
+/**
+ * Factory function to create Tone.js audio nodes
+ *
+ * @param type - Type of audio node to create
+ * @param params - Parameters for the node
+ * @returns The created Tone.js node or array of nodes
+ */
+export function createAudioNode(
+	type: AudioNodeType,
+	params?: AudioNodeParams
+): Tone.ToneAudioNode | Tone.ToneAudioNode[] {
+	console.log(`🏭 Creating audio node of type: ${type}`, params);
+
+	try {
+		switch (type) {
+			case 'oscillator': {
+				const oscParams = params as OscillatorParams;
+				const oscillator = new Tone.Oscillator({
+					frequency: oscParams?.frequency || 440,
+					type: oscParams?.type || 'sine',
+					detune: oscParams?.detune || 0,
+				});
+
+				// Add volume control if specified
+				if (oscParams?.volume !== undefined) {
+					const gain = new Tone.Gain(Tone.dbToGain(oscParams.volume));
+					oscillator.connect(gain);
+					return [oscillator, gain];
+				}
+
+				return oscillator;
+			}
+
+			case 'player': {
+				const playerParams = params as PlayerParams;
+				return new Tone.Player({
+					url: playerParams?.url || '',
+					loop: playerParams?.loop || false,
+					volume: playerParams?.volume || 0,
+					playbackRate: playerParams?.playbackRate || 1,
+				});
+			}
+
+			case 'noise': {
+				const noiseParams = params as NoiseParams;
+				const noise = new Tone.Noise({
+					type: noiseParams?.type || 'white',
+				});
+
+				if (noiseParams?.volume !== undefined) {
+					const gain = new Tone.Gain(Tone.dbToGain(noiseParams.volume));
+					noise.connect(gain);
+					return [noise, gain];
+				}
+
+				return noise;
+			}
+
+			case 'filter': {
+				const filterParams = params as FilterParams;
+				return new Tone.Filter({
+					frequency: filterParams?.frequency || 1000,
+					type: filterParams?.type || 'lowpass',
+					Q: filterParams?.Q || 1,
+					gain: filterParams?.gain || 0,
+				});
+			}
+
+			case 'delay': {
+				const delayParams = params as DelayParams;
+				return new Tone.FeedbackDelay({
+					delayTime: delayParams?.delayTime || 0.25,
+					feedback: delayParams?.feedback || 0.5,
+					wet: delayParams?.wet || 0.5,
+				});
+			}
+
+			case 'reverb': {
+				const reverbParams = params as ReverbParams;
+				return new Tone.Reverb({
+					decay: reverbParams?.decay || 1.5,
+					preDelay: reverbParams?.preDelay || 0.01,
+					wet: reverbParams?.wet || 0.3,
+				});
+			}
+
+			case 'gain': {
+				const gainParams = params as GainParams;
+				return new Tone.Gain({
+					gain: gainParams?.gain || 1,
+				});
+			}
+
+			case 'dualGain': {
+				const dualGainParams = params as DualGainParams;
+				const gain1 = new Tone.Gain({
+					gain: dualGainParams?.gain1 || 1,
+				});
+				const gain2 = new Tone.Gain({
+					gain: dualGainParams?.gain2 || 1,
+				});
+
+				// Return as array with two independent gain nodes
+				// Index 0 = gain1 (channel 1), Index 1 = gain2 (channel 2)
+				return [gain1, gain2];
+			}
+
+			case 'panner': {
+				const panParams = params as PannerParams;
+				return new Tone.Panner({
+					pan: panParams?.pan || 0,
+				});
+			}
+
+			case 'compressor': {
+				const compParams = params as CompressorParams;
+				return new Tone.Compressor({
+					threshold: compParams?.threshold || -24,
+					ratio: compParams?.ratio || 3,
+					attack: compParams?.attack || 0.003,
+					release: compParams?.release || 0.1,
+					knee: compParams?.knee || 30,
+				});
+			}
+
+			case 'distortion': {
+				const distParams = params as DistortionParams;
+				return new Tone.Distortion({
+					distortion: distParams?.distortion || 0.4,
+					oversample: distParams?.oversample || 'none',
+				});
+			}
+
+			case 'analyzer': {
+				const analyzerParams = params as AnalyzerParams;
+				return new Tone.Analyser({
+					type: analyzerParams?.type || 'waveform',
+					size: analyzerParams?.size || 1024,
+				});
+			}
+
+			case 'meter': {
+				const meterParams = params as MeterParams;
+				return new Tone.Meter({
+					smoothing: meterParams?.smoothing || 0.8,
+				});
+			}
+
+			case 'envelope': {
+				const envParams = params as EnvelopeParams;
+				return new Tone.AmplitudeEnvelope({
+					attack: envParams?.attack || 0.1,
+					decay: envParams?.decay || 0.2,
+					sustain: envParams?.sustain || 0.5,
+					release: envParams?.release || 0.8,
+				});
+			}
+
+			case 'lfo': {
+				const lfoParams = params as LFOParams;
+				return new Tone.LFO({
+					frequency: lfoParams?.frequency || 1,
+					type: lfoParams?.type || 'sine',
+					min: lfoParams?.min || 0,
+					max: lfoParams?.max || 1,
+				});
+			}
+
+			case 'masterOutput':
+			case 'destination': {
+				// For destination nodes, create a gain node that connects to destination
+				// This allows us to have volume control on the master output
+				const destinationParams = params as DestinationParams;
+				const destinationGain = new Tone.Gain(
+					destinationParams?.mute
+						? 0
+						: Tone.dbToGain(destinationParams?.volume || 0)
+				);
+				destinationGain.toDestination();
+				return destinationGain;
+			}
+
+			case 'microphone': {
+				// Create a user media input
+				return new Tone.UserMedia();
+			}
+
+			default:
+				console.warn(`⚠️ Unknown audio node type: ${type}`);
+				// Return a pass-through gain node as fallback
+				return new Tone.Gain(1);
+		}
+	} catch (error) {
+		console.error(`❌ Failed to create audio node of type ${type}:`, error);
+		// Return a safe fallback
+		return new Tone.Gain(1);
+	}
+}
+
+/**
+ * Properly dispose of an audio node or array of nodes
+ *
+ * @param audioNode - The audio node(s) to dispose
+ */
+export function disposeAudioNode(
+	audioNode: Tone.ToneAudioNode | Tone.ToneAudioNode[]
+): void {
+	try {
+		if (Array.isArray(audioNode)) {
+			audioNode.forEach((node) => {
+				if (node.dispose && typeof node.dispose === 'function') {
+					node.dispose();
+				}
+			});
+		} else {
+			if (audioNode.dispose && typeof audioNode.dispose === 'function') {
+				audioNode.dispose();
+			}
+		}
+	} catch (error) {
+		console.error('❌ Error disposing audio node:', error);
+	}
+}
+
+// Type guards for audio node capabilities
+interface StartableNode extends Tone.ToneAudioNode {
+	start: () => void;
+	state: 'started' | 'stopped';
+}
+
+interface StoppableNode extends Tone.ToneAudioNode {
+	stop: () => void;
+}
+
+function isStartableNode(node: Tone.ToneAudioNode): node is StartableNode {
+	return 'start' in node && typeof (node as StartableNode).start === 'function';
+}
+
+function isStoppableNode(node: Tone.ToneAudioNode): node is StoppableNode {
+	return 'stop' in node && typeof (node as StoppableNode).stop === 'function';
+}
+
+function isNodeAlreadyStarted(node: Tone.ToneAudioNode): boolean {
+	return 'state' in node && (node as StartableNode).state === 'started';
+}
+
+/**
+ * Start an audio node if it supports starting and isn't already started
+ *
+ * @param audioNode - The audio node(s) to start
+ */
+export function startAudioNode(
+	audioNode: Tone.ToneAudioNode | Tone.ToneAudioNode[]
+): void {
+	try {
+		if (Array.isArray(audioNode)) {
+			audioNode.forEach((node, index) => {
+				if (isStartableNode(node)) {
+					const isAlreadyStarted = isNodeAlreadyStarted(node);
+					if (!isAlreadyStarted) {
+						console.log(
+							`▶️ Starting audio node[${index}] (${node.constructor.name})`
+						);
+						node.start();
+					} else {
+						console.log(
+							`⏭️ Skipping already started audio node[${index}] (${node.constructor.name})`
+						);
+					}
+				}
+			});
+		} else {
+			if (isStartableNode(audioNode)) {
+				const isAlreadyStarted = isNodeAlreadyStarted(audioNode);
+				if (!isAlreadyStarted) {
+					console.log(`▶️ Starting audio node (${audioNode.constructor.name})`);
+					audioNode.start();
+				} else {
+					console.log(
+						`⏭️ Skipping already started audio node (${audioNode.constructor.name})`
+					);
+				}
+			}
+		}
+	} catch (error) {
+		console.error('❌ Error starting audio node:', error);
+	}
+}
+
+/**
+ * Stop an audio node if it supports stopping
+ *
+ * @param audioNode - The audio node(s) to stop
+ */
+export function stopAudioNode(
+	audioNode: Tone.ToneAudioNode | Tone.ToneAudioNode[]
+): void {
+	try {
+		if (Array.isArray(audioNode)) {
+			audioNode.forEach((node) => {
+				if (isStoppableNode(node)) {
+					node.stop();
+				}
+			});
+		} else {
+			if (isStoppableNode(audioNode)) {
+				audioNode.stop();
+			}
+		}
+	} catch (error) {
+		console.error('❌ Error stopping audio node:', error);
+	}
+}
+
+/**
+ * Update parameters of an existing audio node without recreating it
+ *
+ * @param audioNode - The audio node(s) to update
+ * @param type - The type of audio node
+ * @param params - The new parameters to apply
+ */
+export function updateAudioNodeParams(
+	audioNode: Tone.ToneAudioNode | Tone.ToneAudioNode[],
+	type: AudioNodeType,
+	params: Partial<AudioNodeParams>
+): void {
+	console.log(`🔧 Updating live audio node params (${type}):`, params);
+
+	try {
+		if (Array.isArray(audioNode)) {
+			// Handle array of nodes (like dualGain)
+			switch (type) {
+				case 'dualGain': {
+					const gainParams = params as Partial<DualGainParams>;
+					if (gainParams.gain1 !== undefined && audioNode[0]) {
+						(audioNode[0] as Tone.Gain).gain.value = gainParams.gain1;
+					}
+					if (gainParams.gain2 !== undefined && audioNode[1]) {
+						(audioNode[1] as Tone.Gain).gain.value = gainParams.gain2;
+					}
+					break;
+				}
+				default:
+					console.warn(`⚠️ Unknown array audio node type for update: ${type}`);
+			}
+		} else {
+			// Handle single nodes
+			switch (type) {
+				case 'oscillator': {
+					const oscParams = params as Partial<OscillatorParams>;
+					const osc = audioNode as Tone.Oscillator;
+					if (oscParams.frequency !== undefined) {
+						osc.frequency.value = oscParams.frequency;
+					}
+					if (oscParams.type !== undefined) {
+						osc.type = oscParams.type;
+					}
+					if (oscParams.detune !== undefined) {
+						osc.detune.value = oscParams.detune;
+					}
+					if (oscParams.volume !== undefined) {
+						// Access volume through the volume property (Tone.js pattern)
+						(osc as Tone.Oscillator & { volume: Tone.Volume }).volume.value = oscParams.volume;
+					}
+					break;
+				}
+
+				case 'gain': {
+					const gainParams = params as Partial<GainParams>;
+					const gain = audioNode as Tone.Gain;
+					if (gainParams.gain !== undefined) {
+						gain.gain.value = gainParams.gain;
+					}
+					break;
+				}
+
+				case 'destination': {
+					const destParams = params as Partial<DestinationParams>;
+					const dest = audioNode as Tone.Gain; // Destination is implemented as a Gain node
+					if (destParams.volume !== undefined) {
+						dest.gain.value = Tone.dbToGain(destParams.volume);
+					}
+					if (destParams.mute !== undefined) {
+						dest.gain.value = destParams.mute ? 0 : Tone.dbToGain(destParams.volume || 0);
+					}
+					break;
+				}
+
+				case 'filter': {
+					const filterParams = params as Partial<FilterParams>;
+					const filter = audioNode as Tone.Filter;
+					if (filterParams.frequency !== undefined) {
+						filter.frequency.value = filterParams.frequency;
+					}
+					if (filterParams.Q !== undefined) {
+						filter.Q.value = filterParams.Q;
+					}
+					if (filterParams.type !== undefined) {
+						filter.type = filterParams.type;
+					}
+					if (filterParams.gain !== undefined) {
+						filter.gain.value = filterParams.gain;
+					}
+					break;
+				}
+
+				case 'delay': {
+					const delayParams = params as Partial<DelayParams>;
+					const delay = audioNode as Tone.Delay;
+					if (delayParams.delayTime !== undefined) {
+						delay.delayTime.value = delayParams.delayTime;
+					}
+					// Note: feedback and wet properties may need to be accessed differently in Tone.js
+					break;
+				}
+
+				case 'reverb': {
+					const reverbParams = params as Partial<ReverbParams>;
+					const reverb = audioNode as Tone.Reverb;
+					if (reverbParams.wet !== undefined) {
+						reverb.wet.value = reverbParams.wet;
+					}
+					// Note: roomSize and dampening may need to be accessed differently in Tone.js
+					break;
+				}
+
+				case 'panner': {
+					const panParams = params as Partial<PannerParams>;
+					const panner = audioNode as Tone.Panner;
+					if (panParams.pan !== undefined) {
+						panner.pan.value = panParams.pan;
+					}
+					break;
+				}
+
+				case 'compressor': {
+					const compParams = params as Partial<CompressorParams>;
+					const comp = audioNode as Tone.Compressor;
+					if (compParams.threshold !== undefined) {
+						comp.threshold.value = compParams.threshold;
+					}
+					if (compParams.ratio !== undefined) {
+						comp.ratio.value = compParams.ratio;
+					}
+					if (compParams.attack !== undefined) {
+						comp.attack.value = compParams.attack;
+					}
+					if (compParams.release !== undefined) {
+						comp.release.value = compParams.release;
+					}
+					break;
+				}
+
+				case 'distortion': {
+					const distParams = params as Partial<DistortionParams>;
+					const dist = audioNode as Tone.Distortion;
+					if (distParams.distortion !== undefined) {
+						dist.distortion = distParams.distortion;
+					}
+					if (distParams.oversample !== undefined) {
+						dist.oversample = distParams.oversample;
+					}
+					break;
+				}
+
+				case 'noise': {
+					const noiseParams = params as Partial<NoiseParams>;
+					const noise = audioNode as Tone.Noise;
+					if (noiseParams.type !== undefined) {
+						noise.type = noiseParams.type;
+					}
+					if (noiseParams.volume !== undefined) {
+						(noise as Tone.Noise & { volume: Tone.Volume }).volume.value = noiseParams.volume;
+					}
+					break;
+				}
+
+				case 'lfo': {
+					const lfoParams = params as Partial<LFOParams>;
+					const lfo = audioNode as Tone.LFO;
+					if (lfoParams.frequency !== undefined) {
+						lfo.frequency.value = lfoParams.frequency;
+					}
+					if (lfoParams.type !== undefined) {
+						lfo.type = lfoParams.type;
+					}
+					// Note: amplitude property may need to be accessed differently in Tone.js
+					break;
+				}
+
+				default:
+					console.warn(`⚠️ Unknown audio node type for update: ${type}`);
+			}
+		}
+
+		console.log(`✅ Live audio node params updated (${type})`);
+	} catch (error) {
+		console.error(`❌ Error updating live audio node params (${type}):`, error);
+	}
+}

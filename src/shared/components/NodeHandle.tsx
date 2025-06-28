@@ -9,6 +9,7 @@ interface NodeHandleProps {
 	// === STYLING OPTIONS ===
 	className?: string;
 	size?: 'sm' | 'md' | 'lg';
+	style?: React.CSSProperties; // Allow custom positioning styles
 
 	// === LABEL OPTIONS (for source handles) ===
 	label?: string; // Text label to display inside source handles
@@ -34,6 +35,7 @@ export function NodeHandle({
 	position,
 	className,
 	size = 'md',
+	style,
 	label,
 	showLabel = true,
 }: NodeHandleProps) {
@@ -250,6 +252,7 @@ export function NodeHandle({
 			type={type}
 			position={position}
 			className={handleClasses}
+			style={style}
 		>
 			{/* Render SVG icon inside the handle */}
 			{createHandleIcon()}

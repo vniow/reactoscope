@@ -115,7 +115,7 @@ function VariantSection({
 			>
 				{nodes.map((option, buttonIndex) => (
 					<button
-						key={option.type}
+						key={option.name}
 						data-variant={option.variant}
 						onClick={() => onAddNode(option)}
 						title={option.description}
