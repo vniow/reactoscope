@@ -146,7 +146,7 @@ export const createAudioRegistrySlice: StateCreator<
 	},
 
 	unregisterAudioNode: (nodeId) => {
-		console.log(`🔇 Unregistering audio node: ${nodeId}`);
+		// console.log(`🔇 Unregistering audio node: ${nodeId}`);
 
 		const entry = get().nodeRegistry[nodeId];
 		if (!entry) {
@@ -180,7 +180,7 @@ export const createAudioRegistrySlice: StateCreator<
 				get().unregisterConnection(edgeId);
 			});
 
-			console.log(`✅ Audio node unregistered: ${nodeId}`);
+			// console.log(`✅ Audio node unregistered: ${nodeId}`);
 		} catch (error) {
 			console.error(`❌ Error unregistering audio node ${nodeId}:`, error);
 		}
@@ -210,7 +210,7 @@ export const createAudioRegistrySlice: StateCreator<
 				},
 			}));
 
-			console.log(`✅ Audio node params updated: ${nodeId}`);
+			// console.log(`✅ Audio node params updated: ${nodeId}`);
 		} catch (error) {
 			console.error(`❌ Error updating audio node params ${nodeId}:`, error);
 		}

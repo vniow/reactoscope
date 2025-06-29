@@ -54,6 +54,7 @@ export const NODE_TYPE_MAPPING: Record<string, AudioNodeType> = {
 	// Signal nodes
 	'signal.analyzer': 'analyzer',
 	'signal.oscilloscope': 'oscilloscope',
+	'signal-3d.oscilloscope': 'oscilloscope', // 3D version uses same audio logic
 	'signal.meter': 'meter',
 
 	// Core nodes

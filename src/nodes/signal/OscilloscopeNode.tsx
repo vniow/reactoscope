@@ -159,23 +159,6 @@ export function OscilloscopeNode({
 		} else {
 			// Get waveform data from analyzer
 			waveformData = analyzer.getValue() as Float32Array;
-
-			// Debug: Log waveform data occasionally
-			if (Math.random() < 0.02) {
-				// Log ~2% of frames
-				const hasSignal = waveformData.some((val) => Math.abs(val) > 0.001);
-				console.log(`🌊 Oscilloscope data:`, {
-					nodeId,
-					hasSignal,
-					length: waveformData.length,
-					min: Math.min(...waveformData),
-					max: Math.max(...waveformData),
-					rms: Math.sqrt(
-						waveformData.reduce((sum, val) => sum + val * val, 0) /
-							waveformData.length
-					),
-				});
-			}
 		}
 
 		// Draw trigger level line
@@ -227,7 +210,7 @@ export function OscilloscopeNode({
 		// Cleanup animation frame on unmount
 		return () => {
 			if (animationFrameRef.current) {
-				console.log(`🛑 Stopping oscilloscope animation for ${nodeId}`);
+				// console.log(`🛑 Stopping oscilloscope animation for ${nodeId}`);
 				cancelAnimationFrame(animationFrameRef.current);
 				animationFrameRef.current = null;
 			}

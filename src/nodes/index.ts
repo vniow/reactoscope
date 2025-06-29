@@ -17,6 +17,7 @@ import { DestinationNode } from './core/DestinationNode';
 import { DynamicEffectNode } from './effect/DynamicEffectNode';
 import { DynamicComponentNode } from './component/DynamicComponentNode';
 import { OscilloscopeNode } from './signal/OscilloscopeNode';
+import { Oscilloscope3DNode } from './signal/Oscilloscope3DNode';
 
 import {
 	InstrumentNodeComponent,
@@ -66,6 +67,7 @@ export const nodeTypes = {
 	effect: DynamicEffectNode,
 	component: DynamicComponentNode,
 	signal: OscilloscopeNode,
+	'signal-3d': Oscilloscope3DNode, // 3D version of oscilloscope
 	event: EventNodeComponent,
 	unit: UtilityNodeComponent,
 

@@ -27,6 +27,7 @@ export type InstrumentNode = Node<PlaceholderNodeData, 'instrument'>;
 export type EffectNode = Node<PlaceholderNodeData, 'effect'>;
 export type ComponentNode = Node<PlaceholderNodeData, 'component'>;
 export type SignalNode = Node<PlaceholderNodeData, 'signal'>;
+export type Signal3DNode = Node<PlaceholderNodeData, 'signal-3d'>;
 export type EventNode = Node<PlaceholderNodeData, 'event'>;
 export type UtilityNode = Node<PlaceholderNodeData, 'unit'>;
 
@@ -41,5 +42,6 @@ export type AppNode =
 	| EffectNode
 	| ComponentNode
 	| SignalNode
+	| Signal3DNode
 	| EventNode
 	| UtilityNode;

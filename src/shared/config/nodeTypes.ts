@@ -410,6 +410,25 @@ export const SIGNAL_NODES: NodeTypeOption[] = [
 			},
 		},
 	},
+	{
+		type: 'signal-3d',
+		name: '3D Oscilloscope',
+		description: 'Interactive 3D waveform visualization with camera controls',
+		emoji: '🔮',
+		variant: 'signal',
+		category: 'utility',
+		defaultData: {
+			label: '3D Oscilloscope',
+			timeWindow: 50,
+			triggerLevel: 0,
+			resolution: 256,
+			audioParams: {
+				timeWindow: 50,
+				triggerLevel: 0,
+				resolution: 256,
+			},
+		},
+	},
 ];
 
 // Core audio infrastructure nodes

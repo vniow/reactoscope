@@ -610,7 +610,7 @@ export function updateAudioNodeParams(
 			}
 		}
 
-		console.log(`✅ Live audio node params updated (${type})`);
+		// console.log(`✅ Live audio node params updated (${type})`);
 	} catch (error) {
 		console.error(`❌ Error updating live audio node params (${type}):`, error);
 	}
