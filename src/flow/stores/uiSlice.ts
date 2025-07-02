@@ -73,9 +73,6 @@ export const createUISlice: StateCreator<AppStore, [], [], UISliceProps> = (
 	toggleNodeAddPanel: () => {
 		set((state) => {
 			const newState = !state.ui.isNodeAddPanelExpanded;
-			console.log(
-				`🎛️ Toggling node add panel: ${state.ui.isNodeAddPanelExpanded} -> ${newState}`
-			);
 			return {
 				ui: {
 					...state.ui,

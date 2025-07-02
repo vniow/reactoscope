@@ -19,6 +19,10 @@ export interface PlaceholderNodeData extends BaseNodeData {
 }
 
 export type DebugNode = Node<DebugNodeData, 'debug'>;
+/**
+ * Simple debug node with unstyled output
+ */
+export type DebugSimpleNode = Node<DebugNodeData, 'debug-simple'>;
 
 // Placeholder node types for each variant
 export type CoreNode = Node<PlaceholderNodeData, 'core'>;
@@ -28,6 +32,14 @@ export type EffectNode = Node<PlaceholderNodeData, 'effect'>;
 export type ComponentNode = Node<PlaceholderNodeData, 'component'>;
 export type SignalNode = Node<PlaceholderNodeData, 'signal'>;
 export type Signal3DNode = Node<PlaceholderNodeData, 'signal-3d'>;
+/**
+ * XYscope node for dual-input Lissajous visualization
+ */
+export type SignalXYNode = Node<PlaceholderNodeData, 'signal-xy'>;
+/**
+ * XYRGBScope node for 5-channel audio-visual mapping (X,Y,R,G,B)
+ */
+export type SignalXYRGBNode = Node<PlaceholderNodeData, 'signal-xyrgb'>;
 export type EventNode = Node<PlaceholderNodeData, 'event'>;
 export type UtilityNode = Node<PlaceholderNodeData, 'unit'>;
 
@@ -36,6 +48,7 @@ export type AppNodeData = DebugNodeData;
 export type AppNode =
 	| BuiltInNode
 	| DebugNode
+	| DebugSimpleNode
 	| CoreNode
 	| SourceNode
 	| InstrumentNode
@@ -43,5 +56,7 @@ export type AppNode =
 	| ComponentNode
 	| SignalNode
 	| Signal3DNode
+	| SignalXYNode
+	| SignalXYRGBNode
 	| EventNode
 	| UtilityNode;

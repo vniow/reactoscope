@@ -1,7 +1,6 @@
 /**
  * Node Registry and Type Definitions
  *
- * This module serves as the central registry for all node types in the Reactoscope application.
  * It exports the node type mappings used by React Flow and manages initial node configurations.
  *
  * @module nodes
@@ -12,12 +11,15 @@ import type { NodeTypes } from '@xyflow/react';
 
 // Internal node component imports
 import { DebugNode } from './DebugNode';
+import { DebugSimpleNode } from '../shared/components/DebugSimpleNode';
 import { DynamicSourceNode } from './source/DynamicSourceNode';
 import { DestinationNode } from './core/DestinationNode';
 import { DynamicEffectNode } from './effect/DynamicEffectNode';
 import { DynamicComponentNode } from './component/DynamicComponentNode';
 import { OscilloscopeNode } from './signal/OscilloscopeNode';
 import { Oscilloscope3DNode } from './signal/Oscilloscope3DNode';
+import { XYscope3DNode } from './signal/XYscope3DNode';
+import { XYRGBScope3DNode } from './signal/XYRGBScope3DNode';
 
 import {
 	InstrumentNodeComponent,
@@ -59,6 +61,7 @@ export const initialNodes: AppNode[] = [
 export const nodeTypes = {
 	// Core system nodes
 	debug: DebugNode,
+	'debug-simple': DebugSimpleNode,
 
 	// Dynamic routing nodes for each variant
 	core: DestinationNode,
@@ -68,6 +71,8 @@ export const nodeTypes = {
 	component: DynamicComponentNode,
 	signal: OscilloscopeNode,
 	'signal-3d': Oscilloscope3DNode, // 3D version of oscilloscope
+	'signal-xy': XYscope3DNode, // XY Lissajous plot node
+	'signal-xyrgb': XYRGBScope3DNode, // 5-channel audio-visual mapping (X,Y,R,G,B)
 	event: EventNodeComponent,
 	unit: UtilityNodeComponent,
 

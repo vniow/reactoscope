@@ -107,7 +107,6 @@ const saveCurrentFlowState = (nodes: AppNode[], edges: Edge[]) => {
 const saveSavedStates = (savedStates: SavedFlowState[]) => {
 	try {
 		localStorage.setItem(SAVED_STATES_KEY, JSON.stringify(savedStates));
-		console.log('💾 Saved states persisted to localStorage');
 	} catch (error) {
 		console.error('❌ Failed to persist saved states:', error);
 	}
@@ -172,7 +171,6 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 
 	// Actions
 	setNodes: (nodes) => {
-		console.log(`🔄 Setting ${nodes.length} nodes`);
 		set((state) => {
 			saveCurrentFlowState(nodes, state.edges);
 			return { nodes };
@@ -180,7 +178,6 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 	},
 
 	setEdges: (edges) => {
-		console.log(`🔄 Setting ${edges.length} edges`);
 		set((state) => {
 			saveCurrentFlowState(state.nodes, edges);
 			return { edges };
@@ -197,15 +194,12 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 	},
 
 	onEdgesChange: (changes) => {
-		console.log('🔄 Applying edge changes:', changes);
-
 		// Handle edge removals to unregister audio connections
 		const removeChanges = changes.filter((change) => change.type === 'remove');
 		const appStore = get() as AppStore;
 
 		removeChanges.forEach((change) => {
 			if (change.type === 'remove' && appStore.unregisterConnection) {
-				console.log(`🔌 Unregistering audio connection for edge: ${change.id}`);
 				appStore.unregisterConnection(change.id);
 			}
 		});
@@ -218,8 +212,6 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 	},
 
 	onConnect: (connection) => {
-		console.log('🔌 Creating new connection:', connection);
-
 		// Create the edge with React Flow
 		const newEdge = { ...connection, type: 'gradient' };
 		let addedEdge: Edge | undefined;
@@ -241,9 +233,7 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 		// Create audio connection with the actual edge ID
 		const appStore = get() as AppStore;
 		if (appStore.registerConnection && addedEdge) {
-			console.log(
-				`🎵 Registering audio connection with edge ID: ${addedEdge.id}`
-			);
+			// Use raw IDs; audioRegistrySlice will map XYscope inputs
 			appStore.registerConnection(
 				addedEdge.id,
 				connection.source,
@@ -255,17 +245,10 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 	},
 
 	onReconnect: (oldEdge, newConnection) => {
-		console.log('🔄 Reconnecting edge:', {
-			oldEdge: oldEdge.id,
-			from: `${oldEdge.source}[${oldEdge.sourceHandle}] → ${oldEdge.target}[${oldEdge.targetHandle}]`,
-			to: `${newConnection.source}[${newConnection.sourceHandle}] → ${newConnection.target}[${newConnection.targetHandle}]`,
-		});
-
 		const appStore = get() as AppStore;
 
 		// Step 1: Unregister the old audio connection
 		if (appStore.unregisterConnection) {
-			console.log(`🔌 Unregistering old audio connection: ${oldEdge.id}`);
 			appStore.unregisterConnection(oldEdge.id);
 		}
 
@@ -298,7 +281,7 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 
 		// Step 3: Register new audio connection with the correct edge ID
 		if (appStore.registerConnection) {
-			console.log(`🎵 Registering new audio connection: ${newEdge.id}`);
+			// Use raw IDs; audioRegistrySlice will handle XYscope mapping
 			appStore.registerConnection(
 				newEdge.id,
 				newConnection.source,
@@ -310,7 +293,6 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 	},
 
 	addNode: (node) => {
-		console.log(`➕ Adding node: ${node.id}`);
 		set((state) => {
 			const newNodes = [...state.nodes, node];
 			saveCurrentFlowState(newNodes, state.edges);
@@ -323,17 +305,12 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 		const audioNodeType = NODE_TYPE_MAPPING[nodeTypeKey];
 
 		if (audioNodeType) {
-			console.log(
-				`🎵 Creating audio node for: ${nodeTypeKey} → ${audioNodeType}`
-			);
 			const appStore = get() as AppStore;
 			appStore.registerAudioNode(node.id, audioNodeType, nodeData.audioParams);
 		}
 	},
 
 	removeNode: (nodeId) => {
-		console.log(`🗑️ Removing node: ${nodeId}`);
-
 		// Get edges that will be removed
 		const state = get();
 		const edgesToRemove = state.edges.filter(
@@ -344,7 +321,6 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 		const appStore = get() as AppStore;
 		edgesToRemove.forEach((edge) => {
 			if (appStore.unregisterConnection) {
-				console.log(`🔌 Unregistering audio connection for edge: ${edge.id}`);
 				appStore.unregisterConnection(edge.id);
 			}
 		});
@@ -366,7 +342,6 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 	},
 
 	updateNode: (nodeId, data) => {
-		console.log(`🔧 Updating node ${nodeId}:`, data);
 		set((state) => {
 			const newNodes = state.nodes.map((node) =>
 				node.id === nodeId ? { ...node, data: { ...node.data, ...data } } : node
@@ -377,7 +352,6 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 	},
 
 	addEdgeConnection: (edge) => {
-		console.log(`🔗 Adding edge: ${edge.id}`);
 		set((state) => {
 			const newEdges = [...state.edges, edge];
 			saveCurrentFlowState(state.nodes, newEdges);
@@ -386,12 +360,9 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 	},
 
 	removeEdge: (edgeId) => {
-		console.log(`✂️ Removing edge: ${edgeId}`);
-
 		// Unregister audio connection first
 		const appStore = get() as AppStore;
 		if (appStore.unregisterConnection) {
-			console.log(`🔌 Unregistering audio connection for edge: ${edgeId}`);
 			appStore.unregisterConnection(edgeId);
 		}
 
@@ -423,14 +394,12 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 	},
 
 	resetFlow: () => {
-		console.log('🔄 Resetting flow state');
 		set(() => ({
 			nodes: [],
 			edges: [],
 		}));
 		// Clear localStorage
 		localStorage.removeItem(FLOW_STORAGE_KEY);
-		console.log('🧹 Flow state cleared from localStorage');
 	},
 
 	// Save/Restore functionality
@@ -527,7 +496,6 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 			// Save the imported state
 			saveCurrentFlowState(parsedData.nodes, parsedData.edges);
 
-			console.log('✅ Flow state imported successfully');
 			return true;
 		} catch (error) {
 			console.error('❌ Failed to import flow state:', error);

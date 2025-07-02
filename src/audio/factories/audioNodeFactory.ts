@@ -39,8 +39,6 @@ export function createAudioNode(
 	type: AudioNodeType,
 	params?: AudioNodeParams
 ): Tone.ToneAudioNode | Tone.ToneAudioNode[] {
-	console.log(`🏭 Creating audio node of type: ${type}`, params);
-
 	try {
 		switch (type) {
 			case 'oscillator': {
@@ -373,8 +371,6 @@ export function updateAudioNodeParams(
 	type: AudioNodeType,
 	params: Partial<AudioNodeParams>
 ): void {
-	console.log(`🔧 Updating live audio node params (${type}):`, params);
-
 	try {
 		if (Array.isArray(audioNode)) {
 			// Handle array of nodes (like dualGain, oscillator with volume, etc.)

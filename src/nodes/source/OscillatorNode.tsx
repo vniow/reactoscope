@@ -39,7 +39,7 @@ export function OscillatorNode({
 
 	// Register audio node on mount (only once)
 	useEffect(() => {
-		console.log(`🎵 Registering oscillator audio node: ${nodeId}`);
+		// console.log(`🎵 Registering oscillator audio node: ${nodeId}`);
 
 		registerAudioNode(nodeId, 'oscillator', {
 			frequency: nodeData.frequency || 440,
@@ -50,7 +50,7 @@ export function OscillatorNode({
 
 		// Cleanup on unmount
 		return () => {
-			console.log(`🧹 Unregistering oscillator audio node: ${nodeId}`);
+			// console.log(`🧹 Unregistering oscillator audio node: ${nodeId}`);
 			unregisterAudioNode(nodeId);
 		};
 		// Only depend on nodeId and the register/unregister functions, NOT on nodeData parameters
@@ -62,7 +62,7 @@ export function OscillatorNode({
 		nodeId,
 		'frequency',
 		nodeData.frequency || 440,
-		{ min: 20, max: 2000, rampTime: 0.1 }
+		{ min: 1, max: 192000, rampTime: 0.1 }
 	);
 
 	const [waveType, setWaveType] = useAudioNodeParam<OscillatorType>(
@@ -159,8 +159,8 @@ export function OscillatorNode({
 					type='slider'
 					label='Frequency'
 					value={frequency}
-					min={20}
-					max={2000}
+					min={1}
+					max={192000}
 					step={1}
 					variant='node-variant'
 					layout='stacked'

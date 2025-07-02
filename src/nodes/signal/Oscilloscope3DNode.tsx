@@ -5,11 +5,11 @@
  * Acts as a pass-through node with visualization - signal flows in and out.
  */
 
+import React from 'react';
 import { Position, type NodeProps } from '@xyflow/react';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import * as THREE from 'three';
+import { Line } from '@react-three/drei';
 import * as Tone from 'tone';
 import { BaseNode } from '../../shared/components/BaseNode';
 import { NodeHandle } from '../../shared/components/NodeHandle';
@@ -18,33 +18,25 @@ import { useAudioNodeParam } from '../../audio/hooks/useAudioNodeParam';
 import { useAppStore } from '../../shared/stores/appStore';
 import type { BaseNodeData } from '../types';
 
+/**
+ * Props for Oscilloscope3DNode.
+ * Extends BaseNodeData for type safety and future extensibility.
+ */
 interface OscilloscopeNodeData extends BaseNodeData {
+	/** Time window in seconds (0.01 - 1.0) */
 	timeWindow?: number;
+	/** Trigger level (-1 to 1) */
 	triggerLevel?: number;
+	/** Resolution (number of samples, default 512) */
 	resolution?: number;
 }
 
-// Component to manage OrbitControls based on React Flow interactions
-function ResponsiveOrbitControls({
-	isReactFlowInteracting,
-}: {
-	isReactFlowInteracting: boolean;
-}) {
-	return (
-		<OrbitControls
-			enabled={!isReactFlowInteracting}
-			enableRotate={false}
-			enableZoom={true}
-			enablePan={true}
-			minZoom={50}
-			maxZoom={150}
-			zoomSpeed={0.3}
-			panSpeed={0.5}
-		/>
-	);
-}
-
-// 3D Waveform component that runs inside the Canvas
+/**
+ * Waveform3D
+ *
+ * Renders the oscilloscope waveform and trigger line in a Three.js scene.
+ * Pure presentational component.
+ */
 function Waveform3D({
 	nodeId,
 	triggerLevel,
@@ -53,321 +45,234 @@ function Waveform3D({
 	nodeId: string;
 	triggerLevel: number;
 	isSelected: boolean;
-}) {
+}): React.ReactElement {
 	const getAudioNode = useAppStore((state) => state.getAudioNode);
-	const waveformMeshRef = useRef<THREE.Line>(null);
-	const triggerMeshRef = useRef<THREE.Line>(null);
-
-	// Create geometry for the waveform line
-	const waveformGeometry = useMemo(() => {
-		const geometry = new THREE.BufferGeometry();
-		const points = new Float32Array(512 * 3); // 512 points * 3 coordinates
-
-		// Initialize with flat line
-		for (let i = 0; i < 512; i++) {
-			points[i * 3] = (i / 511) * 4 - 2; // x from -2 to 2
-			points[i * 3 + 1] = 0; // y
-			points[i * 3 + 2] = 0; // z
-		}
-
-		geometry.setAttribute('position', new THREE.BufferAttribute(points, 3));
-		return geometry;
-	}, []);
-
-	// Create geometry for trigger line
-	const triggerGeometry = useMemo(() => {
-		const geometry = new THREE.BufferGeometry();
-		const points = new Float32Array(6); // 2 points * 3 coordinates
-
-		points[0] = -2;
-		points[1] = 0;
-		points[2] = 0; // first point
-		points[3] = 2;
-		points[4] = 0;
-		points[5] = 0; // second point
-
-		geometry.setAttribute('position', new THREE.BufferAttribute(points, 3));
-		return geometry;
-	}, []);
-
-	// Materials
-	const waveformMaterial = useMemo(
-		() =>
-			new THREE.LineBasicMaterial({
-				color: isSelected ? 0x10b981 : 0x00ff41, // Classic oscilloscope green
-			}),
-		[isSelected]
+	const [points, setPoints] = useState<[number, number, number][]>(() =>
+		Array.from({ length: 512 }, (_, i) => [(i / 511) * 4 - 2, 0, 0])
 	);
-
-	const triggerMaterial = useMemo(
-		() =>
-			new THREE.LineDashedMaterial({
-				color: 0xffa500,
-				dashSize: 0.1,
-				gapSize: 0.05,
-			}),
-		[]
-	);
-
-	// Create THREE.Line objects
-	const waveformLine = useMemo(
-		() => new THREE.Line(waveformGeometry, waveformMaterial),
-		[waveformGeometry, waveformMaterial]
-	);
-
-	const triggerLine = useMemo(
-		() => new THREE.Line(triggerGeometry, triggerMaterial),
-		[triggerGeometry, triggerMaterial]
-	);
+	const dataRef = useRef<Float32Array>(new Float32Array(512));
 
 	useFrame(() => {
-		// Get the analyzer audio node (index 1 in the array: [passThrough, analyzer])
-		const audioNodes = getAudioNode(nodeId) as Tone.ToneAudioNode[];
-		const analyzer = audioNodes?.[1] as Tone.Analyser;
-
-		let waveformData: Float32Array;
-
+		const audioNodes = getAudioNode(nodeId) as Tone.ToneAudioNode[] | null;
+		const analyzer = audioNodes?.[1] as Tone.Analyser | undefined;
 		if (!analyzer) {
-			// Create a flat line at zero level
-			waveformData = new Float32Array(512).fill(0);
-		} else {
-			// Get waveform data from analyzer
-			waveformData = analyzer.getValue() as Float32Array;
-		}
-
-		// Update the waveform line geometry
-		if (waveformMeshRef.current) {
-			const positions = waveformMeshRef.current.geometry.attributes.position
-				.array as Float32Array;
-
-			for (let i = 0; i < waveformData.length; i++) {
-				const x = (i / (waveformData.length - 1)) * 4 - 2; // x from -2 to 2
-				const y = waveformData[i] * 2; // Scale amplitude
-				const z = 0;
-
-				positions[i * 3] = x;
-				positions[i * 3 + 1] = y;
-				positions[i * 3 + 2] = z;
+			if (dataRef.current.some((v) => v !== 0)) {
+				dataRef.current.fill(0);
+				setPoints(
+					Array.from({ length: 512 }, (_, i) => [(i / 511) * 4 - 2, 0, 0])
+				);
 			}
-
-			waveformMeshRef.current.geometry.attributes.position.needsUpdate = true;
+			return;
 		}
-
-		// Update trigger line
-		if (triggerMeshRef.current && Math.abs(triggerLevel) > 0.01) {
-			const positions = triggerMeshRef.current.geometry.attributes.position
-				.array as Float32Array;
-			const y = triggerLevel * 2;
-
-			positions[1] = y; // first point y
-			positions[4] = y; // second point y
-
-			triggerMeshRef.current.geometry.attributes.position.needsUpdate = true;
+		try {
+			const current = analyzer.getValue() as Float32Array;
+			if (current.some((v, i) => Math.abs(v - dataRef.current[i]) > 0.01)) {
+				dataRef.current.set(current);
+				setPoints(
+					Array.from(current, (y, i) => [
+						(i / (current.length - 1)) * 4 - 2,
+						y * 2,
+						0,
+					])
+				);
+			}
+		} catch (e) {
+			console.warn('Error reading analyzer data:', e);
 		}
 	});
 
+	const triggerPoints = useMemo<[number, number, number][]>(
+		() => [
+			[-2, triggerLevel * 2, 0],
+			[2, triggerLevel * 2, 0],
+		],
+		[triggerLevel]
+	);
+
 	return (
 		<group>
-			{/* 2D Oscilloscope screen grid - flat on XY plane */}
 			<gridHelper
 				args={[4, 8]}
-				rotation={[0, 0, 0]} // No rotation - keep flat
+				rotation={[0, 0, 0]}
 				material-opacity={0.3}
-				material-transparent={true}
+				material-transparent
 			/>
-
-			{/* Horizontal grid lines for oscilloscope appearance */}
 			<gridHelper
 				args={[4, 4]}
-				rotation={[Math.PI / 2, 0, 0]} // Rotate to create horizontal lines
+				rotation={[Math.PI / 2, 0, 0]}
 				material-opacity={0.2}
-				material-transparent={true}
+				material-transparent
 			/>
-
-			{/* Waveform line */}
-			<primitive
-				object={waveformLine}
-				ref={waveformMeshRef}
+			<Line
+				points={points}
+				color={isSelected ? 'var(--color-accent)' : 'var(--color-signal)'}
+				lineWidth={1}
 			/>
-
-			{/* Trigger level line */}
 			{Math.abs(triggerLevel) > 0.01 && (
-				<primitive
-					object={triggerLine}
-					ref={triggerMeshRef}
+				<Line
+					points={triggerPoints as [number, number, number][]}
+					color='var(--color-trigger)'
+					lineWidth={1}
+					dashed
+					dashSize={0.1}
+					gapSize={0.05}
 				/>
 			)}
 		</group>
 	);
 }
 
+/**
+ * Oscilloscope3DNode
+ *
+ * 3D oscilloscope node for Reactoscope. Visualizes real-time audio waveform using React Three Fiber.
+ *
+ * @remarks
+ * - Follows composition, single responsibility, and container/presenter separation.
+ * - Uses explicit types, JSDoc, and semantic Tailwind classes.
+ * - Audio node lifecycle is managed via Zustand store.
+ *
+ * @param id - Node id (from React Flow)
+ * @param data - Node data (timeWindow, triggerLevel, etc)
+ * @param selected - Whether the node is selected
+ */
 export function Oscilloscope3DNode({
 	id,
 	data,
 	selected = false,
-}: NodeProps & { data: OscilloscopeNodeData }) {
-	// Get audio context state
+}: NodeProps & { data: OscilloscopeNodeData }): React.ReactElement {
+	// Audio context state
 	const registerAudioNode = useAppStore((state) => state.registerAudioNode);
 	const unregisterAudioNode = useAppStore((state) => state.unregisterAudioNode);
+	const getAudioNode = useAppStore((state) => state.getAudioNode);
 
-	// Type assertions for props
-	const nodeId = id as string;
-	const nodeData = data as OscilloscopeNodeData;
-	const isSelected = selected as boolean;
+	// Animation status
+	const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
-	// Container ref for responsive sizing
-	const containerRef = useRef<HTMLDivElement>(null);
-
-	// State for animation status and React Flow interaction tracking
-	const [isPlaying, setIsPlaying] = useState(false);
-	const [isReactFlowInteracting, setIsReactFlowInteracting] = useState(false);
-
-	// Track React Flow interaction state
+	// Register/unregister audio node
 	useEffect(() => {
-		const handlePointerDown = () => setIsReactFlowInteracting(true);
-		const handlePointerUp = () => setIsReactFlowInteracting(false);
-		const handleWheel = () => {
-			setIsReactFlowInteracting(true);
-			// Reset interaction state after wheel event
-			setTimeout(() => setIsReactFlowInteracting(false), 100);
-		};
-
-		const reactFlowPane = document.querySelector('.react-flow__pane');
-		if (reactFlowPane) {
-			reactFlowPane.addEventListener('pointerdown', handlePointerDown);
-			reactFlowPane.addEventListener('pointerup', handlePointerUp);
-			reactFlowPane.addEventListener('wheel', handleWheel);
-
-			return () => {
-				reactFlowPane.removeEventListener('pointerdown', handlePointerDown);
-				reactFlowPane.removeEventListener('pointerup', handlePointerUp);
-				reactFlowPane.removeEventListener('wheel', handleWheel);
-			};
-		}
-	}, []);
-
-	// Register audio node on mount (only once)
-	useEffect(() => {
-		console.log(`📊 Registering 3D oscilloscope audio node: ${nodeId}`);
-
-		registerAudioNode(nodeId, 'oscilloscope', {
-			timeWindow: nodeData.timeWindow || 0.1,
-			triggerLevel: nodeData.triggerLevel || 0,
-			resolution: nodeData.resolution || 512,
+		// Defensive: log registration
+		console.log(`📊 Registering 3D oscilloscope audio node: ${id}`);
+		registerAudioNode(id, 'oscilloscope', {
+			timeWindow: data.timeWindow ?? 0.1,
+			triggerLevel: data.triggerLevel ?? 0,
+			resolution: data.resolution ?? 512,
 		});
-
 		setIsPlaying(true);
-
-		// Cleanup on unmount
 		return () => {
-			console.log(`🧹 Unregistering 3D oscilloscope audio node: ${nodeId}`);
-			unregisterAudioNode(nodeId);
+			console.log(`🧹 Unregistering 3D oscilloscope audio node: ${id}`);
+			unregisterAudioNode(id);
 		};
-		// Only depend on nodeId and the register/unregister functions
+		// Only depend on id and the register/unregister functions
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [nodeId, registerAudioNode, unregisterAudioNode]);
+	}, [id, registerAudioNode, unregisterAudioNode]);
 
-	// Set up controls using our custom hook
+	// Audio parameter controls
 	const [timeWindow, setTimeWindow] = useAudioNodeParam<number>(
-		nodeId,
+		id,
 		'timeWindow',
-		nodeData.timeWindow || 0.1,
-		{
-			min: 0.01,
-			max: 1.0,
-		}
+		data.timeWindow ?? 0.1,
+		{ min: 0.01, max: 1.0 }
 	);
-
 	const [triggerLevel, setTriggerLevel] = useAudioNodeParam<number>(
-		nodeId,
+		id,
 		'triggerLevel',
-		nodeData.triggerLevel || 0,
-		{
-			min: -1,
-			max: 1,
-		}
+		data.triggerLevel ?? 0,
+		{ min: -1, max: 1 }
 	);
 
 	// Update node data when parameters change
 	const updateNode = useAppStore((state) => state.updateNode);
 	useEffect(() => {
-		updateNode(nodeId, {
+		updateNode(id, {
 			timeWindow,
 			triggerLevel,
 			audioParams: { timeWindow, triggerLevel },
 		});
-	}, [nodeId, timeWindow, triggerLevel, updateNode]);
+	}, [id, timeWindow, triggerLevel, updateNode]);
+
+	// Debug: check audio node registration
+	useEffect(() => {
+		const checkAudioNode = () => {
+			const audioNodes = getAudioNode(id) as Tone.ToneAudioNode[];
+			console.log(`🔍 Debug - Audio node check for ${id}:`, {
+				exists: !!audioNodes,
+				isArray: Array.isArray(audioNodes),
+				length: audioNodes?.length,
+				passThrough: audioNodes?.[0]?.constructor?.name,
+				analyzer: audioNodes?.[1]?.constructor?.name,
+			});
+		};
+		checkAudioNode();
+		let checkCount = 0;
+		const interval = setInterval(() => {
+			checkCount++;
+			checkAudioNode();
+			if (checkCount >= 5) clearInterval(interval);
+		}, 2000);
+		return () => clearInterval(interval);
+	}, [id, getAudioNode]);
 
 	return (
 		<BaseNode
-			nodeId={nodeId}
-			selected={isSelected}
+			nodeId={id}
+			selected={selected}
 			title='3D Oscilloscope'
 			variant='signal'
 		>
+			{' '}
 			{/* 3D Waveform Display */}
-			<div className='mb-4 p-3 bg-black rounded-lg border border-node-accent/20'>
-				{/* Responsive Canvas Container */}
-				<div className='relative w-[280px] h-[200px] overflow-hidden'>
-					<div
-						ref={containerRef}
-						className='absolute inset-0 w-full h-full'
+			<div className='bg-node-secondary rounded overflow-hidden border border-node'>
+				{/* Canvas Container with grid-aligned sizing */}
+				<div
+					className='bg-black r3f-canvas-container'
+					style={{
+						width: 'var(--spacing-grid-8)', // 512px
+						height: 'var(--spacing-grid-8)', // 512px
+					}}
+				>
+					<Canvas
+						style={{ width: '100%', height: '100%' }}
+						orthographic
+						camera={{
+							position: [0, 0, 5],
+							zoom: 80,
+							near: 0.1,
+							far: 1000,
+						}}
+						dpr={Math.min(window.devicePixelRatio || 1, 2)}
+						frameloop='always'
+						onCreated={({ gl, camera }) => {
+							gl.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+							camera.updateProjectionMatrix();
+						}}
 					>
-						<Canvas
-							orthographic
-							camera={{
-								position: [0, 0, 5], // Front-facing view
-								zoom: 80,
-								near: 0.1,
-								far: 1000,
-							}}
-							style={{
-								background: '#000',
-								width: '100%',
-								height: '100%',
-								display: 'block',
-							}}
-							dpr={window.devicePixelRatio || 1}
-							onCreated={({ gl, size }) => {
-								// Set proper canvas size based on container
-								gl.setSize(size.width, size.height);
-							}}
-						>
-						{/* Simple lighting for 2D oscilloscope screen appearance */}
 						<ambientLight intensity={1.0} />
-
 						<Waveform3D
-							nodeId={nodeId}
+							nodeId={id}
 							triggerLevel={triggerLevel}
-							isSelected={isSelected}
-						/>
-
-						{/* Responsive controls that disable during React Flow interactions */}
-						<ResponsiveOrbitControls
-							isReactFlowInteracting={isReactFlowInteracting}
+							isSelected={selected}
 						/>
 					</Canvas>
-					</div>
 				</div>
-
 				{/* Status indicator */}
-				<div className='flex justify-between items-center mt-2 text-xs'>
+				<div className='flex justify-between items-center mt-2 text-xs px-2'>
 					<div className='flex items-center'>
 						<div
 							className={`w-2 h-2 rounded-full mr-2 ${
 								isPlaying ? 'bg-green-500 animate-pulse' : 'bg-gray-500'
 							}`}
+							aria-label={isPlaying ? 'Signal active' : 'No input'}
 						/>
-						<span className='text-node-text/70'>
+						<span className='text-node-secondary'>
 							{isPlaying ? '3D SIGNAL' : 'NO INPUT'}
 						</span>
 					</div>
-					<span className='text-node-text/50'>
+					<span className='text-node-secondary opacity-70'>
 						{(timeWindow * 1000).toFixed(0)}ms
 					</span>
 				</div>
 			</div>
-
 			{/* Time Window Control */}
 			<div className='mb-3'>
 				<GridControl
@@ -379,13 +284,14 @@ export function Oscilloscope3DNode({
 					step={0.01}
 					variant='node-variant'
 					layout='stacked'
-					showValue={true}
-					formatValue={(val) => `${(val * 1000).toFixed(0)}ms`}
-					onChange={(e) => setTimeWindow(Number(e.target.value))}
+					showValue
+					formatValue={(val: number) => `${(val * 1000).toFixed(0)}ms`}
+					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+						setTimeWindow(Number(e.target.value))
+					}
 					className='h-12'
 				/>
 			</div>
-
 			{/* Trigger Level Control */}
 			<div className='mb-3'>
 				<GridControl
@@ -397,13 +303,14 @@ export function Oscilloscope3DNode({
 					step={0.01}
 					variant='node-variant'
 					layout='stacked'
-					showValue={true}
-					formatValue={(val) => `${(val * 100).toFixed(0)}%`}
-					onChange={(e) => setTriggerLevel(Number(e.target.value))}
+					showValue
+					formatValue={(val: number) => `${(val * 100).toFixed(0)}%`}
+					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+						setTriggerLevel(Number(e.target.value))
+					}
 					className='h-12'
 				/>
 			</div>
-
 			{/* Audio Input Handle */}
 			<NodeHandle
 				id='input'
@@ -412,7 +319,6 @@ export function Oscilloscope3DNode({
 				label='In'
 				style={{ top: '50%' }}
 			/>
-
 			{/* Audio Output Handle - pass-through */}
 			<NodeHandle
 				id='output'

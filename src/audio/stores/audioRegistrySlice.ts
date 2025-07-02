@@ -108,8 +108,6 @@ export const createAudioRegistrySlice: StateCreator<
 
 	// Actions
 	registerAudioNode: (nodeId, type, params = {}) => {
-		console.log(`🔊 Registering audio node: ${nodeId} (${type})`);
-
 		try {
 			const audioNode = createAudioNode(type, params);
 
@@ -136,10 +134,7 @@ export const createAudioRegistrySlice: StateCreator<
 			// Auto-start nodes that need to be started (but they will be stopped if disconnected)
 			if (type === 'oscillator' || type === 'noise' || type === 'lfo') {
 				startAudioNode(audioNode);
-				console.log(`▶️ Auto-started source node: ${nodeId}`);
 			}
-
-			console.log(`✅ Audio node registered: ${nodeId}`);
 		} catch (error) {
 			console.error(`❌ Failed to register audio node ${nodeId}:`, error);
 		}
@@ -187,8 +182,6 @@ export const createAudioRegistrySlice: StateCreator<
 	},
 
 	updateAudioNodeParams: (nodeId, params) => {
-		console.log(`🔧 Updating audio node params: ${nodeId}`, params);
-
 		const entry = get().nodeRegistry[nodeId];
 		if (!entry) {
 			console.warn(`⚠️ Audio node ${nodeId} not found for parameter update`);
@@ -209,8 +202,6 @@ export const createAudioRegistrySlice: StateCreator<
 					},
 				},
 			}));
-
-			// console.log(`✅ Audio node params updated: ${nodeId}`);
 		} catch (error) {
 			console.error(`❌ Error updating audio node params ${nodeId}:`, error);
 		}
@@ -223,12 +214,35 @@ export const createAudioRegistrySlice: StateCreator<
 		sourceHandleId,
 		targetHandleId
 	) => {
-		console.log(
-			`🔌 Registering audio connection: ${edgeId} (${sourceId} → ${targetId})`
-		);
+		// Map React Flow node IDs to internal audio node IDs for multi-input nodes
+		// Map target node handles to their internal audio node IDs
+		// Determine target audio node key (x, y, r, g, b channels for XYRGBScope)
+		const handleToSuffixMap: Record<string, string> = {
+			inputX: ':x',
+			inputY: ':y',
+			inputR: ':r',
+			inputG: ':g',
+			inputB: ':b',
+		};
+
+		const actualTargetId =
+			targetHandleId && handleToSuffixMap[targetHandleId]
+				? `${targetId}${handleToSuffixMap[targetHandleId]}`
+				: targetId;
 
 		const sourceEntry = get().nodeRegistry[sourceId];
-		const targetEntry = get().nodeRegistry[targetId];
+		let targetEntry = get().nodeRegistry[actualTargetId];
+
+		// Fallback: lookup registry by matching suffix if direct lookup fails
+		if (!targetEntry && targetHandleId && handleToSuffixMap[targetHandleId]) {
+			const suffix = handleToSuffixMap[targetHandleId];
+			const fallbackKey = Object.keys(get().nodeRegistry).find(
+				(key) => key === `${targetId}${suffix}`
+			);
+			if (fallbackKey) {
+				targetEntry = get().nodeRegistry[fallbackKey];
+			}
+		}
 
 		if (!sourceEntry || !targetEntry) {
 			console.warn(
@@ -252,9 +266,6 @@ export const createAudioRegistrySlice: StateCreator<
 						if (channelMatch) {
 							const channelIndex = parseInt(channelMatch[1]) - 1; // Convert 1-based to 0-based
 							if (channelIndex >= 0 && channelIndex < audioNode.length) {
-								console.log(
-									`🎯 Handle-based routing: ${handleId} -> node[${channelIndex}]`
-								);
 								return { node: audioNode[channelIndex], index: channelIndex };
 							}
 						}
@@ -262,9 +273,6 @@ export const createAudioRegistrySlice: StateCreator<
 					// Fallback to existing behavior for standard handles
 					const fallbackIndex = isOutput ? audioNode.length - 1 : 0;
 					const fallbackNode = audioNode[fallbackIndex];
-					console.log(
-						`🔄 Fallback routing: ${handleId || 'undefined'} -> ${isOutput ? 'last' : 'first'} node`
-					);
 					return { node: fallbackNode, index: fallbackIndex };
 				}
 				return { node: audioNode, index: undefined };
@@ -290,22 +298,6 @@ export const createAudioRegistrySlice: StateCreator<
 				sourceOutputIndex: sourceResult.index,
 				targetInputIndex: targetResult.index,
 			};
-
-			console.log(
-				`🔗 Connecting: ${sourceId}[${sourceHandleId}] -> ${targetId}[${targetHandleId}]`,
-				{
-					sourceType: Array.isArray(sourceEntry.audioNode)
-						? `Array[${sourceEntry.audioNode.length}]`
-						: 'Single',
-					targetType: Array.isArray(targetEntry.audioNode)
-						? `Array[${targetEntry.audioNode.length}]`
-						: 'Single',
-					sourceOutputIndex: sourceResult.index,
-					targetInputIndex: targetResult.index,
-					outputNodeType: sourceResult.node.constructor.name,
-					inputNodeType: targetResult.node.constructor.name,
-				}
-			);
 
 			// Connect the nodes
 			sourceResult.node.connect(targetResult.node);
@@ -351,20 +343,15 @@ export const createAudioRegistrySlice: StateCreator<
 					sourceEntry.type
 				);
 				if (shouldAutoStart) {
-					console.log(`▶️ Starting connected source node: ${sourceId}`);
 					startAudioNode(sourceEntry.audioNode);
 				}
 			}
-
-			console.log(`✅ Audio connection registered: ${edgeId}`);
 		} catch (error) {
 			console.error(`❌ Failed to register audio connection ${edgeId}:`, error);
 		}
 	},
 
 	unregisterConnection: (edgeId) => {
-		console.log(`✂️ Unregistering audio connection: ${edgeId}`);
-
 		const connection = get().connectionRegistry[edgeId];
 		if (!connection) {
 			console.warn(`⚠️ Audio connection ${edgeId} not found`);
@@ -414,10 +401,6 @@ export const createAudioRegistrySlice: StateCreator<
 					targetNode,
 					connection.targetHandleId,
 					false
-				);
-
-				console.log(
-					`✂️ Disconnecting: ${connection.sourceId}[${connection.sourceHandleId}] -> ${connection.targetId}[${connection.targetHandleId}]`
 				);
 
 				// Disconnect the nodes
@@ -509,15 +492,10 @@ export const createAudioRegistrySlice: StateCreator<
 					const shouldPlay = get().shouldSourceNodePlay(connection.sourceId);
 
 					if (!shouldPlay) {
-						console.log(
-							`🛑 Stopping disconnected source node: ${connection.sourceId}`
-						);
 						stopAudioNode(sourceEntry.audioNode);
 					}
 				}
 			}
-
-			console.log(`✅ Audio connection unregistered: ${edgeId}`);
 		} catch (error) {
 			console.error(
 				`❌ Error unregistering audio connection ${edgeId}:`,
@@ -587,8 +565,6 @@ export const createAudioRegistrySlice: StateCreator<
 
 	initializeAudioSystem: async () => {
 		try {
-			console.log('🎵 Initializing audio system...');
-
 			// Start the audio context
 			await Tone.start();
 
@@ -596,7 +572,6 @@ export const createAudioRegistrySlice: StateCreator<
 			Tone.getDestination().volume.value = get().masterVolume;
 
 			set({ isAudioInitialized: true });
-			console.log('✅ Audio system initialized');
 		} catch (error) {
 			console.error('❌ Failed to initialize audio system:', error);
 			throw error;
@@ -604,8 +579,6 @@ export const createAudioRegistrySlice: StateCreator<
 	},
 
 	disposeAllNodes: () => {
-		console.log('🧹 Disposing all audio nodes');
-
 		const { nodeRegistry } = get();
 
 		Object.values(nodeRegistry).forEach((entry) => {
@@ -621,13 +594,9 @@ export const createAudioRegistrySlice: StateCreator<
 			nodeRegistry: {},
 			connectionRegistry: {},
 		});
-
-		console.log('✅ All audio nodes disposed');
 	},
 
 	setMasterVolume: (volume) => {
-		console.log(`🔊 Setting master volume: ${volume}dB`);
-
 		try {
 			Tone.getDestination().volume.value = volume;
 			set({ masterVolume: volume });
@@ -637,8 +606,6 @@ export const createAudioRegistrySlice: StateCreator<
 	},
 
 	setGlobalMute: (mute) => {
-		console.log(`🔇 Setting global mute: ${mute}`);
-
 		try {
 			if (mute) {
 				Tone.getDestination().volume.value = -Infinity;

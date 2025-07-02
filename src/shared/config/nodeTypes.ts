@@ -43,6 +43,15 @@ export const DEBUG_NODES: NodeTypeOption[] = [
 			label: 'Debug Node',
 		},
 	},
+	{
+		type: 'debug-simple' as AppNode['type'],
+		name: 'Debug Simple Node',
+		description: 'Minimal unstyled debug node',
+		emoji: '🐞',
+		variant: 'unit',
+		category: 'debug',
+		defaultData: {},
+	},
 ];
 
 // Audio source nodes
@@ -426,6 +435,41 @@ export const SIGNAL_NODES: NodeTypeOption[] = [
 				timeWindow: 50,
 				triggerLevel: 0,
 				resolution: 256,
+			},
+		},
+	},
+	{
+		type: 'signal-xy' as AppNode['type'],
+		name: 'XYscope',
+		description: 'Lissajous plot for dual-input XY visualization',
+		emoji: '🎯',
+		variant: 'signal',
+		category: 'utility',
+		defaultData: {
+			label: 'XYscope',
+			timeWindow: 0.1,
+			resolution: 512,
+			audioParams: {
+				timeWindow: 0.1,
+				resolution: 512,
+			},
+		},
+	},
+	{
+		type: 'signal-xyrgb' as AppNode['type'],
+		name: 'XYRGBScope',
+		description:
+			'5-channel audio-visual mapping with X,Y coordinates and R,G,B colors',
+		emoji: '🌈',
+		variant: 'signal',
+		category: 'utility',
+		defaultData: {
+			label: 'XYRGBScope',
+			timeWindow: 0.1,
+			resolution: 512,
+			audioParams: {
+				timeWindow: 0.1,
+				resolution: 512,
 			},
 		},
 	},

@@ -53,8 +53,6 @@ export const createAudioContextSlice: StateCreator<
 	// Actions
 	initializeAudio: async () => {
 		try {
-			console.log('🎵 Initializing audio context');
-
 			// Start the audio context
 			await Tone.start();
 
@@ -69,7 +67,6 @@ export const createAudioContextSlice: StateCreator<
 			await get().initializeAudioSystem();
 
 			set({ isStarted: true });
-			console.log('✅ Audio context initialized');
 		} catch (error) {
 			console.error('❌ Failed to initialize audio context:', error);
 			throw error;
@@ -80,7 +77,6 @@ export const createAudioContextSlice: StateCreator<
 		try {
 			Tone.Transport.start();
 			set({ isPlaying: true });
-			console.log('▶️ Transport started');
 		} catch (error) {
 			console.error('❌ Failed to start transport:', error);
 		}
@@ -90,7 +86,6 @@ export const createAudioContextSlice: StateCreator<
 		try {
 			Tone.Transport.stop();
 			set({ isPlaying: false });
-			console.log('⏹️ Transport stopped');
 		} catch (error) {
 			console.error('❌ Failed to stop transport:', error);
 		}
@@ -100,7 +95,6 @@ export const createAudioContextSlice: StateCreator<
 		try {
 			Tone.Transport.pause();
 			set({ isPlaying: false });
-			console.log('⏸️ Transport paused');
 		} catch (error) {
 			console.error('❌ Failed to pause transport:', error);
 		}
@@ -130,7 +124,6 @@ export const createAudioContextSlice: StateCreator<
 		try {
 			Tone.Transport.bpm.value = bpm;
 			set({ bpm });
-			console.log(`🕒 BPM set to ${bpm}`);
 		} catch (error) {
 			console.error('❌ Failed to set BPM:', error);
 		}
@@ -141,7 +134,6 @@ export const createAudioContextSlice: StateCreator<
 			const timeSignature: [number, number] = [numerator, denominator];
 			Tone.Transport.timeSignature = timeSignature;
 			set({ timeSignature });
-			console.log(`🎼 Time signature set to ${numerator}/${denominator}`);
 		} catch (error) {
 			console.error('❌ Failed to set time signature:', error);
 		}
@@ -151,7 +143,6 @@ export const createAudioContextSlice: StateCreator<
 		try {
 			Tone.Transport.swing = swing;
 			set({ swing });
-			console.log(`🎵 Swing set to ${swing}`);
 		} catch (error) {
 			console.error('❌ Failed to set swing:', error);
 		}
@@ -162,7 +153,6 @@ export const createAudioContextSlice: StateCreator<
 			// Note: Tone.js handles look-ahead internally
 			// This is kept for UI state management
 			set({ lookAhead });
-			console.log(`⏱️ Look-ahead set to ${lookAhead}ms`);
 		} catch (error) {
 			console.error('❌ Failed to set look-ahead:', error);
 		}
@@ -180,7 +170,6 @@ export const createAudioContextSlice: StateCreator<
 	setTransportPosition: (position) => {
 		try {
 			Tone.Transport.position = position;
-			console.log(`⏭️ Transport position set to ${position}`);
 		} catch (error) {
 			console.error('❌ Failed to set transport position:', error);
 		}

@@ -33,8 +33,6 @@ export const createThemeSlice: StateCreator<
 
 	// Actions
 	setTheme: (theme: Theme) => {
-		console.log(`🎨 Theme change requested: ${theme}`);
-
 		set((state) => ({
 			theme: {
 				...state.theme,
@@ -47,9 +45,6 @@ export const createThemeSlice: StateCreator<
 			const systemIsDark = window.matchMedia(
 				'(prefers-color-scheme: dark)'
 			).matches;
-			console.log(
-				`🖥️ System theme detected: ${systemIsDark ? 'dark' : 'light'}`
-			);
 
 			set((state) => ({
 				theme: {
@@ -58,7 +53,6 @@ export const createThemeSlice: StateCreator<
 				},
 			}));
 		} else {
-			console.log(`🎯 Setting direct theme: ${theme}`);
 			set((state) => ({
 				theme: {
 					...state.theme,
@@ -69,19 +63,13 @@ export const createThemeSlice: StateCreator<
 
 		// Persist to localStorage
 		localStorage.setItem('theme', theme);
-		console.log(`💾 Theme persisted to localStorage: ${theme}`);
 
 		// Update DOM
 		const { theme: themeState } = get();
 		updateDOMTheme(themeState.actualTheme, themeState.metallicBackground);
-		console.log(`✅ Theme applied to DOM: ${themeState.actualTheme}`);
 	},
 
 	setMetallicBackground: (metallicBackground: MetallicTheme) => {
-		console.log(
-			`🎨 Metallic background change requested: ${metallicBackground}`
-		);
-
 		set((state) => ({
 			theme: {
 				...state.theme,
@@ -91,14 +79,10 @@ export const createThemeSlice: StateCreator<
 
 		// Persist to localStorage
 		localStorage.setItem('metallicBackground', metallicBackground);
-		console.log(
-			`💾 Metallic background persisted to localStorage: ${metallicBackground}`
-		);
 
 		// Update DOM with new metallic background
 		const { theme: themeState } = get();
 		updateDOMTheme(themeState.actualTheme, metallicBackground);
-		console.log(`✅ Metallic background applied to DOM: ${metallicBackground}`);
 	},
 
 	initializeTheme: () => {
