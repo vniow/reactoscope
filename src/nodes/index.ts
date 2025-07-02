@@ -20,6 +20,7 @@ import { OscilloscopeNode } from './signal/OscilloscopeNode';
 import { Oscilloscope3DNode } from './signal/Oscilloscope3DNode';
 import { XYscope3DNode } from './signal/XYscope3DNode';
 import { XYRGBScope3DNode } from './signal/XYRGBScope3DNode';
+import { XYRGBGeneratorNode } from './source/XYRGBGeneratorNode';
 
 import {
 	InstrumentNodeComponent,
@@ -73,6 +74,7 @@ export const nodeTypes = {
 	'signal-3d': Oscilloscope3DNode, // 3D version of oscilloscope
 	'signal-xy': XYscope3DNode, // XY Lissajous plot node
 	'signal-xyrgb': XYRGBScope3DNode, // 5-channel audio-visual mapping (X,Y,R,G,B)
+	'source-xyrgb': XYRGBGeneratorNode, // XYRGB audio generator from 3D scene
 	event: EventNodeComponent,
 	unit: UtilityNodeComponent,
 

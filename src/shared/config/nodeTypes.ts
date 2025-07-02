@@ -131,6 +131,23 @@ export const SOURCE_NODES: NodeTypeOption[] = [
 			},
 		},
 	},
+	{
+		type: 'source-xyrgb' as AppNode['type'],
+		name: 'XYRGB Generator',
+		description: 'Generate XYRGB audio signals from 3D scene vertex data',
+		emoji: '🎨',
+		variant: 'source',
+		category: 'utility',
+		defaultData: {
+			label: 'XYRGB Generator',
+			scanRate: 30,
+			rotationSpeed: 1.0,
+			audioParams: {
+				scanRate: 30,
+				rotationSpeed: 1.0,
+			},
+		},
+	},
 ];
 
 // Audio effect nodes

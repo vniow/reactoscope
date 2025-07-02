@@ -292,7 +292,7 @@ export const createAudioRegistrySlice: StateCreator<
 
 			const connection: AudioConnection = {
 				sourceId,
-				targetId,
+				targetId: actualTargetId, // Store the actual target ID with suffix for proper cleanup
 				sourceHandleId,
 				targetHandleId,
 				sourceOutputIndex: sourceResult.index,
@@ -311,10 +311,14 @@ export const createAudioRegistrySlice: StateCreator<
 			}));
 
 			// Update registry entries with connection info
-			set((state) => ({
-				nodeRegistry: {
+			set((state) => {
+				const updates: Record<string, AudioNodeRegistryEntry> = {
 					...state.nodeRegistry,
-					[sourceId]: {
+				};
+
+				// Update source node if it exists
+				if (state.nodeRegistry[sourceId]) {
+					updates[sourceId] = {
 						...state.nodeRegistry[sourceId],
 						connections: {
 							...state.nodeRegistry[sourceId].connections,
@@ -323,19 +327,25 @@ export const createAudioRegistrySlice: StateCreator<
 								connection,
 							],
 						},
-					},
-					[targetId]: {
-						...state.nodeRegistry[targetId],
+					};
+				}
+
+				// Update target node if it exists
+				if (state.nodeRegistry[actualTargetId]) {
+					updates[actualTargetId] = {
+						...state.nodeRegistry[actualTargetId],
 						connections: {
-							...state.nodeRegistry[targetId].connections,
+							...state.nodeRegistry[actualTargetId].connections,
 							inputs: [
-								...state.nodeRegistry[targetId].connections.inputs,
+								...state.nodeRegistry[actualTargetId].connections.inputs,
 								connection,
 							],
 						},
-					},
-				},
-			}));
+					};
+				}
+
+				return { nodeRegistry: updates };
+			});
 
 			// Auto-start source nodes when they get connected
 			if (sourceEntry) {
@@ -417,10 +427,14 @@ export const createAudioRegistrySlice: StateCreator<
 
 			// Update node registry entries
 			if (sourceEntry && targetEntry) {
-				set((state) => ({
-					nodeRegistry: {
+				set((state) => {
+					const updates: Record<string, AudioNodeRegistryEntry> = {
 						...state.nodeRegistry,
-						[connection.sourceId]: {
+					};
+
+					// Update source node if it exists
+					if (state.nodeRegistry[connection.sourceId]) {
+						updates[connection.sourceId] = {
 							...state.nodeRegistry[connection.sourceId],
 							connections: {
 								...state.nodeRegistry[connection.sourceId].connections,
@@ -434,8 +448,12 @@ export const createAudioRegistrySlice: StateCreator<
 										)
 								),
 							},
-						},
-						[connection.targetId]: {
+						};
+					}
+
+					// Update target node if it exists
+					if (state.nodeRegistry[connection.targetId]) {
+						updates[connection.targetId] = {
 							...state.nodeRegistry[connection.targetId],
 							connections: {
 								...state.nodeRegistry[connection.targetId].connections,
@@ -449,9 +467,11 @@ export const createAudioRegistrySlice: StateCreator<
 										)
 								),
 							},
-						},
-					},
-				}));
+						};
+					}
+
+					return { nodeRegistry: updates };
+				});
 			}
 
 			// Check if source node should be stopped after disconnection
