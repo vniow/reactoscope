@@ -56,11 +56,12 @@ export const createAudioContextSlice: StateCreator<
 			// Start the audio context
 			await Tone.start();
 
-			// Configure transport
+			// Configure transport using correct Tone.js API
 			const state = get();
-			Tone.Transport.bpm.value = state.bpm;
-			Tone.Transport.timeSignature = state.timeSignature;
-			Tone.Transport.swing = state.swing;
+			const transport = Tone.getTransport();
+			transport.bpm.value = state.bpm;
+			transport.timeSignature = state.timeSignature;
+			transport.swing = state.swing;
 			// Note: lookAhead is handled by Tone.js internally
 
 			// Also initialize the audio registry system
@@ -75,7 +76,8 @@ export const createAudioContextSlice: StateCreator<
 
 	startTransport: () => {
 		try {
-			Tone.Transport.start();
+			const transport = Tone.getTransport();
+			transport.start();
 			set({ isPlaying: true });
 		} catch (error) {
 			console.error('❌ Failed to start transport:', error);
@@ -84,7 +86,8 @@ export const createAudioContextSlice: StateCreator<
 
 	stopTransport: () => {
 		try {
-			Tone.Transport.stop();
+			const transport = Tone.getTransport();
+			transport.stop();
 			set({ isPlaying: false });
 		} catch (error) {
 			console.error('❌ Failed to stop transport:', error);
@@ -93,7 +96,8 @@ export const createAudioContextSlice: StateCreator<
 
 	pauseTransport: () => {
 		try {
-			Tone.Transport.pause();
+			const transport = Tone.getTransport();
+			transport.pause();
 			set({ isPlaying: false });
 		} catch (error) {
 			console.error('❌ Failed to pause transport:', error);
@@ -122,7 +126,8 @@ export const createAudioContextSlice: StateCreator<
 
 	setBpm: (bpm) => {
 		try {
-			Tone.Transport.bpm.value = bpm;
+			const transport = Tone.getTransport();
+			transport.bpm.value = bpm;
 			set({ bpm });
 		} catch (error) {
 			console.error('❌ Failed to set BPM:', error);
@@ -132,7 +137,8 @@ export const createAudioContextSlice: StateCreator<
 	setTimeSignature: (numerator, denominator) => {
 		try {
 			const timeSignature: [number, number] = [numerator, denominator];
-			Tone.Transport.timeSignature = timeSignature;
+			const transport = Tone.getTransport();
+			transport.timeSignature = timeSignature;
 			set({ timeSignature });
 		} catch (error) {
 			console.error('❌ Failed to set time signature:', error);
@@ -141,7 +147,8 @@ export const createAudioContextSlice: StateCreator<
 
 	setSwing: (swing) => {
 		try {
-			Tone.Transport.swing = swing;
+			const transport = Tone.getTransport();
+			transport.swing = swing;
 			set({ swing });
 		} catch (error) {
 			console.error('❌ Failed to set swing:', error);
@@ -160,7 +167,8 @@ export const createAudioContextSlice: StateCreator<
 
 	getTransportTime: () => {
 		try {
-			return Tone.Transport.position.toString();
+			const transport = Tone.getTransport();
+			return transport.position.toString();
 		} catch (error) {
 			console.error('❌ Failed to get transport time:', error);
 			return '0:0:0';
@@ -169,7 +177,8 @@ export const createAudioContextSlice: StateCreator<
 
 	setTransportPosition: (position) => {
 		try {
-			Tone.Transport.position = position;
+			const transport = Tone.getTransport();
+			transport.position = position;
 		} catch (error) {
 			console.error('❌ Failed to set transport position:', error);
 		}

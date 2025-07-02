@@ -39,7 +39,7 @@ export interface AudioRegistryActions {
 		nodeId: string,
 		type: AudioNodeType,
 		params?: AudioNodeParams
-	) => void;
+	) => Promise<void>;
 	unregisterAudioNode: (nodeId: string) => void;
 	updateAudioNodeParams: (
 		nodeId: string,
@@ -107,8 +107,15 @@ export const createAudioRegistrySlice: StateCreator<
 	globalMute: false,
 
 	// Actions
-	registerAudioNode: (nodeId, type, params = {}) => {
+	registerAudioNode: async (nodeId, type, params = {}) => {
 		try {
+			// Ensure audio system is initialized before creating nodes
+			const state = get();
+			if (!state.isAudioInitialized) {
+				console.log('🔄 Initializing audio system before creating node...');
+				await state.initializeAudioSystem();
+			}
+
 			const audioNode = createAudioNode(type, params);
 
 			const registryEntry: AudioNodeRegistryEntry = {
@@ -132,7 +139,7 @@ export const createAudioRegistrySlice: StateCreator<
 			}));
 
 			// Auto-start nodes that need to be started (but they will be stopped if disconnected)
-			if (type === 'oscillator' || type === 'noise' || type === 'lfo') {
+			if (type === 'oscillator' || type === 'lfo') {
 				startAudioNode(audioNode);
 			}
 		} catch (error) {
@@ -349,9 +356,9 @@ export const createAudioRegistrySlice: StateCreator<
 
 			// Auto-start source nodes when they get connected
 			if (sourceEntry) {
-				const shouldAutoStart = ['oscillator', 'noise', 'lfo'].includes(
-					sourceEntry.type
-				);
+			   const shouldAutoStart = ['oscillator', 'lfo'].includes(
+				   sourceEntry.type
+			   );
 				if (shouldAutoStart) {
 					startAudioNode(sourceEntry.audioNode);
 				}
@@ -587,9 +594,11 @@ export const createAudioRegistrySlice: StateCreator<
 		try {
 			// Start the audio context
 			await Tone.start();
-
-			// Set initial master volume
-			Tone.getDestination().volume.value = get().masterVolume;
+			
+			
+			// Set initial master volume using correct Tone.js API
+			const destination = Tone.getDestination();
+			destination.volume.value = get().masterVolume;
 
 			set({ isAudioInitialized: true });
 		} catch (error) {

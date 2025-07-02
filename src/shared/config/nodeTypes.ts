@@ -101,23 +101,6 @@ export const SOURCE_NODES: NodeTypeOption[] = [
 	},
 	{
 		type: 'source',
-		name: 'Noise Generator',
-		description: 'White, brown, and pink noise generator',
-		emoji: '📻',
-		variant: 'source',
-		category: 'placeholder',
-		defaultData: {
-			label: 'Noise Generator',
-			type: 'white',
-			volume: -12,
-			audioParams: {
-				type: 'white',
-				volume: -12,
-			},
-		},
-	},
-	{
-		type: 'source',
 		name: 'Microphone',
 		description: 'Audio input from microphone or line input',
 		emoji: '🎤',

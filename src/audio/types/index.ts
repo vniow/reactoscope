@@ -78,6 +78,7 @@ export interface PlayerParams {
 
 export interface NoiseParams {
 	type?: 'white' | 'brown' | 'pink';
+	amplitude?: number;
 	volume?: number;
 }
 

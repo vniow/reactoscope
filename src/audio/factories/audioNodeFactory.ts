@@ -7,25 +7,24 @@
 
 import * as Tone from 'tone';
 import type {
-	AudioNodeType,
-	AudioNodeParams,
-	OscillatorParams,
-	PlayerParams,
-	NoiseParams,
-	FilterParams,
-	DelayParams,
-	ReverbParams,
-	GainParams,
-	DualGainParams,
-	PannerParams,
-	CompressorParams,
-	DistortionParams,
-	AnalyzerParams,
-	OscilloscopeParams,
-	MeterParams,
-	EnvelopeParams,
-	LFOParams,
-	DestinationParams,
+   AudioNodeType,
+   AudioNodeParams,
+   OscillatorParams,
+   PlayerParams,
+   FilterParams,
+   DelayParams,
+   ReverbParams,
+   GainParams,
+   DualGainParams,
+   PannerParams,
+   CompressorParams,
+   DistortionParams,
+   AnalyzerParams,
+   OscilloscopeParams,
+   MeterParams,
+   EnvelopeParams,
+   LFOParams,
+   DestinationParams,
 } from '../types';
 
 /**
@@ -69,20 +68,6 @@ export function createAudioNode(
 				});
 			}
 
-			case 'noise': {
-				const noiseParams = params as NoiseParams;
-				const noise = new Tone.Noise({
-					type: noiseParams?.type || 'white',
-				});
-
-				if (noiseParams?.volume !== undefined) {
-					const gain = new Tone.Gain(Tone.dbToGain(noiseParams.volume));
-					noise.connect(gain);
-					return [noise, gain];
-				}
-
-				return noise;
-			}
 
 			case 'filter': {
 				const filterParams = params as FilterParams;
@@ -406,21 +391,6 @@ export function updateAudioNodeParams(
 					}
 					break;
 				}
-				case 'noise': {
-					// Handle noise with volume (array of [noise, gain])
-					const noiseParams = params as Partial<NoiseParams>;
-					const noise = audioNode[0] as Tone.Noise;
-					const gain = audioNode[1] as Tone.Gain;
-
-					if (noiseParams.type !== undefined) {
-						noise.type = noiseParams.type;
-					}
-					if (noiseParams.volume !== undefined) {
-						// Update the gain node (second element in array)
-						gain.gain.value = Tone.dbToGain(noiseParams.volume);
-					}
-					break;
-				}
 				case 'oscilloscope': {
 					// Handle oscilloscope (array of [passThrough, analyzer])
 					const scopeParams = params as Partial<OscilloscopeParams>;
@@ -460,17 +430,6 @@ export function updateAudioNodeParams(
 					break;
 				}
 
-				case 'noise': {
-					// Handle simple noise without volume (single node)
-					const noiseParams = params as Partial<NoiseParams>;
-					const noise = audioNode as Tone.Noise;
-					if (noiseParams.type !== undefined) {
-						noise.type = noiseParams.type;
-					}
-					// Note: volume parameter should not be set on single noise nodes
-					// as they don't have volume control - only array noise nodes do
-					break;
-				}
 
 				case 'gain': {
 					const gainParams = params as Partial<GainParams>;

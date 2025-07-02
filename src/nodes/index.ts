@@ -12,7 +12,6 @@ import type { NodeTypes } from '@xyflow/react';
 // Internal node component imports
 import { DebugNode } from './DebugNode';
 import { DebugSimpleNode } from '../shared/components/DebugSimpleNode';
-import { DynamicSourceNode } from './source/DynamicSourceNode';
 import { DestinationNode } from './core/DestinationNode';
 import { DynamicEffectNode } from './effect/DynamicEffectNode';
 import { DynamicComponentNode } from './component/DynamicComponentNode';
@@ -66,7 +65,6 @@ export const nodeTypes = {
 
 	// Dynamic routing nodes for each variant
 	core: DestinationNode,
-	source: DynamicSourceNode,
 	instrument: InstrumentNodeComponent,
 	effect: DynamicEffectNode,
 	component: DynamicComponentNode,
