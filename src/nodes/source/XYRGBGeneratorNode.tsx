@@ -83,7 +83,7 @@ function DebugPanel({ sceneData }: { sceneData: SceneData }) {
 							<div className='text-xs text-gray-500 mb-1'>
 								Vertex Data (showing first 5):
 							</div>
-							{sceneData.vertices.slice(0, 5).map((vertex, i) => (
+							{sceneData.vertices.slice(0, 6).map((vertex, i) => (
 								<div
 									key={i}
 									className='font-mono text-xs bg-gray-900 p-1 rounded'
@@ -122,7 +122,7 @@ function DebugPanel({ sceneData }: { sceneData: SceneData }) {
 							))}
 							{sceneData.vertices.length > 5 && (
 								<div className='text-gray-500 text-center'>
-									... and {sceneData.vertices.length - 5} more vertices
+									... and {sceneData.vertices.length - 6} more vertices
 								</div>
 							)}
 						</div>
