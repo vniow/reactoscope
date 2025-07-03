@@ -32,10 +32,9 @@ export type AudioNodeType =
 // Mapping between React Flow node types and Tone.js node types
 export const NODE_TYPE_MAPPING: Record<string, AudioNodeType> = {
 	// Source nodes
-	'source.oscillator': 'oscillator',
-	'source.player': 'player',
-	'source.noise': 'noise',
-	'source.microphone': 'microphone',
+	'source.source': 'oscillator', // Main oscillator source node  
+	'source.source-player': 'player',
+	'source.source-microphone': 'microphone',
 
 	// Effect nodes
 	'effect.filter': 'filter',

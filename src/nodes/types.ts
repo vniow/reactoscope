@@ -27,6 +27,8 @@ export type DebugSimpleNode = Node<DebugNodeData, 'debug-simple'>;
 // Placeholder node types for each variant
 export type CoreNode = Node<PlaceholderNodeData, 'core'>;
 export type SourceNode = Node<PlaceholderNodeData, 'source'>;
+export type SourcePlayerNode = Node<PlaceholderNodeData, 'source-player'>;
+export type SourceMicrophoneNode = Node<PlaceholderNodeData, 'source-microphone'>;
 export type InstrumentNode = Node<PlaceholderNodeData, 'instrument'>;
 export type EffectNode = Node<PlaceholderNodeData, 'effect'>;
 export type ComponentNode = Node<PlaceholderNodeData, 'component'>;
@@ -51,6 +53,8 @@ export type AppNode =
 	| DebugSimpleNode
 	| CoreNode
 	| SourceNode
+	| SourcePlayerNode
+	| SourceMicrophoneNode
 	| InstrumentNode
 	| EffectNode
 	| ComponentNode

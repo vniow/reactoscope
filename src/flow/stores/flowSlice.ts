@@ -301,12 +301,19 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 
 		// Create corresponding audio node if it's an audio node type
 		const nodeData = node.data as BaseNodeData;
-		const nodeTypeKey = `${nodeData.variant || node.type}.${node.type}`;
-		const audioNodeType = NODE_TYPE_MAPPING[nodeTypeKey];
+		
+		// Skip automatic audio registration for dynamic nodes that handle their own registration
+		// Dynamic nodes (effect, source, component, etc.) register themselves in their components
+		const isDynamicNode = node.type ? ['effect', 'source', 'component', 'instrument'].includes(node.type) : false;
+		
+		if (!isDynamicNode) {
+			const nodeTypeKey = `${nodeData.variant || node.type}.${node.type}`;
+			const audioNodeType = NODE_TYPE_MAPPING[nodeTypeKey];
 
-		if (audioNodeType) {
-			const appStore = get() as AppStore;
-			appStore.registerAudioNode(node.id, audioNodeType, nodeData.audioParams);
+			if (audioNodeType) {
+				const appStore = get() as AppStore;
+				appStore.registerAudioNode(node.id, audioNodeType, nodeData.audioParams);
+			}
 		}
 	},
 

@@ -57,7 +57,7 @@ export const DEBUG_NODES: NodeTypeOption[] = [
 // Audio source nodes
 export const SOURCE_NODES: NodeTypeOption[] = [
 	{
-		type: 'source',
+		type: 'source' as AppNode['type'],
 		name: 'Oscillator',
 		description:
 			'Basic waveform generator with frequency, type, and volume controls',
@@ -79,7 +79,7 @@ export const SOURCE_NODES: NodeTypeOption[] = [
 		},
 	},
 	{
-		type: 'source',
+		type: 'source-player' as AppNode['type'],
 		name: 'Audio Player',
 		description: 'Audio file player with loop and playback rate controls',
 		emoji: '🎵',
@@ -100,7 +100,7 @@ export const SOURCE_NODES: NodeTypeOption[] = [
 		},
 	},
 	{
-		type: 'source',
+		type: 'source-microphone' as AppNode['type'],
 		name: 'Microphone',
 		description: 'Audio input from microphone or line input',
 		emoji: '🎤',
