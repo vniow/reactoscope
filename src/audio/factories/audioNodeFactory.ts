@@ -7,25 +7,27 @@
 
 import * as Tone from 'tone';
 import type {
-   AudioNodeType,
-   AudioNodeParams,
-   OscillatorParams,
-   PlayerParams,
-   FilterParams,
-   DelayParams,
-   ReverbParams,
-   GainParams,
-   DualGainParams,
-   PannerParams,
-   CompressorParams,
-   DistortionParams,
-   AnalyzerParams,
-   OscilloscopeParams,
-   MeterParams,
-   EnvelopeParams,
-   LFOParams,
-   DestinationParams,
+	AudioNodeType,
+	AudioNodeParams,
+	OscillatorParams,
+	PlayerParams,
+	FilterParams,
+	DelayParams,
+	ReverbParams,
+	GainParams,
+	DualGainParams,
+	PannerParams,
+	CompressorParams,
+	DistortionParams,
+	AnalyzerParams,
+	OscilloscopeParams,
+	MeterParams,
+	EnvelopeParams,
+	LFOParams,
+	DestinationParams,
+	BitCrusherParams,
 } from '../types';
+import { BitCrusherWorkletNode } from '../effects/worklet/BitCrusherWorkletNode';
 
 /**
  * Factory function to create Tone.js audio nodes
@@ -67,7 +69,6 @@ export function createAudioNode(
 					playbackRate: playerParams?.playbackRate || 1,
 				});
 			}
-
 
 			case 'filter': {
 				const filterParams = params as FilterParams;
@@ -141,6 +142,15 @@ export function createAudioNode(
 				return new Tone.Distortion({
 					distortion: distParams?.distortion || 0.4,
 					oversample: distParams?.oversample || 'none',
+				});
+			}
+
+			case 'bitcrusher': {
+				const bitCrusherParams = params as BitCrusherParams;
+				return new BitCrusherWorkletNode({
+					bits: bitCrusherParams?.bits || 8,
+					sampleRate: bitCrusherParams?.sampleRate || 8000,
+					wet: bitCrusherParams?.wet || 1.0,
 				});
 			}
 
@@ -351,11 +361,11 @@ export function stopAudioNode(
  * @param type - The type of audio node
  * @param params - The new parameters to apply
  */
-export function updateAudioNodeParams(
+export async function updateAudioNodeParams(
 	audioNode: Tone.ToneAudioNode | Tone.ToneAudioNode[],
 	type: AudioNodeType,
 	params: Partial<AudioNodeParams>
-): void {
+): Promise<void> {
 	try {
 		if (Array.isArray(audioNode)) {
 			// Handle array of nodes (like dualGain, oscillator with volume, etc.)
@@ -429,7 +439,6 @@ export function updateAudioNodeParams(
 					// as they don't have volume control - only array oscillators do
 					break;
 				}
-
 
 				case 'gain': {
 					const gainParams = params as Partial<GainParams>;
@@ -527,6 +536,25 @@ export function updateAudioNodeParams(
 					}
 					if (distParams.oversample !== undefined) {
 						dist.oversample = distParams.oversample;
+					}
+					break;
+				}
+
+				case 'bitcrusher': {
+					const bitCrusherParams = params as Partial<BitCrusherParams>;
+					const bitCrusher = audioNode as BitCrusherWorkletNode;
+
+					// Wait for worklet to be ready before setting parameters
+					await bitCrusher.ready;
+
+					if (bitCrusherParams.bits !== undefined) {
+						bitCrusher.bits.value = bitCrusherParams.bits;
+					}
+					if (bitCrusherParams.sampleRate !== undefined) {
+						bitCrusher.sampleRateReduction.value = bitCrusherParams.sampleRate;
+					}
+					if (bitCrusherParams.wet !== undefined) {
+						bitCrusher.wet.value = bitCrusherParams.wet;
 					}
 					break;
 				}

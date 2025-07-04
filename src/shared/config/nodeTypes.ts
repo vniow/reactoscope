@@ -137,6 +137,25 @@ export const SOURCE_NODES: NodeTypeOption[] = [
 export const EFFECT_NODES: NodeTypeOption[] = [
 	{
 		type: 'effect',
+		name: 'BitCrusher',
+		description: 'Lo-fi bit reduction and sample rate crushing effect',
+		emoji: '🔩',
+		variant: 'effect',
+		category: 'utility',
+		defaultData: {
+			label: 'BitCrusher',
+			bits: 8,
+			sampleRate: 8000,
+			wet: 1.0,
+			audioParams: {
+				bits: 8,
+				sampleRate: 8000,
+				wet: 1.0,
+			},
+		},
+	},
+	{
+		type: 'effect',
 		name: 'Filter',
 		description: 'Lowpass, highpass, bandpass, and notch filters',
 		emoji: '🔊',

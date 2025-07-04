@@ -27,12 +27,21 @@ export type AudioNodeType =
 	| 'destination'
 	| 'meter'
 	| 'envelope'
-	| 'lfo';
+	| 'lfo'
+	// Worklet-based node types
+	| 'bitcrusher'
+	| 'spectralfilter'
+	| 'granulardelay'
+	| 'advancedoscillator'
+	| 'noisegenerator'
+	| 'vocoder'
+	| 'pitchshifter'
+	| 'granularsynthesis';
 
 // Mapping between React Flow node types and Tone.js node types
 export const NODE_TYPE_MAPPING: Record<string, AudioNodeType> = {
 	// Source nodes
-	'source.source': 'oscillator', // Main oscillator source node  
+	'source.source': 'oscillator', // Main oscillator source node
 	'source.source-player': 'player',
 	'source.source-microphone': 'microphone',
 
@@ -160,6 +169,72 @@ export interface DestinationParams {
 	mute?: boolean;
 }
 
+// Worklet-based node parameter interfaces
+export interface BitCrusherParams {
+	bits: number;
+	sampleRate: number;
+	wet: number;
+}
+
+export interface SpectralFilterParams {
+	cutoff: number;
+	resonance: number;
+	filterType: 'lowpass' | 'highpass' | 'bandpass' | 'notch';
+	fftSize: number;
+	wet: number;
+}
+
+export interface GranularDelayParams {
+	delayTime: number;
+	feedback: number;
+	grainSize: number;
+	grainDensity: number;
+	pitch: number;
+	wet: number;
+}
+
+export interface AdvancedOscillatorParams {
+	frequency: number;
+	type: 'wavetable' | 'fm' | 'additive' | 'granular';
+	harmonics: number;
+	modulation: number;
+	detune: number;
+	volume: number;
+}
+
+export interface NoiseGeneratorParams {
+	type: 'white' | 'pink' | 'brown' | 'blue' | 'violet';
+	filtering: boolean;
+	cutoff?: number;
+	resonance?: number;
+	volume: number;
+}
+
+export interface VocoderParams {
+	bands: number;
+	attack: number;
+	release: number;
+	carrierGain: number;
+	modulatorGain: number;
+	wet: number;
+}
+
+export interface PitchShifterParams {
+	pitch: number;
+	windowSize: number;
+	overlap: number;
+	wet: number;
+}
+
+export interface GranularSynthesisParams {
+	grainSize: number;
+	grainDensity: number;
+	position: number;
+	randomness: number;
+	pitch: number;
+	volume: number;
+}
+
 // Union type for all possible parameters
 export type AudioNodeParams =
 	| OscillatorParams
@@ -179,6 +254,15 @@ export type AudioNodeParams =
 	| EnvelopeParams
 	| LFOParams
 	| DestinationParams
+	// Worklet parameter types
+	| BitCrusherParams
+	| SpectralFilterParams
+	| GranularDelayParams
+	| AdvancedOscillatorParams
+	| NoiseGeneratorParams
+	| VocoderParams
+	| PitchShifterParams
+	| GranularSynthesisParams
 	| Record<string, unknown>;
 
 // Audio connection information

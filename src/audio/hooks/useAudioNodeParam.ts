@@ -86,7 +86,9 @@ export function useAudioNodeParam<T>(
 			}
 
 			// Update the registry with the new parameter value
-			updateAudioNodeParams(nodeId, { [paramName]: value });
+			updateAudioNodeParams(nodeId, { [paramName]: value }).catch((error) => {
+				console.error(`Error updating audio parameter ${paramName}:`, error);
+			});
 		} catch (error) {
 			console.error(`Error setting audio parameter ${paramName}:`, error);
 		}

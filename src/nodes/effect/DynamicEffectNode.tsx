@@ -6,6 +6,7 @@
 
 import type { NodeProps } from '@xyflow/react';
 import { EffectNodeComponent } from '../PlaceholderNodes';
+import { BitCrusherNode } from './BitCrusherNode';
 import type { AppNode } from '../types';
 
 export function DynamicEffectNode(props: NodeProps<AppNode>) {
@@ -13,6 +14,10 @@ export function DynamicEffectNode(props: NodeProps<AppNode>) {
 
 	// Route to specific component based on node data
 	switch (data?.label) {
+		case 'BitCrusher':
+		case 'Bit Crusher':
+			return <BitCrusherNode {...props} />;
+
 		case 'Filter':
 		case 'Delay':
 		case 'Reverb':

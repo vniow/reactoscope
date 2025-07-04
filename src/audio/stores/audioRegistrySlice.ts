@@ -44,7 +44,7 @@ export interface AudioRegistryActions {
 	updateAudioNodeParams: (
 		nodeId: string,
 		params: Partial<AudioNodeParams>
-	) => void;
+	) => Promise<void>;
 
 	// Connection management
 	registerConnection: (
@@ -188,7 +188,7 @@ export const createAudioRegistrySlice: StateCreator<
 		}
 	},
 
-	updateAudioNodeParams: (nodeId, params) => {
+	updateAudioNodeParams: async (nodeId, params) => {
 		const entry = get().nodeRegistry[nodeId];
 		if (!entry) {
 			console.warn(`⚠️ Audio node ${nodeId} not found for parameter update`);
@@ -197,7 +197,7 @@ export const createAudioRegistrySlice: StateCreator<
 
 		try {
 			// Update the live audio node parameters first
-			updateLiveAudioNodeParams(entry.audioNode, entry.type, params);
+			await updateLiveAudioNodeParams(entry.audioNode, entry.type, params);
 
 			// Then update the registry entry
 			set((state) => ({
@@ -356,9 +356,9 @@ export const createAudioRegistrySlice: StateCreator<
 
 			// Auto-start source nodes when they get connected
 			if (sourceEntry) {
-			   const shouldAutoStart = ['oscillator', 'lfo'].includes(
-				   sourceEntry.type
-			   );
+				const shouldAutoStart = ['oscillator', 'lfo'].includes(
+					sourceEntry.type
+				);
 				if (shouldAutoStart) {
 					startAudioNode(sourceEntry.audioNode);
 				}
@@ -594,8 +594,7 @@ export const createAudioRegistrySlice: StateCreator<
 		try {
 			// Start the audio context
 			await Tone.start();
-			
-			
+
 			// Set initial master volume using correct Tone.js API
 			const destination = Tone.getDestination();
 			destination.volume.value = get().masterVolume;
