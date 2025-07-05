@@ -100,6 +100,22 @@ export const SOURCE_NODES: NodeTypeOption[] = [
 		},
 	},
 	{
+		type: 'source-noise' as AppNode['type'],
+		name: 'Noise Generator',
+		description:
+			'AudioWorklet-based white noise generator with amplitude control',
+		emoji: '🌪️',
+		variant: 'source',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Noise Generator',
+			amplitude: 0.5,
+			isPlaying: false,
+			nodeType: 'custom-worklet',
+			workletType: 'noise-generator',
+		},
+	},
+	{
 		type: 'source-microphone' as AppNode['type'],
 		name: 'Microphone',
 		description: 'Audio input from microphone or line input',
@@ -416,25 +432,6 @@ export const SIGNAL_NODES: NodeTypeOption[] = [
 			smoothing: 0.8,
 			audioParams: {
 				smoothing: 0.8,
-			},
-		},
-	},
-	{
-		type: 'signal',
-		name: 'Oscilloscope',
-		description: 'Real-time waveform visualization with multiple outputs',
-		emoji: '📈',
-		variant: 'signal',
-		category: 'utility',
-		defaultData: {
-			label: 'Oscilloscope',
-			timeWindow: 50,
-			triggerLevel: 0,
-			resolution: 256,
-			audioParams: {
-				timeWindow: 50,
-				triggerLevel: 0,
-				resolution: 256,
 			},
 		},
 	},

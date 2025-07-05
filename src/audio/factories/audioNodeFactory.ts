@@ -25,9 +25,7 @@ import type {
 	EnvelopeParams,
 	LFOParams,
 	DestinationParams,
-	BitCrusherParams,
 } from '../types';
-import { BitCrusherWorkletNode } from '../effects/worklet/BitCrusherWorkletNode';
 
 /**
  * Factory function to create Tone.js audio nodes
@@ -142,15 +140,6 @@ export function createAudioNode(
 				return new Tone.Distortion({
 					distortion: distParams?.distortion || 0.4,
 					oversample: distParams?.oversample || 'none',
-				});
-			}
-
-			case 'bitcrusher': {
-				const bitCrusherParams = params as BitCrusherParams;
-				return new BitCrusherWorkletNode({
-					bits: bitCrusherParams?.bits || 8,
-					sampleRate: bitCrusherParams?.sampleRate || 8000,
-					wet: bitCrusherParams?.wet || 1.0,
 				});
 			}
 
@@ -536,25 +525,6 @@ export async function updateAudioNodeParams(
 					}
 					if (distParams.oversample !== undefined) {
 						dist.oversample = distParams.oversample;
-					}
-					break;
-				}
-
-				case 'bitcrusher': {
-					const bitCrusherParams = params as Partial<BitCrusherParams>;
-					const bitCrusher = audioNode as BitCrusherWorkletNode;
-
-					// Wait for worklet to be ready before setting parameters
-					await bitCrusher.ready;
-
-					if (bitCrusherParams.bits !== undefined) {
-						bitCrusher.bits.value = bitCrusherParams.bits;
-					}
-					if (bitCrusherParams.sampleRate !== undefined) {
-						bitCrusher.sampleRateReduction.value = bitCrusherParams.sampleRate;
-					}
-					if (bitCrusherParams.wet !== undefined) {
-						bitCrusher.wet.value = bitCrusherParams.wet;
 					}
 					break;
 				}

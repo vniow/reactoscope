@@ -14,6 +14,7 @@ import { DebugNode } from './DebugNode';
 import { DebugSimpleNode } from '../shared/components/DebugSimpleNode';
 import { DestinationNode } from './core/DestinationNode';
 import { OscillatorNode } from './source/OscillatorNode';
+import { NoiseGeneratorNode } from './source/NoiseGeneratorNode';
 import { DynamicEffectNode } from './effect/DynamicEffectNode';
 import { DynamicComponentNode } from './component/DynamicComponentNode';
 import { OscilloscopeNode } from './signal/OscilloscopeNode';
@@ -68,6 +69,7 @@ export const nodeTypes = {
 	// Dynamic routing nodes for each variant
 	core: DestinationNode,
 	source: OscillatorNode, // Oscillator is the main source node
+	'source-noise': NoiseGeneratorNode, // AudioWorklet-based noise generator
 	'source-player': SourceNodeComponent, // Placeholder for Audio Player
 	'source-microphone': SourceNodeComponent, // Placeholder for Microphone
 	instrument: InstrumentNodeComponent,
