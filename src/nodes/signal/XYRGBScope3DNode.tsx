@@ -14,14 +14,10 @@ import * as THREE from 'three';
 import * as Tone from 'tone';
 import { BaseNode } from '../../shared/components/BaseNode';
 import { NodeHandle } from '../../shared/components/NodeHandle';
-import { GridControl } from '../../shared/components/ui/GridControl';
-import { useAudioNodeParam } from '../../audio/hooks/useAudioNodeParam';
 import { useAppStore } from '../../shared/stores/appStore';
 import type { BaseNodeData } from '../types';
 
 interface XYRGBScopeNodeData extends BaseNodeData {
-	/** Resolution (number of samples, default 512) */
-	resolution?: number;
 	/** Node ID for X input (for registry lookup) */
 	inputX?: string;
 	/** Node ID for Y input (for registry lookup) */
@@ -40,41 +36,33 @@ const XYRGBWaveform3D = React.memo(function XYRGBWaveform3D({
 	nodeIdR,
 	nodeIdG,
 	nodeIdB,
-	resolution = 512,
 }: {
 	nodeIdX: string;
 	nodeIdY: string;
 	nodeIdR: string;
 	nodeIdG: string;
 	nodeIdB: string;
-	resolution?: number;
 }): React.ReactElement {
 	const getAudioNode = useAppStore((state) => state.getAudioNode);
 
-	// Pre-allocate buffers for better performance
-	const positionsRef = useRef(new Float32Array(resolution * 3));
-	const colorsRef = useRef(new Float32Array(resolution * 3));
-	const dataRefX = useRef<Float32Array>(new Float32Array(resolution));
-	const dataRefY = useRef<Float32Array>(new Float32Array(resolution));
-	const dataRefR = useRef<Float32Array>(new Float32Array(resolution));
-	const dataRefG = useRef<Float32Array>(new Float32Array(resolution));
-	const dataRefB = useRef<Float32Array>(new Float32Array(resolution));
+	// Dynamic buffer references - will resize based on analyzer data
+	const positionsRef = useRef<Float32Array>(new Float32Array(0));
+	const colorsRef = useRef<Float32Array>(new Float32Array(0));
+	const geometryRef = useRef<THREE.BufferGeometry | null>(null);
+	const currentPointCount = useRef<number>(0);
 
-	// Create geometry and material once
+	// Create geometry and material once, update buffers dynamically
 	const geometry = useMemo(() => {
 		const geom = new THREE.BufferGeometry();
-		geom.setAttribute(
-			'position',
-			new THREE.BufferAttribute(positionsRef.current, 3)
-		);
-		geom.setAttribute('color', new THREE.BufferAttribute(colorsRef.current, 3));
+		geometryRef.current = geom;
 		return geom;
 	}, []);
 
 	const material = useMemo(() => {
-		return new THREE.LineBasicMaterial({
+		return new THREE.PointsMaterial({
 			vertexColors: true,
-			linewidth: 2,
+			size: 2,
+			sizeAttenuation: false,
 		});
 	}, []);
 
@@ -107,58 +95,66 @@ const XYRGBWaveform3D = React.memo(function XYRGBWaveform3D({
 			const gData = analyzerG.getValue() as Float32Array;
 			const bData = analyzerB.getValue() as Float32Array;
 
+			// Use the full length of analyzer data - no artificial limits
 			const len = Math.min(
 				xData.length,
 				yData.length,
 				rData.length,
 				gData.length,
-				bData.length,
-				resolution
+				bData.length
 			);
 
-			// Quick change detection - check a few sample points instead of entire arrays
-			const hasChanged =
-				Math.abs(xData[0] - dataRefX.current[0]) > 0.01 ||
-				Math.abs(xData[len >> 1] - dataRefX.current[len >> 1]) > 0.01 ||
-				Math.abs(xData[len - 1] - dataRefX.current[len - 1]) > 0.01;
+			// Resize buffers if needed
+			if (positionsRef.current.length < len * 3) {
+				positionsRef.current = new Float32Array(len * 3);
+				colorsRef.current = new Float32Array(len * 3);
+				currentPointCount.current = len;
 
-			if (hasChanged) {
-				// Update reference data
-				dataRefX.current.set(xData.subarray(0, len));
-				dataRefY.current.set(yData.subarray(0, len));
-				dataRefR.current.set(rData.subarray(0, len));
-				dataRefG.current.set(gData.subarray(0, len));
-				dataRefB.current.set(bData.subarray(0, len));
-
-				// Update positions and colors in-place for maximum performance
-				const positions = positionsRef.current;
-				const colors = colorsRef.current;
-
-				for (let i = 0; i < len; i++) {
-					const i3 = i * 3;
-
-					// Positions
-					positions[i3] = xData[i] * 2; // X
-					positions[i3 + 1] = yData[i] * 2; // Y
-					positions[i3 + 2] = 0; // Z
-
-					// Colors (mapped from -1,1 to 0,1)
-					colors[i3] = Math.max(0, Math.min(1, (rData[i] + 1) * 0.5)); // R
-					colors[i3 + 1] = Math.max(0, Math.min(1, (gData[i] + 1) * 0.5)); // G
-					colors[i3 + 2] = Math.max(0, Math.min(1, (bData[i] + 1) * 0.5)); // B
-				}
-
-				// Update geometry attributes
-				geometry.attributes.position.needsUpdate = true;
-				geometry.attributes.color.needsUpdate = true;
-				geometry.setDrawRange(0, len);
+				// Update geometry attributes with new buffers
+				geometry.setAttribute(
+					'position',
+					new THREE.BufferAttribute(positionsRef.current, 3)
+				);
+				geometry.setAttribute(
+					'color',
+					new THREE.BufferAttribute(colorsRef.current, 3)
+				);
 			}
+
+			// Update positions and colors for all analyzer samples
+			const positions = positionsRef.current;
+			const colors = colorsRef.current;
+
+			for (let i = 0; i < len; i++) {
+				const i3 = i * 3;
+
+				// Positions - map analyzer data to 3D coordinates
+				positions[i3] = xData[i] * 2; // X
+				positions[i3 + 1] = yData[i] * 2; // Y
+				positions[i3 + 2] = 0; // Z (keep flat for now)
+
+				// Colors - map from [-1,1] to [0,1] range
+				colors[i3] = Math.max(0, Math.min(1, (rData[i] + 1) * 0.5)); // R
+				colors[i3 + 1] = Math.max(0, Math.min(1, (gData[i] + 1) * 0.5)); // G
+				colors[i3 + 2] = Math.max(0, Math.min(1, (bData[i] + 1) * 0.5)); // B
+			}
+
+			// Update geometry attributes
+			if (geometry.attributes.position) {
+				geometry.attributes.position.needsUpdate = true;
+			}
+			if (geometry.attributes.color) {
+				geometry.attributes.color.needsUpdate = true;
+			}
+
+			// Set draw range to current data length
+			geometry.setDrawRange(0, len);
 		} catch (e) {
 			console.warn('Error reading analyzer data:', e);
 		}
 	});
 
-	return <primitive object={new THREE.Line(geometry, material)} />;
+	return <primitive object={new THREE.Points(geometry, material)} />;
 });
 
 export const XYRGBScope3DNode = React.memo(function XYRGBScope3DNode({
@@ -173,19 +169,19 @@ export const XYRGBScope3DNode = React.memo(function XYRGBScope3DNode({
 	useEffect(() => {
 		// Register 5 independent analyzers for X, Y, R, G, B
 		registerAudioNode(id + ':x', 'oscilloscope', {
-			resolution: data.resolution ?? 512,
+			resolution: 512,
 		});
 		registerAudioNode(id + ':y', 'oscilloscope', {
-			resolution: data.resolution ?? 512,
+			resolution: 512,
 		});
 		registerAudioNode(id + ':r', 'oscilloscope', {
-			resolution: data.resolution ?? 512,
+			resolution: 512,
 		});
 		registerAudioNode(id + ':g', 'oscilloscope', {
-			resolution: data.resolution ?? 512,
+			resolution: 512,
 		});
 		registerAudioNode(id + ':b', 'oscilloscope', {
-			resolution: data.resolution ?? 512,
+			resolution: 512,
 		});
 		setIsPlaying(true);
 
@@ -196,29 +192,19 @@ export const XYRGBScope3DNode = React.memo(function XYRGBScope3DNode({
 			unregisterAudioNode(id + ':g');
 			unregisterAudioNode(id + ':b');
 		};
-	}, [id, registerAudioNode, unregisterAudioNode, data.resolution]);
-
-	const [resolution, setResolution] = useAudioNodeParam<number>(
-		id,
-		'resolution',
-		data.resolution ?? 512,
-		{ min: 128, max: 2048 }
-	);
+	}, [id, registerAudioNode, unregisterAudioNode]);
 
 	const updateNode = useAppStore((state) => state.updateNode);
 	useEffect(() => {
 		updateNode(id, {
-			resolution,
 			inputX: data.inputX,
 			inputY: data.inputY,
 			inputR: data.inputR,
 			inputG: data.inputG,
 			inputB: data.inputB,
-			audioParams: { resolution },
 		});
 	}, [
 		id,
-		resolution,
 		data.inputX,
 		data.inputY,
 		data.inputR,
@@ -260,7 +246,6 @@ export const XYRGBScope3DNode = React.memo(function XYRGBScope3DNode({
 							nodeIdR={data.inputR || id + ':r'}
 							nodeIdG={data.inputG || id + ':g'}
 							nodeIdB={data.inputB || id + ':b'}
-							resolution={resolution}
 						/>
 					</Canvas>
 				</div>
@@ -281,25 +266,6 @@ export const XYRGBScope3DNode = React.memo(function XYRGBScope3DNode({
 			</div>
 
 			{/* Controls */}
-			<div className='mb-3'>
-				<GridControl
-					type='slider'
-					label='Resolution'
-					value={resolution}
-					min={128}
-					max={2048}
-					step={1}
-					variant='node-variant'
-					layout='stacked'
-					showValue
-					formatValue={(val: number) => `${val} samples`}
-					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-						setResolution(Number(e.target.value))
-					}
-					className='h-12'
-				/>
-			</div>
-
 			{/* Input Handles - Left side for coordinates */}
 			<NodeHandle
 				id='inputX'

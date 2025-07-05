@@ -54,7 +54,7 @@ function SceneTraversal({
 }) {
 	// Use the scene traversal hook with helper exclusion filter
 	useSceneTraversal(onSceneData, scanRate, {
-		maxVerticesPerObject: 3,
+		maxVerticesPerObject: 4, // Include the closing vertex for proper loop
 		objectFilter: EXCLUDE_HELPERS_FILTER,
 	});
 
