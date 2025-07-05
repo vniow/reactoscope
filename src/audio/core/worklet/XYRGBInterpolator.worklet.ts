@@ -232,9 +232,10 @@ export const xyrgbInterpolatorWorklet = /* javascript */ `
         const rawValues = {
           x: currentVertex.screen.x,
           y: currentVertex.screen.y,
-          r: currentVertex.color.r,
-          g: currentVertex.color.g,
-          b: currentVertex.color.b,
+          // Convert RGB from [0,1] to [-1,1] range for audio compatibility
+          r: (currentVertex.color.r * 2) - 1,
+          g: (currentVertex.color.g * 2) - 1,
+          b: (currentVertex.color.b * 2) - 1,
         };
         
         // Apply smoothing
