@@ -24,17 +24,9 @@ export const xyrgbInterpolatorWorklet = /* javascript */ `
   };
 
   /**
-   * Scan patterns for vertex traversal
-   */
-  const ScanPattern = {
-    SEQUENTIAL: 'sequential',
-    PING_PONG: 'ping_pong',
-    RANDOM: 'random'
-  };
-
-  /**
    * XYRGB Interpolator Audio Processor
    * Generates 5-channel audio output: X, Y, R, G, B
+   * Simplified to use sequential traversal like XYscope.js
    */
   class XYRGBInterpolatorProcessor extends AudioWorkletProcessor {
     /**
@@ -46,22 +38,13 @@ export const xyrgbInterpolatorWorklet = /* javascript */ `
       // Processor state
       this._isActive = false;
       this._vertices = [];
-      this._currentPosition = 0;
-      this._direction = 1; // For ping-pong pattern
-      this._scanRate = 30; // Hz
+      this._index = 0; // Single index like XYscope
+      this._frequency = 30; // Hz - like XYscope's frequency
       this._interpolationMode = InterpolationMode.LINEAR;
-      this._scanPattern = ScanPattern.SEQUENTIAL;
-      this._amplitude = 1.0;
       this._smoothing = 0.1; // For smooth transitions
       
       // Interpolation state
       this._lastOutputValues = { x: 0, y: 0, r: 0, g: 0, b: 0 };
-      this._targetValues = { x: 0, y: 0, r: 0, g: 0, b: 0 };
-      this._samplesPerScan = 0;
-      this._sampleCounter = 0;
-      
-      // Calculate initial scan timing
-      this._updateScanTiming();
       
       console.log('🎵 XYRGB Interpolator processor initialized');
       
@@ -82,34 +65,19 @@ export const xyrgbInterpolatorWorklet = /* javascript */ `
             
           case 'vertices':
             this._vertices = data || [];
-            this._currentPosition = 0;
-            // console.log('🎵 Updated vertices: \${this._vertices.length} vertices\`);
+            this._index = 0;
             break;
             
           case 'scanRate':
-            this._scanRate = Math.max(0.1, Math.min(1000, data));
-            this._updateScanTiming();
-            // console.log(\`🎵 Scan rate: \${this._scanRate}Hz\`);
+            this._frequency = Math.max(0.1, Math.min(1000, data));
             break;
             
           case 'interpolationMode':
             this._interpolationMode = data;
-            // console.log(\`🎵 Interpolation mode: \${data}\`);
-            break;
-            
-          case 'scanPattern':
-            this._scanPattern = data;
-            // console.log(\`🎵 Scan pattern: \${data}\`);
-            break;
-            
-          case 'amplitude':
-            this._amplitude = Math.max(0, Math.min(2, data));
-            // console.log(\`🎵 Amplitude: \${this._amplitude}\`);
             break;
             
           case 'smoothing':
             this._smoothing = Math.max(0, Math.min(1, data));
-            // console.log(\`🎵 Smoothing: \${this._smoothing}\`);
             break;
         }
       };
@@ -121,12 +89,6 @@ export const xyrgbInterpolatorWorklet = /* javascript */ `
      */
     static get parameterDescriptors() {
       return [
-        {
-          name: 'amplitude',
-          defaultValue: 1.0,
-          minValue: 0,
-          maxValue: 2,
-        },
         {
           name: 'scanRate',
           defaultValue: 30,
@@ -140,47 +102,6 @@ export const xyrgbInterpolatorWorklet = /* javascript */ `
           maxValue: 1,
         }
       ];
-    }
-
-    /**
-     * Update scan timing based on scan rate
-     * @private
-     */
-    _updateScanTiming() {
-      this._samplesPerScan = Math.max(1, Math.floor(sampleRate / this._scanRate));
-    }
-
-    /**
-     * Get next vertex position based on scan pattern
-     * @private
-     * @returns {number} Next vertex index
-     */
-    _getNextPosition() {
-      if (this._vertices.length === 0) return 0;
-      
-      switch (this._scanPattern) {
-        case ScanPattern.PING_PONG:
-          this._currentPosition += this._direction;
-          if (this._currentPosition >= this._vertices.length - 1) {
-            this._direction = -1;
-            this._currentPosition = this._vertices.length - 1;
-          } else if (this._currentPosition <= 0) {
-            this._direction = 1;
-            this._currentPosition = 0;
-          }
-          break;
-          
-        case ScanPattern.RANDOM:
-          this._currentPosition = Math.floor(Math.random() * this._vertices.length);
-          break;
-          
-        case ScanPattern.SEQUENTIAL:
-        default:
-          this._currentPosition = (this._currentPosition + 1) % this._vertices.length;
-          break;
-      }
-      
-      return this._currentPosition;
     }
 
     /**
@@ -228,22 +149,28 @@ export const xyrgbInterpolatorWorklet = /* javascript */ `
      * @private
      * @param {Object} current - Current values
      * @param {Object} target - Target values
-     * @param {number} smoothing - Smoothing factor
+     * @param {number} smoothing - Smoothing factor (0 = no smoothing, 1 = maximum smoothing)
      * @returns {Object} Smoothed values
      */
     _applySmoothing(current, target, smoothing) {
-      const factor = 1 - smoothing;
+      // Clamp smoothing to prevent numerical issues
+      const clampedSmoothing = Math.max(0, Math.min(0.99, smoothing));
+      
+      // Use exponential smoothing with better scaling
+      // At high smoothing values, still allow some target influence
+      const alpha = 1 - clampedSmoothing;
+      
       return {
-        x: current.x * smoothing + target.x * factor,
-        y: current.y * smoothing + target.y * factor,
-        r: current.r * smoothing + target.r * factor,
-        g: current.g * smoothing + target.g * factor,
-        b: current.b * smoothing + target.b * factor,
+        x: current.x + alpha * (target.x - current.x),
+        y: current.y + alpha * (target.y - current.y),
+        r: current.r + alpha * (target.r - current.r),
+        g: current.g + alpha * (target.g - current.g),
+        b: current.b + alpha * (target.b - current.b),
       };
     }
 
     /**
-     * Process audio samples
+     * Process audio samples - simplified XYscope-style approach
      * @param {Float32Array[][]} inputs - Input audio data
      * @param {Float32Array[][]} outputs - Output audio data (5 channels: X, Y, R, G, B)
      * @param {Record<string, Float32Array>} parameters - Parameter values
@@ -258,18 +185,24 @@ export const xyrgbInterpolatorWorklet = /* javascript */ `
       }
       
       const frameCount = output[0].length;
-      const amplitude = parameters.amplitude || this._amplitude;
-      const scanRate = parameters.scanRate || this._scanRate;
+      const frequency = parameters.scanRate || this._frequency;
       const smoothing = parameters.smoothing || this._smoothing;
       
-      // Update scan rate if changed
-      if (scanRate !== this._scanRate) {
-        this._scanRate = scanRate;
-        this._updateScanTiming();
+      // Update internal frequency if parameter changed
+      if (frequency !== this._frequency) {
+        this._frequency = frequency;
+      }
+      
+      // Update internal smoothing if parameter changed
+      if (smoothing !== this._smoothing) {
+        this._smoothing = smoothing;
       }
       
       // Output channels: X, Y, R, G, B
       const [xChannel, yChannel, rChannel, gChannel, bChannel] = output;
+      
+      // Calculate index increment like XYscope
+      const indexIncrement = frequency / sampleRate;
       
       for (let i = 0; i < frameCount; i++) {
         if (!this._isActive || this._vertices.length === 0) {
@@ -282,49 +215,58 @@ export const xyrgbInterpolatorWorklet = /* javascript */ `
           continue;
         }
         
-        // Check if we need to advance to next vertex
-        this._sampleCounter++;
-        if (this._sampleCounter >= this._samplesPerScan) {
-          this._sampleCounter = 0;
-          
-          // Get current and next vertex
-          const currentIdx = this._currentPosition;
-          const nextIdx = this._getNextPosition();
-          
-          const currentVertex = this._vertices[currentIdx];
-          const nextVertex = this._vertices[nextIdx];
-          
-          // Calculate interpolation factor for smooth transition
-          this._targetValues = this._interpolateVertices(currentVertex, nextVertex, 0);
+        // Get current vertex index (like XYscope)
+        const vertexIndex = Math.floor(this._index * this._vertices.length) % this._vertices.length;
+        const currentVertex = this._vertices[vertexIndex];
+        
+        if (!currentVertex) {
+          xChannel[i] = 0;
+          yChannel[i] = 0;
+          rChannel[i] = 0;
+          gChannel[i] = 0;
+          bChannel[i] = 0;
+          continue;
         }
         
-        // Interpolate within current scan period
-        const t = this._sampleCounter / this._samplesPerScan;
-        const currentIdx = this._currentPosition;
-        const nextIdx = (this._currentPosition + 1) % Math.max(1, this._vertices.length);
-        
-        const currentVertex = this._vertices[currentIdx];
-        const nextVertex = this._vertices[nextIdx] || currentVertex;
-        
-        // Get interpolated values
-        const interpolated = this._interpolateVertices(currentVertex, nextVertex, t);
+        // Get raw values from vertex
+        const rawValues = {
+          x: currentVertex.screen.x,
+          y: currentVertex.screen.y,
+          r: currentVertex.color.r,
+          g: currentVertex.color.g,
+          b: currentVertex.color.b,
+        };
         
         // Apply smoothing
         const smoothingValue = Array.isArray(smoothing) ? smoothing[i] : smoothing;
         this._lastOutputValues = this._applySmoothing(
           this._lastOutputValues,
-          interpolated,
+          rawValues,
           smoothingValue
         );
         
-        // Apply amplitude and output
-        const amplitudeValue = Array.isArray(amplitude) ? amplitude[i] : amplitude;
+        // Debug: Check for NaN or extreme values that could break the connection
+        if (isNaN(this._lastOutputValues.x) || isNaN(this._lastOutputValues.y) || 
+            isNaN(this._lastOutputValues.r) || isNaN(this._lastOutputValues.g) || 
+            isNaN(this._lastOutputValues.b)) {
+          // Reset to safe values if we get NaN
+          this._lastOutputValues = { x: 0, y: 0, r: 0, g: 0, b: 0 };
+        }
         
-        xChannel[i] = this._lastOutputValues.x * amplitudeValue;
-        yChannel[i] = this._lastOutputValues.y * amplitudeValue;
-        rChannel[i] = this._lastOutputValues.r * amplitudeValue;
-        gChannel[i] = this._lastOutputValues.g * amplitudeValue;
-        bChannel[i] = this._lastOutputValues.b * amplitudeValue;
+        // Output final values
+        xChannel[i] = this._lastOutputValues.x;
+        yChannel[i] = this._lastOutputValues.y;
+        rChannel[i] = this._lastOutputValues.r;
+        gChannel[i] = this._lastOutputValues.g;
+        bChannel[i] = this._lastOutputValues.b;
+        
+        // Increment index like XYscope
+        this._index += indexIncrement;
+        
+        // Keep index in bounds
+        if (this._index >= 1) {
+          this._index = this._index % 1;
+        }
       }
       
       return true;

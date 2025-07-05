@@ -33,10 +33,6 @@ interface XYRGBGeneratorNodeData extends BaseNodeData {
 	audioEnabled?: boolean;
 	/** Audio interpolation mode */
 	interpolationMode?: 'linear' | 'cubic' | 'circular';
-	/** Audio scan pattern */
-	scanPattern?: 'sequential' | 'ping_pong' | 'random';
-	/** Audio amplitude */
-	audioAmplitude?: number;
 	/** Audio smoothing */
 	audioSmoothing?: number;
 }
@@ -144,17 +140,6 @@ export function XYRGBGeneratorNode({
 		'linear' | 'cubic' | 'circular'
 	>(nodeId, 'interpolationMode', nodeData.interpolationMode ?? 'linear');
 
-	const [scanPattern, setScanPattern] = useAudioNodeParam<
-		'sequential' | 'ping_pong' | 'random'
-	>(nodeId, 'scanPattern', nodeData.scanPattern ?? 'sequential');
-
-	const [audioAmplitude, setAudioAmplitude] = useAudioNodeParam<number>(
-		nodeId,
-		'audioAmplitude',
-		nodeData.audioAmplitude ?? 1.0,
-		{ min: 0, max: 2 }
-	);
-
 	const [audioSmoothing, setAudioSmoothing] = useAudioNodeParam<number>(
 		nodeId,
 		'audioSmoothing',
@@ -203,8 +188,6 @@ export function XYRGBGeneratorNode({
 		if (interpolator.isReady) {
 			interpolator.setScanRate(scanRate);
 			interpolator.setInterpolationMode(interpolationMode);
-			interpolator.setScanPattern(scanPattern);
-			interpolator.setAmplitude(audioAmplitude);
 			interpolator.setSmoothing(audioSmoothing);
 
 			// Start/stop based on audioEnabled
@@ -219,8 +202,6 @@ export function XYRGBGeneratorNode({
 		audioEnabled,
 		scanRate,
 		interpolationMode,
-		scanPattern,
-		audioAmplitude,
 		audioSmoothing,
 		interpolator.isReady,
 	]);
@@ -234,8 +215,6 @@ export function XYRGBGeneratorNode({
 			triangleScale,
 			audioEnabled,
 			interpolationMode,
-			scanPattern,
-			audioAmplitude,
 			audioSmoothing,
 			audioParams: {
 				scanRate,
@@ -243,8 +222,6 @@ export function XYRGBGeneratorNode({
 				triangleScale,
 				audioEnabled,
 				interpolationMode,
-				scanPattern,
-				audioAmplitude,
 				audioSmoothing,
 			},
 		});
@@ -256,8 +233,6 @@ export function XYRGBGeneratorNode({
 		triangleScale,
 		audioEnabled,
 		interpolationMode,
-		scanPattern,
-		audioAmplitude,
 		audioSmoothing,
 	]);
 
@@ -428,46 +403,6 @@ export function XYRGBGeneratorNode({
 									{ value: 'cubic', label: 'Cubic' },
 									{ value: 'circular', label: 'Circular' },
 								]}
-							/>
-						</div>
-
-						<div className='mb-3'>
-							<GridControl
-								type='select'
-								label='Scan Pattern'
-								value={scanPattern}
-								variant='node-variant'
-								layout='stacked'
-								onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-									setScanPattern(
-										e.target.value as 'sequential' | 'ping_pong' | 'random'
-									)
-								}
-								className='h-12'
-								options={[
-									{ value: 'sequential', label: 'Sequential' },
-									{ value: 'ping_pong', label: 'Ping Pong' },
-									{ value: 'random', label: 'Random' },
-								]}
-							/>
-						</div>
-
-						<div className='mb-3'>
-							<GridControl
-								type='slider'
-								label='Audio Amplitude'
-								value={audioAmplitude}
-								min={0}
-								max={2}
-								step={0.1}
-								variant='node-variant'
-								layout='stacked'
-								showValue
-								formatValue={(val: number) => `${val.toFixed(1)}x`}
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-									setAudioAmplitude(Number(e.target.value))
-								}
-								className='h-12'
 							/>
 						</div>
 

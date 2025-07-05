@@ -16,10 +16,6 @@ export interface XYRGBInterpolatorNodeOptions {
 	scanRate?: number;
 	/** Interpolation mode */
 	interpolationMode?: 'linear' | 'cubic' | 'circular';
-	/** Scan pattern */
-	scanPattern?: 'sequential' | 'ping_pong' | 'random';
-	/** Output amplitude */
-	amplitude?: number;
 	/** Smoothing factor for transitions */
 	smoothing?: number;
 	/** Start automatically when created */
@@ -54,8 +50,6 @@ export class XYRGBInterpolatorNode {
 	// Parameters
 	private _scanRate: number = 30;
 	private _interpolationMode: 'linear' | 'cubic' | 'circular' = 'linear';
-	private _scanPattern: 'sequential' | 'ping_pong' | 'random' = 'sequential';
-	private _amplitude: number = 1.0;
 	private _smoothing: number = 0.1;
 
 	/**
@@ -64,8 +58,6 @@ export class XYRGBInterpolatorNode {
 	constructor(options: XYRGBInterpolatorNodeOptions = {}) {
 		this._scanRate = options.scanRate ?? 30;
 		this._interpolationMode = options.interpolationMode ?? 'linear';
-		this._scanPattern = options.scanPattern ?? 'sequential';
-		this._amplitude = options.amplitude ?? 1.0;
 		this._smoothing = options.smoothing ?? 0.1;
 		this._debug = options.debug ?? false;
 
@@ -118,7 +110,6 @@ export class XYRGBInterpolatorNode {
 					outputChannelCount: [5], // X, Y, R, G, B channels
 					parameterData: {
 						scanRate: this._scanRate,
-						amplitude: this._amplitude,
 						smoothing: this._smoothing,
 					},
 				}
@@ -143,14 +134,6 @@ export class XYRGBInterpolatorNode {
 			this._workletNode.port.postMessage({
 				type: 'interpolationMode',
 				data: this._interpolationMode,
-			});
-			this._workletNode.port.postMessage({
-				type: 'scanPattern',
-				data: this._scanPattern,
-			});
-			this._workletNode.port.postMessage({
-				type: 'amplitude',
-				data: this._amplitude,
 			});
 			this._workletNode.port.postMessage({
 				type: 'smoothing',
@@ -257,43 +240,6 @@ export class XYRGBInterpolatorNode {
 	}
 
 	/**
-	 * Set scan pattern
-	 */
-	setScanPattern(pattern: 'sequential' | 'ping_pong' | 'random'): this {
-		this._scanPattern = pattern;
-
-		if (this._workletNode && this._isReady) {
-			this._workletNode.port.postMessage({
-				type: 'scanPattern',
-				data: pattern,
-			});
-		}
-
-		return this;
-	}
-
-	/**
-	 * Set amplitude
-	 */
-	setAmplitude(value: number): this {
-		this._amplitude = Math.max(0, Math.min(2, value));
-
-		if (this._workletNode && this._isReady) {
-			const param = this._workletNode.parameters.get('amplitude');
-			if (param) {
-				param.setValueAtTime(this._amplitude, Tone.getContext().currentTime);
-			}
-
-			this._workletNode.port.postMessage({
-				type: 'amplitude',
-				data: this._amplitude,
-			});
-		}
-
-		return this;
-	}
-
-	/**
 	 * Set smoothing factor
 	 */
 	setSmoothing(value: number): this {
@@ -329,14 +275,6 @@ export class XYRGBInterpolatorNode {
 		return this._interpolationMode;
 	}
 
-	get scanPattern(): string {
-		return this._scanPattern;
-	}
-
-	get amplitude(): number {
-		return this._amplitude;
-	}
-
 	get smoothing(): number {
 		return this._smoothing;
 	}
@@ -362,14 +300,6 @@ export class XYRGBInterpolatorNode {
 
 	set interpolationMode(mode: 'linear' | 'cubic' | 'circular') {
 		this.setInterpolationMode(mode);
-	}
-
-	set scanPattern(pattern: 'sequential' | 'ping_pong' | 'random') {
-		this.setScanPattern(pattern);
-	}
-
-	set amplitude(value: number) {
-		this.setAmplitude(value);
 	}
 
 	set smoothing(value: number) {

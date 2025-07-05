@@ -25,10 +25,6 @@ interface UseXYRGBInterpolatorReturn {
 	setScanRate: (rate: number) => void;
 	/** Update interpolation mode */
 	setInterpolationMode: (mode: 'linear' | 'cubic' | 'circular') => void;
-	/** Update scan pattern */
-	setScanPattern: (pattern: 'sequential' | 'ping_pong' | 'random') => void;
-	/** Update amplitude */
-	setAmplitude: (amplitude: number) => void;
 	/** Update smoothing */
 	setSmoothing: (smoothing: number) => void;
 	/** Ready promise */
@@ -138,24 +134,6 @@ export function useXYRGBInterpolator(
 		[isReady]
 	);
 
-	const setScanPattern = useCallback(
-		(pattern: 'sequential' | 'ping_pong' | 'random') => {
-			if (nodeRef.current && isReady) {
-				nodeRef.current.setScanPattern(pattern);
-			}
-		},
-		[isReady]
-	);
-
-	const setAmplitude = useCallback(
-		(amplitude: number) => {
-			if (nodeRef.current && isReady) {
-				nodeRef.current.setAmplitude(amplitude);
-			}
-		},
-		[isReady]
-	);
-
 	const setSmoothing = useCallback(
 		(smoothing: number) => {
 			if (nodeRef.current && isReady) {
@@ -174,8 +152,6 @@ export function useXYRGBInterpolator(
 		stop,
 		setScanRate,
 		setInterpolationMode,
-		setScanPattern,
-		setAmplitude,
 		setSmoothing,
 		ready: readyPromiseRef.current,
 	};
