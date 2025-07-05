@@ -37,7 +37,8 @@ export type AudioNodeType =
 	| 'vocoder'
 	| 'pitchshifter'
 	| 'granularsynthesis'
-	| 'custom-noise';
+	| 'custom-noise'
+	| 'custom-xyrgb';
 
 // Mapping between React Flow node types and Tone.js node types
 export const NODE_TYPE_MAPPING: Record<string, AudioNodeType> = {
@@ -45,6 +46,7 @@ export const NODE_TYPE_MAPPING: Record<string, AudioNodeType> = {
 	'source.source': 'oscillator', // Main oscillator source node
 	'source.source-player': 'player',
 	'source.source-microphone': 'microphone',
+	'source.XYRGBGeneratorNode': 'custom-xyrgb',
 
 	// Effect nodes
 	'effect.filter': 'filter',
@@ -280,7 +282,10 @@ export interface AudioConnection {
 export interface AudioNodeRegistryEntry {
 	id: string;
 	type: AudioNodeType;
-	audioNode: Tone.ToneAudioNode | Tone.ToneAudioNode[];
+	audioNode:
+		| Tone.ToneAudioNode
+		| Tone.ToneAudioNode[]
+		| { outputs: Record<string, Tone.ToneAudioNode> };
 	parameters: AudioNodeParams;
 	connections: {
 		inputs: AudioConnection[];

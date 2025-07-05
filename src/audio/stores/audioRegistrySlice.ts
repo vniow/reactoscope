@@ -59,7 +59,11 @@ export interface AudioRegistryActions {
 	// Node access
 	getAudioNode: (
 		nodeId: string
-	) => Tone.ToneAudioNode | Tone.ToneAudioNode[] | null;
+	) =>
+		| Tone.ToneAudioNode
+		| Tone.ToneAudioNode[]
+		| { outputs: Record<string, Tone.ToneAudioNode> }
+		| null;
 	getRegistryEntry: (nodeId: string) => AudioNodeRegistryEntry | null;
 	getConnectionDetails: (edgeId: string) => {
 		connection: AudioConnection;
@@ -116,22 +120,25 @@ export const createAudioRegistrySlice: StateCreator<
 				await state.initializeAudioSystem();
 			}
 
-			let audioNode: Tone.ToneAudioNode | Tone.ToneAudioNode[];
+			let audioNode:
+				| Tone.ToneAudioNode
+				| Tone.ToneAudioNode[]
+				| { outputs: Record<string, Tone.ToneAudioNode> };
 			let customNodeInstance: unknown = undefined;
 
 			if (
-				type === 'custom-noise' &&
+				(type === 'custom-noise' || type === 'custom-xyrgb') &&
 				params &&
 				typeof params === 'object' &&
 				'node' in params &&
 				params.node
 			) {
-				// For custom-noise, use the provided node directly
+				// For custom-noise and custom-xyrgb, use the provided node directly
 				// Type assertion is safe here since we're checking the type and node property
 				audioNode = params.node as Tone.ToneAudioNode | Tone.ToneAudioNode[];
 				customNodeInstance = params.node;
 				console.log(
-					`🔊 Registering custom-noise node: ${nodeId} with provided audio node`
+					`🔊 Registering ${type} node: ${nodeId} with provided audio node`
 				);
 			} else {
 				audioNode = createAudioNode(type, params);
@@ -282,10 +289,36 @@ export const createAudioRegistrySlice: StateCreator<
 		try {
 			// Enhanced connection logic with handle-to-node mapping and index tracking
 			const getNodeFromHandle = (
-				audioNode: Tone.ToneAudioNode | Tone.ToneAudioNode[],
+				audioNode:
+					| Tone.ToneAudioNode
+					| Tone.ToneAudioNode[]
+					| { outputs: Record<string, Tone.ToneAudioNode> },
 				handleId: string | undefined,
 				isOutput: boolean
 			): { node: Tone.ToneAudioNode; index?: number } => {
+				// Handle named outputs object (like XYRGBInterpolatorNode.outputs)
+				if (
+					isOutput &&
+					audioNode &&
+					typeof audioNode === 'object' &&
+					'outputs' in audioNode &&
+					handleId
+				) {
+					// Map output handle IDs to output channel names
+					const outputHandleMap: Record<string, string> = {
+						outputX: 'x',
+						outputY: 'y',
+						outputR: 'r',
+						outputG: 'g',
+						outputB: 'b',
+					};
+
+					const channelName = outputHandleMap[handleId];
+					if (channelName && audioNode.outputs[channelName]) {
+						return { node: audioNode.outputs[channelName], index: undefined };
+					}
+				}
+
 				if (Array.isArray(audioNode)) {
 					// Handle-based routing for multi-node arrays
 					if (handleId) {
@@ -303,7 +336,7 @@ export const createAudioRegistrySlice: StateCreator<
 					const fallbackNode = audioNode[fallbackIndex];
 					return { node: fallbackNode, index: fallbackIndex };
 				}
-				return { node: audioNode, index: undefined };
+				return { node: audioNode as Tone.ToneAudioNode, index: undefined };
 			};
 
 			// Get the specific nodes to connect based on handle IDs
@@ -407,10 +440,36 @@ export const createAudioRegistrySlice: StateCreator<
 
 				// Use the same handle-to-node mapping function
 				const getNodeFromHandle = (
-					audioNode: Tone.ToneAudioNode | Tone.ToneAudioNode[],
+					audioNode:
+						| Tone.ToneAudioNode
+						| Tone.ToneAudioNode[]
+						| { outputs: Record<string, Tone.ToneAudioNode> },
 					handleId: string | undefined,
 					isOutput: boolean
 				): Tone.ToneAudioNode => {
+					// Handle named outputs object (like XYRGBInterpolatorNode.outputs)
+					if (
+						isOutput &&
+						audioNode &&
+						typeof audioNode === 'object' &&
+						'outputs' in audioNode &&
+						handleId
+					) {
+						// Map output handle IDs to output channel names
+						const outputHandleMap: Record<string, string> = {
+							outputX: 'x',
+							outputY: 'y',
+							outputR: 'r',
+							outputG: 'g',
+							outputB: 'b',
+						};
+
+						const channelName = outputHandleMap[handleId];
+						if (channelName && audioNode.outputs[channelName]) {
+							return audioNode.outputs[channelName];
+						}
+					}
+
 					if (Array.isArray(audioNode)) {
 						// Handle-based routing for multi-node arrays
 						if (handleId) {
@@ -426,7 +485,7 @@ export const createAudioRegistrySlice: StateCreator<
 						// Fallback to existing behavior
 						return isOutput ? audioNode[audioNode.length - 1] : audioNode[0];
 					}
-					return audioNode;
+					return audioNode as Tone.ToneAudioNode;
 				};
 
 				// Get the specific nodes to disconnect

@@ -6,6 +6,7 @@
 
 // Worklet hooks
 export { useNoiseWorklet } from './useNoiseWorklet';
+export { useXYRGBInterpolator } from './useXYRGBInterpolator';
 
 // TODO: Additional worklet hooks to be implemented
 // export { useSpectralFilterWorklet } from './useSpectralFilterWorklet';

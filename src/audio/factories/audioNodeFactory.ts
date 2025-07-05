@@ -216,6 +216,13 @@ export function createAudioNode(
 				return new Tone.UserMedia();
 			}
 
+			case 'custom-xyrgb': {
+				// Custom XYRGB interpolator node - handled externally
+				// This case should not be reached as custom nodes are passed directly
+				console.warn('⚠️ Custom XYRGB node should be provided externally');
+				return new Tone.Gain(1);
+			}
+
 			default:
 				console.warn(`⚠️ Unknown audio node type: ${type}`);
 				// Return a pass-through gain node as fallback
@@ -234,7 +241,10 @@ export function createAudioNode(
  * @param audioNode - The audio node(s) to dispose
  */
 export function disposeAudioNode(
-	audioNode: Tone.ToneAudioNode | Tone.ToneAudioNode[]
+	audioNode:
+		| Tone.ToneAudioNode
+		| Tone.ToneAudioNode[]
+		| { outputs: Record<string, Tone.ToneAudioNode> }
 ): void {
 	try {
 		if (Array.isArray(audioNode)) {
@@ -243,6 +253,17 @@ export function disposeAudioNode(
 					node.dispose();
 				}
 			});
+		} else if ('outputs' in audioNode) {
+			// Handle nodes with named outputs
+			Object.values(audioNode.outputs).forEach((outputNode) => {
+				if (outputNode.dispose && typeof outputNode.dispose === 'function') {
+					outputNode.dispose();
+				}
+			});
+			// Dispose the main node if it has dispose method
+			if (isDisposableNode(audioNode)) {
+				audioNode.dispose();
+			}
 		} else {
 			if (audioNode.dispose && typeof audioNode.dispose === 'function') {
 				audioNode.dispose();
@@ -263,12 +284,25 @@ interface StoppableNode extends Tone.ToneAudioNode {
 	stop: () => void;
 }
 
+interface DisposableNode {
+	dispose: () => void;
+}
+
 function isStartableNode(node: Tone.ToneAudioNode): node is StartableNode {
 	return 'start' in node && typeof (node as StartableNode).start === 'function';
 }
 
 function isStoppableNode(node: Tone.ToneAudioNode): node is StoppableNode {
 	return 'stop' in node && typeof (node as StoppableNode).stop === 'function';
+}
+
+function isDisposableNode(obj: unknown): obj is DisposableNode {
+	return (
+		typeof obj === 'object' &&
+		obj !== null &&
+		'dispose' in obj &&
+		typeof (obj as DisposableNode).dispose === 'function'
+	);
 }
 
 function isNodeAlreadyStarted(node: Tone.ToneAudioNode): boolean {
@@ -281,7 +315,10 @@ function isNodeAlreadyStarted(node: Tone.ToneAudioNode): boolean {
  * @param audioNode - The audio node(s) to start
  */
 export function startAudioNode(
-	audioNode: Tone.ToneAudioNode | Tone.ToneAudioNode[]
+	audioNode:
+		| Tone.ToneAudioNode
+		| Tone.ToneAudioNode[]
+		| { outputs: Record<string, Tone.ToneAudioNode> }
 ): void {
 	try {
 		if (Array.isArray(audioNode)) {
@@ -300,6 +337,12 @@ export function startAudioNode(
 					}
 				}
 			});
+		} else if ('outputs' in audioNode) {
+			// Handle nodes with named outputs - try to start the main node if it's startable
+			if ('start' in audioNode && typeof audioNode.start === 'function') {
+				console.log(`▶️ Starting audio node with outputs`);
+				(audioNode.start as () => void)();
+			}
 		} else {
 			if (isStartableNode(audioNode)) {
 				const isAlreadyStarted = isNodeAlreadyStarted(audioNode);
@@ -324,7 +367,10 @@ export function startAudioNode(
  * @param audioNode - The audio node(s) to stop
  */
 export function stopAudioNode(
-	audioNode: Tone.ToneAudioNode | Tone.ToneAudioNode[]
+	audioNode:
+		| Tone.ToneAudioNode
+		| Tone.ToneAudioNode[]
+		| { outputs: Record<string, Tone.ToneAudioNode> }
 ): void {
 	try {
 		if (Array.isArray(audioNode)) {
@@ -333,6 +379,11 @@ export function stopAudioNode(
 					node.stop();
 				}
 			});
+		} else if ('outputs' in audioNode) {
+			// Handle nodes with named outputs - try to stop the main node if it's stoppable
+			if ('stop' in audioNode && typeof audioNode.stop === 'function') {
+				(audioNode.stop as () => void)();
+			}
 		} else {
 			if (isStoppableNode(audioNode)) {
 				audioNode.stop();
@@ -351,7 +402,10 @@ export function stopAudioNode(
  * @param params - The new parameters to apply
  */
 export async function updateAudioNodeParams(
-	audioNode: Tone.ToneAudioNode | Tone.ToneAudioNode[],
+	audioNode:
+		| Tone.ToneAudioNode
+		| Tone.ToneAudioNode[]
+		| { outputs: Record<string, Tone.ToneAudioNode> },
 	type: AudioNodeType,
 	params: Partial<AudioNodeParams>
 ): Promise<void> {
@@ -407,6 +461,18 @@ export async function updateAudioNodeParams(
 				}
 				default:
 					console.warn(`⚠️ Unknown array audio node type for update: ${type}`);
+			}
+		} else if ('outputs' in audioNode) {
+			// Handle nodes with named outputs (like custom XYRGB node)
+			switch (type) {
+				case 'custom-xyrgb': {
+					// Custom XYRGB nodes handle their own parameter updates through their methods
+					// The parameters are already applied through the React component
+					// No additional parameter updates needed here
+					break;
+				}
+				default:
+					console.warn(`⚠️ Unknown custom node type for update: ${type}`);
 			}
 		} else {
 			// Handle single nodes
@@ -555,6 +621,14 @@ export async function updateAudioNodeParams(
 					}
 					// Other parameters like timeWindow and triggerLevel are handled by the UI component
 					// No live parameter updates needed for oscilloscope audio nodes
+					break;
+				}
+
+				case 'custom-noise':
+				case 'custom-xyrgb': {
+					// Custom nodes handle their own parameter updates through their methods
+					// The parameters are already applied through the React component
+					// No additional parameter updates needed here
 					break;
 				}
 

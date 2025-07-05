@@ -15,6 +15,7 @@ import { BaseNode } from '../../shared/components/BaseNode';
 import { NodeHandle } from '../../shared/components/NodeHandle';
 import { GridControl } from '../../shared/components/ui/GridControl';
 import { useAudioNodeParam } from '../../audio/hooks/useAudioNodeParam';
+import { useXYRGBInterpolator } from '../../audio/hooks/useXYRGBInterpolator';
 import { useAppStore } from '../../shared/stores/appStore';
 import { DebugPanel, type SceneData } from './DebugPanel';
 import { useSceneTraversal } from './useSceneTraversal';
@@ -28,6 +29,16 @@ interface XYRGBGeneratorNodeData extends BaseNodeData {
 	rotationSpeed?: number;
 	/** Scale factor for triangle size */
 	triangleScale?: number;
+	/** Audio interpolator enabled */
+	audioEnabled?: boolean;
+	/** Audio interpolation mode */
+	interpolationMode?: 'linear' | 'cubic' | 'circular';
+	/** Audio scan pattern */
+	scanPattern?: 'sequential' | 'ping_pong' | 'random';
+	/** Audio amplitude */
+	audioAmplitude?: number;
+	/** Audio smoothing */
+	audioSmoothing?: number;
 }
 
 /**
@@ -77,7 +88,6 @@ function Scene3D({
 			{/* Ambient light for visibility */}
 			<ambientLight intensity={0.8} />
 
-
 			{/* RGB Triangle */}
 			<RGBTriangle
 				scale={triangleScale}
@@ -92,53 +102,169 @@ export function XYRGBGeneratorNode({
 	data,
 	selected = false,
 }: NodeProps & { data: XYRGBGeneratorNodeData }): React.ReactElement {
-  // Type assertions for props
-  const nodeId = id as string;
-  const nodeData = data as XYRGBGeneratorNodeData;
-  const isSelected = selected as boolean;
+	// Type assertions for props
+	const nodeId = id as string;
+	const nodeData = data as XYRGBGeneratorNodeData;
+	const isSelected = selected as boolean;
 	const [sceneData, setSceneData] = useState<SceneData>({
 		vertices: [],
 		timestamp: 0,
 	});
 
-	// Controls
-   const [scanRate, setScanRate] = useAudioNodeParam<number>(
-	   nodeId,
-	   'scanRate',
-	   nodeData.scanRate ?? 30,
+	// Visual controls
+	const [scanRate, setScanRate] = useAudioNodeParam<number>(
+		nodeId,
+		'scanRate',
+		nodeData.scanRate ?? 30,
 		{ min: 1, max: 60 }
 	);
 
-   const [rotationSpeed, setRotationSpeed] = useAudioNodeParam<number>(
-	   nodeId,
-	   'rotationSpeed',
-	   nodeData.rotationSpeed ?? 1,
+	const [rotationSpeed, setRotationSpeed] = useAudioNodeParam<number>(
+		nodeId,
+		'rotationSpeed',
+		nodeData.rotationSpeed ?? 1,
 		{ min: 0, max: 5 }
 	);
 
-   const [triangleScale, setTriangleScale] = useAudioNodeParam<number>(
-	   nodeId,
-	   'triangleScale',
-	   nodeData.triangleScale ?? 1,
+	const [triangleScale, setTriangleScale] = useAudioNodeParam<number>(
+		nodeId,
+		'triangleScale',
+		nodeData.triangleScale ?? 1,
 		{ min: 0.1, max: 2 }
 	);
 
+	// Audio controls
+	const [audioEnabled, setAudioEnabled] = useAudioNodeParam<boolean>(
+		nodeId,
+		'audioEnabled',
+		nodeData.audioEnabled ?? false
+	);
+
+	const [interpolationMode, setInterpolationMode] = useAudioNodeParam<
+		'linear' | 'cubic' | 'circular'
+	>(nodeId, 'interpolationMode', nodeData.interpolationMode ?? 'linear');
+
+	const [scanPattern, setScanPattern] = useAudioNodeParam<
+		'sequential' | 'ping_pong' | 'random'
+	>(nodeId, 'scanPattern', nodeData.scanPattern ?? 'sequential');
+
+	const [audioAmplitude, setAudioAmplitude] = useAudioNodeParam<number>(
+		nodeId,
+		'audioAmplitude',
+		nodeData.audioAmplitude ?? 1.0,
+		{ min: 0, max: 2 }
+	);
+
+	const [audioSmoothing, setAudioSmoothing] = useAudioNodeParam<number>(
+		nodeId,
+		'audioSmoothing',
+		nodeData.audioSmoothing ?? 0.1,
+		{ min: 0, max: 1 }
+	);
+
+	// XYRGB Audio Interpolator
+	const interpolator = useXYRGBInterpolator(audioEnabled);
+
+	// Register the audio interpolator with the audio system when ready
+	useEffect(() => {
+		const appStore = useAppStore.getState();
+
+		if (audioEnabled && interpolator.isReady && interpolator.node) {
+			// Register this as a custom audio node type with the audio registry
+			appStore.registerAudioNode(nodeId, 'custom-xyrgb', {
+				node: interpolator.node,
+				outputs: interpolator.node.outputs, // Pass the 5-channel outputs
+			});
+
+			console.log(`🎵 Registered XYRGB audio node: ${nodeId}`);
+		} else if (!audioEnabled) {
+			// Unregister when disabled
+			appStore.unregisterAudioNode(nodeId);
+		}
+
+		return () => {
+			// Cleanup on unmount
+			if (audioEnabled) {
+				appStore.unregisterAudioNode(nodeId);
+			}
+		};
+	}, [nodeId, audioEnabled, interpolator.isReady, interpolator.node]);
+
+	// Update interpolator when scene data changes
+	useEffect(() => {
+		if (audioEnabled && interpolator.isReady && sceneData.vertices.length > 0) {
+			interpolator.updateVertices(sceneData.vertices);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [sceneData, audioEnabled, interpolator.isReady]);
+
+	// Sync all interpolator controls when they change
+	useEffect(() => {
+		if (interpolator.isReady) {
+			interpolator.setScanRate(scanRate);
+			interpolator.setInterpolationMode(interpolationMode);
+			interpolator.setScanPattern(scanPattern);
+			interpolator.setAmplitude(audioAmplitude);
+			interpolator.setSmoothing(audioSmoothing);
+
+			// Start/stop based on audioEnabled
+			if (audioEnabled) {
+				interpolator.start();
+			} else {
+				interpolator.stop();
+			}
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [
+		audioEnabled,
+		scanRate,
+		interpolationMode,
+		scanPattern,
+		audioAmplitude,
+		audioSmoothing,
+		interpolator.isReady,
+	]);
 
 	// Update node data
 	const updateNode = useAppStore((state) => state.updateNode);
-   useEffect(() => {
-	   updateNode(nodeId, {
+	useEffect(() => {
+		updateNode(nodeId, {
 			scanRate,
 			rotationSpeed,
 			triangleScale,
-			audioParams: { scanRate, rotationSpeed, triangleScale },
+			audioEnabled,
+			interpolationMode,
+			scanPattern,
+			audioAmplitude,
+			audioSmoothing,
+			audioParams: {
+				scanRate,
+				rotationSpeed,
+				triangleScale,
+				audioEnabled,
+				interpolationMode,
+				scanPattern,
+				audioAmplitude,
+				audioSmoothing,
+			},
 		});
-	}, [nodeId, updateNode, scanRate, rotationSpeed, triangleScale]);
+	}, [
+		nodeId,
+		updateNode,
+		scanRate,
+		rotationSpeed,
+		triangleScale,
+		audioEnabled,
+		interpolationMode,
+		scanPattern,
+		audioAmplitude,
+		audioSmoothing,
+	]);
 
 	return (
-   <BaseNode
-	   nodeId={nodeId}
-	   selected={isSelected}
+		<BaseNode
+			nodeId={nodeId}
+			selected={isSelected}
 			title='XYRGB Generator'
 			variant='source'
 		>
@@ -173,20 +299,38 @@ export function XYRGBGeneratorNode({
 				{/* Debug Panel */}
 				<DebugPanel sceneData={sceneData} />
 
-				{/* Status indicator (static, always inactive) */}
+				{/* Status indicator */}
 				<div className='flex justify-between items-center mt-2 text-xs px-2'>
 					<div className='flex items-center'>
 						<div
-							className='w-2 h-2 rounded-full mr-2 bg-gray-500'
-							aria-label='Inactive'
+							className={`w-2 h-2 rounded-full mr-2 ${
+								audioEnabled && interpolator.isPlaying
+									? 'bg-green-500'
+									: audioEnabled
+										? 'bg-yellow-500'
+										: 'bg-gray-500'
+							}`}
+							aria-label={
+								audioEnabled && interpolator.isPlaying
+									? 'Active'
+									: audioEnabled
+										? 'Ready'
+										: 'Inactive'
+							}
 						/>
-						<span className='text-node-secondary'>INACTIVE</span>
+						<span className='text-node-secondary'>
+							{audioEnabled && interpolator.isPlaying
+								? 'ACTIVE'
+								: audioEnabled
+									? 'READY'
+									: 'INACTIVE'}
+						</span>
 					</div>
 					<span className='text-node-secondary opacity-70'>{scanRate}Hz</span>
 				</div>
 			</div>
 
-			{/* Controls */}
+			{/* Visual Controls */}
 			<div className='mb-3'>
 				<GridControl
 					type='slider'
@@ -225,7 +369,7 @@ export function XYRGBGeneratorNode({
 				/>
 			</div>
 
-			<div className='mb-3'>
+			<div className='mb-4'>
 				<GridControl
 					type='slider'
 					label='Triangle Scale'
@@ -242,6 +386,111 @@ export function XYRGBGeneratorNode({
 					}
 					className='h-12'
 				/>
+			</div>
+
+			{/* Audio Controls Section */}
+			<div className='border-t border-node pt-3 mb-3'>
+				<h4 className='text-sm font-medium text-node-primary mb-2'>
+					Audio Output
+				</h4>
+
+				{/* Audio Enable Toggle */}
+				<div className='mb-3'>
+					<GridControl
+						type='toggle'
+						label='Enable Audio'
+						checked={audioEnabled}
+						variant='node-variant'
+						layout='stacked'
+						onChange={(checked: boolean) => setAudioEnabled(checked)}
+						className='h-8'
+					/>
+				</div>
+
+				{/* Audio controls - only show when enabled */}
+				{audioEnabled && (
+					<>
+						<div className='mb-3'>
+							<GridControl
+								type='select'
+								label='Interpolation'
+								value={interpolationMode}
+								variant='node-variant'
+								layout='stacked'
+								onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+									setInterpolationMode(
+										e.target.value as 'linear' | 'cubic' | 'circular'
+									)
+								}
+								className='h-12'
+								options={[
+									{ value: 'linear', label: 'Linear' },
+									{ value: 'cubic', label: 'Cubic' },
+									{ value: 'circular', label: 'Circular' },
+								]}
+							/>
+						</div>
+
+						<div className='mb-3'>
+							<GridControl
+								type='select'
+								label='Scan Pattern'
+								value={scanPattern}
+								variant='node-variant'
+								layout='stacked'
+								onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+									setScanPattern(
+										e.target.value as 'sequential' | 'ping_pong' | 'random'
+									)
+								}
+								className='h-12'
+								options={[
+									{ value: 'sequential', label: 'Sequential' },
+									{ value: 'ping_pong', label: 'Ping Pong' },
+									{ value: 'random', label: 'Random' },
+								]}
+							/>
+						</div>
+
+						<div className='mb-3'>
+							<GridControl
+								type='slider'
+								label='Audio Amplitude'
+								value={audioAmplitude}
+								min={0}
+								max={2}
+								step={0.1}
+								variant='node-variant'
+								layout='stacked'
+								showValue
+								formatValue={(val: number) => `${val.toFixed(1)}x`}
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+									setAudioAmplitude(Number(e.target.value))
+								}
+								className='h-12'
+							/>
+						</div>
+
+						<div className='mb-3'>
+							<GridControl
+								type='slider'
+								label='Smoothing'
+								value={audioSmoothing}
+								min={0}
+								max={1}
+								step={0.01}
+								variant='node-variant'
+								layout='stacked'
+								showValue
+								formatValue={(val: number) => `${Math.round(val * 100)}%`}
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+									setAudioSmoothing(Number(e.target.value))
+								}
+								className='h-12'
+							/>
+						</div>
+					</>
+				)}
 			</div>
 
 			{/* Output Handles - 5 channels for X, Y, R, G, B */}
