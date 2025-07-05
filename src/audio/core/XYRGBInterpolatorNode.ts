@@ -212,7 +212,7 @@ export class XYRGBInterpolatorNode {
 			});
 
 			if (this._debug) {
-				console.log(`🔄 Updated vertices: ${vertices.length} vertices`);
+				// console.log(`🔄 Updated vertices: ${vertices.length} vertices`);
 			}
 		}
 
@@ -351,6 +351,29 @@ export class XYRGBInterpolatorNode {
 
 	get ready(): Promise<void> {
 		return this._readyPromise;
+	}
+
+	/**
+	 * Property setters for useAudioNodeParam compatibility
+	 */
+	set scanRate(value: number) {
+		this.setScanRate(value);
+	}
+
+	set interpolationMode(mode: 'linear' | 'cubic' | 'circular') {
+		this.setInterpolationMode(mode);
+	}
+
+	set scanPattern(pattern: 'sequential' | 'ping_pong' | 'random') {
+		this.setScanPattern(pattern);
+	}
+
+	set amplitude(value: number) {
+		this.setAmplitude(value);
+	}
+
+	set smoothing(value: number) {
+		this.setSmoothing(value);
 	}
 
 	/**

@@ -113,6 +113,12 @@ export const createAudioRegistrySlice: StateCreator<
 	// Actions
 	registerAudioNode: async (nodeId, type, params = {}) => {
 		try {
+			// Check if node is already registered
+			if (get().nodeRegistry[nodeId]) {
+				console.warn(`⚠️ Audio node ${nodeId} is already registered, skipping`);
+				return;
+			}
+
 			// Ensure audio system is initialized before creating nodes
 			const state = get();
 			if (!state.isAudioInitialized) {
@@ -127,19 +133,24 @@ export const createAudioRegistrySlice: StateCreator<
 			let customNodeInstance: unknown = undefined;
 
 			if (
-				(type === 'custom-noise' || type === 'custom-xyrgb') &&
+				(type === 'custom-noise' ||
+					type === 'custom-xyrgb' ||
+					type === 'analyzer') &&
 				params &&
 				typeof params === 'object' &&
 				'node' in params &&
 				params.node
 			) {
-				// For custom-noise and custom-xyrgb, use the provided node directly
+				// For custom nodes, use the provided node directly
 				// Type assertion is safe here since we're checking the type and node property
 				audioNode = params.node as Tone.ToneAudioNode | Tone.ToneAudioNode[];
 				customNodeInstance = params.node;
-				console.log(
-					`🔊 Registering ${type} node: ${nodeId} with provided audio node`
-				);
+				// Only log for custom-xyrgb to reduce console spam
+				if (type === 'custom-xyrgb') {
+					console.log(
+						`🔊 Registering ${type} node: ${nodeId} with provided audio node`
+					);
+				}
 			} else {
 				audioNode = createAudioNode(type, params);
 			}
@@ -165,6 +176,8 @@ export const createAudioRegistrySlice: StateCreator<
 				},
 			}));
 
+			console.log(`✅ Audio node registered: ${nodeId} (type: ${type})`);
+
 			// Auto-start nodes that need to be started (but they will be stopped if disconnected)
 			// Note: custom-noise nodes handle their own start/stop via the UI, so don't auto-start them
 			if (type === 'oscillator' || type === 'lfo') {
@@ -176,11 +189,9 @@ export const createAudioRegistrySlice: StateCreator<
 	},
 
 	unregisterAudioNode: (nodeId) => {
-		// console.log(`🔇 Unregistering audio node: ${nodeId}`);
-
 		const entry = get().nodeRegistry[nodeId];
 		if (!entry) {
-			console.warn(`⚠️ Audio node ${nodeId} not found in registry`);
+			// Don't warn for missing nodes during cleanup - this is normal
 			return;
 		}
 
@@ -249,177 +260,202 @@ export const createAudioRegistrySlice: StateCreator<
 		sourceHandleId,
 		targetHandleId
 	) => {
-		// Map React Flow node IDs to internal audio node IDs for multi-input nodes
-		// Map target node handles to their internal audio node IDs
-		// Determine target audio node key (x, y, r, g, b channels for XYRGBScope)
-		const handleToSuffixMap: Record<string, string> = {
-			inputX: ':x',
-			inputY: ':y',
-			inputR: ':r',
-			inputG: ':g',
-			inputB: ':b',
-		};
+		const attemptConnection = (attempt = 1) => {
+			// Map React Flow node IDs to internal audio node IDs for multi-input nodes
+			// Map target node handles to their internal audio node IDs
+			// Determine target audio node key (x, y, r, g, b channels for XYRGBScope)
+			const handleToSuffixMap: Record<string, string> = {
+				inputX: ':x',
+				inputY: ':y',
+				inputR: ':r',
+				inputG: ':g',
+				inputB: ':b',
+			};
 
-		const actualTargetId =
-			targetHandleId && handleToSuffixMap[targetHandleId]
-				? `${targetId}${handleToSuffixMap[targetHandleId]}`
-				: targetId;
+			const actualTargetId =
+				targetHandleId && handleToSuffixMap[targetHandleId]
+					? `${targetId}${handleToSuffixMap[targetHandleId]}`
+					: targetId;
 
-		const sourceEntry = get().nodeRegistry[sourceId];
-		let targetEntry = get().nodeRegistry[actualTargetId];
+			const sourceEntry = get().nodeRegistry[sourceId];
+			let targetEntry = get().nodeRegistry[actualTargetId];
 
-		// Fallback: lookup registry by matching suffix if direct lookup fails
-		if (!targetEntry && targetHandleId && handleToSuffixMap[targetHandleId]) {
-			const suffix = handleToSuffixMap[targetHandleId];
-			const fallbackKey = Object.keys(get().nodeRegistry).find(
-				(key) => key === `${targetId}${suffix}`
-			);
-			if (fallbackKey) {
-				targetEntry = get().nodeRegistry[fallbackKey];
-			}
-		}
-
-		if (!sourceEntry || !targetEntry) {
-			console.warn(
-				`⚠️ Cannot create audio connection - missing nodes: source=${!!sourceEntry}, target=${!!targetEntry}`
-			);
-			return;
-		}
-
-		try {
-			// Enhanced connection logic with handle-to-node mapping and index tracking
-			const getNodeFromHandle = (
-				audioNode:
-					| Tone.ToneAudioNode
-					| Tone.ToneAudioNode[]
-					| { outputs: Record<string, Tone.ToneAudioNode> },
-				handleId: string | undefined,
-				isOutput: boolean
-			): { node: Tone.ToneAudioNode; index?: number } => {
-				// Handle named outputs object (like XYRGBInterpolatorNode.outputs)
-				if (
-					isOutput &&
-					audioNode &&
-					typeof audioNode === 'object' &&
-					'outputs' in audioNode &&
-					handleId
-				) {
-					// Map output handle IDs to output channel names
-					const outputHandleMap: Record<string, string> = {
-						outputX: 'x',
-						outputY: 'y',
-						outputR: 'r',
-						outputG: 'g',
-						outputB: 'b',
-					};
-
-					const channelName = outputHandleMap[handleId];
-					if (channelName && audioNode.outputs[channelName]) {
-						return { node: audioNode.outputs[channelName], index: undefined };
-					}
+			// Fallback: lookup registry by matching suffix if direct lookup fails
+			if (!targetEntry && targetHandleId && handleToSuffixMap[targetHandleId]) {
+				const suffix = handleToSuffixMap[targetHandleId];
+				const fallbackKey = Object.keys(get().nodeRegistry).find(
+					(key) => key === `${targetId}${suffix}`
+				);
+				if (fallbackKey) {
+					targetEntry = get().nodeRegistry[fallbackKey];
 				}
+			}
 
-				if (Array.isArray(audioNode)) {
-					// Handle-based routing for multi-node arrays
-					if (handleId) {
-						// Extract channel number from handle ID (e.g., 'input-1' -> 0, 'output-2' -> 1)
-						const channelMatch = handleId.match(/-(\d+)$/);
-						if (channelMatch) {
-							const channelIndex = parseInt(channelMatch[1]) - 1; // Convert 1-based to 0-based
-							if (channelIndex >= 0 && channelIndex < audioNode.length) {
-								return { node: audioNode[channelIndex], index: channelIndex };
-							}
+			if (!sourceEntry || !targetEntry) {
+				if (attempt < 5) {
+					// Debug logging to understand what's missing
+					if (attempt === 1) {
+						console.log(
+							`🔍 Connection attempt ${attempt}: sourceId=${sourceId}, targetId=${targetId}, actualTargetId=${actualTargetId}`
+						);
+						console.log(`🔍 Available nodes:`, Object.keys(get().nodeRegistry));
+					}
+					// If nodes are not ready, retry after a short delay
+					setTimeout(() => attemptConnection(attempt + 1), 100 * attempt);
+				} else {
+					console.warn(
+						`⚠️ Cannot create audio connection after ${attempt} attempts - missing nodes: source=${!!sourceEntry} (${sourceId}), target=${!!targetEntry} (${actualTargetId})`
+					);
+					console.log(
+						`🔍 Available registry keys:`,
+						Object.keys(get().nodeRegistry)
+					);
+				}
+				return;
+			}
+
+			try {
+				// Enhanced connection logic with handle-to-node mapping and index tracking
+				const getNodeFromHandle = (
+					audioNode:
+						| Tone.ToneAudioNode
+						| Tone.ToneAudioNode[]
+						| { outputs: Record<string, Tone.ToneAudioNode> },
+					handleId: string | undefined,
+					isOutput: boolean
+				): { node: Tone.ToneAudioNode; index?: number } => {
+					// Handle named outputs object (like XYRGBInterpolatorNode.outputs)
+					if (
+						isOutput &&
+						audioNode &&
+						typeof audioNode === 'object' &&
+						'outputs' in audioNode &&
+						handleId
+					) {
+						// Map output handle IDs to output channel names
+						const outputHandleMap: Record<string, string> = {
+							outputX: 'x',
+							outputY: 'y',
+							outputR: 'r',
+							outputG: 'g',
+							outputB: 'b',
+						};
+
+						const channelName = outputHandleMap[handleId];
+						if (channelName && audioNode.outputs[channelName]) {
+							return { node: audioNode.outputs[channelName], index: undefined };
 						}
 					}
-					// Fallback to existing behavior for standard handles
-					const fallbackIndex = isOutput ? audioNode.length - 1 : 0;
-					const fallbackNode = audioNode[fallbackIndex];
-					return { node: fallbackNode, index: fallbackIndex };
-				}
-				return { node: audioNode as Tone.ToneAudioNode, index: undefined };
-			};
 
-			// Get the specific nodes to connect based on handle IDs
-			const sourceResult = getNodeFromHandle(
-				sourceEntry.audioNode,
-				sourceHandleId,
-				true
-			);
-			const targetResult = getNodeFromHandle(
-				targetEntry.audioNode,
-				targetHandleId,
-				false
-			);
-
-			const connection: AudioConnection = {
-				sourceId,
-				targetId: actualTargetId, // Store the actual target ID with suffix for proper cleanup
-				sourceHandleId,
-				targetHandleId,
-				sourceOutputIndex: sourceResult.index,
-				targetInputIndex: targetResult.index,
-			};
-
-			// Connect the nodes
-			sourceResult.node.connect(targetResult.node);
-
-			// Register the connection
-			set((state) => ({
-				connectionRegistry: {
-					...state.connectionRegistry,
-					[edgeId]: connection,
-				},
-			}));
-
-			// Update registry entries with connection info
-			set((state) => {
-				const updates: Record<string, AudioNodeRegistryEntry> = {
-					...state.nodeRegistry,
+					if (Array.isArray(audioNode)) {
+						// Handle-based routing for multi-node arrays
+						if (handleId) {
+							// Extract channel number from handle ID (e.g., 'input-1' -> 0, 'output-2' -> 1)
+							const channelMatch = handleId.match(/-(\d+)$/);
+							if (channelMatch) {
+								const channelIndex = parseInt(channelMatch[1]) - 1; // Convert 1-based to 0-based
+								if (channelIndex >= 0 && channelIndex < audioNode.length) {
+									return { node: audioNode[channelIndex], index: channelIndex };
+								}
+							}
+						}
+						// Fallback to existing behavior for standard handles
+						const fallbackIndex = isOutput ? audioNode.length - 1 : 0;
+						const fallbackNode = audioNode[fallbackIndex];
+						return { node: fallbackNode, index: fallbackIndex };
+					}
+					return { node: audioNode as Tone.ToneAudioNode, index: undefined };
 				};
 
-				// Update source node if it exists
-				if (state.nodeRegistry[sourceId]) {
-					updates[sourceId] = {
-						...state.nodeRegistry[sourceId],
-						connections: {
-							...state.nodeRegistry[sourceId].connections,
-							outputs: [
-								...state.nodeRegistry[sourceId].connections.outputs,
-								connection,
-							],
-						},
-					};
-				}
-
-				// Update target node if it exists
-				if (state.nodeRegistry[actualTargetId]) {
-					updates[actualTargetId] = {
-						...state.nodeRegistry[actualTargetId],
-						connections: {
-							...state.nodeRegistry[actualTargetId].connections,
-							inputs: [
-								...state.nodeRegistry[actualTargetId].connections.inputs,
-								connection,
-							],
-						},
-					};
-				}
-
-				return { nodeRegistry: updates };
-			});
-
-			// Auto-start source nodes when they get connected
-			if (sourceEntry) {
-				const shouldAutoStart = ['oscillator', 'lfo', 'custom-noise'].includes(
-					sourceEntry.type
+				// Get the specific nodes to connect based on handle IDs
+				const sourceResult = getNodeFromHandle(
+					sourceEntry.audioNode,
+					sourceHandleId,
+					true
 				);
-				if (shouldAutoStart) {
-					startAudioNode(sourceEntry.audioNode);
+				const targetResult = getNodeFromHandle(
+					targetEntry.audioNode,
+					targetHandleId,
+					false
+				);
+
+				const connection: AudioConnection = {
+					sourceId,
+					targetId: actualTargetId, // Store the actual target ID with suffix for proper cleanup
+					sourceHandleId,
+					targetHandleId,
+					sourceOutputIndex: sourceResult.index,
+					targetInputIndex: targetResult.index,
+				};
+
+				// Connect the nodes
+				sourceResult.node.connect(targetResult.node);
+
+				// Register the connection
+				set((state) => ({
+					connectionRegistry: {
+						...state.connectionRegistry,
+						[edgeId]: connection,
+					},
+				}));
+
+				// Update registry entries with connection info
+				set((state) => {
+					const updates: Record<string, AudioNodeRegistryEntry> = {
+						...state.nodeRegistry,
+					};
+
+					// Update source node if it exists
+					if (state.nodeRegistry[sourceId]) {
+						updates[sourceId] = {
+							...state.nodeRegistry[sourceId],
+							connections: {
+								...state.nodeRegistry[sourceId].connections,
+								outputs: [
+									...state.nodeRegistry[sourceId].connections.outputs,
+									connection,
+								],
+							},
+						};
+					}
+
+					// Update target node if it exists
+					if (state.nodeRegistry[actualTargetId]) {
+						updates[actualTargetId] = {
+							...state.nodeRegistry[actualTargetId],
+							connections: {
+								...state.nodeRegistry[actualTargetId].connections,
+								inputs: [
+									...state.nodeRegistry[actualTargetId].connections.inputs,
+									connection,
+								],
+							},
+						};
+					}
+
+					return { nodeRegistry: updates };
+				});
+
+				// Auto-start source nodes when they get connected
+				if (sourceEntry) {
+					const shouldAutoStart = [
+						'oscillator',
+						'lfo',
+						'custom-noise',
+					].includes(sourceEntry.type);
+					if (shouldAutoStart) {
+						startAudioNode(sourceEntry.audioNode);
+					}
 				}
+			} catch (error) {
+				console.error(
+					`❌ Failed to register audio connection ${edgeId}:`,
+					error
+				);
 			}
-		} catch (error) {
-			console.error(`❌ Failed to register audio connection ${edgeId}:`, error);
-		}
+		};
+
+		attemptConnection();
 	},
 
 	unregisterConnection: (edgeId) => {

@@ -67,6 +67,7 @@ export const NODE_TYPE_MAPPING: Record<string, AudioNodeType> = {
 	'signal.oscilloscope': 'oscilloscope',
 	'signal-3d.oscilloscope': 'oscilloscope', // 3D version uses same audio logic
 	'signal.meter': 'meter',
+	'signal.XYRGBVisualizerNode': 'analyzer', // XYRGB visualizer uses analyzers
 
 	// Core nodes
 	'core.output': 'masterOutput',

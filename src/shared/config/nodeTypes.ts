@@ -489,6 +489,21 @@ export const SIGNAL_NODES: NodeTypeOption[] = [
 			},
 		},
 	},
+	{
+		type: 'signal-xyrgb-viz' as AppNode['type'],
+		name: 'XYRGB Visualizer',
+		description:
+			'UI-only XYRGB visualizer with 3D scene and vertex traversal (no audio)',
+		emoji: '🎨',
+		variant: 'signal',
+		category: 'utility',
+		defaultData: {
+			label: 'XYRGB Visualizer',
+			scanRate: 30,
+			rotationSpeed: 1.0,
+			triangleScale: 1.0,
+		},
+	},
 ];
 
 // Core audio infrastructure nodes

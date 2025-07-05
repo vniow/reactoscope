@@ -39,6 +39,17 @@ export function createAudioNode(
 	params?: AudioNodeParams
 ): Tone.ToneAudioNode | Tone.ToneAudioNode[] {
 	try {
+		// Handle custom nodes passed through parameters
+		if (
+			params &&
+			typeof params === 'object' &&
+			'node' in params &&
+			params.node
+		) {
+			console.log(`🔊 Using provided custom ${type} node`);
+			return params.node as Tone.ToneAudioNode;
+		}
+
 		switch (type) {
 			case 'oscillator': {
 				const oscParams = params as OscillatorParams;
