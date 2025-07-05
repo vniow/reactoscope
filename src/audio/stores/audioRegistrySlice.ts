@@ -116,7 +116,26 @@ export const createAudioRegistrySlice: StateCreator<
 				await state.initializeAudioSystem();
 			}
 
-			const audioNode = createAudioNode(type, params);
+			let audioNode: Tone.ToneAudioNode | Tone.ToneAudioNode[];
+			let customNodeInstance: unknown = undefined;
+
+			if (
+				type === 'custom-noise' &&
+				params &&
+				typeof params === 'object' &&
+				'node' in params &&
+				params.node
+			) {
+				// For custom-noise, use the provided node directly
+				// Type assertion is safe here since we're checking the type and node property
+				audioNode = params.node as Tone.ToneAudioNode | Tone.ToneAudioNode[];
+				customNodeInstance = params.node;
+				console.log(
+					`🔊 Registering custom-noise node: ${nodeId} with provided audio node`
+				);
+			} else {
+				audioNode = createAudioNode(type, params);
+			}
 
 			const registryEntry: AudioNodeRegistryEntry = {
 				id: nodeId,
@@ -129,6 +148,7 @@ export const createAudioRegistrySlice: StateCreator<
 				},
 				isActive: true,
 				createdAt: Date.now(),
+				...(customNodeInstance ? { customNodeInstance } : {}),
 			};
 
 			set((state) => ({
@@ -139,6 +159,7 @@ export const createAudioRegistrySlice: StateCreator<
 			}));
 
 			// Auto-start nodes that need to be started (but they will be stopped if disconnected)
+			// Note: custom-noise nodes handle their own start/stop via the UI, so don't auto-start them
 			if (type === 'oscillator' || type === 'lfo') {
 				startAudioNode(audioNode);
 			}
@@ -356,7 +377,7 @@ export const createAudioRegistrySlice: StateCreator<
 
 			// Auto-start source nodes when they get connected
 			if (sourceEntry) {
-				const shouldAutoStart = ['oscillator', 'lfo'].includes(
+				const shouldAutoStart = ['oscillator', 'lfo', 'custom-noise'].includes(
 					sourceEntry.type
 				);
 				if (shouldAutoStart) {
@@ -580,10 +601,10 @@ export const createAudioRegistrySlice: StateCreator<
 		// Source nodes should play if they have output connections
 		const isSourceType = [
 			'oscillator',
-			'noise',
 			'player',
 			'lfo',
 			'microphone',
+			'custom-noise',
 		].includes(entry.type);
 		const hasOutputs = entry.connections.outputs.length > 0;
 

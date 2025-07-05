@@ -36,7 +36,8 @@ export type AudioNodeType =
 	| 'noisegenerator'
 	| 'vocoder'
 	| 'pitchshifter'
-	| 'granularsynthesis';
+	| 'granularsynthesis'
+	| 'custom-noise';
 
 // Mapping between React Flow node types and Tone.js node types
 export const NODE_TYPE_MAPPING: Record<string, AudioNodeType> = {
@@ -287,4 +288,6 @@ export interface AudioNodeRegistryEntry {
 	};
 	isActive: boolean;
 	createdAt: number;
+	// Optional: for custom nodes, store the full instance
+	customNodeInstance?: unknown;
 }

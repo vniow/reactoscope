@@ -15,6 +15,7 @@ import { useNoiseWorklet } from '../../audio/hooks/useNoiseWorklet';
 import { useAppStore } from '../../shared/stores/appStore';
 import { combineClasses } from '../../shared/utils/styleUtils';
 import type { BaseNodeData } from '../types';
+import { NoiseNode } from '../../audio/core/NoiseNode';
 
 interface NoiseGeneratorNodeData extends BaseNodeData {
 	amplitude?: number;
@@ -40,11 +41,18 @@ export function NoiseGeneratorNode({
 	);
 
 	// Use our worklet hook directly - no factory needed!
-	const { isReady, isPlaying, amplitude, start, stop, setAmplitude } =
-		useNoiseWorklet({
-			debug: true,
-			autostart: false,
-		});
+	const {
+		isReady,
+		isPlaying,
+		amplitude,
+		start,
+		stop,
+		setAmplitude,
+		noiseNode,
+	} = useNoiseWorklet({
+		debug: true,
+		autostart: false,
+	});
 
 	// Sync hook state with local state
 	useEffect(() => {
@@ -84,6 +92,16 @@ export function NoiseGeneratorNode({
 			});
 		}
 	}, [nodeId, updateNode, localAmplitude, localIsPlaying, isReady]);
+
+	// Register the noise node with the registry when ready (top-level hook)
+	useEffect(() => {
+		if (isReady && noiseNode instanceof NoiseNode) {
+			// Register the output (Tone.Gain) as a custom type
+			const registerAudioNode = useAppStore.getState().registerAudioNode;
+			registerAudioNode(nodeId, 'custom-noise', { node: noiseNode.output });
+			return () => useAppStore.getState().unregisterAudioNode(nodeId);
+		}
+	}, [isReady, noiseNode, nodeId]);
 
 	// Handle play/stop
 	const handlePlayToggle = async () => {
