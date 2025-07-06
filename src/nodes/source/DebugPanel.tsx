@@ -1,26 +1,5 @@
 import { useState } from 'react';
-
-/**
- * Vertex data structure for audio generation
- */
-export interface VertexInfo {
-	/** Normalized screen coordinates (-1 to 1 range) */
-	screen: { x: number; y: number };
-	/** Pixel coordinates within canvas viewport */
-	screenRaw: { x: number; y: number };
-	/** Color values (0-1) */
-	color: { r: number; g: number; b: number };
-	/** Original world position */
-	world: { x: number; y: number; z: number };
-}
-
-/**
- * Scene traversal result
- */
-export interface SceneData {
-	vertices: VertexInfo[];
-	timestamp: number;
-}
+import type { SceneData } from './sceneTypes';
 
 interface DebugPanelProps {
 	sceneData: SceneData;
@@ -69,13 +48,15 @@ export function DebugPanel({ sceneData }: DebugPanelProps) {
 									<div className='flex justify-between'>
 										<span className='text-yellow-400'>V{i}:</span>
 										<span className='text-cyan-400'>
-											NDC: X: {vertex.screen.x.toFixed(3)} Y: {vertex.screen.y.toFixed(3)}
+											NDC: X: {vertex.screen.x.toFixed(3)} Y:{' '}
+											{vertex.screen.y.toFixed(3)}
 										</span>
 									</div>
 									<div className='flex justify-between text-gray-400 ml-4'>
 										<span>Pixel:</span>
 										<span>
-											X: {vertex.screenRaw.x.toFixed(0)}px Y: {vertex.screenRaw.y.toFixed(0)}px
+											X: {vertex.screenRaw.x.toFixed(0)}px Y:{' '}
+											{vertex.screenRaw.y.toFixed(0)}px
 										</span>
 									</div>
 									<div className='flex justify-between text-gray-400 ml-4'>
@@ -95,7 +76,8 @@ export function DebugPanel({ sceneData }: DebugPanelProps) {
 									<div className='flex justify-between text-gray-500 ml-4 text-xs'>
 										<span>World:</span>
 										<span>
-											X: {vertex.world.x.toFixed(1)} Y: {vertex.world.y.toFixed(1)} Z: {vertex.world.z.toFixed(1)}
+											X: {vertex.world.x.toFixed(1)} Y:{' '}
+											{vertex.world.y.toFixed(1)} Z: {vertex.world.z.toFixed(1)}
 										</span>
 									</div>
 								</div>

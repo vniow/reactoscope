@@ -17,9 +17,9 @@ import { GridControl } from '../../shared/components/ui/GridControl';
 import { useAudioNodeParam } from '../../audio/hooks/useAudioNodeParam';
 import { useXYRGBInterpolator } from '../../audio/hooks/useXYRGBInterpolator';
 import { useAppStore } from '../../shared/stores/appStore';
-import { DebugPanel, type SceneData } from './DebugPanel';
+import { DebugPanel } from './DebugPanel';
+import type { SceneData } from './sceneTypes';
 import { useSceneTraversal } from './useSceneTraversal';
-import { EXCLUDE_HELPERS_FILTER } from './sceneTraversal';
 import type { BaseNodeData } from '../types';
 
 interface XYRGBGeneratorNodeData extends BaseNodeData {
@@ -50,8 +50,7 @@ function SceneTraversal({
 }) {
 	// Use the scene traversal hook with helper exclusion filter
 	useSceneTraversal(onSceneData, scanRate, {
-		maxVerticesPerObject: 4, // Include the closing vertex for proper loop
-		objectFilter: EXCLUDE_HELPERS_FILTER,
+		// objectFilter: EXCLUDE_HELPERS_FILTER,
 	});
 
 	return null;
@@ -272,7 +271,7 @@ export function XYRGBGeneratorNode({
 				</div>
 
 				{/* Debug Panel */}
-				<DebugPanel sceneData={sceneData} />
+				{/* <DebugPanel sceneData={sceneData} /> */}
 
 				{/* Status indicator */}
 				<div className='flex justify-between items-center mt-2 text-xs px-2'>
