@@ -11,14 +11,12 @@ import React, { useEffect, useState } from 'react';
 import { Position, type NodeProps } from '@xyflow/react';
 import { Canvas } from '@react-three/fiber';
 import { RGBTriangle } from './RGBTriangle';
-import { Line } from '@react-three/drei';
 import { BaseNode } from '../../shared/components/BaseNode';
 import { NodeHandle } from '../../shared/components/NodeHandle';
 import { GridControl } from '../../shared/components/ui/GridControl';
 import { useAudioNodeParam } from '../../audio/hooks/useAudioNodeParam';
 import { useXYRGBInterpolator } from '../../audio/hooks/useXYRGBInterpolator';
 import { useAppStore } from '../../shared/stores/appStore';
-import { DebugPanel } from './DebugPanel';
 import type { SceneData } from './sceneTypes';
 import { useSceneTraversal } from './useSceneTraversal';
 import type { BaseNodeData } from '../types';
@@ -65,11 +63,13 @@ function Scene3D({
 	rotationSpeed,
 	onSceneData,
 	scanRate,
+	segmentDensity,
 }: {
 	triangleScale: number;
 	rotationSpeed: number;
 	onSceneData?: (data: SceneData) => void;
 	scanRate?: number;
+	segmentDensity: number;
 }): React.ReactElement {
 	return (
 		<>
@@ -84,20 +84,11 @@ function Scene3D({
 			{/* Ambient light for visibility */}
 			<ambientLight intensity={0.8} />
 
-			{/* Simple horizontal white line using drei Line */}
-			{/* <Line
-				points={[
-					[-0.8, 0, 0],
-					[0.8, 0, 0],
-				]}
-				color='white'
-				lineWidth={2}
-			/> */}
-
 			{/* RGB Triangle */}
 			<RGBTriangle
 				scale={triangleScale}
 				rotationSpeed={rotationSpeed}
+				segmentDensity={segmentDensity}
 			/>
 		</>
 	);
@@ -108,7 +99,6 @@ export function XYRGBGeneratorNode({
 	data,
 	selected = false,
 }: NodeProps & { data: XYRGBGeneratorNodeData }): React.ReactElement {
-	// Type assertions for props
 	const nodeId = id as string;
 	const nodeData = data as XYRGBGeneratorNodeData;
 	const isSelected = selected as boolean;
@@ -116,6 +106,8 @@ export function XYRGBGeneratorNode({
 		vertices: [],
 		timestamp: 0,
 	});
+	// Segment density state for triangle
+	const [segmentDensity, setSegmentDensity] = useState<number>(16);
 
 	// Visual controls
 	const [scanRate, setScanRate] = useAudioNodeParam<number>(
@@ -146,11 +138,9 @@ export function XYRGBGeneratorNode({
 		nodeData.audioEnabled ?? false
 	);
 
-	const [interpolationMode, setInterpolationMode] = useAudioNodeParam<
-		'linear' | 'cubic' | 'circular'
-	>(nodeId, 'interpolationMode', nodeData.interpolationMode ?? 'linear');
+	// Interpolation mode removed
 
-	const [audioSmoothing, setAudioSmoothing] = useAudioNodeParam<number>(
+	const [audioSmoothing] = useAudioNodeParam<number>(
 		nodeId,
 		'audioSmoothing',
 		nodeData.audioSmoothing ?? 0.1,
@@ -197,7 +187,6 @@ export function XYRGBGeneratorNode({
 	useEffect(() => {
 		if (interpolator.isReady) {
 			interpolator.setScanRate(scanRate);
-			interpolator.setInterpolationMode(interpolationMode);
 			interpolator.setSmoothing(audioSmoothing);
 
 			// Start/stop based on audioEnabled
@@ -208,13 +197,7 @@ export function XYRGBGeneratorNode({
 			}
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [
-		audioEnabled,
-		scanRate,
-		interpolationMode,
-		audioSmoothing,
-		interpolator.isReady,
-	]);
+	}, [audioEnabled, scanRate, audioSmoothing, interpolator.isReady]);
 
 	// Update node data
 	const updateNode = useAppStore((state) => state.updateNode);
@@ -224,14 +207,12 @@ export function XYRGBGeneratorNode({
 			rotationSpeed,
 			triangleScale,
 			audioEnabled,
-			interpolationMode,
 			audioSmoothing,
 			audioParams: {
 				scanRate,
 				rotationSpeed,
 				triangleScale,
 				audioEnabled,
-				interpolationMode,
 				audioSmoothing,
 			},
 		});
@@ -242,7 +223,6 @@ export function XYRGBGeneratorNode({
 		rotationSpeed,
 		triangleScale,
 		audioEnabled,
-		interpolationMode,
 		audioSmoothing,
 	]);
 
@@ -277,6 +257,7 @@ export function XYRGBGeneratorNode({
 							rotationSpeed={rotationSpeed}
 							onSceneData={setSceneData}
 							scanRate={scanRate}
+							segmentDensity={segmentDensity}
 						/>
 					</Canvas>
 				</div>
@@ -335,25 +316,6 @@ export function XYRGBGeneratorNode({
 				/>
 			</div>
 
-			<div className='mb-3'>
-				<GridControl
-					type='slider'
-					label='Rotation Speed'
-					value={rotationSpeed}
-					min={0}
-					max={5}
-					step={0.1}
-					variant='node-variant'
-					layout='stacked'
-					showValue
-					formatValue={(val: number) => `${val.toFixed(1)}x`}
-					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-						setRotationSpeed(Number(e.target.value))
-					}
-					className='h-12'
-				/>
-			</div>
-
 			<div className='mb-4'>
 				<GridControl
 					type='slider'
@@ -368,6 +330,25 @@ export function XYRGBGeneratorNode({
 					formatValue={(val: number) => `${val.toFixed(1)}x`}
 					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 						setTriangleScale(Number(e.target.value))
+					}
+					className='h-12'
+				/>
+			</div>
+
+			<div className='mb-4'>
+				<GridControl
+					type='slider'
+					label='Segment Density'
+					value={segmentDensity}
+					min={3}
+					max={128}
+					step={1}
+					variant='node-variant'
+					layout='stacked'
+					showValue
+					formatValue={(val: number) => `${val}`}
+					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+						setSegmentDensity(Number(e.target.value))
 					}
 					className='h-12'
 				/>
@@ -395,28 +376,9 @@ export function XYRGBGeneratorNode({
 				{/* Audio controls - only show when enabled */}
 				{audioEnabled && (
 					<>
-						<div className='mb-3'>
-							<GridControl
-								type='select'
-								label='Interpolation'
-								value={interpolationMode}
-								variant='node-variant'
-								layout='stacked'
-								onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-									setInterpolationMode(
-										e.target.value as 'linear' | 'cubic' | 'circular'
-									)
-								}
-								className='h-12'
-								options={[
-									{ value: 'linear', label: 'Linear' },
-									{ value: 'cubic', label: 'Cubic' },
-									{ value: 'circular', label: 'Circular' },
-								]}
-							/>
-						</div>
+						{/* Interpolation UI removed */}
 
-						<div className='mb-3'>
+						{/* <div className='mb-3'>
 							<GridControl
 								type='slider'
 								label='Smoothing'
@@ -433,7 +395,7 @@ export function XYRGBGeneratorNode({
 								}
 								className='h-12'
 							/>
-						</div>
+						</div> */}
 					</>
 				)}
 			</div>

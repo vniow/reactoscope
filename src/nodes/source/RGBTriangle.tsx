@@ -1,13 +1,15 @@
-import React, { useRef, useMemo, useState } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { Line, Html } from '@react-three/drei';
+import { Line } from '@react-three/drei';
 
 interface RGBTriangleProps {
 	/** Scale factor for triangle size */
 	scale?: number;
 	/** Rotation speed for animation */
 	rotationSpeed?: number;
+	/** Number of segments per edge */
+	segmentDensity?: number;
 }
 
 /**
@@ -17,11 +19,9 @@ interface RGBTriangleProps {
 export function RGBTriangle({
 	scale = 1,
 	rotationSpeed = 1,
+	segmentDensity = 16,
 }: RGBTriangleProps): React.ReactElement {
 	const groupRef = useRef<THREE.Group>(null);
-
-	// State for segment density
-	const [segmentDensity, setSegmentDensity] = useState(16);
 
 	// Triangle vertices and their colors, and interpolate points/colors
 	const { points, colorsArr } = useMemo(() => {
@@ -72,41 +72,12 @@ export function RGBTriangle({
 	});
 
 	return (
-		<>
-			<group ref={groupRef}>
-				<Line
-					points={points}
-					vertexColors={colorsArr}
-					lineWidth={1}
-				/>
-				<Html
-					position={[0, 0, 0]}
-					style={{ pointerEvents: 'auto' }}
-					zIndexRange={[10, 0]}
-				>
-					<div
-						style={{
-							background: 'rgba(0,0,0,0.5)',
-							padding: 8,
-							borderRadius: 8,
-							color: '#fff',
-							fontSize: 12,
-						}}
-					>
-						<label>
-							Segment Density: {segmentDensity}
-							<input
-								type='range'
-								min={3}
-								max={128}
-								value={segmentDensity}
-								onChange={(e) => setSegmentDensity(Number(e.target.value))}
-								style={{ width: 120, marginLeft: 8 }}
-							/>
-						</label>
-					</div>
-				</Html>
-			</group>
-		</>
+		<group ref={groupRef}>
+			<Line
+				points={points}
+				vertexColors={colorsArr}
+				lineWidth={1}
+			/>
+		</group>
 	);
 }
