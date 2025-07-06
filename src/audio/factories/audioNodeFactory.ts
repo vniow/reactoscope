@@ -51,6 +51,10 @@ export function createAudioNode(
 		}
 
 		switch (type) {
+			case 'xyrgbMerge': {
+				// 5-channel merger for XYRGB
+				return new Tone.Merge(5);
+			}
 			case 'oscillator': {
 				const oscParams = params as OscillatorParams;
 				const oscillator = new Tone.Oscillator({

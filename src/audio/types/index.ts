@@ -38,7 +38,8 @@ export type AudioNodeType =
 	| 'pitchshifter'
 	| 'granularsynthesis'
 	| 'custom-noise'
-	| 'custom-xyrgb';
+	| 'custom-xyrgb'
+	| 'xyrgbMerge';
 
 // Mapping between React Flow node types and Tone.js node types
 export const NODE_TYPE_MAPPING: Record<string, AudioNodeType> = {
@@ -61,6 +62,7 @@ export const NODE_TYPE_MAPPING: Record<string, AudioNodeType> = {
 	'component.panner': 'panner',
 	'component.envelope': 'envelope',
 	'component.lfo': 'lfo',
+	'component.XYRGBMergeNode': 'xyrgbMerge',
 
 	// Signal nodes
 	'signal.analyzer': 'analyzer',

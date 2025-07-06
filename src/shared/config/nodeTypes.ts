@@ -274,6 +274,18 @@ export const EFFECT_NODES: NodeTypeOption[] = [
 // Signal component nodes
 export const COMPONENT_NODES: NodeTypeOption[] = [
 	{
+		type: 'component-xyrgb-merge',
+		name: 'XYRGB Merge',
+		description:
+			'Merge 5 mono channels (X, Y, R, G, B) into a single 5-channel output',
+		emoji: '🔀',
+		variant: 'component',
+		category: 'utility',
+		defaultData: {
+			label: 'XYRGB Merge',
+		},
+	},
+	{
 		type: 'component',
 		name: 'Gain',
 		description: 'Volume and gain control for audio signals',
@@ -502,6 +514,21 @@ export const SIGNAL_NODES: NodeTypeOption[] = [
 			scanRate: 30,
 			rotationSpeed: 1.0,
 			triangleScale: 1.0,
+		},
+	},
+	{
+		type: 'signal-woscope' as AppNode['type'],
+		name: 'Woscope Visualizer',
+		description: 'Classic XY oscilloscope visualization for stereo audio',
+		emoji: '🧪',
+		variant: 'signal',
+		category: 'utility',
+		defaultData: {
+			label: 'Woscope Visualizer',
+			lineColor: '#00ff00',
+			lineThickness: 0.012,
+			lineIntensity: 1.0,
+			audioScale: 0.8,
 		},
 	},
 ];

@@ -1,3 +1,7 @@
+/**
+ * XYRGBMerge node for merging 5 mono channels (X,Y,R,G,B) into a single 5-channel output
+ */
+export type XYRGBMergeNode = Node<PlaceholderNodeData, 'component-xyrgb-merge'>;
 import type { Node, BuiltInNode, Position } from '@xyflow/react';
 import type { ComponentVariant } from '../shared/types/ui';
 import type { AudioNodeParams } from '../audio/types';
@@ -28,7 +32,10 @@ export type DebugSimpleNode = Node<DebugNodeData, 'debug-simple'>;
 export type CoreNode = Node<PlaceholderNodeData, 'core'>;
 export type SourceNode = Node<PlaceholderNodeData, 'source'>;
 export type SourcePlayerNode = Node<PlaceholderNodeData, 'source-player'>;
-export type SourceMicrophoneNode = Node<PlaceholderNodeData, 'source-microphone'>;
+export type SourceMicrophoneNode = Node<
+	PlaceholderNodeData,
+	'source-microphone'
+>;
 export type InstrumentNode = Node<PlaceholderNodeData, 'instrument'>;
 export type EffectNode = Node<PlaceholderNodeData, 'effect'>;
 export type ComponentNode = Node<PlaceholderNodeData, 'component'>;
@@ -63,4 +70,5 @@ export type AppNode =
 	| SignalXYNode
 	| SignalXYRGBNode
 	| EventNode
-	| UtilityNode;
+	| UtilityNode
+	| XYRGBMergeNode;

@@ -35,30 +35,55 @@ export function extractVerticesFromScene(
 				attributes: {
 					instanceStart?: THREE.BufferAttribute;
 					instanceEnd?: THREE.BufferAttribute;
-					color?: THREE.BufferAttribute;
+					instanceStartColor?: THREE.BufferAttribute;
+					instanceEndColor?: THREE.BufferAttribute;
+					instanceColorStart?: THREE.BufferAttribute;
+					instanceColorEnd?: THREE.BufferAttribute;
 				};
 			};
 			const startAttr = geomAny.attributes.instanceStart;
 			const endAttr = geomAny.attributes.instanceEnd;
 			if (startAttr && endAttr) {
-				const colors = geomAny.attributes.color;
-				const pts: THREE.Vector3[] = [];
+				const cStartAttr =
+					geomAny.attributes.instanceStartColor ||
+					geomAny.attributes.instanceColorStart;
+				const cEndAttr =
+					geomAny.attributes.instanceEndColor ||
+					geomAny.attributes.instanceColorEnd;
+				const entries: {
+					pos: THREE.Vector3;
+					color: { r: number; g: number; b: number };
+				}[] = [];
 				for (let i = 0; i < startAttr.count; i++) {
 					tempVector.fromBufferAttribute(startAttr, i);
-					pts.push(tempVector.clone());
+					const pStart = tempVector.clone();
+					let colorStart = { r: 1, g: 1, b: 1 };
+					if (cStartAttr && cStartAttr.count > i) {
+						colorStart = {
+							r: cStartAttr.getX(i),
+							g: cStartAttr.getY(i),
+							b: cStartAttr.getZ(i),
+						};
+					}
+					entries.push({ pos: pStart, color: colorStart });
 					tempVector.fromBufferAttribute(endAttr, i);
-					pts.push(tempVector.clone());
+					const pEnd = tempVector.clone();
+					let colorEnd = { r: 1, g: 1, b: 1 };
+					if (cEndAttr && cEndAttr.count > i) {
+						colorEnd = {
+							r: cEndAttr.getX(i),
+							g: cEndAttr.getY(i),
+							b: cEndAttr.getZ(i),
+						};
+					}
+					entries.push({ pos: pEnd, color: colorEnd });
 				}
-				pts.forEach((localPos, i) => {
-					const worldPos = localPos.clone();
+				entries.forEach(({ pos, color }) => {
+					const worldPos = pos.clone();
 					mesh.localToWorld(worldPos);
 					const screenPos = worldPos.clone().project(camera);
 					const screenRawX = ((screenPos.x + 1) / 2) * viewportSize.width;
 					const screenRawY = ((1 - screenPos.y) / 2) * viewportSize.height;
-					let color = { r: 1, g: 1, b: 1 };
-					if (colors && colors.count > i) {
-						color = { r: colors.getX(i), g: colors.getY(i), b: colors.getZ(i) };
-					}
 					vertices.push({
 						screen: { x: screenPos.x, y: screenPos.y },
 						screenRaw: { x: screenRawX, y: screenRawY },
@@ -66,11 +91,7 @@ export function extractVerticesFromScene(
 						world: { x: worldPos.x, y: worldPos.y, z: worldPos.z },
 					});
 				});
-				console.debug(
-					`[sceneTraversal] Extracted ${pts.length} vertices for Line2 object:`,
-					mesh,
-					vertices.slice(-pts.length)
-				);
+
 				return;
 			}
 		}
