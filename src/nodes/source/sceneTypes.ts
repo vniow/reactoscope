@@ -1,0 +1,27 @@
+/**
+ * Scene Traversal Types
+ *
+ * Core type definitions for vertex data and scene traversal results.
+ */
+
+/**
+ * Vertex data structure for audio generation
+ */
+export interface VertexInfo {
+	/** Normalized screen coordinates (-1 to 1 range) */
+	screen: { x: number; y: number };
+	/** Pixel coordinates within canvas viewport */
+	screenRaw: { x: number; y: number };
+	/** Color values (0-1) */
+	color: { r: number; g: number; b: number };
+	/** Original world position */
+	world: { x: number; y: number; z: number };
+}
+
+/**
+ * Scene traversal result
+ */
+export interface SceneData {
+	vertices: VertexInfo[];
+	timestamp: number;
+}
