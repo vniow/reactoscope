@@ -11,6 +11,7 @@ import React, { useEffect, useState } from 'react';
 import { Position, type NodeProps } from '@xyflow/react';
 import { Canvas } from '@react-three/fiber';
 import { RGBTriangle } from './RGBTriangle';
+import { Line } from '@react-three/drei';
 import { BaseNode } from '../../shared/components/BaseNode';
 import { NodeHandle } from '../../shared/components/NodeHandle';
 import { GridControl } from '../../shared/components/ui/GridControl';
@@ -83,11 +84,21 @@ function Scene3D({
 			{/* Ambient light for visibility */}
 			<ambientLight intensity={0.8} />
 
+			{/* Simple horizontal white line using drei Line */}
+			<Line
+				points={[
+					[-0.8, 0, 0],
+					[0.8, 0, 0],
+				]}
+				color='white'
+				lineWidth={2}
+			/>
+
 			{/* RGB Triangle */}
-			<RGBTriangle
+			{/* <RGBTriangle
 				scale={triangleScale}
 				rotationSpeed={rotationSpeed}
-			/>
+			/> */}
 		</>
 	);
 }
