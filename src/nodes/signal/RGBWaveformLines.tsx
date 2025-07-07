@@ -7,6 +7,10 @@ import * as Tone from 'tone';
 
 import '../../shared/materials/LineShaderMaterial';
 import { useWaveformGeometry } from '../../shared/geometry/useWaveformGeometry';
+import RGBWaveformLinesProps from './RGBWaveformLines'; // adjust if needed
+
+// Add minimum amplitude threshold for rendering
+const MIN_RENDER_AMP = 0.005;
 
 interface RGBWaveformLinesProps {
 	analyserX?: Tone.Analyser;
@@ -47,6 +51,7 @@ const RGBWaveformLines: React.FC<RGBWaveformLinesProps> = ({
 	useFrame(() => {
 		if (!geometryRef.current || !materialRef.current) return;
 
+		// Only render if playing and all analysers present
 		if (
 			isPlaying &&
 			analyserX &&
@@ -57,6 +62,20 @@ const RGBWaveformLines: React.FC<RGBWaveformLinesProps> = ({
 		) {
 			const dataX = analyserX.getValue() as Float32Array;
 			const dataY = analyserY.getValue() as Float32Array;
+
+			// Compute average absolute amplitude to gate rendering
+			const avgAmpX =
+				dataX.reduce((sum, v) => sum + Math.abs(v), 0) / dataX.length;
+			const avgAmpY =
+				dataY.reduce((sum, v) => sum + Math.abs(v), 0) / dataY.length;
+			const avgAmp = (avgAmpX + avgAmpY) / 2;
+			if (avgAmp < MIN_RENDER_AMP) {
+				// Clear geometry when signal is too weak
+				resetGeometryData(geometryRef.current);
+				return;
+			}
+
+			// Proceed with geometry update and color when above threshold
 			const dataR = analyserR.getValue() as Float32Array;
 			const dataG = analyserG.getValue() as Float32Array;
 			const dataB = analyserB.getValue() as Float32Array;

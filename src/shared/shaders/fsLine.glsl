@@ -19,6 +19,9 @@ float erf(float x) {
 }
 
 void main(void) {
+	// Discard segments with NaN or zero-length to avoid persistent central dot
+	if(uvl.z != uvl.z || uvl.z < EPS)
+		discard;
 	float len = uvl.z;
 	vec2 xy = vec2((len / 2.0 + uSize) * uvl.x + len / 2.0, uSize * uvl.y);
 	float sigma = uSize / 4.0;

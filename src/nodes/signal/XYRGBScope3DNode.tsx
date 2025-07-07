@@ -33,6 +33,44 @@ export const XYRGBScope3DNode: React.FC<
 	const getAudioNode = useAppStore((s) => s.getAudioNode);
 	const [isPlaying, setIsPlaying] = useState(false);
 
+	// Track previous input IDs for each channel
+	const prevInputsRef = React.useRef({
+		inputX: data.inputX,
+		inputY: data.inputY,
+		inputR: data.inputR,
+		inputG: data.inputG,
+		inputB: data.inputB,
+	});
+
+	// Helper to flush a Tone.Analyser buffer by filling it with NaN
+	function flushAnalyser(analyser?: Tone.Analyser) {
+		if (!analyser) return;
+		// Overwrite the internal buffer with NaN (or random noise)
+		// Tone.js does not expose the buffer directly, but getValue() returns a Float32Array view
+		const arr = analyser.getValue() as Float32Array;
+		for (let i = 0; i < arr.length; i++) {
+			arr[i] = NaN;
+		}
+	}
+
+	// Effect: flush analyser when a new input connection is made
+	useEffect(() => {
+		const prev = prevInputsRef.current;
+		if (data.inputX !== prev.inputX) flushAnalyser(analyserX);
+		if (data.inputY !== prev.inputY) flushAnalyser(analyserY);
+		if (data.inputR !== prev.inputR) flushAnalyser(analyserR);
+		if (data.inputG !== prev.inputG) flushAnalyser(analyserG);
+		if (data.inputB !== prev.inputB) flushAnalyser(analyserB);
+		prevInputsRef.current = {
+			inputX: data.inputX,
+			inputY: data.inputY,
+			inputR: data.inputR,
+			inputG: data.inputG,
+			inputB: data.inputB,
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [data.inputX, data.inputY, data.inputR, data.inputG, data.inputB]);
+
 	useEffect(() => {
 		['x', 'y', 'r', 'g', 'b'].forEach((ch) =>
 			registerAudioNode(`${id}:${ch}`, 'oscilloscope', { resolution: 512 })

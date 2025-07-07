@@ -20,7 +20,7 @@
  */
 import type { StateCreator } from 'zustand';
 import type { Edge, NodeChange, EdgeChange, Connection } from '@xyflow/react';
-import { applyNodeChanges, applyEdgeChanges, addEdge } from '@xyflow/react';
+import { applyNodeChanges, applyEdgeChanges } from '@xyflow/react';
 import type { AppNode } from '../../nodes/types';
 import type { BaseNodeData } from '../../nodes/types';
 import { NODE_TYPE_MAPPING } from '../../audio/types';
@@ -212,30 +212,21 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 	},
 
 	onConnect: (connection) => {
-		// Create the edge with React Flow
-		const newEdge = { ...connection, type: 'gradient' };
-		let addedEdge: Edge | undefined;
+		// Always generate a unique edge ID to allow multiple edges between the same handles
+		const uniqueId = `xy-edge__${connection.source}${connection.sourceHandle || ''}-${connection.target}${connection.targetHandle || ''}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+		const newEdge = { ...connection, type: 'gradient', id: uniqueId };
 
 		set((state) => {
-			const newEdges = addEdge(newEdge, state.edges);
-			// Get the actual edge that was added (React Flow generates IDs)
-			addedEdge = newEdges.find(
-				(edge) =>
-					edge.source === connection.source &&
-					edge.target === connection.target &&
-					edge.sourceHandle === connection.sourceHandle &&
-					edge.targetHandle === connection.targetHandle
-			);
+			const newEdges = [...state.edges, newEdge];
 			saveCurrentFlowState(state.nodes, newEdges);
 			return { edges: newEdges };
 		});
 
-		// Create audio connection with the actual edge ID
+		// Create audio connection with the new edge ID
 		const appStore = get() as AppStore;
-		if (appStore.registerConnection && addedEdge) {
-			// Use raw IDs; audioRegistrySlice will map XYscope inputs
+		if (appStore.registerConnection) {
 			appStore.registerConnection(
-				addedEdge.id,
+				newEdge.id,
 				connection.source,
 				connection.target,
 				connection.sourceHandle || undefined,
@@ -301,18 +292,24 @@ export const createFlowSlice: StateCreator<AppStore, [], [], FlowSlice> = (
 
 		// Create corresponding audio node if it's an audio node type
 		const nodeData = node.data as BaseNodeData;
-		
+
 		// Skip automatic audio registration for dynamic nodes that handle their own registration
 		// Dynamic nodes (effect, source, component, etc.) register themselves in their components
-		const isDynamicNode = node.type ? ['effect', 'source', 'component', 'instrument'].includes(node.type) : false;
-		
+		const isDynamicNode = node.type
+			? ['effect', 'source', 'component', 'instrument'].includes(node.type)
+			: false;
+
 		if (!isDynamicNode) {
 			const nodeTypeKey = `${nodeData.variant || node.type}.${node.type}`;
 			const audioNodeType = NODE_TYPE_MAPPING[nodeTypeKey];
 
 			if (audioNodeType) {
 				const appStore = get() as AppStore;
-				appStore.registerAudioNode(node.id, audioNodeType, nodeData.audioParams);
+				appStore.registerAudioNode(
+					node.id,
+					audioNodeType,
+					nodeData.audioParams
+				);
 			}
 		}
 	},
