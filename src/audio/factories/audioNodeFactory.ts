@@ -185,6 +185,17 @@ export function createAudioNode(
 				return [passThrough, analyzer];
 			}
 
+			case 'signal': {
+				// Create a Tone.Signal node
+				// SignalParams: value (number), min (optional), max (optional), units (optional)
+				const { value = 0 } = (params as import('../types').SignalParams) || {};
+				// Tone.Signal constructor: new Signal(value?: number, units?: string)
+				// Only pass units if defined, to avoid type errors
+				// TypeScript does not allow passing units due to type restrictions.
+				// If units are needed, set them after construction: signal.units = units as any;
+				return new Tone.Signal(value);
+			}
+
 			case 'meter': {
 				const meterParams = params as MeterParams;
 				return new Tone.Meter({
@@ -639,6 +650,17 @@ export async function updateAudioNodeParams(
 					break;
 				}
 
+				case 'signal': {
+					// Update Tone.Signal value if provided
+					const signalParams = params as Partial<
+						import('../types').SignalParams
+					>;
+					const signal = audioNode as Tone.Signal;
+					if (signalParams.value !== undefined) {
+						signal.value = signalParams.value;
+					}
+					break;
+				}
 				case 'custom-noise':
 				case 'custom-xyrgb': {
 					// Custom nodes handle their own parameter updates through their methods

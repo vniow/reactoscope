@@ -79,6 +79,27 @@ export const SOURCE_NODES: NodeTypeOption[] = [
 		},
 	},
 	{
+		type: 'source-signal' as AppNode['type'],
+		name: 'Signal',
+		description: 'Constant signal generator for modulation and control',
+		emoji: '📶',
+		variant: 'source',
+		category: 'placeholder',
+		defaultData: {
+			label: 'Signal',
+			value: 0,
+			min: -1,
+			max: 1,
+			units: 'number',
+			audioParams: {
+				value: 0,
+				min: -1,
+				max: 1,
+				units: 'number',
+			},
+		},
+	},
+	{
 		type: 'source-player' as AppNode['type'],
 		name: 'Audio Player',
 		description: 'Audio file player with loop and playback rate controls',

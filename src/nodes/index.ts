@@ -17,7 +17,6 @@ import { OscillatorNode } from './source/OscillatorNode';
 import { NoiseGeneratorNode } from './source/NoiseGeneratorNode';
 import { DynamicEffectNode } from './effect/DynamicEffectNode';
 import { DynamicComponentNode } from './component/DynamicComponentNode';
-import { OscilloscopeNode } from './signal/OscilloscopeNode';
 import { Oscilloscope3DNode } from './signal/Oscilloscope3DNode';
 import { XYscope3DNode } from './signal/XYscope3DNode';
 import { XYRGBScope3DNode } from './signal/XYRGBScope3DNode';
@@ -25,6 +24,7 @@ import { XYRGBVisualizerNode } from './signal/XYRGBVisualizerNode';
 import { XYRGBGeneratorNode } from './source/XYRGBGeneratorNode';
 import { WoscopeVisualizerNode } from './signal/WoscopeVisualizerNode';
 import { XYRGBMergeNode } from './component/XYRGBMergeNode';
+import { SignalNode } from './source/SignalNode';
 
 import {
 	InstrumentNodeComponent,
@@ -82,11 +82,14 @@ export const nodeTypes = {
 	'signal-xyrgb': XYRGBScope3DNode, // 5-channel audio-visual mapping (X,Y,R,G,B)
 	'signal-xyrgb-viz': XYRGBVisualizerNode, // UI-only XYRGB visualizer
 	'source-xyrgb': XYRGBGeneratorNode, // XYRGB audio generator from 3D scene
+	'signal-3d': Oscilloscope3DNode, // 3D Oscilloscope node
 	event: EventNodeComponent,
 	unit: UtilityNodeComponent,
 	'signal-woscope': WoscopeVisualizerNode, // Woscope visualizer node
 	// Register XYRGBMergeNode
 	'component-xyrgb-merge': XYRGBMergeNode,
+	// Register SignalNode for Tone.Signal
+	'source-signal': SignalNode, // Tone.Signal node for signal processing
 
 	// Add any custom nodes here following the same pattern
 } as NodeTypes;

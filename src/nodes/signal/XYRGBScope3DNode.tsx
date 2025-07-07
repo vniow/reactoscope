@@ -14,6 +14,7 @@ import { BaseNode } from '../../shared/components/BaseNode';
 import { NodeHandle } from '../../shared/components/NodeHandle';
 import { useAppStore } from '../../shared/stores/appStore';
 import RGBWaveformLines from './RGBWaveformLines';
+import { GridControl } from '../../shared/components/ui/GridControl';
 import type { BaseNodeData } from '../types';
 
 interface XYRGBScopeNodeData extends BaseNodeData {
@@ -32,6 +33,8 @@ export const XYRGBScope3DNode: React.FC<
 	const updateNode = useAppStore((s) => s.updateNode);
 	const getAudioNode = useAppStore((s) => s.getAudioNode);
 	const [isPlaying, setIsPlaying] = useState(false);
+	// Afterglow (trail intensity) state
+	const [afterglow, setAfterglow] = useState(1.0);
 
 	// Track previous input IDs for each channel
 	const prevInputsRef = React.useRef({
@@ -156,6 +159,7 @@ export const XYRGBScope3DNode: React.FC<
 							analyserG={analyserG}
 							analyserB={analyserB}
 							isPlaying={isPlaying}
+							afterglow={afterglow}
 						/>
 					</Canvas>
 				</div>
@@ -170,6 +174,25 @@ export const XYRGBScope3DNode: React.FC<
 						</span>
 					</div>
 				</div>
+			</div>
+			{/* Afterglow slider, styled like other controls */}
+			<div className='mb-4'>
+				<GridControl
+					type='slider'
+					label='Afterglow'
+					value={afterglow}
+					min={0.1}
+					max={2.0}
+					step={0.01}
+					variant='node-variant'
+					layout='stacked'
+					showValue
+					formatValue={(val: number) => val.toFixed(2)}
+					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+						setAfterglow(Number(e.target.value))
+					}
+					className='h-12'
+				/>
 			</div>
 			<NodeHandle
 				id='inputX'

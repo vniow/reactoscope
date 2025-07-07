@@ -39,7 +39,16 @@ export type SourceMicrophoneNode = Node<
 export type InstrumentNode = Node<PlaceholderNodeData, 'instrument'>;
 export type EffectNode = Node<PlaceholderNodeData, 'effect'>;
 export type ComponentNode = Node<PlaceholderNodeData, 'component'>;
-export type SignalNode = Node<PlaceholderNodeData, 'signal'>;
+// SignalNode for Tone.Signal
+import type { SignalParams } from '../audio/types';
+export interface SignalNodeData extends BaseNodeData {
+	value?: number;
+	min?: number;
+	max?: number;
+	units?: string;
+	audioParams?: SignalParams;
+}
+export type SignalNode = Node<SignalNodeData, 'signal'>;
 export type Signal3DNode = Node<PlaceholderNodeData, 'signal-3d'>;
 /**
  * XYscope node for dual-input Lissajous visualization

@@ -23,6 +23,7 @@ export type AudioNodeType =
 	| 'distortion'
 	| 'analyzer'
 	| 'oscilloscope'
+	| 'signal' // <-- Added for Tone.Signal
 	| 'masterOutput'
 	| 'destination'
 	| 'meter'
@@ -40,11 +41,35 @@ export type AudioNodeType =
 	| 'custom-noise'
 	| 'custom-xyrgb'
 	| 'xyrgbMerge';
+// Parameters for Tone.Signal node
+export interface SignalParams {
+	value?: number; // The signal value
+	min?: number; // Optional: minimum value
+	max?: number; // Optional: maximum value
+	// Only allow known Tone.js unit strings for type safety
+	units?:
+		| 'number'
+		| 'frequency'
+		| 'bpm'
+		| 'decibels'
+		| 'cents'
+		| 'degrees'
+		| 'gain'
+		| 'time'
+		| 'ticks'
+		| 'normalRange'
+		| 'audioRange'
+		| 'positive'
+		| 'transportTime'
+		| 'samples'
+		| 'milliseconds';
+}
 
 // Mapping between React Flow node types and Tone.js node types
 export const NODE_TYPE_MAPPING: Record<string, AudioNodeType> = {
 	// Source nodes
 	'source.source': 'oscillator', // Main oscillator source node
+	'source.signal': 'signal', // <-- Added for Tone.Signal
 	'source.source-player': 'player',
 	'source.source-microphone': 'microphone',
 	'source.XYRGBGeneratorNode': 'custom-xyrgb',
@@ -260,6 +285,7 @@ export type AudioNodeParams =
 	| EnvelopeParams
 	| LFOParams
 	| DestinationParams
+	| SignalParams // <-- Added for Tone.Signal
 	// Worklet parameter types
 	| BitCrusherParams
 	| SpectralFilterParams
