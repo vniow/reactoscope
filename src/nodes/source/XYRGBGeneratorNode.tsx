@@ -60,13 +60,11 @@ function SceneTraversal({
  */
 function Scene3D({
 	triangleScale,
-	rotationSpeed,
 	onSceneData,
 	scanRate,
 	segmentDensity,
 }: {
 	triangleScale: number;
-	rotationSpeed: number;
 	onSceneData?: (data: SceneData) => void;
 	scanRate?: number;
 	segmentDensity: number;
@@ -87,7 +85,6 @@ function Scene3D({
 			{/* RGB Triangle */}
 			<RGBTriangle
 				scale={triangleScale}
-				rotationSpeed={rotationSpeed}
 				segmentDensity={segmentDensity}
 			/>
 		</>
@@ -115,13 +112,6 @@ export function XYRGBGeneratorNode({
 		'scanRate',
 		nodeData.scanRate ?? 30,
 		{ min: 1, max: 60 }
-	);
-
-	const [rotationSpeed, setRotationSpeed] = useAudioNodeParam<number>(
-		nodeId,
-		'rotationSpeed',
-		nodeData.rotationSpeed ?? 1,
-		{ min: 0, max: 5 }
 	);
 
 	const [triangleScale, setTriangleScale] = useAudioNodeParam<number>(
@@ -204,13 +194,13 @@ export function XYRGBGeneratorNode({
 	useEffect(() => {
 		updateNode(nodeId, {
 			scanRate,
-			rotationSpeed,
+
 			triangleScale,
 			audioEnabled,
 			audioSmoothing,
 			audioParams: {
 				scanRate,
-				rotationSpeed,
+
 				triangleScale,
 				audioEnabled,
 				audioSmoothing,
@@ -220,7 +210,7 @@ export function XYRGBGeneratorNode({
 		nodeId,
 		updateNode,
 		scanRate,
-		rotationSpeed,
+
 		triangleScale,
 		audioEnabled,
 		audioSmoothing,
@@ -254,7 +244,6 @@ export function XYRGBGeneratorNode({
 					>
 						<Scene3D
 							triangleScale={triangleScale}
-							rotationSpeed={rotationSpeed}
 							onSceneData={setSceneData}
 							scanRate={scanRate}
 							segmentDensity={segmentDensity}
@@ -374,30 +363,7 @@ export function XYRGBGeneratorNode({
 				</div>
 
 				{/* Audio controls - only show when enabled */}
-				{audioEnabled && (
-					<>
-						{/* Interpolation UI removed */}
-
-						{/* <div className='mb-3'>
-							<GridControl
-								type='slider'
-								label='Smoothing'
-								value={audioSmoothing}
-								min={0}
-								max={1}
-								step={0.01}
-								variant='node-variant'
-								layout='stacked'
-								showValue
-								formatValue={(val: number) => `${Math.round(val * 100)}%`}
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-									setAudioSmoothing(Number(e.target.value))
-								}
-								className='h-12'
-							/>
-						</div> */}
-					</>
-				)}
+				{audioEnabled && <></>}
 			</div>
 
 			{/* Output Handles - 5 channels for X, Y, R, G, B */}

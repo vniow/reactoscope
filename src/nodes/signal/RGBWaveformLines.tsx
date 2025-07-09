@@ -1,17 +1,27 @@
 // RGBWaveformLines.tsx
 // Shader-based XYRGB waveform visualizer using buffer geometry and custom shader material
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import * as Tone from 'tone';
 
 import '../../shared/materials/LineShaderMaterial';
 import { useWaveformGeometry } from '../../shared/geometry/useWaveformGeometry';
-import RGBWaveformLinesProps from './RGBWaveformLines'; // adjust if needed
 
 // Add minimum amplitude threshold for rendering
 const MIN_RENDER_AMP = 0.005;
 
+/**
+ * Props for RGBWaveformLines component.
+ * @property analyserX - Tone.js analyser for X axis
+ * @property analyserY - Tone.js analyser for Y axis
+ * @property analyserR - Tone.js analyser for Red channel
+ * @property analyserG - Tone.js analyser for Green channel
+ * @property analyserB - Tone.js analyser for Blue channel
+ * @property isPlaying - Whether audio is currently playing
+ * @property audioScale - Optional scale factor for audio amplitude
+ * @property afterglow - Optional afterglow intensity for shader
+ */
 interface RGBWaveformLinesProps {
 	analyserX?: Tone.Analyser;
 	analyserY?: Tone.Analyser;
@@ -23,7 +33,11 @@ interface RGBWaveformLinesProps {
 	afterglow?: number;
 }
 
-const RGBWaveformLines: React.FC<RGBWaveformLinesProps> = ({
+/**
+ * Shader-based XYRGB waveform visualizer using buffer geometry and custom shader material.
+ * @param props - RGBWaveformLinesProps
+ */
+function RGBWaveformLines({
 	analyserX,
 	analyserY,
 	analyserR,
@@ -32,7 +46,7 @@ const RGBWaveformLines: React.FC<RGBWaveformLinesProps> = ({
 	isPlaying,
 	audioScale = 1.0,
 	afterglow = 1.0,
-}) => {
+}: RGBWaveformLinesProps): React.ReactElement {
 	const meshRef = useRef<THREE.Mesh>(null!);
 	const geometryRef = useRef<THREE.BufferGeometry>(null!);
 	const materialRef = useRef<THREE.ShaderMaterial>(null!);
@@ -124,6 +138,6 @@ const RGBWaveformLines: React.FC<RGBWaveformLinesProps> = ({
 			/>
 		</mesh>
 	);
-};
+}
 
 export default RGBWaveformLines;

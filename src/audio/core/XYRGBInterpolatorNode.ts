@@ -9,7 +9,7 @@ import {
 	xyrgbInterpolatorWorklet,
 	workletName,
 } from './worklet/XYRGBInterpolator.worklet';
-import type { VertexInfo } from '../../nodes/source/DebugPanel';
+import type { VertexInfo } from '../../nodes/source/sceneTypes';
 
 export interface XYRGBInterpolatorNodeOptions {
 	/** Scan rate in Hz */
