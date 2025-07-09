@@ -6,7 +6,7 @@
  */
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { XYRGBInterpolatorNode } from '../core/XYRGBInterpolatorNode';
-import type { VertexInfo } from '../../nodes/source/DebugPanel';
+import type { VertexInfo } from '../../nodes/source/sceneTypes';
 
 interface UseXYRGBInterpolatorReturn {
 	/** The XYRGB interpolator node instance */

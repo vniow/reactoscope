@@ -61,7 +61,7 @@ export const xyrgbInterpolatorWorklet = /* javascript */ `
         },
       ];
         // Removed smoothing parameter
-      ];
+      
     }
 
 
