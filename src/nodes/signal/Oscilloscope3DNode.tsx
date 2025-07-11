@@ -47,10 +47,36 @@ function Waveform3D({
 	isSelected: boolean;
 }): React.ReactElement {
 	const getAudioNode = useAppStore((state) => state.getAudioNode);
+	const RESOLUTION = 512; // Default, could be made a prop
 	const [points, setPoints] = useState<[number, number, number][]>(() =>
-		Array.from({ length: 512 }, (_, i) => [(i / 511) * 4 - 2, 0, 0])
+		Array.from({ length: RESOLUTION }, (_, i) => [
+			(i / (RESOLUTION - 1)) * 4 - 2,
+			0,
+			0,
+		])
 	);
-	const dataRef = useRef<Float32Array>(new Float32Array(512));
+	const dataRef = useRef<Float32Array>(new Float32Array(RESOLUTION));
+
+	// Phase-aligned trigger detection (positive slope)
+	function findTriggerIndex(
+		buffer: Float32Array,
+		triggerLevel: number,
+		positiveSlope: boolean = true
+	): number {
+		for (let i = 1; i < buffer.length; i++) {
+			if (
+				(positiveSlope &&
+					buffer[i - 1] < triggerLevel &&
+					buffer[i] >= triggerLevel) ||
+				(!positiveSlope &&
+					buffer[i - 1] > triggerLevel &&
+					buffer[i] <= triggerLevel)
+			) {
+				return i;
+			}
+		}
+		return 0; // fallback if not found
+	}
 
 	useFrame(() => {
 		const audioNodes = getAudioNode(nodeId) as Tone.ToneAudioNode[] | null;
@@ -59,18 +85,38 @@ function Waveform3D({
 			if (dataRef.current.some((v) => v !== 0)) {
 				dataRef.current.fill(0);
 				setPoints(
-					Array.from({ length: 512 }, (_, i) => [(i / 511) * 4 - 2, 0, 0])
+					Array.from({ length: RESOLUTION }, (_, i) => [
+						(i / (RESOLUTION - 1)) * 4 - 2,
+						0,
+						0,
+					])
 				);
 			}
 			return;
 		}
 		try {
 			const current = analyzer.getValue() as Float32Array;
-			if (current.some((v, i) => Math.abs(v - dataRef.current[i]) > 0.01)) {
-				dataRef.current.set(current);
+			// Phase-aligned: find trigger index
+			const triggerIdx = findTriggerIndex(current, triggerLevel, true); // positive slope
+			// Extract phase-aligned window
+			let phaseAligned: Float32Array;
+			if (triggerIdx + RESOLUTION <= current.length) {
+				phaseAligned = current.slice(triggerIdx, triggerIdx + RESOLUTION);
+			} else {
+				// Wrap around if needed
+				phaseAligned = new Float32Array(RESOLUTION);
+				const firstPart = current.length - triggerIdx;
+				phaseAligned.set(current.slice(triggerIdx), 0);
+				phaseAligned.set(current.slice(0, RESOLUTION - firstPart), firstPart);
+			}
+			// Only update if changed (for performance)
+			if (
+				phaseAligned.some((v, i) => Math.abs(v - dataRef.current[i]) > 0.01)
+			) {
+				dataRef.current.set(phaseAligned);
 				setPoints(
-					Array.from(current, (y, i) => [
-						(i / (current.length - 1)) * 4 - 2,
+					Array.from(phaseAligned, (y, i) => [
+						(i / (RESOLUTION - 1)) * 4 - 2,
 						y * 2,
 						0,
 					])

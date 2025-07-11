@@ -13,16 +13,15 @@ import type { NodeTypes } from '@xyflow/react';
 import { DebugNode } from './DebugNode';
 import { DebugSimpleNode } from '../shared/components/DebugSimpleNode';
 import { DestinationNode } from './core/DestinationNode';
-import { OscillatorNode } from './source/OscillatorNode';
 import { NoiseGeneratorNode } from './source/NoiseGeneratorNode';
 import { DynamicEffectNode } from './effect/DynamicEffectNode';
 import { DynamicComponentNode } from './component/DynamicComponentNode';
 import { Oscilloscope3DNode } from './signal/Oscilloscope3DNode';
-import { XYscope3DNode } from './signal/XYscope3DNode';
+
 import { XYRGBScope3DNode } from './signal/XYRGBScope3DNode';
-import { XYRGBVisualizerNode } from './signal/XYRGBVisualizerNode';
+
 import { XYRGBGeneratorNode } from './source/XYRGBGeneratorNode';
-import { WoscopeVisualizerNode } from './signal/WoscopeVisualizerNode';
+
 import { XYRGBMergeNode } from './component/XYRGBMergeNode';
 import { SignalNode } from './source/SignalNode';
 
@@ -71,21 +70,19 @@ export const nodeTypes = {
 
 	// Dynamic routing nodes for each variant
 	core: DestinationNode,
-	source: OscillatorNode, // Oscillator is the main source node
 	'source-noise': NoiseGeneratorNode, // AudioWorklet-based noise generator
 	'source-player': SourceNodeComponent, // Placeholder for Audio Player
 	'source-microphone': SourceNodeComponent, // Placeholder for Microphone
 	instrument: InstrumentNodeComponent,
 	effect: DynamicEffectNode,
 	component: DynamicComponentNode,
-	'signal-xy': XYscope3DNode, // XY Lissajous plot node
 	'signal-xyrgb': XYRGBScope3DNode, // 5-channel audio-visual mapping (X,Y,R,G,B)
-	'signal-xyrgb-viz': XYRGBVisualizerNode, // UI-only XYRGB visualizer
+
 	'source-xyrgb': XYRGBGeneratorNode, // XYRGB audio generator from 3D scene
 	'signal-3d': Oscilloscope3DNode, // 3D Oscilloscope node
 	event: EventNodeComponent,
 	unit: UtilityNodeComponent,
-	'signal-woscope': WoscopeVisualizerNode, // Woscope visualizer node
+
 	// Register XYRGBMergeNode
 	'component-xyrgb-merge': XYRGBMergeNode,
 	// Register SignalNode for Tone.Signal
