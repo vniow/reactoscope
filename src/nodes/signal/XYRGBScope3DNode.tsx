@@ -17,6 +17,8 @@ import { useAppStore } from '../../shared/stores/appStore';
 import RGBWaveformLines from './RGBWaveformLines';
 import { GridControl } from '../../shared/components/ui/GridControl';
 import type { BaseNodeData } from '../types';
+import { PersistencePass } from './PersistencePass';
+import { CRTBarrelDistortionPass } from './CRTBarrelDistortionPass';
 
 interface XYRGBScopeNodeData extends BaseNodeData {
 	inputX?: string;
@@ -36,6 +38,11 @@ export const XYRGBScope3DNode: React.FC<
 	const [isPlaying, setIsPlaying] = useState(false);
 	// Afterglow (trail intensity) state
 	const [afterglow, setAfterglow] = useState(1.0);
+	const [bloomIntensity, setBloomIntensity] = useState(1.5);
+	const [bloomThreshold, setBloomThreshold] = useState(0.05); // Lower threshold for more bloom
+	const [lineIntensity, setLineIntensity] = useState(1.0); // For debugging bloom
+	const [persistenceDecay, setPersistenceDecay] = useState(0.95);
+	const [crtStrength, setCRTStrength] = useState(0.2);
 
 	// Track previous input IDs for each channel
 	const prevInputsRef = React.useRef({
@@ -154,9 +161,10 @@ export const XYRGBScope3DNode: React.FC<
 					>
 						<ambientLight intensity={1.0} />
 						<EffectComposer>
+							<CRTBarrelDistortionPass strength={crtStrength} />
 							<Bloom
-								intensity={1.0}
-								luminanceThreshold={0.15}
+								intensity={bloomIntensity}
+								luminanceThreshold={bloomThreshold}
 								luminanceSmoothing={0.025}
 							/>
 							<RGBWaveformLines
@@ -166,8 +174,9 @@ export const XYRGBScope3DNode: React.FC<
 								analyserG={analyserG}
 								analyserB={analyserB}
 								isPlaying={isPlaying}
-								// afterglow={afterglow}
+								lineIntensity={lineIntensity}
 							/>
+							<PersistencePass decay={persistenceDecay} />
 						</EffectComposer>
 					</Canvas>
 				</div>
@@ -183,8 +192,8 @@ export const XYRGBScope3DNode: React.FC<
 					</div>
 				</div>
 			</div>
-			{/* Afterglow slider, styled like other controls */}
-			<div className='mb-4'>
+			{/* Effect controls: Afterglow, Bloom, Persistence, CRT, Line Intensity */}
+			<div className='mb-4 grid grid-cols-1 gap-2'>
 				<GridControl
 					type='slider'
 					label='Afterglow'
@@ -198,6 +207,86 @@ export const XYRGBScope3DNode: React.FC<
 					formatValue={(val: number) => val.toFixed(2)}
 					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 						setAfterglow(Number(e.target.value))
+					}
+					className='h-12'
+				/>
+				<GridControl
+					type='slider'
+					label='Bloom Intensity'
+					value={bloomIntensity}
+					min={0.0}
+					max={3.0}
+					step={0.01}
+					variant='node-variant'
+					layout='stacked'
+					showValue
+					formatValue={(val: number) => val.toFixed(2)}
+					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+						setBloomIntensity(Number(e.target.value))
+					}
+					className='h-12'
+				/>
+				<GridControl
+					type='slider'
+					label='Bloom Threshold'
+					value={bloomThreshold}
+					min={0.0}
+					max={0.5}
+					step={0.01}
+					variant='node-variant'
+					layout='stacked'
+					showValue
+					formatValue={(val: number) => val.toFixed(2)}
+					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+						setBloomThreshold(Number(e.target.value))
+					}
+					className='h-12'
+				/>
+				<GridControl
+					type='slider'
+					label='Line Intensity'
+					value={lineIntensity}
+					min={0.1}
+					max={5.0}
+					step={0.01}
+					variant='node-variant'
+					layout='stacked'
+					showValue
+					formatValue={(val: number) => val.toFixed(2)}
+					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+						setLineIntensity(Number(e.target.value))
+					}
+					className='h-12'
+				/>
+				<GridControl
+					type='slider'
+					label='Persistence'
+					value={persistenceDecay}
+					min={0.8}
+					max={0.99}
+					step={0.001}
+					variant='node-variant'
+					layout='stacked'
+					showValue
+					formatValue={(val: number) => val.toFixed(3)}
+					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+						setPersistenceDecay(Number(e.target.value))
+					}
+					className='h-12'
+				/>
+				<GridControl
+					type='slider'
+					label='CRT Distortion'
+					value={crtStrength}
+					min={0.0}
+					max={0.5}
+					step={0.01}
+					variant='node-variant'
+					layout='stacked'
+					showValue
+					formatValue={(val: number) => val.toFixed(2)}
+					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+						setCRTStrength(Number(e.target.value))
 					}
 					className='h-12'
 				/>
