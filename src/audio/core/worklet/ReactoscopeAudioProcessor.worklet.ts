@@ -1,11 +1,4 @@
 /**
- * XYRGB Interpolator AudioWorklet Processor
- *
- * Interpolates between discrete vertex data to generate continuous X, Y, R, G, B audio signals.
- * Uses configurable interpolation methods and scan patterns.
- */
-
-/**
  * Name of the worklet processor
  */
 export const workletName = 'reactoscope-processor';

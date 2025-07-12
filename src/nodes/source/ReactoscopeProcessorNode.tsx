@@ -21,7 +21,7 @@ import { useSceneTraversal } from './useSceneTraversal';
 import type { BaseNodeData } from '../types';
 import { RGBTriangleComponent } from './shapes';
 
-interface ReactoscopeViewerNodeData extends BaseNodeData {
+interface ReactoscopeProcessorNodeData extends BaseNodeData {
 	/** Scan rate in Hz (1-60) */
 	scanRate?: number;
 	/** Rotation speed for animation */
@@ -93,9 +93,9 @@ export function ReactoscopeViewerNode({
 	id,
 	data,
 	selected = false,
-}: NodeProps & { data: ReactoscopeViewerNodeData }): React.ReactElement {
+}: NodeProps & { data: ReactoscopeProcessorNodeData }): React.ReactElement {
 	const nodeId = id as string;
-	const nodeData = data as ReactoscopeViewerNodeData;
+	const nodeData = data as ReactoscopeProcessorNodeData;
 	const isSelected = selected as boolean;
 	const [sceneData, setSceneData] = useState<SceneData>({
 		vertices: [],

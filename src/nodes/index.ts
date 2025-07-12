@@ -20,7 +20,7 @@ import { Oscilloscope3DNode } from './signal/Oscilloscope3DNode';
 
 import { XYRGBScope3DNode } from './signal/XYRGBScope3DNode';
 
-import { ReactoscopeViewerNode } from './source/ReactoscopeViewerNode';
+import { ReactoscopeViewerNode } from './source/ReactoscopeProcessorNode';
 
 import { XYRGBMergeNode } from './component/XYRGBMergeNode';
 import { SignalNode } from './source/SignalNode';
