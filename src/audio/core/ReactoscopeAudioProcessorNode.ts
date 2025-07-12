@@ -11,7 +11,7 @@ import {
 } from './worklet/ReactoscopeAudioProcessor.worklet';
 import type { VertexInfo } from '../../nodes/source/sceneTypes';
 
-export interface ReactoscopeProcessorNodeOptions {
+export interface ReactoscopeAudioProcessorNodeOptions {
 	/** Scan rate in Hz */
 	scanRate?: number;
 	/** Smoothing factor for transitions */
@@ -26,8 +26,8 @@ export interface ReactoscopeProcessorNodeOptions {
  * XYRGB Interpolator Audio Node
  * Generates 5-channel audio output: X, Y, R, G, B
  */
-export class ReactoscopeProcessorNode {
-	readonly name: string = 'ReactoscopeProcessorNode';
+export class ReactoscopeAudioProcessorNode {
+	readonly name: string = 'ReactoscopeAudioProcessorNode';
 	readonly outputs: {
 		x: Tone.Gain;
 		y: Tone.Gain;
@@ -50,9 +50,9 @@ export class ReactoscopeProcessorNode {
 	private _smoothing: number = 0.1;
 
 	/**
-	 * Create a new ReactoscopeProcessorNode
+	 * Create a new ReactoscopeAudioProcessorNode
 	 */
-	constructor(options: ReactoscopeProcessorNodeOptions = {}) {
+	constructor(options: ReactoscopeAudioProcessorNodeOptions = {}) {
 		this._scanRate = options.scanRate ?? 30;
 		this._smoothing = options.smoothing ?? 0.1;
 		this._debug = options.debug ?? false;

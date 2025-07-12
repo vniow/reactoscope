@@ -5,12 +5,12 @@
  * that generates audio signals from 3D scene vertex data.
  */
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { ReactoscopeProcessorNode } from '../core/ReactoscopeAudioProcessorNode';
+import { ReactoscopeAudioProcessorNode } from '../core/ReactoscopeAudioProcessorNode';
 import type { VertexInfo } from '../../nodes/source/sceneTypes';
 
-interface UseReactoscopeProcessorReturn {
+interface UseReactoscopeAudioProcessorReturn {
 	/** The XYRGB interpolator node instance */
-	node: ReactoscopeProcessorNode | null;
+	node: ReactoscopeAudioProcessorNode | null;
 	/** Whether the node is ready */
 	isReady: boolean;
 	/** Whether the node is currently playing */
@@ -32,10 +32,10 @@ interface UseReactoscopeProcessorReturn {
 /**
  * Hook for managing XYRGB Interpolator audio node
  */
-export function useReactoscopeProcessor(
+export function useReactoscopeAudioProcessor(
 	enabled: boolean = true
-): UseReactoscopeProcessorReturn {
-	const nodeRef = useRef<ReactoscopeProcessorNode | null>(null);
+): UseReactoscopeAudioProcessorReturn {
+	const nodeRef = useRef<ReactoscopeAudioProcessorNode | null>(null);
 	const [isReady, setIsReady] = useState(false);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const readyPromiseRef = useRef<Promise<void> | null>(null);
@@ -56,7 +56,7 @@ export function useReactoscopeProcessor(
 
 		const initializeNode = async () => {
 			try {
-				const node = new ReactoscopeProcessorNode({
+				const node = new ReactoscopeAudioProcessorNode({
 					debug: true,
 				});
 

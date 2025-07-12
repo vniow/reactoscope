@@ -14,14 +14,14 @@ import { BaseNode } from '../../shared/components/BaseNode';
 import { NodeHandle } from '../../shared/components/NodeHandle';
 import { GridControl } from '../../shared/components/ui/GridControl';
 import { useAudioNodeParam } from '../../audio/hooks/useAudioNodeParam';
-import { useReactoscopeProcessor } from '../../audio/hooks/useReactoscopeAudioProcessor';
+import { useReactoscopeAudioProcessor } from '../../audio/hooks/useReactoscopeAudioProcessor';
 import { useAppStore } from '../../shared/stores/appStore';
 import type { SceneData } from './sceneTypes';
 import { useSceneTraversal } from './useSceneTraversal';
 import type { BaseNodeData } from '../types';
 import { RGBTriangleComponent } from './shapes';
 
-interface ReactoscopeProcessorNodeData extends BaseNodeData {
+interface ReactoscopeAudioProcessorNodeData extends BaseNodeData {
 	/** Scan rate in Hz (1-60) */
 	scanRate?: number;
 	/** Rotation speed for animation */
@@ -93,9 +93,11 @@ export function ReactoscopeViewerNode({
 	id,
 	data,
 	selected = false,
-}: NodeProps & { data: ReactoscopeProcessorNodeData }): React.ReactElement {
+}: NodeProps & {
+	data: ReactoscopeAudioProcessorNodeData;
+}): React.ReactElement {
 	const nodeId = id as string;
-	const nodeData = data as ReactoscopeProcessorNodeData;
+	const nodeData = data as ReactoscopeAudioProcessorNodeData;
 	const isSelected = selected as boolean;
 	const [sceneData, setSceneData] = useState<SceneData>({
 		vertices: [],
@@ -133,8 +135,8 @@ export function ReactoscopeViewerNode({
 		{ min: 0, max: 1 }
 	);
 
-	// Reactoscope Processor
-	const processor = useReactoscopeProcessor(audioEnabled);
+	// Reactoscope Audio Processor
+	const processor = useReactoscopeAudioProcessor(audioEnabled);
 
 	// Register the audio processor with the audio system when ready
 	useEffect(() => {
