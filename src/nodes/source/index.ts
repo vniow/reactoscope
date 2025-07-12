@@ -4,4 +4,4 @@
 
 export { OscillatorNode } from './OscillatorNode';
 export { NoiseGeneratorNode } from './NoiseGeneratorNode';
-export { XYRGBGeneratorNode } from './XYRGBGeneratorNode';
+export { ReactoscopeViewerNode } from './ReactoscopeViewerNode';

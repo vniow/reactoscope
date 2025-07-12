@@ -152,14 +152,14 @@ export const SOURCE_NODES: NodeTypeOption[] = [
 		},
 	},
 	{
-		type: 'source-xyrgb' as AppNode['type'],
-		name: 'XYRGB Generator',
+		type: 'source' as AppNode['type'],
+		name: 'Reactoscope Processor',
 		description: 'Generate XYRGB audio signals from 3D scene vertex data',
 		emoji: '🎨',
 		variant: 'source',
 		category: 'utility',
 		defaultData: {
-			label: 'XYRGB Generator',
+			label: 'Reactoscope Processor',
 			scanRate: 30,
 			rotationSpeed: 1.0,
 			audioParams: {

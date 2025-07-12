@@ -20,7 +20,7 @@ import { Oscilloscope3DNode } from './signal/Oscilloscope3DNode';
 
 import { XYRGBScope3DNode } from './signal/XYRGBScope3DNode';
 
-import { XYRGBGeneratorNode } from './source/XYRGBGeneratorNode';
+import { ReactoscopeViewerNode } from './source/ReactoscopeViewerNode';
 
 import { XYRGBMergeNode } from './component/XYRGBMergeNode';
 import { SignalNode } from './source/SignalNode';
@@ -78,7 +78,7 @@ export const nodeTypes = {
 	component: DynamicComponentNode,
 	'signal-xyrgb': XYRGBScope3DNode, // 5-channel audio-visual mapping (X,Y,R,G,B)
 
-	'source-xyrgb': XYRGBGeneratorNode, // XYRGB audio generator from 3D scene
+	source: ReactoscopeViewerNode,
 	'signal-3d': Oscilloscope3DNode, // 3D Oscilloscope node
 	event: EventNodeComponent,
 	unit: UtilityNodeComponent,
