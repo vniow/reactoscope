@@ -1,0 +1,150 @@
+/**
+ * React hook for managing XYRGB Interpolator audio node
+ *
+ * Provides a convenient interface for creating and managing an XYRGB interpolator
+ * that generates audio signals from 3D scene vertex data.
+ */
+import { useEffect, useRef, useCallback, useState } from 'react';
+import { ReactoscopeProcessorNode } from '../core/ReactoscopeAudioProcessorNode';
+import type { VertexInfo } from '../../nodes/source/sceneTypes';
+
+interface UseReactoscopeProcessorReturn {
+	/** The XYRGB interpolator node instance */
+	node: ReactoscopeProcessorNode | null;
+	/** Whether the node is ready */
+	isReady: boolean;
+	/** Whether the node is currently playing */
+	isPlaying: boolean;
+	/** Update vertex data */
+	updateVertices: (vertices: VertexInfo[]) => void;
+	/** Start interpolation */
+	start: () => void;
+	/** Stop interpolation */
+	stop: () => void;
+	/** Update scan rate */
+	setScanRate: (rate: number) => void;
+	/** Update smoothing */
+	setSmoothing: (smoothing: number) => void;
+	/** Ready promise */
+	ready: Promise<void> | null;
+}
+
+/**
+ * Hook for managing XYRGB Interpolator audio node
+ */
+export function useReactoscopeProcessor(
+	enabled: boolean = true
+): UseReactoscopeProcessorReturn {
+	const nodeRef = useRef<ReactoscopeProcessorNode | null>(null);
+	const [isReady, setIsReady] = useState(false);
+	const [isPlaying, setIsPlaying] = useState(false);
+	const readyPromiseRef = useRef<Promise<void> | null>(null);
+
+	// Initialize node only once when enabled changes
+	useEffect(() => {
+		if (!enabled) {
+			// Don't clean up when disabled - just stop the processor
+			if (nodeRef.current) {
+				nodeRef.current.stop();
+				setIsPlaying(false);
+			}
+			return;
+		}
+
+		// Only initialize if we don't already have a node
+		if (nodeRef.current) return;
+
+		const initializeNode = async () => {
+			try {
+				const node = new ReactoscopeProcessorNode({
+					debug: true,
+				});
+
+				nodeRef.current = node;
+				readyPromiseRef.current = node.ready;
+
+				await node.ready;
+				setIsReady(true);
+				setIsPlaying(node.isPlaying);
+
+				console.log('🎵 Reactoscope Processor hook initialized');
+			} catch (error) {
+				console.error('❌ Failed to initialize Reactoscope Processor:', error);
+			}
+		};
+
+		initializeNode();
+
+		// Only cleanup when component unmounts, not when enabled changes
+		return () => {
+			// This cleanup only runs on unmount
+		};
+	}, [enabled]);
+
+	// Separate cleanup effect for component unmount
+	useEffect(() => {
+		return () => {
+			if (nodeRef.current) {
+				nodeRef.current.dispose();
+				nodeRef.current = null;
+				setIsReady(false);
+				setIsPlaying(false);
+				readyPromiseRef.current = null;
+			}
+		};
+	}, []);
+
+	// Stable callback functions
+	const updateVertices = useCallback(
+		(vertices: VertexInfo[]) => {
+			if (nodeRef.current && isReady) {
+				nodeRef.current.setVertices(vertices);
+			}
+		},
+		[isReady]
+	);
+
+	const start = useCallback(() => {
+		if (nodeRef.current && isReady) {
+			nodeRef.current.start();
+			setIsPlaying(true);
+		}
+	}, [isReady]);
+
+	const stop = useCallback(() => {
+		if (nodeRef.current && isReady) {
+			nodeRef.current.stop();
+			setIsPlaying(false);
+		}
+	}, [isReady]);
+
+	const setScanRate = useCallback(
+		(rate: number) => {
+			if (nodeRef.current && isReady) {
+				nodeRef.current.setScanRate(rate);
+			}
+		},
+		[isReady]
+	);
+
+	const setSmoothing = useCallback(
+		(smoothing: number) => {
+			if (nodeRef.current && isReady) {
+				nodeRef.current.setSmoothing(smoothing);
+			}
+		},
+		[isReady]
+	);
+
+	return {
+		node: nodeRef.current,
+		isReady,
+		isPlaying,
+		updateVertices,
+		start,
+		stop,
+		setScanRate,
+		setSmoothing,
+		ready: readyPromiseRef.current,
+	};
+}
