@@ -86,8 +86,19 @@ export function useWaveformGeometry() {
 
 	/** Reset all geometry data to zero */
 	const resetGeometryData = (geometry: THREE.BufferGeometry) => {
-		const startAttr = geometry.attributes.aStart as THREE.BufferAttribute;
-		const endAttr = geometry.attributes.aEnd as THREE.BufferAttribute;
+		const startAttr = geometry.attributes.aStart as
+			| THREE.BufferAttribute
+			| undefined;
+		const endAttr = geometry.attributes.aEnd as
+			| THREE.BufferAttribute
+			| undefined;
+
+		if (!startAttr || !endAttr) {
+			console.warn(
+				'resetGeometryData: geometry missing aStart or aEnd attributes'
+			);
+			return;
+		}
 
 		for (let i = 0; i < NUM_SEGMENTS * 4 * 2; i++) {
 			startAttr.array[i] = 0;

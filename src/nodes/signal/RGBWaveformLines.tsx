@@ -30,7 +30,7 @@ interface RGBWaveformLinesProps {
 	analyserB?: Tone.Analyser;
 	isPlaying: boolean;
 	audioScale?: number;
-	afterglow?: number;
+	lineIntensity?: number;
 }
 
 /**
@@ -45,7 +45,7 @@ function RGBWaveformLines({
 	analyserB,
 	isPlaying,
 	audioScale = 1.0,
-	afterglow = 1.0,
+	lineIntensity = 1.0,
 }: RGBWaveformLinesProps): React.ReactElement {
 	const meshRef = useRef<THREE.Mesh>(null!);
 	const geometryRef = useRef<THREE.BufferGeometry>(null!);
@@ -67,8 +67,8 @@ function RGBWaveformLines({
 	useFrame(() => {
 		if (!geometryRef.current || !materialRef.current) return;
 
-		// Always set afterglow intensity uniform
-		materialRef.current.uniforms.uIntensity.value = afterglow;
+		// Set intensity uniform from prop
+		materialRef.current.uniforms.uIntensity.value = lineIntensity;
 
 		// Only render if playing and all analysers present
 		if (

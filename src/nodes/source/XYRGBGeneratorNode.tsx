@@ -10,7 +10,6 @@
 import React, { useEffect, useState } from 'react';
 import { Position, type NodeProps } from '@xyflow/react';
 import { Canvas } from '@react-three/fiber';
-import { RGBTriangle } from './RGBTriangle';
 import { BaseNode } from '../../shared/components/BaseNode';
 import { NodeHandle } from '../../shared/components/NodeHandle';
 import { GridControl } from '../../shared/components/ui/GridControl';
@@ -20,6 +19,7 @@ import { useAppStore } from '../../shared/stores/appStore';
 import type { SceneData } from './sceneTypes';
 import { useSceneTraversal } from './useSceneTraversal';
 import type { BaseNodeData } from '../types';
+import { RGBTriangleComponent } from './shapes';
 
 interface XYRGBGeneratorNodeData extends BaseNodeData {
 	/** Scan rate in Hz (1-60) */
@@ -82,10 +82,10 @@ function Scene3D({
 			{/* Ambient light for visibility */}
 			<ambientLight intensity={0.8} />
 
-			{/* RGB Triangle */}
-			<RGBTriangle
-				scale={triangleScale}
+			{/* RGB Triangle Component for static rendering */}
+			<RGBTriangleComponent
 				segmentDensity={segmentDensity}
+				scale={triangleScale}
 			/>
 		</>
 	);
@@ -111,7 +111,7 @@ export function XYRGBGeneratorNode({
 		nodeId,
 		'scanRate',
 		nodeData.scanRate ?? 30,
-		{ min: 1, max: 60 }
+		{ min: 1, max: 120 }
 	);
 
 	const [triangleScale, setTriangleScale] = useAudioNodeParam<number>(
@@ -292,7 +292,7 @@ export function XYRGBGeneratorNode({
 					label='Scan Rate'
 					value={scanRate}
 					min={1}
-					max={60}
+					max={120}
 					step={1}
 					variant='node-variant'
 					layout='stacked'
@@ -330,7 +330,7 @@ export function XYRGBGeneratorNode({
 					label='Segment Density'
 					value={segmentDensity}
 					min={3}
-					max={128}
+					max={512}
 					step={1}
 					variant='node-variant'
 					layout='stacked'

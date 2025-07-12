@@ -9,6 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import { Position, type NodeProps } from '@xyflow/react';
 import { Canvas } from '@react-three/fiber';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as Tone from 'tone';
 import { BaseNode } from '../../shared/components/BaseNode';
 import { NodeHandle } from '../../shared/components/NodeHandle';
@@ -152,15 +153,22 @@ export const XYRGBScope3DNode: React.FC<
 						}}
 					>
 						<ambientLight intensity={1.0} />
-						<RGBWaveformLines
-							analyserX={analyserX}
-							analyserY={analyserY}
-							analyserR={analyserR}
-							analyserG={analyserG}
-							analyserB={analyserB}
-							isPlaying={isPlaying}
-							afterglow={afterglow}
-						/>
+						<EffectComposer>
+							<Bloom
+								intensity={1.0}
+								luminanceThreshold={0.15}
+								luminanceSmoothing={0.025}
+							/>
+							<RGBWaveformLines
+								analyserX={analyserX}
+								analyserY={analyserY}
+								analyserR={analyserR}
+								analyserG={analyserG}
+								analyserB={analyserB}
+								isPlaying={isPlaying}
+								// afterglow={afterglow}
+							/>
+						</EffectComposer>
 					</Canvas>
 				</div>
 				<div className='flex justify-between items-center mt-2 text-xs px-2'>

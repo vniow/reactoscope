@@ -12,6 +12,7 @@
 	"dependencies": {
 		"@react-three/drei": "^10.3.0",
 		"@react-three/fiber": "^9.1.2",
+		"@react-three/postprocessing": "^3.0.4",
 		"@tailwindcss/vite": "^4.1.8",
 		"@types/audioworklet": "^0.0.70",
 		"@types/three": "^0.177.0",
@@ -19,6 +20,7 @@
 		"clsx": "^2.1.1",
 		"leva": "^0.10.0",
 		"nanoid": "^5.1.5",
+		"postprocessing": "^6.37.6",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
 		"tailwindcss": "^4.1.8",
