@@ -197,46 +197,42 @@ export function NodeHandle({
 		}
 	};
 
-	// Helper function to create circle/oval path for target handles
-	const getTargetCirclePath = (
-		fillColor: string,
-		strokeColor: string,
-		dimensions: { width: number; height: number }
-	) => {
-		const { width, height } = dimensions;
-		const centerX = width / 2;
-		const centerY = height / 2;
+// Helper function to create a perfect circle path for target handles
+const getTargetCirclePath = (
+  fillColor: string,
+  strokeColor: string,
+  dimensions: { width: number; height: number }
+) => {
+  const { width, height } = dimensions;
+  const centerX = width / 2;
+  const centerY = height / 2;
+  // Use the smaller of width or height for a perfect circle
+  const radius = Math.min(width, height) / 2 - 4; // 4px padding
 
-		// Create an oval that fits the dimensions
-		const radiusX = (width - 8) / 2; // Leave some padding
-		const radiusY = (height - 8) / 2; // Leave some padding
+  const pathStyles = {
+	fill: fillColor,
+	stroke: strokeColor,
+	strokeWidth: '2',
+	opacity: '0.9',
+  };
 
-		// Simple styling without complex filters
-		const pathStyles = {
-			fill: fillColor,
-			stroke: strokeColor,
-			strokeWidth: '2',
-			opacity: '0.9',
-		};
-
-		return (
-			<ellipse
-				cx={centerX}
-				cy={centerY}
-				rx={radiusX}
-				ry={radiusY}
-				{...pathStyles}
-			/>
-		);
-	};
+  return (
+	<circle
+	  cx={centerX}
+	  cy={centerY}
+	  r={radius}
+	  {...pathStyles}
+	/>
+  );
+};
 
 	// Handle styling for SVG container - simplified since we're using SVG icons
 	const handleClasses = [
 		sizeClasses[size] || sizeClasses.md, // Safe access with fallback
 		'transition-colors',
 		'duration-150',
-		// Remove border and background since SVG handles its own styling
-		'bg-transparent',
+
+		// 'bg-transparent',
 		'border-0',
 		'flex',
 		'items-center',

@@ -18,9 +18,7 @@ import { DynamicEffectNode } from './effect/DynamicEffectNode';
 import { DynamicComponentNode } from './component/DynamicComponentNode';
 import { Oscilloscope3DNode } from './signal/Oscilloscope3DNode';
 
-import { XYRGBScope3DNode } from './signal/XYRGBScope3DNode';
-
-import { ReactoscopeViewerNode } from './source/ReactoscopeProcessorNode';
+import { ReactoscopeProcessorNode } from './source/ReactoscopeProcessorNode';
 
 import { XYRGBMergeNode } from './component/XYRGBMergeNode';
 import { SignalNode } from './source/SignalNode';
@@ -34,6 +32,7 @@ import {
 
 // Type imports
 import type { AppNode } from './types';
+import { ReactoscopeViewerNode } from './signal/ReactoscopeViewerNode';
 
 /**
  * Initial nodes configuration for the React Flow canvas
@@ -76,9 +75,9 @@ export const nodeTypes = {
 	instrument: InstrumentNodeComponent,
 	effect: DynamicEffectNode,
 	component: DynamicComponentNode,
-	'signal-xyrgb': XYRGBScope3DNode, // 5-channel audio-visual mapping (X,Y,R,G,B)
+	source: ReactoscopeProcessorNode, // Placeholder for Signal source
 
-	source: ReactoscopeViewerNode,
+	'signal-xyrgb': ReactoscopeViewerNode,
 	'signal-3d': Oscilloscope3DNode, // 3D Oscilloscope node
 	event: EventNodeComponent,
 	unit: UtilityNodeComponent,

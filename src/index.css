@@ -3,7 +3,7 @@
 /* === TAILWIND V4 THEME CONFIGURATION === */
 @theme {
 	/* === COLOR SYSTEM === */
-	
+
 	/* Base application colors */
 	--color-canvas: light-dark(#f8fafc, #0f172a);
 	--color-surface: light-dark(#ffffff, #1e293b);
@@ -11,13 +11,28 @@
 
 	/* Node variant colors using light-dark() - Tone.js categories */
 	--color-variant-core: light-dark(#64748b, #94a3b8); /* Gray - Core system */
-	--color-variant-source: light-dark(#22c55e, #4ade80); /* Green - Audio sources */
-	--color-variant-instrument: light-dark(#f97316, #fb923c); /* Orange - Instruments */
+	--color-variant-source: light-dark(
+		#22c55e,
+		#4ade80
+	); /* Green - Audio sources */
+	--color-variant-instrument: light-dark(
+		#f97316,
+		#fb923c
+	); /* Orange - Instruments */
 	--color-variant-effect: light-dark(#a855f7, #c084fc); /* Purple - Effects */
-	--color-variant-component: light-dark(#3b82f6, #60a5fa); /* Blue - Components */
-	--color-variant-signal: light-dark(#06b6d4, #67e8f9); /* Cyan - Signal processing */
+	--color-variant-component: light-dark(
+		#3b82f6,
+		#60a5fa
+	); /* Blue - Components */
+	--color-variant-signal: light-dark(
+		#06b6d4,
+		#67e8f9
+	); /* Cyan - Signal processing */
 	--color-variant-event: light-dark(#fbbf24, #fde68a); /* Yellow - Events */
-	--color-variant-unit: light-dark(#ef4444, #f87171); /* Red - Units/Utilities */
+	--color-variant-unit: light-dark(
+		#ef4444,
+		#f87171
+	); /* Red - Units/Utilities */
 
 	/* Interactive and grid colors */
 	--color-grid-line: light-dark(#e2e8f0, #334155);
@@ -25,18 +40,18 @@
 	--color-interactive-border-focus: #22c55e;
 
 	/* === SPACING SYSTEM === */
-	
+
 	/* Standard spacing scale */
 	--spacing-grid-unit: 20px;
-	
+
 	/* Grid-based spacing (64px multiples for node sizing) */
-	--spacing-grid-1: 64px;   /* 1 grid unit */
-	--spacing-grid-2: 128px;  /* 2 grid units */
-	--spacing-grid-3: 192px;  /* 3 grid units */
-	--spacing-grid-4: 256px;  /* 4 grid units */
-	--spacing-grid-5: 320px;  /* 5 grid units */
-	--spacing-grid-6: 384px;  /* 6 grid units */
-	--spacing-grid-8: 512px;  /* 8 grid units */
+	--spacing-grid-1: 64px; /* 1 grid unit */
+	--spacing-grid-2: 128px; /* 2 grid units */
+	--spacing-grid-3: 192px; /* 3 grid units */
+	--spacing-grid-4: 256px; /* 4 grid units */
+	--spacing-grid-5: 320px; /* 5 grid units */
+	--spacing-grid-6: 384px; /* 6 grid units */
+	--spacing-grid-8: 512px; /* 8 grid units */
 	--spacing-grid-10: 640px; /* 10 grid units */
 	--spacing-grid-12: 768px; /* 12 grid units */
 	--spacing-grid-16: 1024px; /* 16 grid units */
@@ -60,7 +75,7 @@
 	--duration-rainbow: 6s;
 
 	/* === RAINBOW COLOR SYSTEM === */
-	
+
 	/* Rainbow colors for special effects */
 	--color-rainbow-red: light-dark(#fee2e2, #dc2626);
 	--color-rainbow-orange: light-dark(#fed7aa, #ea580c);
@@ -81,134 +96,367 @@
 	--color-rainbow-rose: light-dark(#ffe4e6, #e11d48);
 }
 
-
 /* === VARIANT-SPECIFIC CUSTOM PROPERTIES === */
 [data-variant='core'] {
 	/* Core variant - Gray/Slate theme */
 	--node-accent: var(--color-variant-core);
-	--node-bg-primary: color-mix(in srgb, var(--color-variant-core) 10%, light-dark(#ffffff, #1e293b));
-	--node-bg-secondary: color-mix(in srgb, var(--color-variant-core) 5%, light-dark(#f8fafc, #0f172a));
-	--node-bg-interactive: color-mix(in srgb, var(--color-variant-core) 15%, light-dark(#f1f5f9, #334155));
-	--node-border: color-mix(in srgb, var(--color-variant-core) 30%, light-dark(#e2e8f0, #475569));
-	--node-border-hover: color-mix(in srgb, var(--color-variant-core) 50%, light-dark(#cbd5e1, #64748b));
+	--node-bg-primary: color-mix(
+		in srgb,
+		var(--color-variant-core) 10%,
+		light-dark(#ffffff, #1e293b)
+	);
+	--node-bg-secondary: color-mix(
+		in srgb,
+		var(--color-variant-core) 5%,
+		light-dark(#f8fafc, #0f172a)
+	);
+	--node-bg-interactive: color-mix(
+		in srgb,
+		var(--color-variant-core) 15%,
+		light-dark(#f1f5f9, #334155)
+	);
+	--node-border: color-mix(
+		in srgb,
+		var(--color-variant-core) 30%,
+		light-dark(#e2e8f0, #475569)
+	);
+	--node-border-hover: color-mix(
+		in srgb,
+		var(--color-variant-core) 50%,
+		light-dark(#cbd5e1, #64748b)
+	);
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
-	--node-text-secondary: color-mix(in srgb, var(--color-variant-core) 70%, light-dark(#4b5563, #d1d5db));
+	--node-text-secondary: color-mix(
+		in srgb,
+		var(--color-variant-core) 70%,
+		light-dark(#4b5563, #d1d5db)
+	);
 	--node-text-on-accent: light-dark(#ffffff, #1f2937);
-	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-core) 15%, transparent);
-	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-core) 25%, transparent);
-	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-core) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-core) 20%, transparent);
+	--node-shadow: 0 4px 6px -1px
+		color-mix(in srgb, var(--color-variant-core) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px
+		color-mix(in srgb, var(--color-variant-core) 25%, transparent);
+	--node-shadow-selected:
+		0 20px 25px -5px
+			color-mix(in srgb, var(--color-variant-core) 40%, transparent),
+		0 0 0 4px color-mix(in srgb, var(--color-variant-core) 20%, transparent);
 }
 
 [data-variant='source'] {
 	/* Source variant - Green theme */
 	--node-accent: var(--color-variant-source);
-	--node-bg-primary: color-mix(in srgb, var(--color-variant-source) 10%, light-dark(#ffffff, #1e293b));
-	--node-bg-secondary: color-mix(in srgb, var(--color-variant-source) 5%, light-dark(#f8fafc, #0f172a));
-	--node-bg-interactive: color-mix(in srgb, var(--color-variant-source) 15%, light-dark(#f0fdf4, #14532d));
-	--node-border: color-mix(in srgb, var(--color-variant-source) 30%, light-dark(#bbf7d0, #166534));
-	--node-border-hover: color-mix(in srgb, var(--color-variant-source) 50%, light-dark(#86efac, #22c55e));
+	--node-bg-primary: color-mix(
+		in srgb,
+		var(--color-variant-source) 10%,
+		light-dark(#ffffff, #1e293b)
+	);
+	--node-bg-secondary: color-mix(
+		in srgb,
+		var(--color-variant-source) 5%,
+		light-dark(#f8fafc, #0f172a)
+	);
+	--node-bg-interactive: color-mix(
+		in srgb,
+		var(--color-variant-source) 15%,
+		light-dark(#f0fdf4, #14532d)
+	);
+	--node-border: color-mix(
+		in srgb,
+		var(--color-variant-source) 30%,
+		light-dark(#bbf7d0, #166534)
+	);
+	--node-border-hover: color-mix(
+		in srgb,
+		var(--color-variant-source) 50%,
+		light-dark(#86efac, #22c55e)
+	);
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
-	--node-text-secondary: color-mix(in srgb, var(--color-variant-source) 70%, light-dark(#166534, #bbf7d0));
+	--node-text-secondary: color-mix(
+		in srgb,
+		var(--color-variant-source) 70%,
+		light-dark(#166534, #bbf7d0)
+	);
 	--node-text-on-accent: light-dark(#ffffff, #1f2937);
-	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-source) 15%, transparent);
-	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-source) 25%, transparent);
-	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-source) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-source) 20%, transparent);
+	--node-shadow: 0 4px 6px -1px
+		color-mix(in srgb, var(--color-variant-source) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px
+		color-mix(in srgb, var(--color-variant-source) 25%, transparent);
+	--node-shadow-selected:
+		0 20px 25px -5px
+			color-mix(in srgb, var(--color-variant-source) 40%, transparent),
+		0 0 0 4px color-mix(in srgb, var(--color-variant-source) 20%, transparent);
 }
 
 [data-variant='instrument'] {
 	/* Instrument variant - Orange theme */
 	--node-accent: var(--color-variant-instrument);
-	--node-bg-primary: color-mix(in srgb, var(--color-variant-instrument) 10%, light-dark(#ffffff, #1e293b));
-	--node-bg-secondary: color-mix(in srgb, var(--color-variant-instrument) 5%, light-dark(#f8fafc, #0f172a));
-	--node-bg-interactive: color-mix(in srgb, var(--color-variant-instrument) 15%, light-dark(#fff7ed, #9a3412));
-	--node-border: color-mix(in srgb, var(--color-variant-instrument) 30%, light-dark(#fed7aa, #c2410c));
-	--node-border-hover: color-mix(in srgb, var(--color-variant-instrument) 50%, light-dark(#fdba74, #f97316));
+	--node-bg-primary: color-mix(
+		in srgb,
+		var(--color-variant-instrument) 10%,
+		light-dark(#ffffff, #1e293b)
+	);
+	--node-bg-secondary: color-mix(
+		in srgb,
+		var(--color-variant-instrument) 5%,
+		light-dark(#f8fafc, #0f172a)
+	);
+	--node-bg-interactive: color-mix(
+		in srgb,
+		var(--color-variant-instrument) 15%,
+		light-dark(#fff7ed, #9a3412)
+	);
+	--node-border: color-mix(
+		in srgb,
+		var(--color-variant-instrument) 30%,
+		light-dark(#fed7aa, #c2410c)
+	);
+	--node-border-hover: color-mix(
+		in srgb,
+		var(--color-variant-instrument) 50%,
+		light-dark(#fdba74, #f97316)
+	);
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
-	--node-text-secondary: color-mix(in srgb, var(--color-variant-instrument) 70%, light-dark(#9a3412, #fed7aa));
+	--node-text-secondary: color-mix(
+		in srgb,
+		var(--color-variant-instrument) 70%,
+		light-dark(#9a3412, #fed7aa)
+	);
 	--node-text-on-accent: light-dark(#ffffff, #1f2937);
-	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-instrument) 15%, transparent);
-	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-instrument) 25%, transparent);
-	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-instrument) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-instrument) 20%, transparent);
+	--node-shadow: 0 4px 6px -1px
+		color-mix(in srgb, var(--color-variant-instrument) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px
+		color-mix(in srgb, var(--color-variant-instrument) 25%, transparent);
+	--node-shadow-selected:
+		0 20px 25px -5px
+			color-mix(in srgb, var(--color-variant-instrument) 40%, transparent),
+		0 0 0 4px
+			color-mix(in srgb, var(--color-variant-instrument) 20%, transparent);
 }
 
 [data-variant='effect'] {
 	/* Effect variant - Purple theme */
 	--node-accent: var(--color-variant-effect);
-	--node-bg-primary: color-mix(in srgb, var(--color-variant-effect) 10%, light-dark(#ffffff, #1e293b));
-	--node-bg-secondary: color-mix(in srgb, var(--color-variant-effect) 5%, light-dark(#f8fafc, #0f172a));
-	--node-bg-interactive: color-mix(in srgb, var(--color-variant-effect) 15%, light-dark(#faf5ff, #581c87));
-	--node-border: color-mix(in srgb, var(--color-variant-effect) 30%, light-dark(#e9d5ff, #7c3aed));
-	--node-border-hover: color-mix(in srgb, var(--color-variant-effect) 50%, light-dark(#d8b4fe, #a855f7));
+	--node-bg-primary: color-mix(
+		in srgb,
+		var(--color-variant-effect) 10%,
+		light-dark(#ffffff, #1e293b)
+	);
+	--node-bg-secondary: color-mix(
+		in srgb,
+		var(--color-variant-effect) 5%,
+		light-dark(#f8fafc, #0f172a)
+	);
+	--node-bg-interactive: color-mix(
+		in srgb,
+		var(--color-variant-effect) 15%,
+		light-dark(#faf5ff, #581c87)
+	);
+	--node-border: color-mix(
+		in srgb,
+		var(--color-variant-effect) 30%,
+		light-dark(#e9d5ff, #7c3aed)
+	);
+	--node-border-hover: color-mix(
+		in srgb,
+		var(--color-variant-effect) 50%,
+		light-dark(#d8b4fe, #a855f7)
+	);
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
-	--node-text-secondary: color-mix(in srgb, var(--color-variant-effect) 70%, light-dark(#581c87, #e9d5ff));
+	--node-text-secondary: color-mix(
+		in srgb,
+		var(--color-variant-effect) 70%,
+		light-dark(#581c87, #e9d5ff)
+	);
 	--node-text-on-accent: light-dark(#ffffff, #1f2937);
-	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-effect) 15%, transparent);
-	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-effect) 25%, transparent);
-	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-effect) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-effect) 20%, transparent);
+	--node-shadow: 0 4px 6px -1px
+		color-mix(in srgb, var(--color-variant-effect) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px
+		color-mix(in srgb, var(--color-variant-effect) 25%, transparent);
+	--node-shadow-selected:
+		0 20px 25px -5px
+			color-mix(in srgb, var(--color-variant-effect) 40%, transparent),
+		0 0 0 4px color-mix(in srgb, var(--color-variant-effect) 20%, transparent);
 }
 
 [data-variant='component'] {
 	/* Component variant - Blue theme */
 	--node-accent: var(--color-variant-component);
-	--node-bg-primary: color-mix(in srgb, var(--color-variant-component) 10%, light-dark(#ffffff, #1e293b));
-	--node-bg-secondary: color-mix(in srgb, var(--color-variant-component) 5%, light-dark(#f8fafc, #0f172a));
-	--node-bg-interactive: color-mix(in srgb, var(--color-variant-component) 15%, light-dark(#eff6ff, #1e3a8a));
-	--node-border: color-mix(in srgb, var(--color-variant-component) 30%, light-dark(#bfdbfe, #2563eb));
-	--node-border-hover: color-mix(in srgb, var(--color-variant-component) 50%, light-dark(#93c5fd, #3b82f6));
+	--node-bg-primary: color-mix(
+		in srgb,
+		var(--color-variant-component) 10%,
+		light-dark(#ffffff, #1e293b)
+	);
+	--node-bg-secondary: color-mix(
+		in srgb,
+		var(--color-variant-component) 5%,
+		light-dark(#f8fafc, #0f172a)
+	);
+	--node-bg-interactive: color-mix(
+		in srgb,
+		var(--color-variant-component) 15%,
+		light-dark(#eff6ff, #1e3a8a)
+	);
+	--node-border: color-mix(
+		in srgb,
+		var(--color-variant-component) 30%,
+		light-dark(#bfdbfe, #2563eb)
+	);
+	--node-border-hover: color-mix(
+		in srgb,
+		var(--color-variant-component) 50%,
+		light-dark(#93c5fd, #3b82f6)
+	);
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
-	--node-text-secondary: color-mix(in srgb, var(--color-variant-component) 70%, light-dark(#1e3a8a, #bfdbfe));
+	--node-text-secondary: color-mix(
+		in srgb,
+		var(--color-variant-component) 70%,
+		light-dark(#1e3a8a, #bfdbfe)
+	);
 	--node-text-on-accent: light-dark(#ffffff, #1f2937);
-	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-component) 15%, transparent);
-	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-component) 25%, transparent);
-	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-component) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-component) 20%, transparent);
+	--node-shadow: 0 4px 6px -1px
+		color-mix(in srgb, var(--color-variant-component) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px
+		color-mix(in srgb, var(--color-variant-component) 25%, transparent);
+	--node-shadow-selected:
+		0 20px 25px -5px
+			color-mix(in srgb, var(--color-variant-component) 40%, transparent),
+		0 0 0 4px
+			color-mix(in srgb, var(--color-variant-component) 20%, transparent);
 }
 
 [data-variant='signal'] {
 	/* Signal variant - Cyan theme */
 	--node-accent: var(--color-variant-signal);
-	--node-bg-primary: color-mix(in srgb, var(--color-variant-signal) 10%, light-dark(#ffffff, #1e293b));
-	--node-bg-secondary: color-mix(in srgb, var(--color-variant-signal) 5%, light-dark(#f8fafc, #0f172a));
-	--node-bg-interactive: color-mix(in srgb, var(--color-variant-signal) 15%, light-dark(#ecfeff, #164e63));
-	--node-border: color-mix(in srgb, var(--color-variant-signal) 30%, light-dark(#a5f3fc, #0891b2));
-	--node-border-hover: color-mix(in srgb, var(--color-variant-signal) 50%, light-dark(#67e8f9, #06b6d4));
+	--node-bg-primary: color-mix(
+		in srgb,
+		var(--color-variant-signal) 10%,
+		light-dark(#ffffff, #1e293b)
+	);
+	--node-bg-secondary: color-mix(
+		in srgb,
+		var(--color-variant-signal) 5%,
+		light-dark(#f8fafc, #0f172a)
+	);
+	--node-bg-interactive: color-mix(
+		in srgb,
+		var(--color-variant-signal) 15%,
+		light-dark(#ecfeff, #164e63)
+	);
+	--node-border: color-mix(
+		in srgb,
+		var(--color-variant-signal) 30%,
+		light-dark(#a5f3fc, #0891b2)
+	);
+	--node-border-hover: color-mix(
+		in srgb,
+		var(--color-variant-signal) 50%,
+		light-dark(#67e8f9, #06b6d4)
+	);
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
-	--node-text-secondary: color-mix(in srgb, var(--color-variant-signal) 70%, light-dark(#164e63, #a5f3fc));
+	--node-text-secondary: color-mix(
+		in srgb,
+		var(--color-variant-signal) 70%,
+		light-dark(#164e63, #a5f3fc)
+	);
 	--node-text-on-accent: light-dark(#ffffff, #1f2937);
-	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-signal) 15%, transparent);
-	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-signal) 25%, transparent);
-	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-signal) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-signal) 20%, transparent);
+	--node-shadow: 0 4px 6px -1px
+		color-mix(in srgb, var(--color-variant-signal) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px
+		color-mix(in srgb, var(--color-variant-signal) 25%, transparent);
+	--node-shadow-selected:
+		0 20px 25px -5px
+			color-mix(in srgb, var(--color-variant-signal) 40%, transparent),
+		0 0 0 4px color-mix(in srgb, var(--color-variant-signal) 20%, transparent);
 }
 
 [data-variant='event'] {
 	/* Event variant - Yellow theme */
 	--node-accent: var(--color-variant-event);
-	--node-bg-primary: color-mix(in srgb, var(--color-variant-event) 15%, light-dark(#ffffff, #1e293b));
-	--node-bg-secondary: color-mix(in srgb, var(--color-variant-event) 8%, light-dark(#f8fafc, #0f172a));
-	--node-bg-interactive: color-mix(in srgb, var(--color-variant-event) 20%, light-dark(#fefce8, #713f12));
-	--node-border: color-mix(in srgb, var(--color-variant-event) 40%, light-dark(#fde68a, #a16207));
-	--node-border-hover: color-mix(in srgb, var(--color-variant-event) 60%, light-dark(#fcd34d, #d97706));
+	--node-bg-primary: color-mix(
+		in srgb,
+		var(--color-variant-event) 15%,
+		light-dark(#ffffff, #1e293b)
+	);
+	--node-bg-secondary: color-mix(
+		in srgb,
+		var(--color-variant-event) 8%,
+		light-dark(#f8fafc, #0f172a)
+	);
+	--node-bg-interactive: color-mix(
+		in srgb,
+		var(--color-variant-event) 20%,
+		light-dark(#fefce8, #713f12)
+	);
+	--node-border: color-mix(
+		in srgb,
+		var(--color-variant-event) 40%,
+		light-dark(#fde68a, #a16207)
+	);
+	--node-border-hover: color-mix(
+		in srgb,
+		var(--color-variant-event) 60%,
+		light-dark(#fcd34d, #d97706)
+	);
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
-	--node-text-secondary: color-mix(in srgb, var(--color-variant-event) 80%, light-dark(#713f12, #fde68a));
+	--node-text-secondary: color-mix(
+		in srgb,
+		var(--color-variant-event) 80%,
+		light-dark(#713f12, #fde68a)
+	);
 	--node-text-on-accent: light-dark(#92400e, #fef3c7);
-	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-event) 15%, transparent);
-	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-event) 25%, transparent);
-	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-event) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-event) 20%, transparent);
+	--node-shadow: 0 4px 6px -1px
+		color-mix(in srgb, var(--color-variant-event) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px
+		color-mix(in srgb, var(--color-variant-event) 25%, transparent);
+	--node-shadow-selected:
+		0 20px 25px -5px
+			color-mix(in srgb, var(--color-variant-event) 40%, transparent),
+		0 0 0 4px color-mix(in srgb, var(--color-variant-event) 20%, transparent);
 }
 
 [data-variant='unit'] {
 	/* Unit variant - Red theme */
 	--node-accent: var(--color-variant-unit);
-	--node-bg-primary: color-mix(in srgb, var(--color-variant-unit) 10%, light-dark(#ffffff, #1e293b));
-	--node-bg-secondary: color-mix(in srgb, var(--color-variant-unit) 5%, light-dark(#f8fafc, #0f172a));
-	--node-bg-interactive: color-mix(in srgb, var(--color-variant-unit) 15%, light-dark(#fef2f2, #7f1d1d));
-	--node-border: color-mix(in srgb, var(--color-variant-unit) 30%, light-dark(#fecaca, #dc2626));
-	--node-border-hover: color-mix(in srgb, var(--color-variant-unit) 50%, light-dark(#fca5a5, #ef4444));
+	--node-bg-primary: color-mix(
+		in srgb,
+		var(--color-variant-unit) 10%,
+		light-dark(#ffffff, #1e293b)
+	);
+	--node-bg-secondary: color-mix(
+		in srgb,
+		var(--color-variant-unit) 5%,
+		light-dark(#f8fafc, #0f172a)
+	);
+	--node-bg-interactive: color-mix(
+		in srgb,
+		var(--color-variant-unit) 15%,
+		light-dark(#fef2f2, #7f1d1d)
+	);
+	--node-border: color-mix(
+		in srgb,
+		var(--color-variant-unit) 30%,
+		light-dark(#fecaca, #dc2626)
+	);
+	--node-border-hover: color-mix(
+		in srgb,
+		var(--color-variant-unit) 50%,
+		light-dark(#fca5a5, #ef4444)
+	);
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
-	--node-text-secondary: color-mix(in srgb, var(--color-variant-unit) 70%, light-dark(#7f1d1d, #fecaca));
+	--node-text-secondary: color-mix(
+		in srgb,
+		var(--color-variant-unit) 70%,
+		light-dark(#7f1d1d, #fecaca)
+	);
 	--node-text-on-accent: light-dark(#ffffff, #1f2937);
-	--node-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-variant-unit) 15%, transparent);
-	--node-shadow-hover: 0 10px 15px -3px color-mix(in srgb, var(--color-variant-unit) 25%, transparent);
-	--node-shadow-selected: 0 20px 25px -5px color-mix(in srgb, var(--color-variant-unit) 40%, transparent), 0 0 0 4px color-mix(in srgb, var(--color-variant-unit) 20%, transparent);
+	--node-shadow: 0 4px 6px -1px
+		color-mix(in srgb, var(--color-variant-unit) 15%, transparent);
+	--node-shadow-hover: 0 10px 15px -3px
+		color-mix(in srgb, var(--color-variant-unit) 25%, transparent);
+	--node-shadow-selected:
+		0 20px 25px -5px
+			color-mix(in srgb, var(--color-variant-unit) 40%, transparent),
+		0 0 0 4px color-mix(in srgb, var(--color-variant-unit) 20%, transparent);
 }
 
 /* === BASE NODE STYLING FOR ALL VARIANTS === */
@@ -221,23 +469,34 @@
 	flex-direction: column;
 	border-radius: 0.75rem;
 	backdrop-filter: blur(12px);
-	background: linear-gradient(135deg, var(--node-bg-from), var(--node-bg-via), var(--node-bg-to));
+	background: linear-gradient(
+		135deg,
+		var(--node-bg-from),
+		var(--node-bg-via),
+		var(--node-bg-to)
+	);
 	border: 1px solid var(--node-border);
-	box-shadow: 0 10px 15px -3px var(--node-shadow), 0 4px 6px -4px var(--node-shadow);
+	box-shadow:
+		0 10px 15px -3px var(--node-shadow),
+		0 4px 6px -4px var(--node-shadow);
 	transition: all 0.2s ease-in-out;
 }
 
 /* Selected state for base nodes */
 [data-variant] .base-node-container.selected {
 	transform: scale(1.05);
-	box-shadow: 0 25px 50px -12px var(--node-shadow), 0 25px 25px -5px var(--node-shadow);
+	box-shadow:
+		0 25px 50px -12px var(--node-shadow),
+		0 25px 25px -5px var(--node-shadow);
 	outline: 2px solid var(--node-accent);
 	outline-offset: 2px;
 }
 
 /* Hover state for base nodes */
 [data-variant] .base-node-container:hover {
-	box-shadow: 0 20px 25px -5px var(--node-shadow), 0 10px 10px -5px var(--node-shadow);
+	box-shadow:
+		0 20px 25px -5px var(--node-shadow),
+		0 10px 10px -5px var(--node-shadow);
 }
 
 /* Base node header styling using variant properties */
@@ -250,7 +509,7 @@
 	flex-shrink: 0;
 	padding: 0.5rem 1rem;
 	color: var(--node-text-primary);
-	background: linear-gradient(135deg, var(--node-accent)/5%, transparent);
+	background: linear-gradient(135deg, var(--node-accent) / 5%, transparent);
 	border-bottom: 1px solid var(--node-border);
 	backdrop-filter: blur(4px);
 }
@@ -353,7 +612,9 @@
 
 /* Global monospace font using standard CSS */
 * {
-	font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+	font-family:
+		ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo,
+		monospace;
 }
 
 /* Prevent React Flow node dragging on interactive elements */
@@ -667,104 +928,274 @@ textarea {
 /* === CUSTOM GRID UTILITIES (64px multiples) === */
 @layer utilities {
 	/* Width utilities based on 64px grid */
-	.w-grid-1 { width: var(--spacing-grid-1); }
-	.w-grid-2 { width: var(--spacing-grid-2); }
-	.w-grid-3 { width: var(--spacing-grid-3); }
-	.w-grid-4 { width: var(--spacing-grid-4); }
-	.w-grid-5 { width: var(--spacing-grid-5); }
-	.w-grid-6 { width: var(--spacing-grid-6); }
-	.w-grid-8 { width: var(--spacing-grid-8); }
-	.w-grid-10 { width: var(--spacing-grid-10); }
-	.w-grid-12 { width: var(--spacing-grid-12); }
-	.w-grid-16 { width: var(--spacing-grid-16); }
+	.w-grid-1 {
+		width: var(--spacing-grid-1);
+	}
+	.w-grid-2 {
+		width: var(--spacing-grid-2);
+	}
+	.w-grid-3 {
+		width: var(--spacing-grid-3);
+	}
+	.w-grid-4 {
+		width: var(--spacing-grid-4);
+	}
+	.w-grid-5 {
+		width: var(--spacing-grid-5);
+	}
+	.w-grid-6 {
+		width: var(--spacing-grid-6);
+	}
+	.w-grid-8 {
+		width: var(--spacing-grid-8);
+	}
+	.w-grid-10 {
+		width: var(--spacing-grid-10);
+	}
+	.w-grid-12 {
+		width: var(--spacing-grid-12);
+	}
+	.w-grid-16 {
+		width: var(--spacing-grid-16);
+	}
 
 	/* Height utilities based on 64px grid */
-	.h-grid-1 { height: var(--spacing-grid-1); }
-	.h-grid-2 { height: var(--spacing-grid-2); }
-	.h-grid-3 { height: var(--spacing-grid-3); }
-	.h-grid-4 { height: var(--spacing-grid-4); }
-	.h-grid-5 { height: var(--spacing-grid-5); }
-	.h-grid-6 { height: var(--spacing-grid-6); }
-	.h-grid-8 { height: var(--spacing-grid-8); }
-	.h-grid-10 { height: var(--spacing-grid-10); }
-	.h-grid-12 { height: var(--spacing-grid-12); }
-	.h-grid-16 { height: var(--spacing-grid-16); }
+	.h-grid-1 {
+		height: var(--spacing-grid-1);
+	}
+	.h-grid-2 {
+		height: var(--spacing-grid-2);
+	}
+	.h-grid-3 {
+		height: var(--spacing-grid-3);
+	}
+	.h-grid-4 {
+		height: var(--spacing-grid-4);
+	}
+	.h-grid-5 {
+		height: var(--spacing-grid-5);
+	}
+	.h-grid-6 {
+		height: var(--spacing-grid-6);
+	}
+	.h-grid-8 {
+		height: var(--spacing-grid-8);
+	}
+	.h-grid-10 {
+		height: var(--spacing-grid-10);
+	}
+	.h-grid-12 {
+		height: var(--spacing-grid-12);
+	}
+	.h-grid-16 {
+		height: var(--spacing-grid-16);
+	}
 
 	/* Combined size utilities for square elements */
-	.size-grid-1 { width: var(--spacing-grid-1); height: var(--spacing-grid-1); }
-	.size-grid-2 { width: var(--spacing-grid-2); height: var(--spacing-grid-2); }
-	.size-grid-3 { width: var(--spacing-grid-3); height: var(--spacing-grid-3); }
-	.size-grid-4 { width: var(--spacing-grid-4); height: var(--spacing-grid-4); }
-	.size-grid-5 { width: var(--spacing-grid-5); height: var(--spacing-grid-5); }
-	.size-grid-6 { width: var(--spacing-grid-6); height: var(--spacing-grid-6); }
-	.size-grid-8 { width: var(--spacing-grid-8); height: var(--spacing-grid-8); }
-	.size-grid-10 { width: var(--spacing-grid-10); height: var(--spacing-grid-10); }
-	.size-grid-12 { width: var(--spacing-grid-12); height: var(--spacing-grid-12); }
-	.size-grid-16 { width: var(--spacing-grid-16); height: var(--spacing-grid-16); }
+	.size-grid-1 {
+		width: var(--spacing-grid-1);
+		height: var(--spacing-grid-1);
+	}
+	.size-grid-2 {
+		width: var(--spacing-grid-2);
+		height: var(--spacing-grid-2);
+	}
+	.size-grid-3 {
+		width: var(--spacing-grid-3);
+		height: var(--spacing-grid-3);
+	}
+	.size-grid-4 {
+		width: var(--spacing-grid-4);
+		height: var(--spacing-grid-4);
+	}
+	.size-grid-5 {
+		width: var(--spacing-grid-5);
+		height: var(--spacing-grid-5);
+	}
+	.size-grid-6 {
+		width: var(--spacing-grid-6);
+		height: var(--spacing-grid-6);
+	}
+	.size-grid-8 {
+		width: var(--spacing-grid-8);
+		height: var(--spacing-grid-8);
+	}
+	.size-grid-10 {
+		width: var(--spacing-grid-10);
+		height: var(--spacing-grid-10);
+	}
+	.size-grid-12 {
+		width: var(--spacing-grid-12);
+		height: var(--spacing-grid-12);
+	}
+	.size-grid-16 {
+		width: var(--spacing-grid-16);
+		height: var(--spacing-grid-16);
+	}
 
 	/* Min/Max utilities for responsive design */
-	.min-w-grid-1 { min-width: var(--spacing-grid-1); }
-	.min-w-grid-2 { min-width: var(--spacing-grid-2); }
-	.min-w-grid-3 { min-width: var(--spacing-grid-3); }
-	.min-w-grid-4 { min-width: var(--spacing-grid-4); }
-	
-	.min-h-grid-1 { min-height: var(--spacing-grid-1); }
-	.min-h-grid-2 { min-height: var(--spacing-grid-2); }
-	.min-h-grid-3 { min-height: var(--spacing-grid-3); }
-	.min-h-grid-4 { min-height: var(--spacing-grid-4); }
+	.min-w-grid-1 {
+		min-width: var(--spacing-grid-1);
+	}
+	.min-w-grid-2 {
+		min-width: var(--spacing-grid-2);
+	}
+	.min-w-grid-3 {
+		min-width: var(--spacing-grid-3);
+	}
+	.min-w-grid-4 {
+		min-width: var(--spacing-grid-4);
+	}
 
-	.max-w-grid-4 { max-width: var(--spacing-grid-4); }
-	.max-w-grid-6 { max-width: var(--spacing-grid-6); }
-	.max-w-grid-8 { max-width: var(--spacing-grid-8); }
-	.max-w-grid-12 { max-width: var(--spacing-grid-12); }
-	
-	.max-h-grid-4 { max-height: var(--spacing-grid-4); }
-	.max-h-grid-6 { max-height: var(--spacing-grid-6); }
-	.max-h-grid-8 { max-height: var(--spacing-grid-8); }
-	.max-h-grid-12 { max-height: var(--spacing-grid-12); }
+	.min-h-grid-1 {
+		min-height: var(--spacing-grid-1);
+	}
+	.min-h-grid-2 {
+		min-height: var(--spacing-grid-2);
+	}
+	.min-h-grid-3 {
+		min-height: var(--spacing-grid-3);
+	}
+	.min-h-grid-4 {
+		min-height: var(--spacing-grid-4);
+	}
+
+	.max-w-grid-4 {
+		max-width: var(--spacing-grid-4);
+	}
+	.max-w-grid-6 {
+		max-width: var(--spacing-grid-6);
+	}
+	.max-w-grid-8 {
+		max-width: var(--spacing-grid-8);
+	}
+	.max-w-grid-12 {
+		max-width: var(--spacing-grid-12);
+	}
+
+	.max-h-grid-4 {
+		max-height: var(--spacing-grid-4);
+	}
+	.max-h-grid-6 {
+		max-height: var(--spacing-grid-6);
+	}
+	.max-h-grid-8 {
+		max-height: var(--spacing-grid-8);
+	}
+	.max-h-grid-12 {
+		max-height: var(--spacing-grid-12);
+	}
 
 	/* Margin utilities based on 64px grid */
-	.m-grid-1 { margin: var(--spacing-grid-1); }
-	.m-grid-2 { margin: var(--spacing-grid-2); }
-	.m-grid-3 { margin: var(--spacing-grid-3); }
-	
-	.mt-grid-1 { margin-top: var(--spacing-grid-1); }
-	.mt-grid-2 { margin-top: var(--spacing-grid-2); }
-	.mt-grid-3 { margin-top: var(--spacing-grid-3); }
-	.mt-grid-4 { margin-top: var(--spacing-grid-4); }
-	
-	.mb-grid-1 { margin-bottom: var(--spacing-grid-1); }
-	.mb-grid-2 { margin-bottom: var(--spacing-grid-2); }
-	.mb-grid-3 { margin-bottom: var(--spacing-grid-3); }
-	.mb-grid-4 { margin-bottom: var(--spacing-grid-4); }
-	
-	.ml-grid-1 { margin-left: var(--spacing-grid-1); }
-	.ml-grid-2 { margin-left: var(--spacing-grid-2); }
-	.ml-grid-3 { margin-left: var(--spacing-grid-3); }
-	
-	.mr-grid-1 { margin-right: var(--spacing-grid-1); }
-	.mr-grid-2 { margin-right: var(--spacing-grid-2); }
-	.mr-grid-3 { margin-right: var(--spacing-grid-3); }
+	.m-grid-1 {
+		margin: var(--spacing-grid-1);
+	}
+	.m-grid-2 {
+		margin: var(--spacing-grid-2);
+	}
+	.m-grid-3 {
+		margin: var(--spacing-grid-3);
+	}
+
+	.mt-grid-1 {
+		margin-top: var(--spacing-grid-1);
+	}
+	.mt-grid-2 {
+		margin-top: var(--spacing-grid-2);
+	}
+	.mt-grid-3 {
+		margin-top: var(--spacing-grid-3);
+	}
+	.mt-grid-4 {
+		margin-top: var(--spacing-grid-4);
+	}
+
+	.mb-grid-1 {
+		margin-bottom: var(--spacing-grid-1);
+	}
+	.mb-grid-2 {
+		margin-bottom: var(--spacing-grid-2);
+	}
+	.mb-grid-3 {
+		margin-bottom: var(--spacing-grid-3);
+	}
+	.mb-grid-4 {
+		margin-bottom: var(--spacing-grid-4);
+	}
+
+	.ml-grid-1 {
+		margin-left: var(--spacing-grid-1);
+	}
+	.ml-grid-2 {
+		margin-left: var(--spacing-grid-2);
+	}
+	.ml-grid-3 {
+		margin-left: var(--spacing-grid-3);
+	}
+
+	.mr-grid-1 {
+		margin-right: var(--spacing-grid-1);
+	}
+	.mr-grid-2 {
+		margin-right: var(--spacing-grid-2);
+	}
+	.mr-grid-3 {
+		margin-right: var(--spacing-grid-3);
+	}
 
 	/* Padding utilities based on 64px grid */
-	.p-grid-1 { padding: var(--spacing-grid-1); }
-	.p-grid-2 { padding: var(--spacing-grid-2); }
-	.p-grid-3 { padding: var(--spacing-grid-3); }
-	
-	.px-grid-1 { padding-left: var(--spacing-grid-1); padding-right: var(--spacing-grid-1); }
-	.px-grid-2 { padding-left: var(--spacing-grid-2); padding-right: var(--spacing-grid-2); }
-	
-	.py-grid-1 { padding-top: var(--spacing-grid-1); padding-bottom: var(--spacing-grid-1); }
-	.py-grid-2 { padding-top: var(--spacing-grid-2); padding-bottom: var(--spacing-grid-2); }
-	
-	.pt-grid-1 { padding-top: var(--spacing-grid-1); }
-	.pt-grid-2 { padding-top: var(--spacing-grid-2); }
-	.pb-grid-1 { padding-bottom: var(--spacing-grid-1); }
-	.pb-grid-2 { padding-bottom: var(--spacing-grid-2); }
-	.pl-grid-1 { padding-left: var(--spacing-grid-1); }
-	.pl-grid-2 { padding-left: var(--spacing-grid-2); }
-	.pr-grid-1 { padding-right: var(--spacing-grid-1); }
-	.pr-grid-2 { padding-right: var(--spacing-grid-2); }
+	.p-grid-1 {
+		padding: var(--spacing-grid-1);
+	}
+	.p-grid-2 {
+		padding: var(--spacing-grid-2);
+	}
+	.p-grid-3 {
+		padding: var(--spacing-grid-3);
+	}
+
+	.px-grid-1 {
+		padding-left: var(--spacing-grid-1);
+		padding-right: var(--spacing-grid-1);
+	}
+	.px-grid-2 {
+		padding-left: var(--spacing-grid-2);
+		padding-right: var(--spacing-grid-2);
+	}
+
+	.py-grid-1 {
+		padding-top: var(--spacing-grid-1);
+		padding-bottom: var(--spacing-grid-1);
+	}
+	.py-grid-2 {
+		padding-top: var(--spacing-grid-2);
+		padding-bottom: var(--spacing-grid-2);
+	}
+
+	.pt-grid-1 {
+		padding-top: var(--spacing-grid-1);
+	}
+	.pt-grid-2 {
+		padding-top: var(--spacing-grid-2);
+	}
+	.pb-grid-1 {
+		padding-bottom: var(--spacing-grid-1);
+	}
+	.pb-grid-2 {
+		padding-bottom: var(--spacing-grid-2);
+	}
+	.pl-grid-1 {
+		padding-left: var(--spacing-grid-1);
+	}
+	.pl-grid-2 {
+		padding-left: var(--spacing-grid-2);
+	}
+	.pr-grid-1 {
+		padding-right: var(--spacing-grid-1);
+	}
+	.pr-grid-2 {
+		padding-right: var(--spacing-grid-2);
+	}
 }
 
 /* === VARIANT-AWARE TAILWIND UTILITIES === */
@@ -890,7 +1321,11 @@ textarea {
 }
 
 .btn-node-secondary:hover {
-	background-color: color-mix(in srgb, var(--node-accent) 20%, var(--node-bg-interactive));
+	background-color: color-mix(
+		in srgb,
+		var(--node-accent) 20%,
+		var(--node-bg-interactive)
+	);
 	border-color: var(--node-border-hover);
 }
 
@@ -963,8 +1398,9 @@ textarea {
 .glass-panel-enhanced {
 	background: color-mix(in srgb, var(--color-surface) 85%, transparent);
 	backdrop-filter: blur(16px) saturate(1.2);
-	border: 1px solid color-mix(in srgb, var(--color-interactive-border) 60%, transparent);
-	box-shadow: 
+	border: 1px solid
+		color-mix(in srgb, var(--color-interactive-border) 60%, transparent);
+	box-shadow:
 		0 4px 6px -1px color-mix(in srgb, #000000 10%, transparent),
 		0 2px 4px -2px color-mix(in srgb, #000000 10%, transparent),
 		inset 0 1px 0 0 color-mix(in srgb, #ffffff 10%, transparent);
@@ -973,7 +1409,12 @@ textarea {
 /* Scrollbar styling for glass panels */
 .scrollbar-glass {
 	scrollbar-width: thin;
-	scrollbar-color: color-mix(in srgb, var(--color-interactive-border) 60%, transparent) transparent;
+	scrollbar-color: color-mix(
+			in srgb,
+			var(--color-interactive-border) 60%,
+			transparent
+		)
+		transparent;
 }
 
 .scrollbar-glass::-webkit-scrollbar {
@@ -985,15 +1426,31 @@ textarea {
 }
 
 .scrollbar-glass::-webkit-scrollbar-thumb {
-	background-color: color-mix(in srgb, var(--color-interactive-border) 60%, transparent);
+	background-color: color-mix(
+		in srgb,
+		var(--color-interactive-border) 60%,
+		transparent
+	);
 	border-radius: 3px;
 }
 
 .scrollbar-glass::-webkit-scrollbar-thumb:hover {
-	background-color: color-mix(in srgb, var(--color-interactive-border) 80%, transparent);
+	background-color: color-mix(
+		in srgb,
+		var(--color-interactive-border) 80%,
+		transparent
+	);
 }
 
 /* Interactive hover utilities for panels */
 .hover\:bg-node-interactive:hover {
 	background-color: var(--node-bg-interactive);
 }
+
+/* Prevent React Flow handle dragging */
+.react-flow__handle {
+	background: transparent !important;
+	/* Or use a CSS variable for theming: */
+	/* background: var(--node-bg-interactive, transparent) !important; */
+}
+```

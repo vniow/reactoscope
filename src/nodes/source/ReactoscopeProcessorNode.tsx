@@ -89,7 +89,7 @@ function Scene3D({
 	);
 }
 
-export function ReactoscopeViewerNode({
+export function ReactoscopeProcessorNode({
 	id,
 	data,
 	selected = false,
@@ -218,7 +218,7 @@ export function ReactoscopeViewerNode({
 		<BaseNode
 			nodeId={nodeId}
 			selected={isSelected}
-			title='Reactoscope Viewer'
+			title='Reactoscope Processor'
 			variant='source'
 		>
 			<div className='bg-node-secondary rounded overflow-hidden border border-node'>

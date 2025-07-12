@@ -6,7 +6,7 @@
 
 // Worklet hooks
 export { useNoiseWorklet } from './useNoiseWorklet';
-export { useXYRGBInterpolator } from './useXYRGBInterpolator';
+export { useReactoscopeAudioProcessor } from './useReactoscopeAudioProcessor';
 
 // Analyzer hooks
 export { useXYRGBAnalyzers } from './useXYRGBAnalyzers';

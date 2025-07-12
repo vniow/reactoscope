@@ -470,13 +470,13 @@ export const SIGNAL_NODES: NodeTypeOption[] = [
 	},
 	{
 		type: 'signal-3d',
-		name: '3D Oscilloscope',
-		description: 'Interactive 3D waveform visualization with camera controls',
+		name: 'Oscilloscope',
+		description: 'Oscilloscope for visualizing audio waveforms',
 		emoji: '🔮',
 		variant: 'signal',
 		category: 'utility',
 		defaultData: {
-			label: '3D Oscilloscope',
+			label: 'Oscilloscope',
 			timeWindow: 50,
 			triggerLevel: 0,
 			resolution: 256,
@@ -487,69 +487,23 @@ export const SIGNAL_NODES: NodeTypeOption[] = [
 			},
 		},
 	},
-	{
-		type: 'signal-xy' as AppNode['type'],
-		name: 'XYscope',
-		description: 'Lissajous plot for dual-input XY visualization',
-		emoji: '🎯',
-		variant: 'signal',
-		category: 'utility',
-		defaultData: {
-			label: 'XYscope',
-			timeWindow: 0.1,
-			resolution: 512,
-			audioParams: {
-				timeWindow: 0.1,
-				resolution: 512,
-			},
-		},
-	},
+
 	{
 		type: 'signal-xyrgb' as AppNode['type'],
-		name: 'XYRGBScope',
+		name: 'Reactoscope Viewer',
 		description:
 			'5-channel audio-visual mapping with X,Y coordinates and R,G,B colors',
 		emoji: '🌈',
 		variant: 'signal',
 		category: 'utility',
 		defaultData: {
-			label: 'XYRGBScope',
+			label: 'Reactoscope Viewer',
 			timeWindow: 0.1,
-			resolution: 512,
+			resolution: 1024,
 			audioParams: {
 				timeWindow: 0.1,
-				resolution: 512,
+				resolution: 1024,
 			},
-		},
-	},
-	{
-		type: 'signal-xyrgb-viz' as AppNode['type'],
-		name: 'XYRGB Visualizer',
-		description:
-			'UI-only XYRGB visualizer with 3D scene and vertex traversal (no audio)',
-		emoji: '🎨',
-		variant: 'signal',
-		category: 'utility',
-		defaultData: {
-			label: 'XYRGB Visualizer',
-			scanRate: 30,
-			rotationSpeed: 1.0,
-			triangleScale: 1.0,
-		},
-	},
-	{
-		type: 'signal-woscope' as AppNode['type'],
-		name: 'Woscope Visualizer',
-		description: 'Classic XY oscilloscope visualization for stereo audio',
-		emoji: '🧪',
-		variant: 'signal',
-		category: 'utility',
-		defaultData: {
-			label: 'Woscope Visualizer',
-			lineColor: '#00ff00',
-			lineThickness: 0.012,
-			lineIntensity: 1.0,
-			audioScale: 0.8,
 		},
 	},
 ];

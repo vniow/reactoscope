@@ -57,7 +57,7 @@ export type SignalXYNode = Node<PlaceholderNodeData, 'signal-xy'>;
 /**
  * XYRGBScope node for 5-channel audio-visual mapping (X,Y,R,G,B)
  */
-export type SignalXYRGBNode = Node<PlaceholderNodeData, 'signal-xyrgb'>;
+export type ReactoscopeViewerNode = Node<PlaceholderNodeData, 'source'>;
 export type EventNode = Node<PlaceholderNodeData, 'event'>;
 export type UtilityNode = Node<PlaceholderNodeData, 'unit'>;
 
@@ -77,7 +77,7 @@ export type AppNode =
 	| SignalNode
 	| Signal3DNode
 	| SignalXYNode
-	| SignalXYRGBNode
+	| ReactoscopeViewerNode
 	| EventNode
 	| UtilityNode
 	| XYRGBMergeNode;
