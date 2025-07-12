@@ -8,7 +8,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { ReactoscopeAudioProcessorNode } from '../core/ReactoscopeAudioProcessorNode';
 import type { VertexInfo } from '../../nodes/source/sceneTypes';
 
-interface UseReactoscopeAudioProcessorReturn {
+interface UseReactoscopeProcessorReturn {
 	/** The XYRGB interpolator node instance */
 	node: ReactoscopeAudioProcessorNode | null;
 	/** Whether the node is ready */
@@ -34,7 +34,7 @@ interface UseReactoscopeAudioProcessorReturn {
  */
 export function useReactoscopeAudioProcessor(
 	enabled: boolean = true
-): UseReactoscopeAudioProcessorReturn {
+): UseReactoscopeProcessorReturn {
 	const nodeRef = useRef<ReactoscopeAudioProcessorNode | null>(null);
 	const [isReady, setIsReady] = useState(false);
 	const [isPlaying, setIsPlaying] = useState(false);
