@@ -11,6 +11,8 @@ import { ReactoscopeProcessorNode } from './source/ReactoscopeProcessorNode';
 import { XYRGBMergeNode } from './component/XYRGBMergeNode';
 import { SignalNode } from './source/SignalNode';
 import { ReactoscopeViewerNode } from './signal/ReactoscopeViewerNode';
+import { FilterNode } from './component/FilterNode';
+import { OscillatorNode } from './source/OscillatorNode';
 
 // Central registry entry type
 export interface NodeRegistryEntry {
@@ -73,7 +75,6 @@ export const NODE_REGISTRY: NodeRegistryEntry[] = [
 		variant: 'signal',
 		component: Oscilloscope3DNode,
 	},
-
 	{
 		type: 'component-xyrgb-merge',
 		name: 'XYRGB Merge',
@@ -90,6 +91,23 @@ export const NODE_REGISTRY: NodeRegistryEntry[] = [
 		emoji: '📶',
 		variant: 'source',
 		component: SignalNode,
+	},
+	{
+		type: 'filter',
+		name: 'Filter',
+		description: 'Lowpass, highpass, bandpass, and notch filters',
+		emoji: '🔊',
+		variant: 'component',
+		component: FilterNode,
+	},
+	{
+		type: 'oscillator',
+		name: 'Oscillator',
+		description:
+			'Basic waveform generator with frequency, type, and volume controls',
+		emoji: '🌊',
+		variant: 'source',
+		component: OscillatorNode,
 	},
 	// Add more nodes here as needed
 ];
