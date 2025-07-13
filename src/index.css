@@ -29,7 +29,7 @@
 		#67e8f9
 	); /* Cyan - Signal processing */
 	--color-variant-event: light-dark(#fbbf24, #fde68a); /* Yellow - Events */
-	--color-variant-unit: light-dark(
+	--color-variant-util: light-dark(
 		#ef4444,
 		#f87171
 	); /* Red - Units/Utilities */
@@ -414,49 +414,49 @@
 		0 0 0 4px color-mix(in srgb, var(--color-variant-event) 20%, transparent);
 }
 
-[data-variant='unit'] {
-	/* Unit variant - Red theme */
-	--node-accent: var(--color-variant-unit);
+[data-variant='util'] {
+	/* Utility variant - Red theme */
+	--node-accent: var(--color-variant-util);
 	--node-bg-primary: color-mix(
 		in srgb,
-		var(--color-variant-unit) 10%,
+		var(--color-variant-util) 10%,
 		light-dark(#ffffff, #1e293b)
 	);
 	--node-bg-secondary: color-mix(
 		in srgb,
-		var(--color-variant-unit) 5%,
+		var(--color-variant-util) 5%,
 		light-dark(#f8fafc, #0f172a)
 	);
 	--node-bg-interactive: color-mix(
 		in srgb,
-		var(--color-variant-unit) 15%,
+		var(--color-variant-util) 15%,
 		light-dark(#fef2f2, #7f1d1d)
 	);
 	--node-border: color-mix(
 		in srgb,
-		var(--color-variant-unit) 30%,
+		var(--color-variant-util) 30%,
 		light-dark(#fecaca, #dc2626)
 	);
 	--node-border-hover: color-mix(
 		in srgb,
-		var(--color-variant-unit) 50%,
+		var(--color-variant-util) 50%,
 		light-dark(#fca5a5, #ef4444)
 	);
 	--node-text-primary: light-dark(#1f2937, #f9fafb);
 	--node-text-secondary: color-mix(
 		in srgb,
-		var(--color-variant-unit) 70%,
+		var(--color-variant-util) 70%,
 		light-dark(#7f1d1d, #fecaca)
 	);
 	--node-text-on-accent: light-dark(#ffffff, #1f2937);
 	--node-shadow: 0 4px 6px -1px
-		color-mix(in srgb, var(--color-variant-unit) 15%, transparent);
+		color-mix(in srgb, var(--color-variant-util) 15%, transparent);
 	--node-shadow-hover: 0 10px 15px -3px
-		color-mix(in srgb, var(--color-variant-unit) 25%, transparent);
+		color-mix(in srgb, var(--color-variant-util) 25%, transparent);
 	--node-shadow-selected:
 		0 20px 25px -5px
-			color-mix(in srgb, var(--color-variant-unit) 40%, transparent),
-		0 0 0 4px color-mix(in srgb, var(--color-variant-unit) 20%, transparent);
+			color-mix(in srgb, var(--color-variant-util) 40%, transparent),
+		0 0 0 4px color-mix(in srgb, var(--color-variant-util) 20%, transparent);
 }
 
 /* === BASE NODE STYLING FOR ALL VARIANTS === */
@@ -525,7 +525,7 @@
 /* === DEBUG NODE SPECIFIC STYLING === */
 
 /* Debug node title styling */
-[data-variant='unit'] .debug-title {
+[data-variant='util'] .debug-title {
 	color: var(--node-text-highlight);
 	font-weight: 700;
 	font-size: 1.25rem;
@@ -533,13 +533,13 @@
 }
 
 /* Debug node text styling */
-[data-variant='unit'] .debug-text {
+[data-variant='util'] .debug-text {
 	color: var(--node-text-secondary);
 	font-size: 1.125rem;
 }
 
 /* Debug node value display */
-[data-variant='unit'] .debug-value {
+[data-variant='util'] .debug-value {
 	font-family: monospace;
 	background-color: var(--node-bg-interactive);
 	padding: 0.25rem 0.75rem;
@@ -549,7 +549,7 @@
 }
 
 /* Debug node label styling */
-[data-variant='unit'] .debug-label {
+[data-variant='util'] .debug-label {
 	color: var(--node-text-highlight);
 	font-size: 0.875rem;
 	font-weight: 600;

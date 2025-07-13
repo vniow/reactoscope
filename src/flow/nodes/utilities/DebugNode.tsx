@@ -59,7 +59,7 @@ export function DebugNode({
 
 	return (
 		<BaseNode
-			variant='unit'
+			variant='util'
 			nodeId={id as string}
 			selected={selected}
 			title={data.label || 'Debug Info'}

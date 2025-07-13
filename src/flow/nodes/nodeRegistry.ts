@@ -6,12 +6,6 @@ import type { ComponentVariant } from '../../shared/types/ui';
 import { DebugNode } from './utilities/DebugNode';
 import { DebugSimpleNode } from '../../shared/components/DebugSimpleNode';
 import { DestinationNode } from './core/DestinationNode';
-import {
-	SourceNodeComponent,
-	UtilityNodeComponent,
-	SignalNodeComponent,
-	EventNodeComponent,
-} from './PlaceholderNodes';
 import { Oscilloscope3DNode } from './signal/Oscilloscope3DNode';
 import { ReactoscopeProcessorNode } from './source/ReactoscopeProcessorNode';
 import { XYRGBMergeNode } from './component/XYRGBMergeNode';
@@ -63,22 +57,6 @@ export const NODE_REGISTRY: NodeRegistryEntry[] = [
 		component: ReactoscopeProcessorNode,
 	},
 	{
-		type: 'source-microphone',
-		name: 'Microphone',
-		description: 'Audio input from microphone or line input',
-		emoji: '🎤',
-		variant: 'source',
-		component: SourceNodeComponent,
-	},
-	{
-		type: 'util',
-		name: 'Utility',
-		description: 'General utility node',
-		emoji: '🔨',
-		variant: 'util',
-		component: UtilityNodeComponent,
-	},
-	{
 		type: 'signal-xyrgb',
 		name: 'Reactoscope Viewer',
 		description:
@@ -95,22 +73,7 @@ export const NODE_REGISTRY: NodeRegistryEntry[] = [
 		variant: 'signal',
 		component: Oscilloscope3DNode,
 	},
-	{
-		type: 'signal-xy',
-		name: 'XYscope',
-		description: 'Dual-input Lissajous visualization',
-		emoji: '🌊',
-		variant: 'signal',
-		component: SignalNodeComponent,
-	},
-	{
-		type: 'event',
-		name: 'Event Controller',
-		description: 'Sequences, parts, transport, and timing control',
-		emoji: '⏰',
-		variant: 'event',
-		component: EventNodeComponent,
-	},
+
 	{
 		type: 'component-xyrgb-merge',
 		name: 'XYRGB Merge',

@@ -146,10 +146,10 @@ function inferVariantFromNodeType(nodeType?: string): ComponentVariant {
 		transport: 'event',
 
 		// Utility/Unit
-		debug: 'unit',
-		frequency: 'unit',
-		time: 'unit',
-		utility: 'unit', // Generic utility
+		debug: 'util',
+		frequency: 'util',
+		time: 'util',
+		utility: 'util', // Generic utility
 	};
 
 	return typeToVariantMap[nodeType.toLowerCase()] || 'core';
