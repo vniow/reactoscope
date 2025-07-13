@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useNodes, useNodeId } from '@xyflow/react';
 import type { ComponentVariant } from '../types/ui';
-import type { AppNode } from '../../nodes/types';
+import type { AppNode } from '../../flow/nodes/types';
 
 /**
  * Hook to get the variant of a specific node by ID.

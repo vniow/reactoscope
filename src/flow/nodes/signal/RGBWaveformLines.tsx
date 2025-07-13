@@ -5,8 +5,8 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import * as Tone from 'tone';
 
-import '../../shared/materials/LineShaderMaterial';
-import { useWaveformGeometry } from '../../shared/geometry/useWaveformGeometry';
+import '../../../shared/materials/LineShaderMaterial';
+import { useWaveformGeometry } from '../../../shared/geometry/useWaveformGeometry';
 
 // Add minimum amplitude threshold for rendering
 const MIN_RENDER_AMP = 0.005;

@@ -13,10 +13,10 @@
 import { Position, type NodeProps } from '@xyflow/react';
 import { useState } from 'react';
 
-import { type DebugNode } from './types';
-import { BaseNode } from '../shared/components/BaseNode';
-import { NodeHandle } from '../shared/components/NodeHandle';
-import { GridControl } from '../shared/components/ui/GridControl';
+import { type DebugNode } from '../types';
+import { BaseNode } from '../../../shared/components/BaseNode';
+import { NodeHandle } from '../../../shared/components/NodeHandle';
+import { GridControl } from '../../../shared/components/ui/GridControl';
 
 /**
  * DebugNode component - Interactive debugging component for the node system

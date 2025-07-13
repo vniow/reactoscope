@@ -3,11 +3,10 @@ import { ReactFlow, Background, BackgroundVariant } from '@xyflow/react';
 
 import '@xyflow/react/dist/base.css';
 
-import { initialNodes, nodeTypes } from './nodes';
+import { initialNodes, nodeTypes } from './flow/nodes';
 import { initialEdges, edgeTypes } from './flow/edges';
 import { FlowControls } from './flow/components/FlowControls';
 import { StyledMiniMap } from './flow/components/StyledMiniMap';
-import { type AppNode } from './nodes/types';
 import { useAppStore } from './shared/stores/appStore';
 
 export default function App() {
@@ -47,7 +46,7 @@ export default function App() {
 			}
 		);
 
-		initializeFlow(initialNodes as AppNode[], initialEdges);
+		initializeFlow(initialNodes, initialEdges);
 
 		// console.log(
 		// 	`🔍 [App] useEffect EXIT #${globalEffectCounterRef.current} - Initialize flow`

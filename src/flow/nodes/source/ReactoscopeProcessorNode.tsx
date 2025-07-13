@@ -10,12 +10,12 @@
 import React, { useEffect, useState } from 'react';
 import { Position, type NodeProps } from '@xyflow/react';
 import { Canvas } from '@react-three/fiber';
-import { BaseNode } from '../../shared/components/BaseNode';
-import { NodeHandle } from '../../shared/components/NodeHandle';
-import { GridControl } from '../../shared/components/ui/GridControl';
-import { useAudioNodeParam } from '../../audio/hooks/useAudioNodeParam';
-import { useReactoscopeAudioProcessor } from '../../audio/hooks/useReactoscopeAudioProcessor';
-import { useAppStore } from '../../shared/stores/appStore';
+import { BaseNode } from '../../../shared/components/BaseNode';
+import { NodeHandle } from '../../../shared/components/NodeHandle';
+import { GridControl } from '../../../shared/components/ui/GridControl';
+import { useAudioNodeParam } from '../../../audio/hooks/useAudioNodeParam';
+import { useReactoscopeAudioProcessor } from '../../../audio/hooks/useReactoscopeAudioProcessor';
+import { useAppStore } from '../../../shared/stores/appStore';
 import type { SceneData } from './sceneTypes';
 import { useSceneTraversal } from './useSceneTraversal';
 import type { BaseNodeData } from '../types';

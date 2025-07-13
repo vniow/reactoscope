@@ -3,8 +3,9 @@
  */
 export type XYRGBMergeNode = Node<PlaceholderNodeData, 'component-xyrgb-merge'>;
 import type { Node, BuiltInNode, Position } from '@xyflow/react';
-import type { ComponentVariant } from '../shared/types/ui';
-import type { AudioNodeParams } from '../audio/types';
+import type { ComponentVariant } from '../../shared/types/ui';
+import type { AudioNodeParams } from '../../audio/types';
+import type { NodeRegistryEntry } from './nodeRegistry';
 
 export interface BaseNodeData extends Record<string, unknown> {
 	label?: string;
@@ -27,20 +28,8 @@ export type DebugNode = Node<DebugNodeData, 'debug'>;
  * Simple debug node with unstyled output
  */
 export type DebugSimpleNode = Node<DebugNodeData, 'debug-simple'>;
-
-// Placeholder node types for each variant
-export type CoreNode = Node<PlaceholderNodeData, 'core'>;
-export type SourceNode = Node<PlaceholderNodeData, 'source'>;
-export type SourcePlayerNode = Node<PlaceholderNodeData, 'source-player'>;
-export type SourceMicrophoneNode = Node<
-	PlaceholderNodeData,
-	'source-microphone'
->;
-export type InstrumentNode = Node<PlaceholderNodeData, 'instrument'>;
-export type EffectNode = Node<PlaceholderNodeData, 'effect'>;
-export type ComponentNode = Node<PlaceholderNodeData, 'component'>;
 // SignalNode for Tone.Signal
-import type { SignalParams } from '../audio/types';
+import type { SignalParams } from '../../audio/types';
 export interface SignalNodeData extends BaseNodeData {
 	value?: number;
 	min?: number;
@@ -63,21 +52,4 @@ export type UtilityNode = Node<PlaceholderNodeData, 'unit'>;
 
 export type AppNodeData = DebugNodeData;
 
-export type AppNode =
-	| BuiltInNode
-	| DebugNode
-	| DebugSimpleNode
-	| CoreNode
-	| SourceNode
-	| SourcePlayerNode
-	| SourceMicrophoneNode
-	| InstrumentNode
-	| EffectNode
-	| ComponentNode
-	| SignalNode
-	| Signal3DNode
-	| SignalXYNode
-	| ReactoscopeViewerNode
-	| EventNode
-	| UtilityNode
-	| XYRGBMergeNode;
+export type AppNode = BuiltInNode | Node<any, NodeRegistryEntry['type']>;

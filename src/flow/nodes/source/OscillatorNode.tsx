@@ -8,11 +8,11 @@
 import { Position, type NodeProps } from '@xyflow/react';
 import { useEffect } from 'react';
 import * as Tone from 'tone';
-import { BaseNode } from '../../shared/components/BaseNode';
-import { NodeHandle } from '../../shared/components/NodeHandle';
-import { GridControl } from '../../shared/components/ui/GridControl';
-import { useAudioNodeParam } from '../../audio/hooks/useAudioNodeParam';
-import { useAppStore } from '../../shared/stores/appStore';
+import { BaseNode } from '../../../shared/components/BaseNode';
+import { NodeHandle } from '../../../shared/components/NodeHandle';
+import { GridControl } from '../../../shared/components/ui/GridControl';
+import { useAudioNodeParam } from '../../../audio/hooks/useAudioNodeParam';
+import { useAppStore } from '../../../shared/stores/appStore';
 import type { BaseNodeData } from '../types';
 
 interface OscillatorNodeData extends BaseNodeData {

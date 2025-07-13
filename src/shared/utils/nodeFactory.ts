@@ -1,6 +1,6 @@
 import { generateNodeId, generateNodePosition } from './nodeUtils';
-import {  type NodeTypeOption } from '../config/nodeTypes';
-import type { AppNode } from '../../nodes/types';
+import { type NodeTypeOption } from '../config/nodeTypes';
+import type { AppNode } from '../../flow/nodes/types';
 
 /**
  * Creates a new node instance based on the node type option
@@ -9,12 +9,8 @@ export function createNode(nodeTypeOption: NodeTypeOption): AppNode {
 	const nodeId = generateNodeId();
 	const position = generateNodePosition();
 
-
-
 	return createStandardNode(nodeId, position, nodeTypeOption);
 }
-
-
 
 /**
  * Creates a standard node for non-audio node types

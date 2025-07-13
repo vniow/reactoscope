@@ -6,7 +6,7 @@
  */
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { ReactoscopeAudioProcessorNode } from '../core/ReactoscopeAudioProcessorNode';
-import type { VertexInfo } from '../../nodes/source/sceneTypes';
+import type { VertexInfo } from '../../flow/nodes/source/sceneTypes';
 
 interface UseReactoscopeProcessorReturn {
 	/** The XYRGB interpolator node instance */

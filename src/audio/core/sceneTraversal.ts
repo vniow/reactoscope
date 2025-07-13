@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { VertexInfo, SceneData } from '../../nodes/source/sceneTypes';
+import type { VertexInfo, SceneData } from '../../flow/nodes/source/sceneTypes';
 
 /**
  * Extracts vertex data from a THREE.Scene, focusing on Line and LineSegments objects.

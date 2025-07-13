@@ -4,4 +4,4 @@
 
 export { OscillatorNode } from './OscillatorNode';
 export { NoiseGeneratorNode } from './NoiseGeneratorNode';
-export { ReactoscopeViewerNode } from './ReactoscopeProcessorNode';
+export { ReactoscopeProcessorNode } from './ReactoscopeProcessorNode';

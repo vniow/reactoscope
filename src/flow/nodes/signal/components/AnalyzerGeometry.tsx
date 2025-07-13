@@ -8,7 +8,7 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import type { XYRGBAnalyzerData } from '../../../audio/hooks/useXYRGBAnalyzers';
+import type { XYRGBAnalyzerData } from '../../../../audio/hooks/useXYRGBAnalyzers';
 
 export interface AnalyzerGeometryProps {
 	/** Analyzer data from the audio inputs */

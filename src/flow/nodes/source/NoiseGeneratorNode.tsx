@@ -8,14 +8,14 @@
 
 import { Position, type NodeProps } from '@xyflow/react';
 import { useEffect, useState } from 'react';
-import { BaseNode } from '../../shared/components/BaseNode';
-import { NodeHandle } from '../../shared/components/NodeHandle';
-import { GridControl } from '../../shared/components/ui/GridControl';
-import { useNoiseWorklet } from '../../audio/hooks/useNoiseWorklet';
-import { useAppStore } from '../../shared/stores/appStore';
-import { combineClasses } from '../../shared/utils/styleUtils';
+import { BaseNode } from '../../../shared/components/BaseNode';
+import { NodeHandle } from '../../../shared/components/NodeHandle';
+import { GridControl } from '../../../shared/components/ui/GridControl';
+import { useNoiseWorklet } from '../../../audio/hooks/useNoiseWorklet';
+import { useAppStore } from '../../../shared/stores/appStore';
+import { combineClasses } from '../../../shared/utils/styleUtils';
 import type { BaseNodeData } from '../types';
-import { NoiseNode } from '../../audio/core/NoiseNode';
+import { NoiseNode } from '../../../audio/core/NoiseNode';
 
 interface NoiseGeneratorNodeData extends BaseNodeData {
 	amplitude?: number;

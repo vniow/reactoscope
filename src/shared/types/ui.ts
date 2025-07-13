@@ -11,7 +11,7 @@ export type ComponentVariant =
 	| 'component' // Signal components (Gain, Panner, etc.)
 	| 'signal' // Signal processing (Analyser, FFT, etc.)
 	| 'event' // Event-based (Sequence, Part, Transport, etc.)
-	| 'unit'; // Utilities and units (Frequency, Time, etc.)
+	| 'util'; // Utilities and units (Frequency, Time, etc.)
 
 export type ComponentColor = 'default' | 'orange' | 'green' | 'red' | 'blue';
 
@@ -67,24 +67,24 @@ export interface VariantColorTokens {
 	accent: string;
 	accentHover: string;
 	accentActive: string;
-	
+
 	// Text colors
 	textOnAccent: string;
 	textPrimary: string;
 	textSecondary: string;
-	
+
 	// Background variations
 	bgFrom: string;
 	bgVia: string;
 	bgTo: string;
 	bgSubtle: string;
-	
+
 	// Border and effects
 	border: string;
 	borderFocus: string;
 	shadow: string;
 	shadowHover: string;
-	
+
 	// Opacity variations (for mixing)
 	accent10: string;
 	accent20: string;

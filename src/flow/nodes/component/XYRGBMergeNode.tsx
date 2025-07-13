@@ -7,9 +7,9 @@
 
 import { Position, type NodeProps } from '@xyflow/react';
 import { useEffect } from 'react';
-import { BaseNode } from '../../shared/components/BaseNode';
-import { NodeHandle } from '../../shared/components/NodeHandle';
-import { useAppStore } from '../../shared/stores/appStore';
+import { BaseNode } from '../../../shared/components/BaseNode';
+import { NodeHandle } from '../../../shared/components/NodeHandle';
+import { useAppStore } from '../../../shared/stores/appStore';
 import type { BaseNodeData } from '../types';
 import * as Tone from 'tone';
 

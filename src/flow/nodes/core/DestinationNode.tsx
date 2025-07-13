@@ -8,11 +8,11 @@
 import { Position, type NodeProps } from '@xyflow/react';
 import { useEffect } from 'react';
 import * as Tone from 'tone';
-import { BaseNode } from '../../shared/components/BaseNode';
-import { NodeHandle } from '../../shared/components/NodeHandle';
-import { GridControl } from '../../shared/components/ui/GridControl';
-import { useAudioNodeParam } from '../../audio/hooks/useAudioNodeParam';
-import { useAppStore } from '../../shared/stores/appStore';
+import { BaseNode } from '../../../shared/components/BaseNode';
+import { NodeHandle } from '../../../shared/components/NodeHandle';
+import { GridControl } from '../../../shared/components/ui/GridControl';
+import { useAudioNodeParam } from '../../../audio/hooks/useAudioNodeParam';
+import { useAppStore } from '../../../shared/stores/appStore';
 import type { BaseNodeData } from '../types';
 
 interface DestinationNodeData extends BaseNodeData {
@@ -206,14 +206,7 @@ export function DestinationNode({
 				type='target'
 				position={Position.Left}
 				label='In'
-				style={{ top: '40%' }}
-			/>
-			<NodeHandle
-				id='input-2'
-				type='target'
-				position={Position.Left}
-				label='In 2'
-				style={{ top: '60%' }}
+				style={{ top: '50%' }}
 			/>
 		</BaseNode>
 	);

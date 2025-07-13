@@ -9,7 +9,7 @@ import {
 	reactoscopeProcessorWorklet,
 	workletName,
 } from './worklet/ReactoscopeAudioProcessor.worklet';
-import type { VertexInfo } from '../../nodes/source/sceneTypes';
+import type { VertexInfo } from '../../flow/nodes/source/sceneTypes';
 
 export interface ReactoscopeAudioProcessorNodeOptions {
 	/** Scan rate in Hz */

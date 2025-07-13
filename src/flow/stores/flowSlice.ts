@@ -21,8 +21,8 @@
 import type { StateCreator } from 'zustand';
 import type { Edge, NodeChange, EdgeChange, Connection } from '@xyflow/react';
 import { applyNodeChanges, applyEdgeChanges } from '@xyflow/react';
-import type { AppNode } from '../../nodes/types';
-import type { BaseNodeData } from '../../nodes/types';
+import type { AppNode } from '../nodes/types';
+import type { BaseNodeData } from '../nodes/types';
 import { NODE_TYPE_MAPPING } from '../../audio/types';
 import type { AppStore } from '../../shared/stores/types';
 

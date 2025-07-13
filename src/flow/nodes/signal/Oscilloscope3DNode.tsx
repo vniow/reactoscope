@@ -11,11 +11,11 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Line } from '@react-three/drei';
 import * as Tone from 'tone';
-import { BaseNode } from '../../shared/components/BaseNode';
-import { NodeHandle } from '../../shared/components/NodeHandle';
-import { GridControl } from '../../shared/components/ui/GridControl';
-import { useAudioNodeParam } from '../../audio/hooks/useAudioNodeParam';
-import { useAppStore } from '../../shared/stores/appStore';
+import { BaseNode } from '../../../shared/components/BaseNode';
+import { NodeHandle } from '../../../shared/components/NodeHandle';
+import { GridControl } from '../../../shared/components/ui/GridControl';
+import { useAudioNodeParam } from '../../../audio/hooks/useAudioNodeParam';
+import { useAppStore } from '../../../shared/stores/appStore';
 import type { BaseNodeData } from '../types';
 
 /**

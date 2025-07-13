@@ -1,10 +1,10 @@
 import { Position, type NodeProps } from '@xyflow/react';
 import { useEffect } from 'react';
-import { BaseNode } from '../../shared/components/BaseNode';
-import { NodeHandle } from '../../shared/components/NodeHandle';
-import { GridControl } from '../../shared/components/ui/GridControl';
-import { useAudioNodeParam } from '../../audio/hooks/useAudioNodeParam';
-import { useAppStore } from '../../shared/stores/appStore';
+import { BaseNode } from '../../../shared/components/BaseNode';
+import { NodeHandle } from '../../../shared/components/NodeHandle';
+import { GridControl } from '../../../shared/components/ui/GridControl';
+import { useAudioNodeParam } from '../../../audio/hooks/useAudioNodeParam';
+import { useAppStore } from '../../../shared/stores/appStore';
 import type { SignalNodeData } from '../types';
 
 export function SignalNode({

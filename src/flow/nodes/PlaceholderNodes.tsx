@@ -7,10 +7,10 @@
  * @module PlaceholderNodes
  */
 import { Position, type NodeProps, type Node } from '@xyflow/react';
-import { BaseNode } from '../shared/components/BaseNode';
-import { NodeHandle } from '../shared/components/NodeHandle';
-import { GridControl } from '../shared/components/ui/GridControl';
-import type { ComponentVariant } from '../shared/types/ui';
+import { BaseNode } from '../../shared/components/BaseNode';
+import { NodeHandle } from '../../shared/components/NodeHandle';
+import { GridControl } from '../../shared/components/ui/GridControl';
+import type { ComponentVariant } from '../../shared/types/ui';
 import type { BaseNodeData } from './types';
 
 // Base placeholder node interface

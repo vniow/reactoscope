@@ -44,8 +44,8 @@ export function generateRandomOffset(maxOffset: number = 200): {
  * @returns Position object with x and y coordinates
  */
 export function generateNodePosition(
-	baseX: number = 100,
-	baseY: number = 100,
+	baseX: number = 128,
+	baseY: number = 128,
 	withRandomOffset: boolean = true
 ): { x: number; y: number } {
 	if (!withRandomOffset) {
