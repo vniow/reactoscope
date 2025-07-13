@@ -25,6 +25,7 @@ const MIN_RENDER_AMP = 0.005;
 interface RGBWaveformLinesProps {
 	analyserX?: Tone.Analyser;
 	analyserY?: Tone.Analyser;
+	analyserZ?: Tone.Analyser;
 	analyserR?: Tone.Analyser;
 	analyserG?: Tone.Analyser;
 	analyserB?: Tone.Analyser;
@@ -40,6 +41,7 @@ interface RGBWaveformLinesProps {
 function RGBWaveformLines({
 	analyserX,
 	analyserY,
+	analyserZ,
 	analyserR,
 	analyserG,
 	analyserB,
@@ -75,19 +77,23 @@ function RGBWaveformLines({
 			isPlaying &&
 			analyserX &&
 			analyserY &&
+			analyserZ &&
 			analyserR &&
 			analyserG &&
 			analyserB
 		) {
 			const dataX = analyserX.getValue() as Float32Array;
 			const dataY = analyserY.getValue() as Float32Array;
+			const dataZ = analyserZ.getValue() as Float32Array;
 
 			// Compute average absolute amplitude to gate rendering
 			const avgAmpX =
 				dataX.reduce((sum, v) => sum + Math.abs(v), 0) / dataX.length;
 			const avgAmpY =
 				dataY.reduce((sum, v) => sum + Math.abs(v), 0) / dataY.length;
-			const avgAmp = (avgAmpX + avgAmpY) / 2;
+			const avgAmpZ =
+				dataZ.reduce((sum, v) => sum + Math.abs(v), 0) / dataZ.length;
+			const avgAmp = (avgAmpX + avgAmpY + avgAmpZ) / 3;
 			if (avgAmp < MIN_RENDER_AMP) {
 				// Clear geometry when signal is too weak
 				resetGeometryData(geometryRef.current);
@@ -99,27 +105,26 @@ function RGBWaveformLines({
 			const dataG = analyserG.getValue() as Float32Array;
 			const dataB = analyserB.getValue() as Float32Array;
 
-			if (dataX instanceof Float32Array && dataY instanceof Float32Array) {
+			if (
+				dataX instanceof Float32Array &&
+				dataY instanceof Float32Array &&
+				dataZ instanceof Float32Array &&
+				dataR instanceof Float32Array &&
+				dataG instanceof Float32Array &&
+				dataB instanceof Float32Array
+			) {
+				// Pass Z and per-vertex RGB data to geometry update
 				updateGeometryWithAudioData(
 					geometryRef.current,
 					dataX,
 					dataY,
-					audioScale
+					audioScale,
+					dataZ,
+					dataR,
+					dataG,
+					dataB
 				);
 			}
-
-			// Compute average color from R,G,B analysers
-			const avg = (arr: Float32Array): number => {
-				const sum = arr.reduce((s, v) => s + v, 0);
-				return Math.min(1, Math.max(0, (sum / arr.length + 1) * 0.5));
-			};
-			const r = avg(dataR);
-			const g = avg(dataG);
-			const b = avg(dataB);
-
-			// Update shader color uniform
-			const uColor = materialRef.current.uniforms.uColor.value as THREE.Vector4;
-			uColor.set(r, g, b, 1.0);
 		} else {
 			// Clear geometry when not playing
 			resetGeometryData(geometryRef.current);

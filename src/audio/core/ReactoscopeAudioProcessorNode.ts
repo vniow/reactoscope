@@ -14,8 +14,6 @@ import type { VertexInfo } from '../../flow/nodes/source/sceneTypes';
 export interface ReactoscopeAudioProcessorNodeOptions {
 	/** Scan rate in Hz */
 	scanRate?: number;
-	/** Smoothing factor for transitions */
-	smoothing?: number;
 	/** Start automatically when created */
 	autostart?: boolean;
 	/** Enable debug logging */
@@ -24,7 +22,7 @@ export interface ReactoscopeAudioProcessorNodeOptions {
 
 /**
  * XYRGB Interpolator Audio Node
- * Generates 5-channel audio output: X, Y, R, G, B
+ * Generates 6-channel audio output: X, Y, R, G, B, Z
  */
 export class ReactoscopeAudioProcessorNode {
 	readonly name: string = 'ReactoscopeAudioProcessorNode';
@@ -34,6 +32,7 @@ export class ReactoscopeAudioProcessorNode {
 		r: Tone.Gain;
 		g: Tone.Gain;
 		b: Tone.Gain;
+		z: Tone.Gain; // Added Z output
 	};
 
 	private _workletNode: AudioWorkletNode | null = null;
@@ -47,14 +46,12 @@ export class ReactoscopeAudioProcessorNode {
 
 	// Parameters
 	private _scanRate: number = 30;
-	private _smoothing: number = 0.1;
 
 	/**
 	 * Create a new ReactoscopeAudioProcessorNode
 	 */
 	constructor(options: ReactoscopeAudioProcessorNodeOptions = {}) {
 		this._scanRate = options.scanRate ?? 30;
-		this._smoothing = options.smoothing ?? 0.1;
 		this._debug = options.debug ?? false;
 
 		// Create output nodes for each channel
@@ -64,6 +61,7 @@ export class ReactoscopeAudioProcessorNode {
 			r: new Tone.Gain({ context: Tone.getContext(), gain: 1 }),
 			g: new Tone.Gain({ context: Tone.getContext(), gain: 1 }),
 			b: new Tone.Gain({ context: Tone.getContext(), gain: 1 }),
+			z: new Tone.Gain({ context: Tone.getContext(), gain: 1 }), // Added Z output
 		};
 
 		// Setup ready promise
@@ -97,22 +95,21 @@ export class ReactoscopeAudioProcessorNode {
 				URL.revokeObjectURL(workletUrl);
 			}
 
-			// Create worklet node with 5 output channels
+			// Create worklet node with 6 output channels
 			this._workletNode = Tone.getContext().createAudioWorkletNode(
 				workletName,
 				{
 					numberOfInputs: 0,
 					numberOfOutputs: 1,
-					outputChannelCount: [5], // X, Y, R, G, B channels
+					outputChannelCount: [6], // Changed from 5 to 6 (X, Y, R, G, B, Z channels)
 					parameterData: {
 						scanRate: this._scanRate,
-						smoothing: this._smoothing,
 					},
 				}
 			);
 
-			// Create channel splitter to separate the 5 channels
-			this._splitter = Tone.getContext().createChannelSplitter(5);
+			// Create channel splitter to separate the 6 channels
+			this._splitter = Tone.getContext().createChannelSplitter(6); // Changed from 5 to 6
 			this._workletNode.connect(this._splitter);
 
 			// Connect each channel to its corresponding output
@@ -121,15 +118,12 @@ export class ReactoscopeAudioProcessorNode {
 			this._splitter.connect(this.outputs.r.input, 2); // R channel
 			this._splitter.connect(this.outputs.g.input, 3); // G channel
 			this._splitter.connect(this.outputs.b.input, 4); // B channel
+			this._splitter.connect(this.outputs.z.input, 5); // Z channel (Added)
 
 			// Send initial configuration
 			this._workletNode.port.postMessage({
 				type: 'scanRate',
 				data: this._scanRate,
-			});
-			this._workletNode.port.postMessage({
-				type: 'smoothing',
-				data: this._smoothing,
 			});
 
 			this._isReady = true;
@@ -216,27 +210,6 @@ export class ReactoscopeAudioProcessorNode {
 	}
 
 	/**
-	 * Set smoothing factor
-	 */
-	setSmoothing(value: number): this {
-		this._smoothing = Math.max(0, Math.min(1, value));
-
-		if (this._workletNode && this._isReady) {
-			const param = this._workletNode.parameters.get('smoothing');
-			if (param) {
-				param.setValueAtTime(this._smoothing, Tone.getContext().currentTime);
-			}
-
-			this._workletNode.port.postMessage({
-				type: 'smoothing',
-				data: this._smoothing,
-			});
-		}
-
-		return this;
-	}
-
-	/**
 	 * Getters
 	 */
 	get vertices(): VertexInfo[] {
@@ -245,10 +218,6 @@ export class ReactoscopeAudioProcessorNode {
 
 	get scanRate(): number {
 		return this._scanRate;
-	}
-
-	get smoothing(): number {
-		return this._smoothing;
 	}
 
 	get isPlaying(): boolean {
@@ -270,15 +239,11 @@ export class ReactoscopeAudioProcessorNode {
 		this.setScanRate(value);
 	}
 
-	set smoothing(value: number) {
-		this.setSmoothing(value);
-	}
-
 	/**
 	 * Connect a specific channel to another node
 	 */
 	connectChannel(
-		channel: 'x' | 'y' | 'r' | 'g' | 'b',
+		channel: 'x' | 'y' | 'r' | 'g' | 'b' | 'z', // Added 'z'
 		destination: Tone.InputNode
 	): this {
 		this.outputs[channel].connect(destination);
@@ -294,12 +259,14 @@ export class ReactoscopeAudioProcessorNode {
 		r?: Tone.InputNode;
 		g?: Tone.InputNode;
 		b?: Tone.InputNode;
+		z?: Tone.InputNode; // Added 'z'
 	}): this {
 		if (destinations.x) this.outputs.x.connect(destinations.x);
 		if (destinations.y) this.outputs.y.connect(destinations.y);
 		if (destinations.r) this.outputs.r.connect(destinations.r);
 		if (destinations.g) this.outputs.g.connect(destinations.g);
 		if (destinations.b) this.outputs.b.connect(destinations.b);
+		if (destinations.z) this.outputs.z.connect(destinations.z); // Added Z connection
 		return this;
 	}
 

@@ -23,8 +23,7 @@ interface UseReactoscopeProcessorReturn {
 	stop: () => void;
 	/** Update scan rate */
 	setScanRate: (rate: number) => void;
-	/** Update smoothing */
-	setSmoothing: (smoothing: number) => void;
+
 	/** Ready promise */
 	ready: Promise<void> | null;
 }
@@ -127,15 +126,6 @@ export function useReactoscopeAudioProcessor(
 		[isReady]
 	);
 
-	const setSmoothing = useCallback(
-		(smoothing: number) => {
-			if (nodeRef.current && isReady) {
-				nodeRef.current.setSmoothing(smoothing);
-			}
-		},
-		[isReady]
-	);
-
 	return {
 		node: nodeRef.current,
 		isReady,
@@ -144,7 +134,6 @@ export function useReactoscopeAudioProcessor(
 		start,
 		stop,
 		setScanRate,
-		setSmoothing,
 		ready: readyPromiseRef.current,
 	};
 }

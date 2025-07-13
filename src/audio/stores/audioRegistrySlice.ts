@@ -339,12 +339,17 @@ export const createAudioRegistrySlice: StateCreator<
 							outputR: 'r',
 							outputG: 'g',
 							outputB: 'b',
+							outputZ: 'z', // Added Z
 						};
 
 						const channelName = outputHandleMap[handleId];
 						if (channelName && audioNode.outputs[channelName]) {
 							return { node: audioNode.outputs[channelName], index: undefined };
 						}
+						// Fallback if channelName is not found or output is null/undefined
+						console.warn(
+							`⚠️ getNodeFromHandle: Could not find output channel ${channelName} for handle ${handleId}. Falling back to main node.`
+						);
 					}
 
 					if (Array.isArray(audioNode)) {
@@ -364,7 +369,17 @@ export const createAudioRegistrySlice: StateCreator<
 						const fallbackNode = audioNode[fallbackIndex];
 						return { node: fallbackNode, index: fallbackIndex };
 					}
-					return { node: audioNode as Tone.ToneAudioNode, index: undefined };
+					// Ensure it's a Tone.ToneAudioNode before returning
+					if (audioNode instanceof Tone.ToneAudioNode) {
+						return { node: audioNode, index: undefined };
+					}
+					// If it's not a Tone.ToneAudioNode, it's an unexpected type.
+					// This should ideally not happen if registerAudioNode is correct.
+					console.error(
+						`❌ getNodeFromHandle: Unexpected audioNode type for handle ${handleId}.`,
+						audioNode
+					);
+					throw new Error('Invalid audio node type for connection.');
 				};
 
 				// Get the specific nodes to connect based on handle IDs
@@ -378,6 +393,24 @@ export const createAudioRegistrySlice: StateCreator<
 					targetHandleId,
 					false
 				);
+
+				// Crucial check: Ensure both nodes are connectable
+				if (
+					!sourceResult.node ||
+					typeof sourceResult.node.connect !== 'function'
+				) {
+					throw new Error(
+						`Source node for connection is not connectable: ${sourceId}, handle: ${sourceHandleId}`
+					);
+				}
+				if (
+					!targetResult.node ||
+					typeof targetResult.node.connect !== 'function'
+				) {
+					throw new Error(
+						`Target node for connection is not connectable: ${targetId}, handle: ${targetHandleId}`
+					);
+				}
 
 				const connection: AudioConnection = {
 					sourceId,

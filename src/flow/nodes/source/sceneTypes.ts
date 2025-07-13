@@ -9,7 +9,7 @@
  */
 export interface VertexInfo {
 	/** Normalized screen coordinates (-1 to 1 range) */
-	screen: { x: number; y: number };
+	screen: { x: number; y: number; z: number };
 	/** Pixel coordinates within canvas viewport */
 	screenRaw: { x: number; y: number };
 	/** Color values (0-1) */

@@ -8,10 +8,11 @@
 import React, { useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { RGBTriangleComponent } from './RGBTriangleComponent';
-import { extractVerticesFromScene } from '../sceneTraversal';
+import { GreenSquareComponent } from './GreenSquareComponent';
+import { extractVerticesFromScene } from '../../flow/nodes/source/sceneTraversal';
 
-import type { SceneTraversalOptions } from '../sceneTraversal';
-import type { SceneData } from '../types';
+import type { SceneTraversalOptions } from '../../flow/nodes/source/sceneTraversal';
+import type { SceneData } from '../../flow/nodes/source/types';
 
 interface ShapeSceneManagerProps {
 	/** Callback for scene audio data updates */
@@ -20,6 +21,10 @@ interface ShapeSceneManagerProps {
 	scanRate?: number;
 	/** Scene traversal options */
 	traversalOptions?: SceneTraversalOptions;
+	/** Shape type to render */
+	shapeType?: 'triangle' | 'square';
+	/** Scale factor for the rendered shape */
+	scale?: number;
 }
 
 /**
@@ -29,6 +34,8 @@ export function ShapeSceneManager({
 	onSceneData,
 	scanRate = 30,
 	traversalOptions = {},
+	shapeType = 'square',
+	scale = 1,
 }: ShapeSceneManagerProps): React.ReactElement | null {
 	const { scene, camera, size } = useThree();
 	const lastUpdateRef = useRef(0);
@@ -56,6 +63,9 @@ export function ShapeSceneManager({
 		}
 	});
 
-	// Just render the RGB triangle directly
-	return <RGBTriangleComponent />;
+	// Render the selected shape
+	if (shapeType === 'square') {
+		return <GreenSquareComponent scale={scale} />;
+	}
+	return <RGBTriangleComponent scale={scale} />;
 }

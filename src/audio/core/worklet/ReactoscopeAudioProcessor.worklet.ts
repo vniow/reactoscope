@@ -19,7 +19,7 @@ export const reactoscopeProcessorWorklet = /* javascript */ `
       this._isActive = false;
       this._vertices = [];
       this._index = 0; // Single index for vertex selection
-      this._frequency = 30; // Hz
+      this._frequency = 60; // Hz
       
       console.log('🎵 Reactoscope processor initialized (no interpolation)');
       
@@ -50,7 +50,7 @@ export const reactoscopeProcessorWorklet = /* javascript */ `
       return [
         {
           name: 'scanRate',
-          defaultValue: 30,
+          defaultValue: 60,
           minValue: 0.1,
           maxValue: 1000,
         },
@@ -59,7 +59,7 @@ export const reactoscopeProcessorWorklet = /* javascript */ `
 
     process(inputs, outputs, parameters) {
       const output = outputs[0];
-      if (!output || output.length < 5) {
+      if (!output || output.length < 6) {
         return true;
       }
       const frameCount = output[0].length;
@@ -67,7 +67,7 @@ export const reactoscopeProcessorWorklet = /* javascript */ `
       if (frequency !== this._frequency) {
         this._frequency = frequency;
       }
-      const [xChannel, yChannel, rChannel, gChannel, bChannel] = output;
+      const [xChannel, yChannel, rChannel, gChannel, bChannel, zChannel] = output;
       const indexIncrement = frequency / sampleRate;
       
       for (let i = 0; i < frameCount; i++) {
@@ -78,6 +78,7 @@ export const reactoscopeProcessorWorklet = /* javascript */ `
           rChannel[i] = 0;
           gChannel[i] = 0;
           bChannel[i] = 0;
+          zChannel[i] = 0;
           continue;
         }
         
@@ -90,6 +91,7 @@ export const reactoscopeProcessorWorklet = /* javascript */ `
           rChannel[i] = 0;
           gChannel[i] = 0;
           bChannel[i] = 0;
+          zChannel[i] = 0;
           continue;
         }
         
@@ -99,6 +101,7 @@ export const reactoscopeProcessorWorklet = /* javascript */ `
         rChannel[i] = (currentVertex.color.r * 2) - 1; // Convert 0-1 to -1-1
         gChannel[i] = (currentVertex.color.g * 2) - 1;
         bChannel[i] = (currentVertex.color.b * 2) - 1;
+        zChannel[i] = 1 - currentVertex.screen.z; // Added zChannel: 0=max luminance, 1=no luminance
         
         // Increment index
         this._index += indexIncrement;

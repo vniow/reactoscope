@@ -24,9 +24,38 @@ export function extractVerticesFromScene(
 	const { objectFilter } = options;
 	const vertices: VertexInfo[] = [];
 	const tempVector = new THREE.Vector3();
+	let lastProcessedObjectUuid: string | null = null; // Track the last processed object
 
 	scene.traverse((object) => {
 		if (objectFilter && !objectFilter(object)) return;
+
+		// Only consider Mesh and Line objects for vertex extraction
+		const isProcessableObject =
+			object instanceof THREE.Mesh ||
+			object instanceof THREE.Line ||
+			object instanceof THREE.LineSegments;
+
+		if (isProcessableObject) {
+			// If this is a new object (not the first one processed)
+			if (
+				lastProcessedObjectUuid !== null &&
+				lastProcessedObjectUuid !== object.uuid
+			) {
+				// Insert a "gap" vertex with z = 1 (no luminance)
+				// You can adjust the x, y, color, and world values as needed,
+				// but z=1 is the critical part for the gap.
+				vertices.push({
+					screen: { x: 0, y: 0, z: 1 }, // Set z to 1 for no luminance
+					screenRaw: { x: 0, y: 0 },
+					color: { r: 0, g: 0, b: 0 },
+					world: { x: 0, y: 0, z: 0 },
+				});
+				console.debug(
+					`[sceneTraversal] Inserted gap before object: ${object.uuid}`
+				);
+			}
+			lastProcessedObjectUuid = object.uuid; // Update the last processed object
+		}
 
 		// Special-case for drei Line2 (alias of three-stdlib Line2) before Mesh handling
 		if (object instanceof THREE.Mesh && object.type === 'Line2') {
@@ -85,7 +114,7 @@ export function extractVerticesFromScene(
 					const screenRawX = ((screenPos.x + 1) / 2) * viewportSize.width;
 					const screenRawY = ((1 - screenPos.y) / 2) * viewportSize.height;
 					vertices.push({
-						screen: { x: screenPos.x, y: screenPos.y },
+						screen: { x: screenPos.x, y: screenPos.y, z: screenPos.z }, // Added z
 						screenRaw: { x: screenRawX, y: screenRawY },
 						color,
 						world: { x: worldPos.x, y: worldPos.y, z: worldPos.z },
@@ -121,7 +150,7 @@ export function extractVerticesFromScene(
 						};
 					}
 					objectVertices.push({
-						screen: { x: screenPos.x, y: screenPos.y },
+						screen: { x: screenPos.x, y: screenPos.y, z: screenPos.z }, // Added z
 						screenRaw: { x: screenRawX, y: screenRawY },
 						color,
 						world: { x: worldPos.x, y: worldPos.y, z: worldPos.z },
@@ -175,7 +204,7 @@ export function extractVerticesFromScene(
 							};
 						}
 						vertices.push({
-							screen: { x: screenPos.x, y: screenPos.y },
+							screen: { x: screenPos.x, y: screenPos.y, z: screenPos.z }, // Added z
 							screenRaw: { x: screenRawX, y: screenRawY },
 							color,
 							world: { x: worldPos.x, y: worldPos.y, z: worldPos.z },
@@ -244,7 +273,7 @@ export function extractVerticesFromScene(
 						};
 					}
 					vertices.push({
-						screen: { x: screenPos.x, y: screenPos.y },
+						screen: { x: screenPos.x, y: screenPos.y, z: screenPos.z }, // Added z
 						screenRaw: { x: screenRawX, y: screenRawY },
 						color,
 						world: { x: worldPos.x, y: worldPos.y, z: worldPos.z },
@@ -284,7 +313,7 @@ export function extractVerticesFromScene(
 						};
 					}
 					objectVertices.push({
-						screen: { x: screenPos.x, y: screenPos.y },
+						screen: { x: screenPos.x, y: screenPos.y, z: screenPos.z }, // Added z
 						screenRaw: { x: screenRawX, y: screenRawY },
 						color,
 						world: { x: worldPos.x, y: worldPos.y, z: worldPos.z },

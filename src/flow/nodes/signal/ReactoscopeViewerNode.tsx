@@ -23,6 +23,7 @@ import { CRTBarrelDistortionPass } from './CRTBarrelDistortionPass';
 interface ReactoscopeViewerNodeData extends BaseNodeData {
 	inputX?: string;
 	inputY?: string;
+	inputZ?: string;
 	inputR?: string;
 	inputG?: string;
 	inputB?: string;
@@ -59,6 +60,7 @@ function ReactoscopeViewerNode(
 	const prevInputsRef = useRef<ReactoscopeViewerNodeData>({
 		inputX: data.inputX,
 		inputY: data.inputY,
+		inputZ: data.inputZ,
 		inputR: data.inputR,
 		inputG: data.inputG,
 		inputB: data.inputB,
@@ -81,26 +83,35 @@ function ReactoscopeViewerNode(
 		const prev = prevInputsRef.current;
 		if (data.inputX !== prev.inputX) flushAnalyser(analyserX);
 		if (data.inputY !== prev.inputY) flushAnalyser(analyserY);
+		if (data.inputZ !== prev.inputZ) flushAnalyser(analyserZ);
 		if (data.inputR !== prev.inputR) flushAnalyser(analyserR);
 		if (data.inputG !== prev.inputG) flushAnalyser(analyserG);
 		if (data.inputB !== prev.inputB) flushAnalyser(analyserB);
 		prevInputsRef.current = {
 			inputX: data.inputX,
 			inputY: data.inputY,
+			inputZ: data.inputZ,
 			inputR: data.inputR,
 			inputG: data.inputG,
 			inputB: data.inputB,
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [data.inputX, data.inputY, data.inputR, data.inputG, data.inputB]);
+	}, [
+		data.inputX,
+		data.inputY,
+		data.inputZ,
+		data.inputR,
+		data.inputG,
+		data.inputB,
+	]);
 
 	useEffect(() => {
-		['x', 'y', 'r', 'g', 'b'].forEach((ch) =>
+		['x', 'y', 'z', 'r', 'g', 'b'].forEach((ch) =>
 			registerAudioNode(`${id}:${ch}`, 'oscilloscope', { resolution: 512 })
 		);
 		setIsPlaying(true);
 		return () => {
-			['x', 'y', 'r', 'g', 'b'].forEach((ch) =>
+			['x', 'y', 'z', 'r', 'g', 'b'].forEach((ch) =>
 				unregisterAudioNode(`${id}:${ch}`)
 			);
 		};
@@ -110,6 +121,7 @@ function ReactoscopeViewerNode(
 		updateNode(id, {
 			inputX: data.inputX,
 			inputY: data.inputY,
+			inputZ: data.inputZ,
 			inputR: data.inputR,
 			inputG: data.inputG,
 			inputB: data.inputB,
@@ -118,6 +130,7 @@ function ReactoscopeViewerNode(
 		id,
 		data.inputX,
 		data.inputY,
+		data.inputZ,
 		data.inputR,
 		data.inputG,
 		data.inputB,
@@ -132,6 +145,10 @@ function ReactoscopeViewerNode(
 	const audioY = getAudioNode(data.inputY || `${id}:y`);
 	const analyserY = Array.isArray(audioY)
 		? (audioY[1] as Tone.Analyser)
+		: undefined;
+	const audioZ = getAudioNode(data.inputZ || `${id}:z`);
+	const analyserZ = Array.isArray(audioZ)
+		? (audioZ[1] as Tone.Analyser)
 		: undefined;
 	const audioR = getAudioNode(data.inputR || `${id}:r`);
 	const analyserR = Array.isArray(audioR)
@@ -182,6 +199,7 @@ function ReactoscopeViewerNode(
 							<RGBWaveformLines
 								analyserX={analyserX}
 								analyserY={analyserY}
+								analyserZ={analyserZ}
 								analyserR={analyserR}
 								analyserG={analyserG}
 								analyserB={analyserB}
@@ -308,14 +326,21 @@ function ReactoscopeViewerNode(
 				type='target'
 				position={Position.Left}
 				label='X'
-				style={{ top: '25%' }}
+				style={{ top: '20%' }}
 			/>
 			<NodeHandle
 				id='inputY'
 				type='target'
 				position={Position.Left}
 				label='Y'
-				style={{ top: '40%' }}
+				style={{ top: '32%' }}
+			/>
+			<NodeHandle
+				id='inputZ'
+				type='target'
+				position={Position.Left}
+				label='Z'
+				style={{ top: '44%' }}
 			/>
 			<NodeHandle
 				id='inputR'

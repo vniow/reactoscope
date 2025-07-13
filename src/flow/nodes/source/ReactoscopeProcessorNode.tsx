@@ -19,7 +19,10 @@ import { useAppStore } from '../../../shared/stores/appStore';
 import type { SceneData } from './sceneTypes';
 import { useSceneTraversal } from './useSceneTraversal';
 import type { BaseNodeData } from '../types';
-import { RGBTriangleComponent } from './shapes';
+import {
+	RGBTriangleComponent,
+	GreenSquareComponent,
+} from '../../../shared/shapes';
 
 interface ReactoscopeAudioProcessorNodeData extends BaseNodeData {
 	/** Scan rate in Hz (1-60) */
@@ -30,8 +33,6 @@ interface ReactoscopeAudioProcessorNodeData extends BaseNodeData {
 	triangleScale?: number;
 	/** Audio processor enabled */
 	audioEnabled?: boolean;
-	/** Audio smoothing */
-	audioSmoothing?: number;
 }
 
 /**
@@ -60,12 +61,10 @@ function Scene3D({
 	triangleScale,
 	onSceneData,
 	scanRate,
-	segmentDensity,
 }: {
 	triangleScale: number;
 	onSceneData?: (data: SceneData) => void;
 	scanRate?: number;
-	segmentDensity: number;
 }): React.ReactElement {
 	return (
 		<>
@@ -80,10 +79,16 @@ function Scene3D({
 			{/* Ambient light for visibility */}
 			<ambientLight intensity={0.8} />
 
-			{/* RGB Triangle Component for static rendering */}
+			{/* RGB Triangle Component */}
 			<RGBTriangleComponent
-				segmentDensity={segmentDensity}
 				scale={triangleScale}
+				position={[-0.5, 0, 0]}
+			/>
+
+			{/* Green Square Component */}
+			<GreenSquareComponent
+				scale={triangleScale}
+				position={[0.5, 0, 0]}
 			/>
 		</>
 	);
@@ -103,8 +108,6 @@ export function ReactoscopeProcessorNode({
 		vertices: [],
 		timestamp: 0,
 	});
-	// Segment density state for triangle
-	const [segmentDensity, setSegmentDensity] = useState<number>(16);
 
 	// Visual controls
 	const [scanRate, setScanRate] = useAudioNodeParam<number>(
@@ -128,13 +131,6 @@ export function ReactoscopeProcessorNode({
 		nodeData.audioEnabled ?? false
 	);
 
-	const [audioSmoothing] = useAudioNodeParam<number>(
-		nodeId,
-		'audioSmoothing',
-		nodeData.audioSmoothing ?? 0.1,
-		{ min: 0, max: 1 }
-	);
-
 	// Reactoscope Audio Processor
 	const processor = useReactoscopeAudioProcessor(audioEnabled);
 
@@ -146,7 +142,7 @@ export function ReactoscopeProcessorNode({
 			// Register this as a custom audio node type with the audio registry
 			appStore.registerAudioNode(nodeId, 'custom-xyrgb', {
 				node: processor.node,
-				outputs: processor.node.outputs, // Pass the 5-channel outputs
+				outputs: processor.node.outputs, // Pass the 6-channel outputs
 			});
 
 			console.log(`🎵 Registered XYRGB audio node: ${nodeId}`);
@@ -175,7 +171,6 @@ export function ReactoscopeProcessorNode({
 	useEffect(() => {
 		if (processor.isReady) {
 			processor.setScanRate(scanRate);
-			processor.setSmoothing(audioSmoothing);
 
 			// Start/stop based on audioEnabled
 			if (audioEnabled) {
@@ -185,7 +180,7 @@ export function ReactoscopeProcessorNode({
 			}
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [audioEnabled, scanRate, audioSmoothing, processor.isReady]);
+	}, [audioEnabled, scanRate, processor.isReady]);
 
 	// Update node data
 	const updateNode = useAppStore((state) => state.updateNode);
@@ -195,24 +190,15 @@ export function ReactoscopeProcessorNode({
 
 			triangleScale,
 			audioEnabled,
-			audioSmoothing,
+
 			audioParams: {
 				scanRate,
 
 				triangleScale,
 				audioEnabled,
-				audioSmoothing,
 			},
 		});
-	}, [
-		nodeId,
-		updateNode,
-		scanRate,
-
-		triangleScale,
-		audioEnabled,
-		audioSmoothing,
-	]);
+	}, [nodeId, updateNode, scanRate, triangleScale, audioEnabled]);
 
 	return (
 		<BaseNode
@@ -244,7 +230,6 @@ export function ReactoscopeProcessorNode({
 							triangleScale={triangleScale}
 							onSceneData={setSceneData}
 							scanRate={scanRate}
-							segmentDensity={segmentDensity}
 						/>
 					</Canvas>
 				</div>
@@ -322,25 +307,6 @@ export function ReactoscopeProcessorNode({
 				/>
 			</div>
 
-			<div className='mb-4'>
-				<GridControl
-					type='slider'
-					label='Segment Density'
-					value={segmentDensity}
-					min={3}
-					max={512}
-					step={1}
-					variant='node-variant'
-					layout='stacked'
-					showValue
-					formatValue={(val: number) => `${val}`}
-					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-						setSegmentDensity(Number(e.target.value))
-					}
-					className='h-12'
-				/>
-			</div>
-
 			{/* Audio Controls Section */}
 			<div className='border-t border-node pt-3 mb-3'>
 				<h4 className='text-sm font-medium text-node-primary mb-2'>
@@ -399,6 +365,13 @@ export function ReactoscopeProcessorNode({
 				position={Position.Bottom}
 				label='B'
 				style={{ left: '75%' }}
+			/>
+			<NodeHandle
+				id='outputZ'
+				type='source'
+				position={Position.Right} // Or Position.Bottom, depending on desired layout
+				label='Z'
+				style={{ top: '65%' }} // Adjust position as needed
 			/>
 		</BaseNode>
 	);
