@@ -267,6 +267,7 @@ export const createAudioRegistrySlice: StateCreator<
 			const handleToSuffixMap: Record<string, string> = {
 				inputX: ':x',
 				inputY: ':y',
+				inputZ: ':z', // Added Z handle
 				inputR: ':r',
 				inputG: ':g',
 				inputB: ':b',
@@ -336,10 +337,10 @@ export const createAudioRegistrySlice: StateCreator<
 						const outputHandleMap: Record<string, string> = {
 							outputX: 'x',
 							outputY: 'y',
+							outputZ: 'z', // Added Z
 							outputR: 'r',
 							outputG: 'g',
 							outputB: 'b',
-							outputZ: 'z', // Added Z
 						};
 
 						const channelName = outputHandleMap[handleId];

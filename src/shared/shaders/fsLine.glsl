@@ -6,9 +6,11 @@ precision highp float;
 
 uniform float uSize;      // Line thickness
 uniform float uIntensity; // Line brightness
+uniform float uLuminance; // Luminance multiplier
 
 varying vec4 uvl;         // .xy: orientation, .z: length, .w: index
 varying vec3 vColor;
+varying float vLuminance;
 
 // Error function approximation for analytical integration
 float erf(float x) {
@@ -41,6 +43,6 @@ void main(void) {
 	float afterglow = smoothstep(0.0, 0.33, uvl.w / 2048.0);
 	alpha *= afterglow * uIntensity;
 
-	// Final color: use per-vertex color from vColor
-	gl_FragColor = vec4(vColor, alpha);
+	// Final color: use per-vertex color from vColor and per-vertex luminance
+	gl_FragColor = vec4(vColor * vLuminance * uLuminance, alpha);
 }

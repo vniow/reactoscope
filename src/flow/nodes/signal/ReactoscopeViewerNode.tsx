@@ -55,6 +55,8 @@ function ReactoscopeViewerNode(
 	const [lineIntensity, setLineIntensity] = useState<number>(1.0); // For debugging bloom
 	const [persistenceDecay, setPersistenceDecay] = useState<number>(0.95);
 	const [crtStrength, setCRTStrength] = useState<number>(0.2);
+	// Luminance control (0-2, default 1.0)
+	const [luminance, setLuminance] = useState<number>(1.0);
 
 	// Track previous input IDs for each channel
 	const prevInputsRef = useRef<ReactoscopeViewerNodeData>({
@@ -163,6 +165,18 @@ function ReactoscopeViewerNode(
 		? (audioB[1] as Tone.Analyser)
 		: undefined;
 
+	// Debug: get Z analyser data
+	let zStats = null;
+	if (analyserZ) {
+		const zData = analyserZ.getValue() as Float32Array;
+		if (zData && zData.length > 0) {
+			const min = Math.min(...zData);
+			const max = Math.max(...zData);
+			const mean = zData.reduce((a, b) => a + b, 0) / zData.length;
+			zStats = { min, max, mean, sample: zData.slice(0, 32) };
+		}
+	}
+
 	return (
 		<BaseNode
 			nodeId={id}
@@ -170,6 +184,25 @@ function ReactoscopeViewerNode(
 			title='Reactoscope Viewer'
 			variant='signal'
 		>
+			{/* Debug Z panel */}
+			{zStats && (
+				<div className='bg-black text-green-400 text-xs p-2 rounded mb-2'>
+					<div>
+						Z axis: min={zStats.min.toFixed(2)} max={zStats.max.toFixed(2)}{' '}
+						mean={zStats.mean.toFixed(2)}
+					</div>
+					<div
+						style={{
+							fontFamily: 'monospace',
+							overflowX: 'auto',
+							whiteSpace: 'nowrap',
+						}}
+					>
+						{/* Simple sparkline: render as string */}
+						{zStats.sample.map((v) => Math.round((v + 1) * 4)).join('')}
+					</div>
+				</div>
+			)}
 			<div className='bg-node-secondary rounded overflow-hidden border border-node'>
 				<div
 					className='bg-black r3f-canvas-container'
@@ -190,7 +223,6 @@ function ReactoscopeViewerNode(
 					>
 						<ambientLight intensity={1.0} />
 						<EffectComposer>
-							<CRTBarrelDistortionPass strength={crtStrength} />
 							<Bloom
 								intensity={bloomIntensity}
 								luminanceThreshold={bloomThreshold}
@@ -205,10 +237,31 @@ function ReactoscopeViewerNode(
 								analyserB={analyserB}
 								isPlaying={isPlaying}
 								lineIntensity={lineIntensity}
+								luminance={luminance}
 							/>
 							<PersistencePass decay={persistenceDecay} />
+							<CRTBarrelDistortionPass strength={crtStrength} />
 						</EffectComposer>
 					</Canvas>
+				</div>
+				{/* Luminance slider control */}
+				<div className='mb-3'>
+					<GridControl
+						type='slider'
+						label='Luminance'
+						value={luminance}
+						min={0}
+						max={2}
+						step={0.01}
+						variant='node-variant'
+						layout='stacked'
+						showValue
+						formatValue={(val: number) => val.toFixed(2)}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+							setLuminance(Number(e.target.value))
+						}
+						className='h-12'
+					/>
 				</div>
 				<div className='flex justify-between items-center mt-2 text-xs px-2'>
 					<div className='flex items-center'>

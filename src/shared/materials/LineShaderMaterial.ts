@@ -12,6 +12,7 @@ const LineShaderMaterial = shaderMaterial(
 	{
 		uSize: 0.012,
 		uIntensity: 1.0,
+		uLuminance: 1.0,
 		uColor: new THREE.Vector4(1.0, 1.0, 1.0, 1.0),
 	},
 	vsLineCode,
@@ -31,6 +32,7 @@ export interface LineShaderMaterialProps
 	extends THREE.ShaderMaterialParameters {
 	uSize?: number;
 	uIntensity?: number;
+	uLuminance?: number;
 	uColor?: THREE.Vector4 | THREE.Color | string | number;
 	attach?: string;
 	key?: React.Key;

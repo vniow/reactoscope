@@ -7,10 +7,12 @@ uniform float uSize;       // Line thickness
 attribute vec2 aStart, aEnd;
 attribute float aIdx;
 attribute vec3 aColor;
+attribute float aLuminance;
 
 // xy: quad orientation and side, z: segment length, w: segment index
 varying vec4 uvl;
 varying vec3 vColor;
+varying float vLuminance;
 
 void main() {
 	float idx = mod(aIdx, 4.0);
@@ -40,8 +42,9 @@ void main() {
 	// Calculate normal vector (perpendicular)
 	vec2 norm = vec2(-dir.y, dir.x);
 
-	// Pass per-vertex color to fragment shader
+// Pass per-vertex color and luminance to fragment shader
 	vColor = aColor;
+	vLuminance = aLuminance;
 
 	// Calculate final position (always inverted on Y-axis)
 	gl_Position = vec4((current + (tang * dir + norm * side) * uSize) * -1.0, 0.0, 1.0);

@@ -32,6 +32,7 @@ interface RGBWaveformLinesProps {
 	isPlaying: boolean;
 	audioScale?: number;
 	lineIntensity?: number;
+	luminance?: number;
 }
 
 /**
@@ -48,6 +49,7 @@ function RGBWaveformLines({
 	isPlaying,
 	audioScale = 1.0,
 	lineIntensity = 1.0,
+	luminance = 1.0,
 }: RGBWaveformLinesProps): React.ReactElement {
 	const meshRef = useRef<THREE.Mesh>(null!);
 	const geometryRef = useRef<THREE.BufferGeometry>(null!);
@@ -63,14 +65,27 @@ function RGBWaveformLines({
 	useEffect(() => {
 		if (geometryRef.current) {
 			applyGeometryAttributes(geometryRef.current);
+			// Add aLuminance attribute for per-vertex brightness
+			if (!geometryRef.current.getAttribute('aLuminance')) {
+				const NUM_POINTS = 1024;
+				const NUM_SEGMENTS = NUM_POINTS - 1;
+				const luminanceArray = new Float32Array(NUM_SEGMENTS * 4);
+				geometryRef.current.setAttribute(
+					'aLuminance',
+					new THREE.BufferAttribute(luminanceArray, 1)
+				);
+			}
 		}
 	}, [applyGeometryAttributes]);
 
 	useFrame(() => {
 		if (!geometryRef.current || !materialRef.current) return;
 
-		// Set intensity uniform from prop
+		// Set intensity and luminance uniforms from props
 		materialRef.current.uniforms.uIntensity.value = lineIntensity;
+		if (materialRef.current.uniforms.uLuminance) {
+			materialRef.current.uniforms.uLuminance.value = luminance;
+		}
 
 		// Only render if playing and all analysers present
 		if (
@@ -124,6 +139,22 @@ function RGBWaveformLines({
 					dataG,
 					dataB
 				);
+				// Update aLuminance attribute with Z values (normalized 0-1)
+				const luminanceAttr = geometryRef.current.getAttribute(
+					'aLuminance'
+				) as THREE.BufferAttribute;
+				if (luminanceAttr) {
+					const num = Math.min(dataZ.length, luminanceAttr.count);
+					for (let i = 0; i < num; i++) {
+						// Normalize Z to [0,1] (assuming Z in [-1,1])
+						const zNorm = Math.max(0, Math.min(1, (dataZ[i] + 1) / 2));
+						// Each segment has 4 vertices
+						for (let j = 0; j < 4; j++) {
+							luminanceAttr.setX(i * 4 + j, zNorm);
+						}
+					}
+					luminanceAttr.needsUpdate = true;
+				}
 			}
 		} else {
 			// Clear geometry when not playing

@@ -346,6 +346,13 @@ export function ReactoscopeProcessorNode({
 				style={{ top: '35%' }}
 			/>
 			<NodeHandle
+				id='outputZ'
+				type='source'
+				position={Position.Right} // Or Position.Bottom, depending on desired layout
+				label='Z'
+				style={{ top: '65%' }} // Adjust position as needed
+			/>
+			<NodeHandle
 				id='outputR'
 				type='source'
 				position={Position.Bottom}
@@ -365,13 +372,6 @@ export function ReactoscopeProcessorNode({
 				position={Position.Bottom}
 				label='B'
 				style={{ left: '75%' }}
-			/>
-			<NodeHandle
-				id='outputZ'
-				type='source'
-				position={Position.Right} // Or Position.Bottom, depending on desired layout
-				label='Z'
-				style={{ top: '65%' }} // Adjust position as needed
 			/>
 		</BaseNode>
 	);
