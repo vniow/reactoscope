@@ -41,7 +41,7 @@ interface ReactoscopeAudioProcessorNodeData extends BaseNodeData {
  */
 function SceneTraversal({
 	onSceneData,
-	scanRate = 30,
+	scanRate = 60,
 }: {
 	onSceneData: (data: SceneData) => void;
 	scanRate?: number;

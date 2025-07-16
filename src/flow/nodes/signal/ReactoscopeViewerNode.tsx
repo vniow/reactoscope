@@ -57,6 +57,8 @@ function ReactoscopeViewerNode(
 	const [crtStrength, setCRTStrength] = useState<number>(0.2);
 	// Luminance control (0-2, default 1.0)
 	const [luminance, setLuminance] = useState<number>(1.0);
+	const [flipY, setFlipY] = useState<boolean>(true);
+	const [flipX, setFlipX] = useState<boolean>(true);
 
 	// Track previous input IDs for each channel
 	const prevInputsRef = useRef<ReactoscopeViewerNodeData>({
@@ -238,6 +240,8 @@ function ReactoscopeViewerNode(
 								isPlaying={isPlaying}
 								lineIntensity={lineIntensity}
 								luminance={luminance}
+								flipY={flipY}
+								flipX={flipX}
 							/>
 							<PersistencePass decay={persistenceDecay} />
 							<CRTBarrelDistortionPass strength={crtStrength} />
@@ -371,6 +375,24 @@ function ReactoscopeViewerNode(
 					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 						setCRTStrength(Number(e.target.value))
 					}
+					className='h-12'
+				/>
+				<GridControl
+					type='toggle'
+					label='Flip Y Axis'
+					checked={flipY}
+					variant='node-variant'
+					layout='stacked'
+					onChange={(checked: boolean) => setFlipY(checked)}
+					className='h-12'
+				/>
+				<GridControl
+					type='toggle'
+					label='Flip X Axis'
+					checked={flipX}
+					variant='node-variant'
+					layout='stacked'
+					onChange={(checked: boolean) => setFlipX(checked)}
 					className='h-12'
 				/>
 			</div>

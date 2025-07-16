@@ -3,6 +3,7 @@ precision highp float;
 #define EPS 1E-6
 
 uniform float uSize;       // Line thickness
+uniform float uFlipY; // Add flip uniform
 
 attribute vec2 aStart, aEnd;
 attribute float aIdx;
@@ -41,6 +42,11 @@ void main() {
 
 	// Calculate normal vector (perpendicular)
 	vec2 norm = vec2(-dir.y, dir.x);
+
+	// Apply Y flip to current position
+	if(uFlipY > 0.5) {
+		current.y *= -1.0;
+	}
 
 // Pass per-vertex color and luminance to fragment shader
 	vColor = aColor;

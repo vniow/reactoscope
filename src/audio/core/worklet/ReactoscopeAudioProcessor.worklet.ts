@@ -21,7 +21,7 @@ export const reactoscopeProcessorWorklet = /* javascript */ `
       this._index = 0; // Single index for vertex selection
       this._frequency = 60; // Hz
       
-      console.log('🎵 Reactoscope processor initialized (no interpolation)');
+      console.log('🎵 Reactoscope processor initialized');
       
       // Message handling
       this.port.onmessage = (event) => {

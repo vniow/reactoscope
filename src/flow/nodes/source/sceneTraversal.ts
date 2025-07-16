@@ -50,9 +50,6 @@ export function extractVerticesFromScene(
 					color: { r: 0, g: 0, b: 0 },
 					world: { x: 0, y: 0, z: 0 },
 				});
-				console.debug(
-					`[sceneTraversal] Inserted gap before object: ${object.uuid}`
-				);
 			}
 			lastProcessedObjectUuid = object.uuid; // Update the last processed object
 		}

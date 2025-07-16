@@ -21,6 +21,8 @@ const MIN_RENDER_AMP = 0.005;
  * @property isPlaying - Whether audio is currently playing
  * @property audioScale - Optional scale factor for audio amplitude
  * @property afterglow - Optional afterglow intensity for shader
+ * @property flipY - Optional boolean to flip Y axis
+ * @property flipX - Optional boolean to flip X axis
  */
 interface RGBWaveformLinesProps {
 	analyserX?: Tone.Analyser;
@@ -33,6 +35,8 @@ interface RGBWaveformLinesProps {
 	audioScale?: number;
 	lineIntensity?: number;
 	luminance?: number;
+	flipY?: boolean; // Add flip control
+	flipX?: boolean; // Add X flip control
 }
 
 /**
@@ -50,6 +54,8 @@ function RGBWaveformLines({
 	audioScale = 1.0,
 	lineIntensity = 1.0,
 	luminance = 1.0,
+	flipY = false,
+	flipX = false,
 }: RGBWaveformLinesProps): React.ReactElement {
 	const meshRef = useRef<THREE.Mesh>(null!);
 	const geometryRef = useRef<THREE.BufferGeometry>(null!);
@@ -97,8 +103,19 @@ function RGBWaveformLines({
 			analyserG &&
 			analyserB
 		) {
-			const dataX = analyserX.getValue() as Float32Array;
-			const dataY = analyserY.getValue() as Float32Array;
+			let dataX = analyserX.getValue() as Float32Array;
+			let dataY = analyserY.getValue() as Float32Array;
+
+			// Apply X flip if enabled
+			if (flipX) {
+				dataX = dataX.map((value) => value * -1) as Float32Array;
+			}
+
+			// Apply Y flip if enabled
+			if (flipY) {
+				dataY = dataY.map((value) => value * -1) as Float32Array;
+			}
+
 			const dataZ = analyserZ.getValue() as Float32Array;
 
 			// Compute average absolute amplitude to gate rendering

@@ -45,13 +45,13 @@ export class ReactoscopeAudioProcessorNode {
 	private _vertices: VertexInfo[] = [];
 
 	// Parameters
-	private _scanRate: number = 30;
+	private _scanRate: number = 60;
 
 	/**
 	 * Create a new ReactoscopeAudioProcessorNode
 	 */
 	constructor(options: ReactoscopeAudioProcessorNodeOptions = {}) {
-		this._scanRate = options.scanRate ?? 30;
+		this._scanRate = options.scanRate ?? 60;
 		this._debug = options.debug ?? false;
 
 		// Create output nodes for each channel
@@ -128,10 +128,6 @@ export class ReactoscopeAudioProcessorNode {
 
 			this._isReady = true;
 			this._resolveReady();
-
-			if (this._debug) {
-				console.log('✅ XYRGBInterpolatorNode initialized successfully');
-			}
 		} catch (error) {
 			console.error('❌ Failed to initialize ReactoscopeProcessorNode:', error);
 			throw error;
