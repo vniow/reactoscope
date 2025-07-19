@@ -13,31 +13,6 @@ This document provides comprehensive guidelines for developing and maintaining t
 - **Tailwind CSS v4** for utility-first styling
 - **Vite** for build tooling and development server
 
-### Application Structure
-
-```
-src/
-├── App.tsx
-├── contexts/
-├── flow/
-│   ├── components/
-│   ├── edges/
-│   ├── hooks/
-│   ├── index.ts
-│   └── stores/
-├── index.css
-├── main.tsx
-├── nodes/
-├── shared/
-│   ├── components/
-│   ├── config/
-│   ├── index.ts
-│   ├── stores/
-│   ├── types/
-│   └── utils/
-└── vite-env.d.ts
-```
-
 ### Design Patterns
 
 #### Component Architecture
