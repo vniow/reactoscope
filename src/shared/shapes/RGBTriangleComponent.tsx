@@ -33,7 +33,9 @@ export function RGBTriangleComponent({
 	);
 	const colors = RGB_TRIANGLE_COLORS;
 	return (
+		// Assign a unique name so traversal can group vertices
 		<Line
+			name='RGBTriangle'
 			points={points as [number, number, number][]}
 			vertexColors={colors}
 			lineWidth={lineWidth}

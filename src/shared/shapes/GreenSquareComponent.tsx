@@ -28,7 +28,9 @@ export function GreenSquareComponent({
 	);
 	const colors = GREEN_SQUARE_COLORS;
 	return (
+		// Assign name for grouping in debug panel
 		<Line
+			name='GreenSquare'
 			points={points as [number, number, number][]}
 			vertexColors={colors}
 			lineWidth={lineWidth}

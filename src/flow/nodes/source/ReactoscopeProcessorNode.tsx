@@ -17,11 +17,13 @@ import { useAudioNodeParam } from '../../../audio/hooks/useAudioNodeParam';
 import { useReactoscopeAudioProcessor } from '../../../audio/hooks/useReactoscopeAudioProcessor';
 import { useAppStore } from '../../../shared/stores/appStore';
 import type { SceneData } from './sceneTypes';
+import { DebugPanel } from './DebugPanel';
 import { useSceneTraversal } from './useSceneTraversal';
 import type { BaseNodeData } from '../types';
 import {
 	RGBTriangleComponent,
 	GreenSquareComponent,
+	ConnectorLineComponent,
 } from '../../../shared/shapes';
 
 interface ReactoscopeAudioProcessorNodeData extends BaseNodeData {
@@ -84,11 +86,21 @@ function Scene3D({
 				scale={triangleScale}
 				position={[-0.5, 0, 0]}
 			/>
+			{/* Connector Line Component */}
+			<ConnectorLineComponent
+				scale={triangleScale}
+				position={[0, 0, 0]}
+			/>
 
 			{/* Green Square Component */}
 			<GreenSquareComponent
 				scale={triangleScale}
 				position={[0.5, 0, 0]}
+			/>
+			{/* Connector Line Component */}
+			<ConnectorLineComponent
+				scale={triangleScale}
+				position={[0, 0, 0]}
 			/>
 		</>
 	);
@@ -235,7 +247,7 @@ export function ReactoscopeProcessorNode({
 				</div>
 
 				{/* Debug Panel */}
-				{/* <DebugPanel sceneData={sceneData} /> */}
+				<DebugPanel sceneData={sceneData} />
 
 				{/* Status indicator */}
 				<div className='flex justify-between items-center mt-2 text-xs px-2'>

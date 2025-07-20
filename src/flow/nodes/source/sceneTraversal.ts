@@ -20,7 +20,7 @@ export function extractVerticesFromScene(
 	scene.traverse((object) => {
 		if (objectFilter && !objectFilter(object)) return;
 
-		// Special-case for drei Line2 (alias of three-stdlib Line2) before Mesh handling
+		// Special-case for drei Line
 		if (object instanceof THREE.Mesh && object.type === 'Line2') {
 			const mesh = object as THREE.Mesh;
 			const geomAny = mesh.geometry as THREE.BufferGeometry & {
@@ -76,10 +76,23 @@ export function extractVerticesFromScene(
 					const screenPos = worldPos.clone().project(camera);
 					const screenRawX = ((screenPos.x + 1) / 2) * viewportSize.width;
 					const screenRawY = ((1 - screenPos.y) / 2) * viewportSize.height;
+					// Find first non-empty name up the ancestor chain
+					let name = object.name || '';
+					let parentObj = object.parent;
+					while ((!name || name === '') && parentObj) {
+						if (parentObj.name) {
+							name = parentObj.name;
+							break;
+						}
+						parentObj = parentObj.parent;
+					}
+					const objectName = name || object.type || object.uuid;
 					vertices.push({
-						screen: { x: screenPos.x, y: screenPos.y, z: screenPos.z }, // Added z
+						screen: { x: screenPos.x, y: screenPos.y, z: screenPos.z },
 						screenRaw: { x: screenRawX, y: screenRawY },
 						color,
+						world: { x: worldPos.x, y: worldPos.y, z: worldPos.z },
+						objectName,
 					});
 				});
 

@@ -7,6 +7,7 @@
 // React components
 export { RGBTriangleComponent } from './RGBTriangleComponent';
 export { GreenSquareComponent } from './GreenSquareComponent';
+export { ConnectorLineComponent } from './ConnectorLineComponent';
 
 // Scene management
 export { ShapeSceneManager } from './ShapeSceneManager';
