@@ -24,6 +24,8 @@ interface UseReactoscopeProcessorReturn {
 	/** Update scan rate */
 	setScanRate: (rate: number) => void;
 
+	/** Update interpolation steps */
+	setInterpolationSteps: (steps: number) => void;
 	/** Ready promise */
 	ready: Promise<void> | null;
 }
@@ -126,6 +128,15 @@ export function useReactoscopeAudioProcessor(
 		[isReady]
 	);
 
+	const setInterpolationSteps = useCallback(
+		(steps: number) => {
+			if (nodeRef.current && isReady) {
+				nodeRef.current.setInterpolationSteps(steps);
+			}
+		},
+		[isReady]
+	);
+
 	return {
 		node: nodeRef.current,
 		isReady,
@@ -134,6 +145,7 @@ export function useReactoscopeAudioProcessor(
 		start,
 		stop,
 		setScanRate,
+		setInterpolationSteps,
 		ready: readyPromiseRef.current,
 	};
 }

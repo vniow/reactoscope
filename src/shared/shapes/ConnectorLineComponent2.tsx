@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Line } from '@react-three/drei';
-import { CONNECTOR_POINTS, CONNECTOR_COLORS } from './connectorData';
+import { CONNECTOR_POINTS2, CONNECTOR_COLORS } from './connectorData';
 
 /**
  * ConnectorLineComponent
@@ -10,7 +10,7 @@ import { CONNECTOR_POINTS, CONNECTOR_COLORS } from './connectorData';
  * ConnectorLineComponent
  * Renders a connector line using static connectorData
  */
-export function ConnectorLineComponent({
+export function ConnectorLineComponent2({
 	scale = 1,
 	lineWidth = 2,
 	position = [0, 0, 0] as [number, number, number],
@@ -21,7 +21,7 @@ export function ConnectorLineComponent({
 }): React.ReactElement {
 	const points = useMemo(
 		() =>
-			CONNECTOR_POINTS.map(
+			CONNECTOR_POINTS2.map(
 				([x, y, z]) =>
 					[x * scale, y * scale, z * scale] as [number, number, number]
 			),

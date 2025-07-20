@@ -11,7 +11,7 @@ export const GREEN_SQUARE_POINTS: [number, number, number][] = [
 export const GREEN_SQUARE_COLORS: [number, number, number][] = [
 	[0, 1, 0], // Green
 	[0, 1, 0], // Green
-	[0, 1, 0], // Green
-	[0, 1, 0], // Green
+	[0, 0, 0], // Green
+	[0, 0, 0], // Green
 	[0, 1, 0], // Green
 ];

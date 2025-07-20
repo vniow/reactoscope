@@ -12,5 +12,5 @@ export const RGB_TRIANGLE_COLORS: [number, number, number][] = [
 	[1, 0, 0], // Red (top)
 	[0, 1, 0], // Green (bottom left)
 	[0, 0, 1], // Blue (bottom right)
-	[1, 0, 0], // Red (close)
+	[1, 0, 0], // Black (close)
 ];

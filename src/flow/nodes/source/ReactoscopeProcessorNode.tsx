@@ -16,14 +16,13 @@ import { GridControl } from '../../../shared/components/ui/GridControl';
 import { useAudioNodeParam } from '../../../audio/hooks/useAudioNodeParam';
 import { useReactoscopeAudioProcessor } from '../../../audio/hooks/useReactoscopeAudioProcessor';
 import { useAppStore } from '../../../shared/stores/appStore';
-import type { SceneData } from './sceneTypes';
+import type { SceneData, VertexInfo } from './sceneTypes';
 import { DebugPanel } from './DebugPanel';
 import { useSceneTraversal } from './useSceneTraversal';
 import type { BaseNodeData } from '../types';
 import {
 	RGBTriangleComponent,
 	GreenSquareComponent,
-	ConnectorLineComponent,
 } from '../../../shared/shapes';
 
 interface ReactoscopeAudioProcessorNodeData extends BaseNodeData {
@@ -35,6 +34,8 @@ interface ReactoscopeAudioProcessorNodeData extends BaseNodeData {
 	triangleScale?: number;
 	/** Audio processor enabled */
 	audioEnabled?: boolean;
+	/** Interpolation steps between object chunks */
+	interpolationSteps?: number;
 }
 
 /**
@@ -86,21 +87,11 @@ function Scene3D({
 				scale={triangleScale}
 				position={[-0.5, 0, 0]}
 			/>
-			{/* Connector Line Component */}
-			<ConnectorLineComponent
-				scale={triangleScale}
-				position={[0, 0, 0]}
-			/>
 
 			{/* Green Square Component */}
 			<GreenSquareComponent
 				scale={triangleScale}
 				position={[0.5, 0, 0]}
-			/>
-			{/* Connector Line Component */}
-			<ConnectorLineComponent
-				scale={triangleScale}
-				position={[0, 0, 0]}
 			/>
 		</>
 	);
@@ -120,6 +111,8 @@ export function ReactoscopeProcessorNode({
 		vertices: [],
 		timestamp: 0,
 	});
+	// Processed (interpolated) vertices for debug
+	const [processedVertices, setProcessedVertices] = useState<VertexInfo[]>([]);
 
 	// Visual controls
 	const [scanRate, setScanRate] = useAudioNodeParam<number>(
@@ -145,6 +138,13 @@ export function ReactoscopeProcessorNode({
 
 	// Reactoscope Audio Processor
 	const processor = useReactoscopeAudioProcessor(audioEnabled);
+	// Interpolation steps control
+	const [interpolationSteps, setInterpolationSteps] = useAudioNodeParam<number>(
+		nodeId,
+		'interpolationSteps',
+		nodeData.interpolationSteps ?? 1,
+		{ min: 0, max: 10 }
+	);
 
 	// Register the audio processor with the audio system when ready
 	useEffect(() => {
@@ -171,20 +171,24 @@ export function ReactoscopeProcessorNode({
 		};
 	}, [nodeId, audioEnabled, processor.isReady, processor.node]);
 
-	// Update processor when scene data changes
+	// Update processor and processed vertices when scene data changes
 	useEffect(() => {
 		if (audioEnabled && processor.isReady && sceneData.vertices.length > 0) {
+			processor.setInterpolationSteps(interpolationSteps);
 			processor.updateVertices(sceneData.vertices);
+			// Read back interpolated vertices
+			const verts = processor.node?.vertices || [];
+			setProcessedVertices(verts);
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [sceneData, audioEnabled, processor.isReady]);
+	}, [sceneData, audioEnabled, processor.isReady, interpolationSteps]);
 
 	// Sync all processor controls when they change
 	useEffect(() => {
 		if (processor.isReady) {
 			processor.setScanRate(scanRate);
-
-			// Start/stop based on audioEnabled
+			processor.setInterpolationSteps(interpolationSteps);
+			// Start or stop based on audioEnabled
 			if (audioEnabled) {
 				processor.start();
 			} else {
@@ -192,25 +196,32 @@ export function ReactoscopeProcessorNode({
 			}
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [audioEnabled, scanRate, processor.isReady]);
+	}, [audioEnabled, scanRate, interpolationSteps, processor.isReady]);
 
 	// Update node data
 	const updateNode = useAppStore((state) => state.updateNode);
 	useEffect(() => {
 		updateNode(nodeId, {
 			scanRate,
-
 			triangleScale,
 			audioEnabled,
+			interpolationSteps,
 
 			audioParams: {
 				scanRate,
-
 				triangleScale,
 				audioEnabled,
+				interpolationSteps,
 			},
 		});
-	}, [nodeId, updateNode, scanRate, triangleScale, audioEnabled]);
+	}, [
+		nodeId,
+		updateNode,
+		scanRate,
+		triangleScale,
+		audioEnabled,
+		interpolationSteps,
+	]);
 
 	return (
 		<BaseNode
@@ -246,8 +257,10 @@ export function ReactoscopeProcessorNode({
 					</Canvas>
 				</div>
 
-				{/* Debug Panel */}
-				<DebugPanel sceneData={sceneData} />
+				{/* Debug Panel (show processed/interpolated vertices) */}
+				<DebugPanel
+					sceneData={{ vertices: processedVertices, timestamp: Date.now() }}
+				/>
 
 				{/* Status indicator */}
 				<div className='flex justify-between items-center mt-2 text-xs px-2'>
@@ -295,6 +308,24 @@ export function ReactoscopeProcessorNode({
 					formatValue={(val: number) => `${val}Hz`}
 					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 						setScanRate(Number(e.target.value))
+					}
+					className='h-12'
+				/>
+			</div>
+
+			{/* Interpolation Steps Control */}
+			<div className='mb-4'>
+				<GridControl
+					type='slider'
+					label='Interpolation Steps'
+					value={interpolationSteps}
+					min={0}
+					max={10}
+					variant='node-variant'
+					layout='stacked'
+					showValue
+					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+						setInterpolationSteps(Number(e.target.value))
 					}
 					className='h-12'
 				/>

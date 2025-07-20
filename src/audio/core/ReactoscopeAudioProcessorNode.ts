@@ -10,6 +10,11 @@ import {
 	workletName,
 } from './worklet/ReactoscopeAudioProcessor.worklet';
 import type { VertexInfo } from '../../flow/nodes/source/sceneTypes';
+// interpolation utilities
+import {
+	chunkVerticesByObject,
+	interpolateBetweenChunks,
+} from '../utils/vertexUtils';
 
 export interface ReactoscopeAudioProcessorNodeOptions {
 	/** Scan rate in Hz */
@@ -18,6 +23,8 @@ export interface ReactoscopeAudioProcessorNodeOptions {
 	autostart?: boolean;
 	/** Enable debug logging */
 	debug?: boolean;
+	/** Number of interpolation steps between object chunks */
+	interpolationSteps?: number;
 }
 
 /**
@@ -43,6 +50,7 @@ export class ReactoscopeAudioProcessorNode {
 	private _resolveReady!: () => void;
 	private _debug: boolean = false;
 	private _vertices: VertexInfo[] = [];
+	private _interpolationSteps: number = 1;
 
 	// Parameters
 	private _scanRate: number = 60;
@@ -53,6 +61,7 @@ export class ReactoscopeAudioProcessorNode {
 	constructor(options: ReactoscopeAudioProcessorNodeOptions = {}) {
 		this._scanRate = options.scanRate ?? 60;
 		this._debug = options.debug ?? false;
+		this._interpolationSteps = options.interpolationSteps ?? 1;
 
 		// Create output nodes for each channel
 		this.outputs = {
@@ -168,18 +177,34 @@ export class ReactoscopeAudioProcessorNode {
 	 * Update vertex data for interpolation
 	 */
 	setVertices(vertices: VertexInfo[]): this {
-		this._vertices = [...vertices];
+		// console.log(
+		// 	'[ReactoscopeAudioProcessorNode] setVertices called, interpolationSteps:',
+		// 	this._interpolationSteps
+		// );
+		// Apply chunking and interpolation to smooth transitions between objects
+		const chunks = chunkVerticesByObject(vertices);
+		const interpolated = interpolateBetweenChunks(
+			chunks,
+			this._interpolationSteps
+		);
+
+		this._vertices = interpolated;
 
 		if (this._workletNode && this._isReady) {
 			this._workletNode.port.postMessage({
 				type: 'vertices',
 				data: this._vertices,
 			});
-
-			if (this._debug) {
-				// console.log(`🔄 Updated vertices: ${vertices.length} vertices`);
-			}
 		}
+
+		return this;
+	}
+
+	/**
+	 * Set the number of interpolation steps between object chunks
+	 */
+	setInterpolationSteps(steps: number): this {
+		this._interpolationSteps = Math.max(0, Math.floor(steps));
 
 		return this;
 	}

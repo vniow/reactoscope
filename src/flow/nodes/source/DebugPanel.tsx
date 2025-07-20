@@ -21,6 +21,10 @@ export function DebugPanel({ sceneData }: DebugPanelProps) {
 		return map;
 	}, [sceneData.vertices]);
 
+	// Count interpolated vertices
+	const interpolatedCount = sceneData.vertices.filter(
+		(v) => v.isInterpolated
+	).length;
 	return (
 		<div className='mt-2 border border-gray-600 rounded bg-gray-800 text-xs'>
 			<button
@@ -39,6 +43,9 @@ export function DebugPanel({ sceneData }: DebugPanelProps) {
 
 					<div className='mb-2 text-sm'>
 						Total vertices: {sceneData.vertices.length}
+						<span className='ml-4 text-yellow-300'>
+							Interpolated: {interpolatedCount}
+						</span>
 					</div>
 
 					{sceneData.vertices.length === 0 ? (
@@ -56,10 +63,13 @@ export function DebugPanel({ sceneData }: DebugPanelProps) {
 									{verts.map((vertex, i) => (
 										<div
 											key={i}
-											className='font-mono text-xs bg-gray-900 p-1 rounded my-1'
+											className={`font-mono text-xs bg-gray-900 p-1 rounded my-1 ${vertex.isInterpolated ? 'border-l-4 border-yellow-400' : ''}`}
 										>
 											<div className='flex justify-between'>
-												<span className='text-yellow-400'>V{i}:</span>
+												<span className='text-yellow-400'>
+													V{i}
+													{vertex.isInterpolated ? ' (interp)' : ''}:
+												</span>
 												<span className='text-cyan-400'>
 													NDC: X: {vertex.screen.x.toFixed(3)} Y:{' '}
 													{vertex.screen.y.toFixed(3)} Z:{' '}
