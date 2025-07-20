@@ -15,7 +15,6 @@ export interface VertexInfo {
 	/** Color values (0-1) */
 	color: { r: number; g: number; b: number };
 	/** Original world position */
-	world: { x: number; y: number; z: number };
 }
 
 /**

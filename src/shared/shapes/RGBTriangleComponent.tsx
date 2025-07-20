@@ -7,20 +7,7 @@
 
 import React, { useMemo } from 'react';
 import { Line } from '@react-three/drei';
-
-const RGB_TRIANGLE_POINTS: [number, number, number][] = [
-	[0, Math.sqrt(3) / 3, 0], // Top vertex
-	[-0.5, -Math.sqrt(3) / 6, 0], // Bottom left
-	[0.5, -Math.sqrt(3) / 6, 0], // Bottom right
-	[0, Math.sqrt(3) / 3, 0], // Close the triangle
-];
-
-const RGB_TRIANGLE_COLORS: [number, number, number][] = [
-	[1, 0, 0], // Red (top)
-	[0, 1, 0], // Green (bottom left)
-	[0, 0, 1], // Blue (bottom right)
-	[1, 0, 0], // Red (close)
-];
+import { RGB_TRIANGLE_POINTS, RGB_TRIANGLE_COLORS } from './triangleData';
 
 /**
  * Simple RGB Triangle Component
