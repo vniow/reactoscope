@@ -51,6 +51,7 @@
 	--spacing-grid-4: 256px; /* 4 grid units */
 	--spacing-grid-5: 320px; /* 5 grid units */
 	--spacing-grid-6: 384px; /* 6 grid units */
+	--spacing-grid-7: 448px; /* 7 grid units */
 	--spacing-grid-8: 512px; /* 8 grid units */
 	--spacing-grid-10: 640px; /* 10 grid units */
 	--spacing-grid-12: 768px; /* 12 grid units */
@@ -822,6 +823,13 @@ textarea {
 		background: light-dark(rgba(0, 0, 0, 0.5), rgba(255, 255, 255, 0.5));
 	}
 }
+/* === Semantic interactive hover background for controls === */
+.hover\:bg-interactive-hover:hover {
+	background-color: var(--color-interactive-border);
+}
+.dark .hover\:bg-interactive-hover:hover {
+	background-color: var(--color-interactive-border);
+}
 
 /* === THEMED MINIMAP STYLES === */
 
@@ -943,6 +951,9 @@ textarea {
 	.w-grid-1 {
 		width: var(--spacing-grid-1);
 	}
+	.w-grid-7 {
+		width: var(--spacing-grid-7);
+	}
 	.w-grid-2 {
 		width: var(--spacing-grid-2);
 	}
@@ -974,6 +985,9 @@ textarea {
 	/* Height utilities based on 64px grid */
 	.h-grid-1 {
 		height: var(--spacing-grid-1);
+	}
+	.h-grid-7 {
+		height: var(--spacing-grid-7);
 	}
 	.h-grid-2 {
 		height: var(--spacing-grid-2);
@@ -1007,6 +1021,10 @@ textarea {
 	.size-grid-1 {
 		width: var(--spacing-grid-1);
 		height: var(--spacing-grid-1);
+	}
+	.size-grid-7 {
+		width: var(--spacing-grid-7);
+		height: var(--spacing-grid-7);
 	}
 	.size-grid-2 {
 		width: var(--spacing-grid-2);

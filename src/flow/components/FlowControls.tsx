@@ -1,16 +1,11 @@
-import { Panel, useReactFlow } from '@xyflow/react';
-import { useTheme } from '../../shared/stores/useAppStore';
-import { useAppStore } from '../../shared/stores/appStore';
-import { useUIState } from '../../shared/stores/useAppStore';
+import { Panel } from '@xyflow/react';
 import { NodeGroupsSection } from './NodeAddPanel/NodeGroupsSection';
 import { SaveRestoreModal } from './SaveRestoreModal';
-import { createNode } from '../../shared/utils/nodeFactory';
+import { useFlowControls } from '../hooks/useFlowControls';
 import { combineClasses } from '../../shared/utils/styleUtils';
-import type { NodeTypeOption } from '../../shared/config/nodeTypes';
-import { useEffect, useRef, useState } from 'react';
 
 /**
- * Reusable control button component following design patterns
+ * ControlButton: purely presentational reusable button following design patterns
  */
 interface ControlButtonProps {
 	onClick: () => void;
@@ -31,19 +26,23 @@ function ControlButton({
 		// Base button styles
 		'flex items-center justify-center w-12 h-12 rounded-lg',
 		'transition-all duration-200',
-		// Hover and focus states
-		'hover:bg-black/5 dark:hover:bg-white/5',
-		'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset',
-		// Active state
-		isActive && 'bg-blue-500/10 border border-blue-500/30 shadow-md',
-		// Rainbow special styling with gradient background
+		// Semantic hover background
+		'hover:bg-interactive-hover',
+		// Focus ring uses semantic interactive focus color
+		'focus:outline-none focus:ring-2 focus:ring-[var(--color-interactive-border-focus)] focus:ring-inset',
+		// Active state semantic styling
+		isActive &&
+			'bg-[var(--color-interactive-border)]/10 border-[var(--color-interactive-border)]/30 shadow-[var(--color-interactive-border)]',
+		// Rainbow special styling using semantic rainbow tokens
 		isRainbow &&
-			'text-white shadow-lg bg-gradient-to-br from-pink-500 via-orange-400 to-cyan-400'
+			'text-white shadow-lg bg-gradient-to-br ' +
+				'from-[var(--color-rainbow-red)] via-[var(--color-rainbow-orange)] to-[var(--color-rainbow-cyan)]'
 	);
 
 	return (
 		<button
 			onClick={onClick}
+			aria-label={title}
 			title={title}
 			className={buttonClasses}
 		>
@@ -52,102 +51,42 @@ function ControlButton({
 	);
 }
 
+/**
+ * FlowControls: presenter component rendering control panel UI
+ */
 export function FlowControls() {
-	const { theme, setTheme } = useTheme();
-	const [isSaveRestoreModalOpen, setIsSaveRestoreModalOpen] = useState(false);
-	const metallicBackground = useAppStore(
-		(state) => state.theme.metallicBackground
-	);
-	const setMetallicBackground = useAppStore(
-		(state) => state.setMetallicBackground
-	);
 	const {
+		isSaveRestoreModalOpen,
+		setIsSaveRestoreModalOpen,
+		metallicBackground,
 		isNodeAddPanelExpanded,
 		toggleNodeAddPanel,
-		setIsNodeAddPanelExpanded,
-	} = useUIState();
-	const { zoomIn, zoomOut, fitView } = useReactFlow();
-	const reactFlowInstance = useReactFlow();
-	const panelContainerRef = useRef<HTMLDivElement>(null);
-
-	const handleAddNode = (nodeTypeOption: NodeTypeOption) => {
-		const newNode = createNode(nodeTypeOption);
-		reactFlowInstance.setNodes((nodes) => [...nodes, newNode]);
-		// Close the panel after adding a node
-		setIsNodeAddPanelExpanded(false);
-	};
-
-	// Handle click outside to close panel - simplified version
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			const target = event.target as HTMLElement;
-
-			if (
-				isNodeAddPanelExpanded &&
-				panelContainerRef.current &&
-				!panelContainerRef.current.contains(target)
-			) {
-				setIsNodeAddPanelExpanded(false);
-			}
-		};
-
-		if (isNodeAddPanelExpanded) {
-			document.addEventListener('mousedown', handleClickOutside);
-		}
-
-		return () => {
-			document.removeEventListener('mousedown', handleClickOutside);
-		};
-	}, [isNodeAddPanelExpanded, setIsNodeAddPanelExpanded]);
-
-	const handleThemeToggle = () => {
-		// Cycle through: light -> dark -> system -> light
-		if (theme === 'light') {
-			setTheme('dark');
-		} else if (theme === 'dark') {
-			setTheme('system');
-		} else {
-			setTheme('light');
-		}
-	};
-
-	const getThemeIcon = () => {
-		if (theme === 'light') return '☀️';
-		if (theme === 'dark') return '🌙';
-		return '💻'; // system
-	};
-
-	const getThemeTitle = () => {
-		if (theme === 'light') return 'Switch to Dark Theme';
-		if (theme === 'dark') return 'Switch to System Theme';
-		return 'Switch to Light Theme';
-	};
-
-	const toggleRainbowMetallic = () => {
-		setMetallicBackground(
-			metallicBackground === 'rainbow' ? 'titanium' : 'rainbow'
-		);
-	};
+		zoomIn,
+		zoomOut,
+		fitView,
+		handleAddNode,
+		handleThemeToggle,
+		getThemeIcon,
+		getThemeTitle,
+		toggleRainbowMetallic,
+	} = useFlowControls();
 
 	return (
 		<Panel
 			position='bottom-left'
 			className='max-w-full'
 		>
-			<div
-				ref={panelContainerRef}
-				className='flex flex-col items-center'
-			>
+			<div className='flex flex-col items-center'>
 				{/* Node Selection Panel - slides up from controls when expanded */}
 				{isNodeAddPanelExpanded && (
 					<div
 						className={combineClasses(
-							// Base styles
-							'mb-2 rounded-xl overflow-hidden w-[448px] h-[448px]',
-							// Glass panel styling
-							'backdrop-blur-md bg-white/80 dark:bg-gray-900/80',
-							'border border-gray-200/60 dark:border-gray-700/60',
-							'shadow-lg shadow-gray-500/10 dark:shadow-black/25',
+							// Base styles using grid utilities
+							'mb-2 rounded-xl overflow-hidden w-grid-7 h-grid-7',
+							// Glass panel styling (semantic surface & interactive border)
+							'backdrop-blur-md bg-[var(--color-surface)]/80 dark:bg-[var(--color-surface-elevated)]/80',
+							'border border-[var(--color-interactive-border)]/60 dark:border-[var(--color-interactive-border)]/60',
+							'shadow-lg shadow-[var(--color-interactive-border)]/10 dark:shadow-[var(--color-interactive-border)]/25',
 							// Animation
 							'transition-all duration-300 ease-in-out origin-bottom',
 							// Conditional states
@@ -166,17 +105,21 @@ export function FlowControls() {
 				{/* Main Controls Container */}
 				<div
 					className={combineClasses(
-						// Layout
-						'relative w-[448px] h-16 rounded-xl',
-						// Glass panel styling
-						'backdrop-blur-md bg-white/80 dark:bg-gray-900/80',
-						'border border-gray-200/60 dark:border-gray-700/60',
-						'shadow-lg shadow-gray-500/10 dark:shadow-black/25',
+						// Layout using grid utilities
+						'relative w-grid-7 h-grid-1 rounded-xl',
+						// Glass panel styling (semantic surface & interactive border)
+						'backdrop-blur-md bg-[var(--color-surface)]/80 dark:bg-[var(--color-surface-elevated)]/80',
+						'border border-[var(--color-interactive-border)]/60 dark:border-[var(--color-interactive-border)]/60',
+						'shadow-lg shadow-[var(--color-interactive-border)]/10 dark:shadow-[var(--color-interactive-border)]/25',
 						// Animation
 						'transition-all duration-300 ease-in-out'
 					)}
 				>
-					<div className='flex items-center justify-center h-full gap-2 px-2'>
+					<div
+						className='flex items-center justify-center h-full gap-2 px-2'
+						role='toolbar'
+						aria-label='Flow controls'
+					>
 						{/* Add Node Control */}
 						<ControlButton
 							onClick={toggleNodeAddPanel}
@@ -247,9 +190,7 @@ export function FlowControls() {
 						{/* Rainbow Toggle Control */}
 						<ControlButton
 							onClick={toggleRainbowMetallic}
-							title={`Toggle rainbow metallic theme (${
-								metallicBackground === 'rainbow' ? 'on' : 'off'
-							})`}
+							title={`Toggle rainbow metallic theme (${metallicBackground === 'rainbow' ? 'on' : 'off'})`}
 							isRainbow={metallicBackground === 'rainbow'}
 						>
 							<span className='text-lg'>🌈</span>
