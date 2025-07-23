@@ -665,9 +665,9 @@ export const createAudioRegistrySlice: StateCreator<
 						updatedSourceEntry.connections.inputs.length === 0
 					: updatedSourceEntry.connections.outputs.length === 0;
 
-				if (shouldStopSourceNode) {
+				// Skip auto-stop for Reactoscope processor (custom-xyrgb)
+				if (shouldStopSourceNode && sourceEntry.type !== 'custom-xyrgb') {
 					const shouldPlay = get().shouldSourceNodePlay(connection.sourceId);
-
 					if (!shouldPlay) {
 						stopAudioNode(sourceEntry.audioNode);
 					}

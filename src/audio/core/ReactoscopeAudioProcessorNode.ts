@@ -146,8 +146,8 @@ export class ReactoscopeAudioProcessorNode {
 	/**
 	 * Start interpolation
 	 */
-	start(): this {
-		if (this._workletNode && this._isReady) {
+	   start(): this {
+		   if (this._workletNode && this._isReady && !this._isPlaying) {
 			this._workletNode.port.postMessage({ type: 'start' });
 			this._isPlaying = true;
 
@@ -161,8 +161,8 @@ export class ReactoscopeAudioProcessorNode {
 	/**
 	 * Stop interpolation
 	 */
-	stop(): this {
-		if (this._workletNode && this._isReady) {
+	   stop(): this {
+		   if (this._workletNode && this._isReady && this._isPlaying) {
 			this._workletNode.port.postMessage({ type: 'stop' });
 			this._isPlaying = false;
 

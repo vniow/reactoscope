@@ -33,67 +33,32 @@ interface UseReactoscopeProcessorReturn {
 /**
  * Hook for managing XYRGB Interpolator audio node
  */
-export function useReactoscopeAudioProcessor(
-	enabled: boolean = true
-): UseReactoscopeProcessorReturn {
+export function useReactoscopeAudioProcessor(): UseReactoscopeProcessorReturn {
 	const nodeRef = useRef<ReactoscopeAudioProcessorNode | null>(null);
 	const [isReady, setIsReady] = useState(false);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const readyPromiseRef = useRef<Promise<void> | null>(null);
 
-	// Initialize node only once when enabled changes
-	useEffect(() => {
-		if (!enabled) {
-			// Don't clean up when disabled - just stop the processor
-			if (nodeRef.current) {
-				nodeRef.current.stop();
-				setIsPlaying(false);
-			}
-			return;
-		}
+		 // Initialize node once on mount
+		 useEffect(() => {
+			 if (nodeRef.current) return;
+			 const initialize = async () => {
+				 try {
+					 const node = new ReactoscopeAudioProcessorNode({ debug: true });
+					 nodeRef.current = node;
+					 readyPromiseRef.current = node.ready;
+					 await node.ready;
+					 setIsReady(true);
+					 setIsPlaying(node.isPlaying);
+					 console.log('🎵 Reactoscope Processor initialized');
+				 } catch (error) {
+					 console.error('❌ Failed to initialize Reactoscope Processor:', error);
+				 }
+			 };
+			 initialize();
+		 }, []);
 
-		// Only initialize if we don't already have a node
-		if (nodeRef.current) return;
-
-		const initializeNode = async () => {
-			try {
-				const node = new ReactoscopeAudioProcessorNode({
-					debug: true,
-				});
-
-				nodeRef.current = node;
-				readyPromiseRef.current = node.ready;
-
-				await node.ready;
-				setIsReady(true);
-				setIsPlaying(node.isPlaying);
-
-				console.log('🎵 Reactoscope Processor hook initialized');
-			} catch (error) {
-				console.error('❌ Failed to initialize Reactoscope Processor:', error);
-			}
-		};
-
-		initializeNode();
-
-		// Only cleanup when component unmounts, not when enabled changes
-		return () => {
-			// This cleanup only runs on unmount
-		};
-	}, [enabled]);
-
-	// Separate cleanup effect for component unmount
-	useEffect(() => {
-		return () => {
-			if (nodeRef.current) {
-				nodeRef.current.dispose();
-				nodeRef.current = null;
-				setIsReady(false);
-				setIsPlaying(false);
-				readyPromiseRef.current = null;
-			}
-		};
-	}, []);
+		// No automatic disposal: worklet continues until explicitly stopped or disposed
 
 	// Stable callback functions
 	const updateVertices = useCallback(
