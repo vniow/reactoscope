@@ -14,6 +14,9 @@ interface NodeHandleProps {
 	// === LABEL OPTIONS (for source handles) ===
 	label?: string; // Text label to display inside source handles
 	showLabel?: boolean; // Whether to show the label (default: true if label is provided)
+
+	// === CONNECTION STATUS ===
+	connectionStatus?: 'default' | 'connected' | 'connecting' | 'error'; // NEW
 }
 
 /**
@@ -38,6 +41,7 @@ export function NodeHandle({
 	style,
 	label,
 	showLabel = true,
+	connectionStatus = 'default', // NEW
 }: NodeHandleProps) {
 	// Size variants - both source and target handles use same arrow dimensions
 	const sizeClasses = {
@@ -45,6 +49,15 @@ export function NodeHandle({
 		md: 'w-20 h-10',
 		lg: 'w-24 h-12',
 	};
+
+	// Semantic color system for handle stroke/fill
+	const handleStrokeColor = {
+		default: 'var(--handle-color-default)',
+		connected: 'var(--handle-color-connected)',
+		connecting: 'var(--handle-color-connecting)',
+		error: 'var(--handle-color-error)',
+	}[connectionStatus ?? 'default'];
+	const handleFillColor = 'var(--node-bg-interactive)';
 
 	// Get SVG size in pixels for inline SVG - same dimensions for both source and target
 	const getSvgSize = (
@@ -67,8 +80,8 @@ export function NodeHandle({
 	// Create SVG icon based on handle type
 	const createHandleIcon = () => {
 		// Use Tailwind colors directly for better theming
-		const strokeColor = 'var(--node-accent, #3b82f6)';
-		const fillColor = 'var(--node-bg-interactive, transparent)';
+		const strokeColor = handleStrokeColor;
+		const fillColor = handleFillColor;
 
 		if (type === 'source') {
 			// Source handles: Arrow shapes pointing outward
@@ -197,34 +210,34 @@ export function NodeHandle({
 		}
 	};
 
-// Helper function to create a perfect circle path for target handles
-const getTargetCirclePath = (
-  fillColor: string,
-  strokeColor: string,
-  dimensions: { width: number; height: number }
-) => {
-  const { width, height } = dimensions;
-  const centerX = width / 2;
-  const centerY = height / 2;
-  // Use the smaller of width or height for a perfect circle
-  const radius = Math.min(width, height) / 2 - 4; // 4px padding
+	// Helper function to create a perfect circle path for target handles
+	const getTargetCirclePath = (
+		fillColor: string,
+		strokeColor: string,
+		dimensions: { width: number; height: number }
+	) => {
+		const { width, height } = dimensions;
+		const centerX = width / 2;
+		const centerY = height / 2;
+		// Use the smaller of width or height for a perfect circle
+		const radius = Math.min(width, height) / 2 - 4; // 4px padding
 
-  const pathStyles = {
-	fill: fillColor,
-	stroke: strokeColor,
-	strokeWidth: '2',
-	opacity: '0.9',
-  };
+		const pathStyles = {
+			fill: fillColor,
+			stroke: strokeColor,
+			strokeWidth: '2',
+			opacity: '0.9',
+		};
 
-  return (
-	<circle
-	  cx={centerX}
-	  cy={centerY}
-	  r={radius}
-	  {...pathStyles}
-	/>
-  );
-};
+		return (
+			<circle
+				cx={centerX}
+				cy={centerY}
+				r={radius}
+				{...pathStyles}
+			/>
+		);
+	};
 
 	// Handle styling for SVG container - simplified since we're using SVG icons
 	const handleClasses = [

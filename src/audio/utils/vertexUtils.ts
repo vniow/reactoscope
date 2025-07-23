@@ -55,21 +55,6 @@ function lerpVec3(
 }
 
 /**
- * Linear interpolation between two color objects
- */
-function lerpColor(
-	a: { r: number; g: number; b: number },
-	b: { r: number; g: number; b: number },
-	t: number
-): { r: number; g: number; b: number } {
-	return {
-		r: lerp(a.r, b.r, t),
-		g: lerp(a.g, b.g, t),
-		b: lerp(a.b, b.b, t),
-	};
-}
-
-/**
  * Given chunks of vertices per object, insert linear interpolated vertices
  * between the end of each chunk and the start of the next.
  * @param chunks Array of vertex chunks grouped by object

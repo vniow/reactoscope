@@ -94,6 +94,18 @@
 	--color-rainbow-fuchsia: light-dark(#fae8ff, #c026d3);
 	--color-rainbow-pink: light-dark(#fce7f3, #db2777);
 	--color-rainbow-rose: light-dark(#ffe4e6, #e11d48);
+	/* === HANDLE CONNECTION STATE COLORS === */
+	--handle-color-default: var(--node-accent);
+	--handle-color-connected: #22c55e;
+	--handle-color-connecting: #f59e42;
+	--handle-color-error: #ef4444;
+}
+
+.dark {
+	--handle-color-default: var(--node-accent);
+	--handle-color-connected: #4ade80;
+	--handle-color-connecting: #fbbf24;
+	--handle-color-error: #f87171;
 }
 
 /* === VARIANT-SPECIFIC CUSTOM PROPERTIES === */

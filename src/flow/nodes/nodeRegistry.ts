@@ -13,6 +13,7 @@ import { SignalNode } from './source/SignalNode';
 import { ReactoscopeViewerNode } from './signal/ReactoscopeViewerNode';
 import { FilterNode } from './component/FilterNode';
 import { OscillatorNode } from './source/OscillatorNode';
+import { NoiseGeneratorNode } from './source/NoiseGeneratorNode';
 
 // Central registry entry type
 export interface NodeRegistryEntry {
@@ -108,6 +109,14 @@ export const NODE_REGISTRY: NodeRegistryEntry[] = [
 		emoji: '🌊',
 		variant: 'source',
 		component: OscillatorNode,
+	},
+	{
+		type: 'noise-generator',
+		name: 'Noise Generator',
+		description: 'Generates white noise for audio applications',
+		emoji: '🌫️',
+		variant: 'source',
+		component: NoiseGeneratorNode,
 	},
 	// Add more nodes here as needed
 ];

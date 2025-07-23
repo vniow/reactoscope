@@ -67,6 +67,13 @@ export function useWaveformGeometry() {
 		const endAttr = geometry.attributes.aEnd as THREE.BufferAttribute;
 		const colorAttr = geometry.attributes.aColor as THREE.BufferAttribute;
 
+		// Determine if any color channel is missing
+		const useDefaultColor = !dataRColor || !dataGColor || !dataBColor;
+		// Default green color
+		const DEFAULT_R = 0;
+		const DEFAULT_G = 1;
+		const DEFAULT_B = 0;
+
 		const numSamples = Math.min(
 			dataL.length,
 			dataR.length,
@@ -92,13 +99,22 @@ export function useWaveformGeometry() {
 					? Math.min(Math.max(dataZ[i + 1] * audioScale, -1.0), 1.0)
 					: 0;
 
-				// Per-vertex color
-				const r1 = dataRColor ? Math.min(Math.max(dataRColor[i], 0), 1) : 1;
-				const g1 = dataGColor ? Math.min(Math.max(dataGColor[i], 0), 1) : 1;
-				const b1 = dataBColor ? Math.min(Math.max(dataBColor[i], 0), 1) : 1;
-				const r2 = dataRColor ? Math.min(Math.max(dataRColor[i + 1], 0), 1) : 1;
-				const g2 = dataGColor ? Math.min(Math.max(dataGColor[i + 1], 0), 1) : 1;
-				const b2 = dataBColor ? Math.min(Math.max(dataBColor[i + 1], 0), 1) : 1;
+				let r1, g1, b1, r2, g2, b2;
+				if (useDefaultColor) {
+					r1 = DEFAULT_R;
+					g1 = DEFAULT_G;
+					b1 = DEFAULT_B;
+					r2 = DEFAULT_R;
+					g2 = DEFAULT_G;
+					b2 = DEFAULT_B;
+				} else {
+					r1 = Math.min(Math.max(dataRColor![i], 0), 1);
+					g1 = Math.min(Math.max(dataGColor![i], 0), 1);
+					b1 = Math.min(Math.max(dataBColor![i], 0), 1);
+					r2 = Math.min(Math.max(dataRColor![i + 1], 0), 1);
+					g2 = Math.min(Math.max(dataGColor![i + 1], 0), 1);
+					b2 = Math.min(Math.max(dataBColor![i + 1], 0), 1);
+				}
 
 				for (let j = 0; j < 4; j++) {
 					startAttr.array[vBase + j * NUM_COMPONENTS + 0] = p1x;

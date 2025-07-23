@@ -142,30 +142,40 @@ function ReactoscopeViewerNode(
 	]);
 
 	// Safely extract the Analyser node from the stored ToneAudioNode array
-	const audioX = getAudioNode(data.inputX || `${id}:x`);
+	const audioX = useAppStore((s) => s.getAudioNode(data.inputX || `${id}:x`));
 	const analyserX = Array.isArray(audioX)
 		? (audioX[1] as Tone.Analyser)
 		: undefined;
-	const audioY = getAudioNode(data.inputY || `${id}:y`);
+	const audioY = useAppStore((s) => s.getAudioNode(data.inputY || `${id}:y`));
 	const analyserY = Array.isArray(audioY)
 		? (audioY[1] as Tone.Analyser)
 		: undefined;
-	const audioZ = getAudioNode(data.inputZ || `${id}:z`);
+	const audioZ = useAppStore((s) => s.getAudioNode(data.inputZ || `${id}:z`));
 	const analyserZ = Array.isArray(audioZ)
 		? (audioZ[1] as Tone.Analyser)
 		: undefined;
-	const audioR = getAudioNode(data.inputR || `${id}:r`);
+	const audioR = useAppStore((s) => s.getAudioNode(data.inputR || `${id}:r`));
 	const analyserR = Array.isArray(audioR)
 		? (audioR[1] as Tone.Analyser)
 		: undefined;
-	const audioG = getAudioNode(data.inputG || `${id}:g`);
+	const audioG = useAppStore((s) => s.getAudioNode(data.inputG || `${id}:g`));
 	const analyserG = Array.isArray(audioG)
 		? (audioG[1] as Tone.Analyser)
 		: undefined;
-	const audioB = getAudioNode(data.inputB || `${id}:b`);
+	const audioB = useAppStore((s) => s.getAudioNode(data.inputB || `${id}:b`));
 	const analyserB = Array.isArray(audioB)
 		? (audioB[1] as Tone.Analyser)
 		: undefined;
+
+	// Debug connection state for each analyser
+	const analyserStates = [
+		{ label: 'X', connected: !!analyserX },
+		{ label: 'Y', connected: !!analyserY },
+		{ label: 'Z', connected: !!analyserZ },
+		{ label: 'R', connected: !!analyserR },
+		{ label: 'G', connected: !!analyserG },
+		{ label: 'B', connected: !!analyserB },
+	];
 
 	// Debug: get Z analyser data
 	let zStats = null;
@@ -178,6 +188,19 @@ function ReactoscopeViewerNode(
 			zStats = { min, max, mean, sample: zData.slice(0, 32) };
 		}
 	}
+
+	// === CONNECTION STATUS LOGIC ===
+	// Helper to get connection status for a handle
+	const edges = useAppStore((state) => state.edges);
+	const getHandleConnectionStatus = (
+		handleId: string
+	): 'default' | 'connected' => {
+		return edges.some(
+			(edge) => edge.target === id && edge.targetHandle === handleId
+		)
+			? 'connected'
+			: 'default';
+	};
 
 	return (
 		<BaseNode
@@ -205,6 +228,22 @@ function ReactoscopeViewerNode(
 					</div>
 				</div>
 			)}
+			{/* Debug connection state panel */}
+			<div className='bg-black/80 text-xs text-white p-2 rounded mb-2 flex gap-2 items-center'>
+				<span className='font-bold text-green-400'>Analyser Connections:</span>
+				{analyserStates.map((ch) => (
+					<span
+						key={ch.label}
+						className={
+							ch.connected
+								? 'px-2 py-1 rounded bg-green-600 text-white'
+								: 'px-2 py-1 rounded bg-gray-700 text-gray-400'
+						}
+					>
+						{ch.label}
+					</span>
+				))}
+			</div>
 			<div className='bg-node-secondary rounded overflow-hidden border border-node'>
 				<div
 					className='bg-black r3f-canvas-container'
@@ -402,6 +441,7 @@ function ReactoscopeViewerNode(
 				position={Position.Left}
 				label='X'
 				style={{ top: '20%' }}
+				connectionStatus={getHandleConnectionStatus('inputX')}
 			/>
 			<NodeHandle
 				id='inputY'
@@ -409,6 +449,7 @@ function ReactoscopeViewerNode(
 				position={Position.Left}
 				label='Y'
 				style={{ top: '32%' }}
+				connectionStatus={getHandleConnectionStatus('inputY')}
 			/>
 			<NodeHandle
 				id='inputZ'
@@ -416,6 +457,7 @@ function ReactoscopeViewerNode(
 				position={Position.Left}
 				label='Z'
 				style={{ top: '44%' }}
+				connectionStatus={getHandleConnectionStatus('inputZ')}
 			/>
 			<NodeHandle
 				id='inputR'
@@ -423,6 +465,7 @@ function ReactoscopeViewerNode(
 				position={Position.Right}
 				label='R'
 				style={{ top: '25%' }}
+				connectionStatus={getHandleConnectionStatus('inputR')}
 			/>
 			<NodeHandle
 				id='inputG'
@@ -430,6 +473,7 @@ function ReactoscopeViewerNode(
 				position={Position.Right}
 				label='G'
 				style={{ top: '40%' }}
+				connectionStatus={getHandleConnectionStatus('inputG')}
 			/>
 			<NodeHandle
 				id='inputB'
@@ -437,6 +481,7 @@ function ReactoscopeViewerNode(
 				position={Position.Right}
 				label='B'
 				style={{ top: '55%' }}
+				connectionStatus={getHandleConnectionStatus('inputB')}
 			/>
 			<NodeHandle
 				id='output'
@@ -444,6 +489,13 @@ function ReactoscopeViewerNode(
 				position={Position.Bottom}
 				label='Out'
 				style={{ left: '50%' }}
+				connectionStatus={
+					edges.some(
+						(edge) => edge.source === id && edge.sourceHandle === 'output'
+					)
+						? 'connected'
+						: 'default'
+				}
 			/>
 		</BaseNode>
 	);

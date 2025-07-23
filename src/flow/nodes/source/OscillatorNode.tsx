@@ -45,7 +45,7 @@ export function OscillatorNode({
 			frequency: nodeData.frequency || 440,
 			type: nodeData.waveType || 'sine',
 			detune: nodeData.detune || 0,
-			volume: nodeData.volume || -12,
+			volume: nodeData.volume || 0,
 		});
 
 		// Cleanup on unmount
@@ -62,7 +62,7 @@ export function OscillatorNode({
 		nodeId,
 		'frequency',
 		nodeData.frequency || 440,
-		{ min: 1, max: 192000, rampTime: 0.1 }
+		{ min: 1, max: 2400, rampTime: 0.1 }
 	);
 
 	const [waveType, setWaveType] = useAudioNodeParam<OscillatorType>(
@@ -83,7 +83,7 @@ export function OscillatorNode({
 	const [volume, setVolume] = useAudioNodeParam<number>(
 		nodeId,
 		'gain',
-		nodeData.volume || -12,
+		nodeData.volume || 0,
 		{
 			min: -60,
 			max: 0,
@@ -120,6 +120,16 @@ export function OscillatorNode({
 			audioParams: { frequency, type: waveType, detune, volume },
 		});
 	}, [nodeId, frequency, waveType, detune, volume, updateNode]);
+
+	// === CONNECTION STATUS LOGIC ===
+	// Determine if the output handle is connected
+	const edges = useAppStore((state) => state.edges);
+	const outputConnected = edges.some(
+		(edge) => edge.source === nodeId && edge.sourceHandle === 'output'
+	);
+	const outputConnectionStatus: 'default' | 'connected' = outputConnected
+		? 'connected'
+		: 'default';
 
 	return (
 		<BaseNode
@@ -160,7 +170,7 @@ export function OscillatorNode({
 					label='Frequency'
 					value={frequency}
 					min={1}
-					max={192000}
+					max={2400}
 					step={1}
 					variant='node-variant'
 					layout='stacked'
@@ -233,6 +243,7 @@ export function OscillatorNode({
 				type='source'
 				position={Position.Right}
 				label='Out'
+				connectionStatus={outputConnectionStatus}
 			/>
 		</BaseNode>
 	);
