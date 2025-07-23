@@ -79,7 +79,7 @@ export class NoiseNode {
 				{
 					numberOfInputs: 0,
 					numberOfOutputs: 1,
-					outputChannelCount: [2],
+					outputChannelCount: [1],
 					parameterData: {
 						amplitude: this._amplitude,
 					},

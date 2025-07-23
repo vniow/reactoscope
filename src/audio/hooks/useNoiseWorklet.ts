@@ -6,7 +6,6 @@ import * as Tone from 'tone';
 import { NoiseNode } from '../core/NoiseNode';
 
 export interface UseNoiseWorkletOptions {
-	autostart?: boolean;
 	debug?: boolean;
 }
 
@@ -39,13 +38,17 @@ export function useNoiseWorklet(
 
 		const initializeNode = async () => {
 			try {
-				console.log('🎛️ Initializing noise worklet...');
+								// Ensure the audio context is running before adding worklets
+								if (Tone.getContext().state !== 'running') {
+									await Tone.start();
+									console.log('🎵 Tone.js context started');
+								}
+								console.log('🎛️ Initializing noise worklet...');
 
-				const node = new NoiseNode({
-					amplitude: 0.5, // Use default, will be updated via setAmplitude
-					autostart: options.autostart,
-					debug: options.debug,
-				});
+					 const node = new NoiseNode({
+						 amplitude: 0.5, // Use default, will be updated via setAmplitude
+						 debug: options.debug,
+					 });
 
 				await node.ready;
 
@@ -57,9 +60,6 @@ export function useNoiseWorklet(
 				noiseNodeRef.current = node;
 				setIsReady(true);
 
-				if (options.autostart) {
-					setIsPlaying(true);
-				}
 
 				console.log('✅ Noise worklet initialized successfully');
 			} catch (error) {
@@ -82,7 +82,7 @@ export function useNoiseWorklet(
 			setIsReady(false);
 			setIsPlaying(false);
 		};
-	}, [options.autostart, options.debug]);
+		}, [options.debug]);
 
 	const start = async (): Promise<void> => {
 		if (noiseNodeRef.current && isReady && !isPlaying) {

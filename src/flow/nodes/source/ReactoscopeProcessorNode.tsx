@@ -223,6 +223,15 @@ export function ReactoscopeProcessorNode({
 		interpolationSteps,
 	]);
 
+  // Connection status for output handles
+  const edges = useAppStore((state) => state.edges);
+  const getConnectionStatus = (handleId: string): 'default' | 'connected' =>
+    edges.some(
+      (edge) => edge.source === nodeId && edge.sourceHandle === handleId
+    )
+      ? 'connected'
+      : 'default';
+
 	return (
 		<BaseNode
 			nodeId={nodeId}
@@ -380,6 +389,7 @@ export function ReactoscopeProcessorNode({
 				position={Position.Right}
 				label='X'
 				style={{ top: '20%' }}
+				connectionStatus={getConnectionStatus('outputX')}
 			/>
 			<NodeHandle
 				id='outputY'
@@ -387,6 +397,7 @@ export function ReactoscopeProcessorNode({
 				position={Position.Right}
 				label='Y'
 				style={{ top: '35%' }}
+				connectionStatus={getConnectionStatus('outputY')}
 			/>
 			<NodeHandle
 				id='outputZ'
@@ -394,6 +405,7 @@ export function ReactoscopeProcessorNode({
 				position={Position.Right} // Or Position.Bottom, depending on desired layout
 				label='Z'
 				style={{ top: '65%' }} // Adjust position as needed
+				connectionStatus={getConnectionStatus('outputZ')}
 			/>
 			<NodeHandle
 				id='outputR'
@@ -401,6 +413,7 @@ export function ReactoscopeProcessorNode({
 				position={Position.Bottom}
 				label='R'
 				style={{ left: '25%' }}
+				connectionStatus={getConnectionStatus('outputR')}
 			/>
 			<NodeHandle
 				id='outputG'
@@ -408,6 +421,7 @@ export function ReactoscopeProcessorNode({
 				position={Position.Bottom}
 				label='G'
 				style={{ left: '50%' }}
+				connectionStatus={getConnectionStatus('outputG')}
 			/>
 			<NodeHandle
 				id='outputB'
@@ -415,6 +429,7 @@ export function ReactoscopeProcessorNode({
 				position={Position.Bottom}
 				label='B'
 				style={{ left: '75%' }}
+				connectionStatus={getConnectionStatus('outputB')}
 			/>
 		</BaseNode>
 	);

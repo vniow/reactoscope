@@ -2,7 +2,10 @@
  * Name of the worklet processor
  */
 export const workletName = 'reactoscope-processor';
-
+/**
+ * JavaScript code for the Reactoscope AudioWorkletProcessor.
+ * Defines a multichannel processor stub that can later be extended.
+ */
 /**
  * XYRGB Interpolator worklet processor code
  */

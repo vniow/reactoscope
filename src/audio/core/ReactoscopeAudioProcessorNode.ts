@@ -105,29 +105,29 @@ export class ReactoscopeAudioProcessorNode {
 			}
 
 			// Create worklet node with 6 output channels
-			this._workletNode = Tone.getContext().createAudioWorkletNode(
-				workletName,
-				{
-					numberOfInputs: 0,
-					numberOfOutputs: 1,
-					outputChannelCount: [6], // Changed from 5 to 6 (X, Y, R, G, B, Z channels)
-					parameterData: {
-						scanRate: this._scanRate,
-					},
-				}
-			);
-
-			// Create channel splitter to separate the 6 channels
-			this._splitter = Tone.getContext().createChannelSplitter(6); // Changed from 5 to 6
-			this._workletNode.connect(this._splitter);
-
-			// Connect each channel to its corresponding output
-			this._splitter.connect(this.outputs.x.input, 0); // X channel
-			this._splitter.connect(this.outputs.y.input, 1); // Y channel
-			this._splitter.connect(this.outputs.r.input, 2); // R channel
-			this._splitter.connect(this.outputs.g.input, 3); // G channel
-			this._splitter.connect(this.outputs.b.input, 4); // B channel
-			this._splitter.connect(this.outputs.z.input, 5); // Z channel (Added)
+							// Create a single output with 6 channels
+							this._workletNode = Tone.getContext().createAudioWorkletNode(
+								workletName,
+								{
+									numberOfInputs: 0,
+									numberOfOutputs: 1,
+									channelCount: 6,
+									channelCountMode: 'explicit',
+									outputChannelCount: [6],
+									parameterData: {
+										scanRate: this._scanRate,
+									},
+								}
+							);
+							// Split the multichannel output into 6 mono channels
+							const splitter = Tone.getContext().createChannelSplitter(6);
+							this._workletNode.connect(splitter);
+							splitter.connect(this.outputs.x.input, 0);
+							splitter.connect(this.outputs.y.input, 1);
+							splitter.connect(this.outputs.r.input, 2);
+							splitter.connect(this.outputs.g.input, 3);
+							splitter.connect(this.outputs.b.input, 4);
+							splitter.connect(this.outputs.z.input, 5);
 
 			// Send initial configuration
 			this._workletNode.port.postMessage({
@@ -312,10 +312,7 @@ export class ReactoscopeAudioProcessorNode {
 			this._workletNode = null;
 		}
 
-		if (this._splitter) {
-			this._splitter.disconnect();
-			this._splitter = null;
-		}
+		// ChannelSplitterNode was local; no stored reference to dispose
 
 		Object.values(this.outputs).forEach((output) => output.dispose());
 
