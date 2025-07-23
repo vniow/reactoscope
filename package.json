@@ -7,7 +7,6 @@
 		"dev": "vite",
 		"build": "tsc -b && vite build",
 		"lint": "eslint .",
-		"test": "vitest",
 		"preview": "vite preview"
 	},
 	"dependencies": {
@@ -44,12 +43,6 @@
 		"prettier-plugin-tailwindcss": "^0.6.12",
 		"typescript": "~5.8.3",
 		"typescript-eslint": "^8.32.1",
-		"vite": "^6.3.5",
-		"vitest": "^0.34.2",
-		"@testing-library/react": "^14.0.0",
-		"@testing-library/user-event": "^14.5.0",
-		"@testing-library/jest-dom": "^5.16.5",
-		"@types/testing-library__react": "^14.0.0",
-		"@types/testing-library__user-event": "^14.0.0"
+		"vite": "^6.3.5"
 	}
 }
