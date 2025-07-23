@@ -13,7 +13,6 @@ import { NodeHandle } from '../../../shared/components/NodeHandle';
 import { GridControl } from '../../../shared/components/ui/GridControl';
 import { useNoiseWorklet } from '../../../audio/hooks/useNoiseWorklet';
 import { useAppStore } from '../../../shared/stores/appStore';
-import { combineClasses } from '../../../shared/utils/styleUtils';
 import type { BaseNodeData } from '../types';
 import { NoiseNode } from '../../../audio/core/NoiseNode';
 
@@ -103,14 +102,6 @@ export function NoiseGeneratorNode({
 		}
 	}, [isReady, noiseNode, nodeId]);
 
-	// Handle play/stop
-	const handlePlayToggle = async () => {
-		if (isPlaying) {
-			stop();
-		} else {
-			await start();
-		}
-	};
 
 	// Handle amplitude changes
 	const handleAmplitudeChange = (
@@ -120,23 +111,14 @@ export function NoiseGeneratorNode({
 		setAmplitude(value);
 	};
 
-	// Status helpers
-	const getStatusColor = () => {
-		if (!isReady) return 'text-yellow-600 dark:text-yellow-400';
-		return isPlaying
-			? 'text-green-600 dark:text-green-400'
-			: 'text-gray-600 dark:text-gray-400';
-	};
 
-	const getStatusText = () => {
-		if (!isReady) return 'Initializing...';
-		return isPlaying ? 'Playing' : 'Ready';
-	};
-
-	const getStatusIcon = () => {
-		if (!isReady) return '⏳';
-		return isPlaying ? '🔊' : '🔇';
-	};
+	// Determine if output handle is connected for visual feedback
+	const edges = useAppStore((state) => state.edges);
+	const outputConnected = edges.some(
+		(edge) => edge.source === nodeId && edge.sourceHandle === 'output'
+	);
+	const outputConnectionStatus: 'default' | 'connected' =
+		outputConnected ? 'connected' : 'default';
 
 	return (
 		<BaseNode
@@ -145,53 +127,21 @@ export function NoiseGeneratorNode({
 			title='Noise Generator'
 			variant='source'
 		>
-			{/* Worklet Status Display */}
-			<div className='mb-4 p-3 bg-node-accent/10 rounded-lg'>
-				<div className='flex items-center justify-between mb-2'>
-					<span className='text-xs font-medium text-gray-700 dark:text-gray-300'>
-						Worklet Status
-					</span>
-					<div
-						className={combineClasses(
-							'flex items-center gap-1 text-xs font-medium',
-							getStatusColor()
-						)}
-					>
-						<span>{getStatusIcon()}</span>
-						<span>{getStatusText()}</span>
-					</div>
-				</div>
-
-				{/* Visual representation of noise generation */}
-				<div className='h-8 bg-gray-100 dark:bg-gray-800 rounded overflow-hidden'>
-					{isPlaying && (
-						<div className='h-full bg-gradient-to-r from-blue-400 to-green-400 animate-pulse' />
-					)}
-					{!isPlaying && isReady && (
-						<div className='h-full bg-gray-300 dark:bg-gray-600' />
-					)}
-					{!isReady && (
-						<div className='h-full bg-yellow-300 dark:bg-yellow-600 animate-pulse' />
-					)}
-				</div>
-			</div>
 
 			{/* Play/Stop Control */}
 			<div className='mb-3'>
 				<GridControl
-					type='button'
-					label='Control'
-					buttonLabel={isPlaying ? 'Stop' : 'Play'}
+					type='toggle'
+					checked={isPlaying}
+					toggleLabel={isPlaying ? 'Stop' : 'Play'}
+					onChange={(checked) => {
+						if (checked) start();
+						else stop();
+					}}
 					variant='node-variant'
 					layout='stacked'
 					disabled={!isReady}
-					onClick={handlePlayToggle}
-					className={combineClasses(
-						'h-16',
-						isPlaying
-							? 'bg-red-500 hover:bg-red-600 text-white'
-							: 'bg-green-500 hover:bg-green-600 text-white'
-					)}
+					className='h-16'
 				/>
 			</div>
 
@@ -214,23 +164,24 @@ export function NoiseGeneratorNode({
 				/>
 			</div>
 
-			{/* Debug Information */}
-			<div className='mb-3 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs'>
-				<div className='space-y-1 text-gray-600 dark:text-gray-400'>
-					<div>Ready: {isReady ? '✅' : '❌'}</div>
-					<div>Playing: {isPlaying ? '✅' : '❌'}</div>
-					<div>Amplitude: {localAmplitude.toFixed(3)}</div>
-					<div>Node ID: {nodeId.slice(0, 8)}...</div>
+				{/* Debug Information */}
+				<div className='mb-3 p-2 bg-node-secondary rounded text-xs'>
+					<div className='space-y-1 text-node-secondary'>
+						<div>Ready: {isReady ? '✅' : '❌'}</div>
+						<div>Playing: {isPlaying ? '✅' : '❌'}</div>
+						<div>Amplitude: {localAmplitude.toFixed(3)}</div>
+						<div>Node ID: {nodeId.slice(0, 8)}...</div>
+					</div>
 				</div>
-			</div>
 
 			{/* Audio output handle */}
-			<NodeHandle
-				id='output'
-				type='source'
-				position={Position.Right}
-				label='Out'
-			/>
+					<NodeHandle
+						id='output'
+						type='source'
+						position={Position.Right}
+						label='Out'
+						connectionStatus={outputConnectionStatus}
+					/>
 		</BaseNode>
 	);
 }

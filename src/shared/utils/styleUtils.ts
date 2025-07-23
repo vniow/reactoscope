@@ -110,12 +110,13 @@ export function getDeleteButtonClasses(): string {
 		'absolute pointer-events-auto -top-4 -left-4 z-50'
 	);
 
-	const colorClasses = combineClasses(
-		'bg-red-500 hover:bg-red-600',
-		'dark:bg-red-600 dark:hover:bg-red-700',
-		'text-white',
-		'focus:ring-red-500'
-	);
+	   // Use theme tokens for danger actions (util variant)
+	   // Use fixed red color for delete action, independent of theme variants
+	   const colorClasses = combineClasses(
+		   'bg-red-600 hover:bg-red-700',
+		   'text-white',
+		   'focus:ring-red-600'
+	   );
 
 	const shadowClasses = combineClasses(
 		'shadow-lg shadow-black/25',

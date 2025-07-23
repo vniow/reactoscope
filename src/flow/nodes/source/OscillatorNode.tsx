@@ -6,7 +6,8 @@
  */
 
 import { Position, type NodeProps } from '@xyflow/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { startAudioNode, stopAudioNode } from '../../../audio/factories/audioNodeFactory';
 import * as Tone from 'tone';
 import { BaseNode } from '../../../shared/components/BaseNode';
 import { NodeHandle } from '../../../shared/components/NodeHandle';
@@ -27,12 +28,10 @@ export function OscillatorNode({
 	data,
 	selected = false,
 }: NodeProps & { data: OscillatorNodeData }) {
-	// Get audio context state
-	const isPlaying = useAppStore((state) => state.isPlaying);
 	const registerAudioNode = useAppStore((state) => state.registerAudioNode);
 	const unregisterAudioNode = useAppStore((state) => state.unregisterAudioNode);
 
-	// Type assertions for props
+		// Type assertions for props
 	const nodeId = id as string;
 	const nodeData = data as OscillatorNodeData;
 	const isSelected = selected as boolean;
@@ -93,7 +92,7 @@ export function OscillatorNode({
 		}
 	);
 
-	// Visual feedback for the wave type
+		// Visual feedback for the wave type
 	const getWaveformPath = () => {
 		switch (waveType) {
 			case 'sine':
@@ -109,7 +108,22 @@ export function OscillatorNode({
 		}
 	};
 
-	// Update node data when parameters change
+	   // Local play state for toggle control
+	   const [isNodePlaying, setIsNodePlaying] = useState(false);
+	   // Handler for play/stop toggle
+	   const handlePlayToggle = () => {
+		   const node = useAppStore.getState().getAudioNode(nodeId);
+		   if (!node) return;
+		   if (!isNodePlaying) {
+			   startAudioNode(node);
+			   setIsNodePlaying(true);
+		   } else {
+			   stopAudioNode(node);
+			   setIsNodePlaying(false);
+		   }
+	   };
+   
+	   // Update node data when parameters change
 	const updateNode = useAppStore((state) => state.updateNode);
 	useEffect(() => {
 		updateNode(nodeId, {
@@ -155,13 +169,18 @@ export function OscillatorNode({
 				</svg>
 			</div>
 
-			{/* Playing indicator */}
-			{isPlaying && (
-				<div className='flex items-center justify-center mb-2'>
-					<div className='w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2' />
-					<span className='text-xs text-green-500'>Playing</span>
-				</div>
-			)}
+			{/* Play/Stop Control */}
+			<div className='mb-3'>
+				<GridControl
+					type='toggle'
+					checked={isNodePlaying}
+					toggleLabel={isNodePlaying ? 'Stop' : 'Play'}
+					onChange={() => handlePlayToggle()}
+					variant='node-variant'
+					layout='stacked'
+					className='h-16'
+				/>
+			</div>
 
 			{/* Frequency control */}
 			<div className='mb-3'>
