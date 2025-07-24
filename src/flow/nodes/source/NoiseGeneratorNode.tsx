@@ -14,7 +14,7 @@ import { GridControl } from '../../../shared/components/ui/GridControl';
 import { useNoiseWorklet } from '../../../audio/hooks/useNoiseWorklet';
 import { useAppStore } from '../../../shared/stores/appStore';
 import type { BaseNodeData } from '../types';
-import { NoiseNode } from '../../../audio/core/NoiseNode';
+import { NoiseWorkletNode } from '../../../audio/core/NoiseWorkletNode';
 
 interface NoiseGeneratorNodeData extends BaseNodeData {
 	amplitude?: number;
@@ -50,7 +50,6 @@ export function NoiseGeneratorNode({
 		noiseNode,
 	} = useNoiseWorklet({
 		debug: true,
-		autostart: false,
 	});
 
 	// Sync hook state with local state
@@ -94,14 +93,13 @@ export function NoiseGeneratorNode({
 
 	// Register the noise node with the registry when ready (top-level hook)
 	useEffect(() => {
-		if (isReady && noiseNode instanceof NoiseNode) {
+		if (isReady && noiseNode instanceof NoiseWorkletNode) {
 			// Register the output (Tone.Gain) as a custom type
 			const registerAudioNode = useAppStore.getState().registerAudioNode;
 			registerAudioNode(nodeId, 'custom-noise', { node: noiseNode.output });
 			return () => useAppStore.getState().unregisterAudioNode(nodeId);
 		}
 	}, [isReady, noiseNode, nodeId]);
-
 
 	// Handle amplitude changes
 	const handleAmplitudeChange = (
@@ -111,14 +109,14 @@ export function NoiseGeneratorNode({
 		setAmplitude(value);
 	};
 
-
 	// Determine if output handle is connected for visual feedback
 	const edges = useAppStore((state) => state.edges);
 	const outputConnected = edges.some(
 		(edge) => edge.source === nodeId && edge.sourceHandle === 'output'
 	);
-	const outputConnectionStatus: 'default' | 'connected' =
-		outputConnected ? 'connected' : 'default';
+	const outputConnectionStatus: 'default' | 'connected' = outputConnected
+		? 'connected'
+		: 'default';
 
 	return (
 		<BaseNode
@@ -127,7 +125,6 @@ export function NoiseGeneratorNode({
 			title='Noise Generator'
 			variant='source'
 		>
-
 			{/* Play/Stop Control */}
 			<div className='mb-3'>
 				<GridControl
@@ -164,24 +161,24 @@ export function NoiseGeneratorNode({
 				/>
 			</div>
 
-				{/* Debug Information */}
-				<div className='mb-3 p-2 bg-node-secondary rounded text-xs'>
-					<div className='space-y-1 text-node-secondary'>
-						<div>Ready: {isReady ? '✅' : '❌'}</div>
-						<div>Playing: {isPlaying ? '✅' : '❌'}</div>
-						<div>Amplitude: {localAmplitude.toFixed(3)}</div>
-						<div>Node ID: {nodeId.slice(0, 8)}...</div>
-					</div>
+			{/* Debug Information */}
+			<div className='mb-3 p-2 bg-node-secondary rounded text-xs'>
+				<div className='space-y-1 text-node-secondary'>
+					<div>Ready: {isReady ? '✅' : '❌'}</div>
+					<div>Playing: {isPlaying ? '✅' : '❌'}</div>
+					<div>Amplitude: {localAmplitude.toFixed(3)}</div>
+					<div>Node ID: {nodeId.slice(0, 8)}...</div>
 				</div>
+			</div>
 
 			{/* Audio output handle */}
-					<NodeHandle
-						id='output'
-						type='source'
-						position={Position.Right}
-						label='Out'
-						connectionStatus={outputConnectionStatus}
-					/>
+			<NodeHandle
+				id='output'
+				type='source'
+				position={Position.Right}
+				label='Out'
+				connectionStatus={outputConnectionStatus}
+			/>
 		</BaseNode>
 	);
 }

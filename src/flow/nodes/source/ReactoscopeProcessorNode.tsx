@@ -137,7 +137,7 @@ export function ReactoscopeProcessorNode({
 	);
 
 	// Reactoscope Audio Processor
-	const processor = useReactoscopeAudioProcessor(audioEnabled);
+	const processor = useReactoscopeAudioProcessor();
 	// Interpolation steps control
 	const [interpolationSteps, setInterpolationSteps] = useAudioNodeParam<number>(
 		nodeId,
@@ -185,18 +185,18 @@ export function ReactoscopeProcessorNode({
 
 	// Sync all processor controls when they change
 	useEffect(() => {
-		if (processor.isReady) {
-			processor.setScanRate(scanRate);
-			processor.setInterpolationSteps(interpolationSteps);
-			// Start or stop based on audioEnabled
-			if (audioEnabled) {
-				processor.start();
-			} else {
-				processor.stop();
-			}
+		processor.setScanRate(scanRate);
+		processor.setInterpolationSteps(interpolationSteps);
+		// Start or stop based on audioEnabled
+		if (audioEnabled) {
+			processor.start();
+		} else {
+			processor.stop();
+			// Dispose when disabled to allow clean restart
+			processor.node?.dispose();
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [audioEnabled, scanRate, interpolationSteps, processor.isReady]);
+	}, [audioEnabled, scanRate, interpolationSteps]);
 
 	// Update node data
 	const updateNode = useAppStore((state) => state.updateNode);
@@ -223,14 +223,14 @@ export function ReactoscopeProcessorNode({
 		interpolationSteps,
 	]);
 
-  // Connection status for output handles
-  const edges = useAppStore((state) => state.edges);
-  const getConnectionStatus = (handleId: string): 'default' | 'connected' =>
-    edges.some(
-      (edge) => edge.source === nodeId && edge.sourceHandle === handleId
-    )
-      ? 'connected'
-      : 'default';
+	// Connection status for output handles
+	const edges = useAppStore((state) => state.edges);
+	const getConnectionStatus = (handleId: string): 'default' | 'connected' =>
+		edges.some(
+			(edge) => edge.source === nodeId && edge.sourceHandle === handleId
+		)
+			? 'connected'
+			: 'default';
 
 	return (
 		<BaseNode

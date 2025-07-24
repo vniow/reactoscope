@@ -9,6 +9,7 @@ import {
 	reactoscopeProcessorWorklet,
 	workletName,
 } from './worklet/ReactoscopeAudioProcessor.worklet';
+import { ensureWorkletModule } from '../utils/workletRegistry';
 import type { VertexInfo } from '../../flow/nodes/source/sceneTypes';
 // interpolation utilities
 import {
@@ -98,36 +99,38 @@ export class ReactoscopeAudioProcessorNode {
 			});
 			const workletUrl = URL.createObjectURL(workletBlob);
 
+			// Register worklet module via registry to avoid duplicate loads
+			const raw = Tone.getContext().rawContext as AudioContext;
 			try {
-				await Tone.getContext().addAudioWorkletModule(workletUrl);
+				await ensureWorkletModule(raw, workletName, workletUrl);
 			} finally {
 				URL.revokeObjectURL(workletUrl);
 			}
 
-			// Create worklet node with 6 output channels
-							// Create a single output with 6 channels
-							this._workletNode = Tone.getContext().createAudioWorkletNode(
-								workletName,
-								{
-									numberOfInputs: 0,
-									numberOfOutputs: 1,
-									channelCount: 6,
-									channelCountMode: 'explicit',
-									outputChannelCount: [6],
-									parameterData: {
-										scanRate: this._scanRate,
-									},
-								}
-							);
-							// Split the multichannel output into 6 mono channels
-							const splitter = Tone.getContext().createChannelSplitter(6);
-							this._workletNode.connect(splitter);
-							splitter.connect(this.outputs.x.input, 0);
-							splitter.connect(this.outputs.y.input, 1);
-							splitter.connect(this.outputs.r.input, 2);
-							splitter.connect(this.outputs.g.input, 3);
-							splitter.connect(this.outputs.b.input, 4);
-							splitter.connect(this.outputs.z.input, 5);
+			// Create worklet node via Tone.js context wrapper
+			const workletNode = Tone.getContext().createAudioWorkletNode(
+				workletName,
+				{
+					numberOfInputs: 0,
+					numberOfOutputs: 1,
+					channelCount: 6,
+					channelCountMode: 'explicit',
+					outputChannelCount: [6],
+					parameterData: { scanRate: this._scanRate },
+				}
+			);
+			this._workletNode = workletNode;
+
+			// Split multichannel output into 6 mono channels
+			const splitter = raw.createChannelSplitter(6);
+			this._splitter = splitter;
+			this._workletNode.connect(splitter);
+			splitter.connect(this.outputs.x.input, 0);
+			splitter.connect(this.outputs.y.input, 1);
+			splitter.connect(this.outputs.r.input, 2);
+			splitter.connect(this.outputs.g.input, 3);
+			splitter.connect(this.outputs.b.input, 4);
+			splitter.connect(this.outputs.z.input, 5);
 
 			// Send initial configuration
 			this._workletNode.port.postMessage({
@@ -137,6 +140,10 @@ export class ReactoscopeAudioProcessorNode {
 
 			this._isReady = true;
 			this._resolveReady();
+
+			if (this._debug) {
+				console.log('✅ ReactoscopeAudioProcessorNode worklet initialized');
+			}
 		} catch (error) {
 			console.error('❌ Failed to initialize ReactoscopeProcessorNode:', error);
 			throw error;
@@ -146,11 +153,24 @@ export class ReactoscopeAudioProcessorNode {
 	/**
 	 * Start interpolation
 	 */
-	   start(): this {
-		   if (this._workletNode && this._isReady && !this._isPlaying) {
+	start(): this {
+		// If worklet not initialized (e.g., after dispose), reinitialize and then start
+		if (!this._workletNode) {
+			this._isReady = false;
+			// Create new ready promise for reinitialization
+			this._readyPromise = new Promise((resolve) => {
+				this._resolveReady = resolve;
+			});
+			this._initializeWorklet()
+				.then(() => this.start())
+				.catch((err) =>
+					console.error('❌ Failed to reinitialize worklet:', err)
+				);
+			return this;
+		}
+		if (this._isReady && !this._isPlaying) {
 			this._workletNode.port.postMessage({ type: 'start' });
 			this._isPlaying = true;
-
 			if (this._debug) {
 				console.log('▶️ ReactoscopeProcessorNode started');
 			}
@@ -161,8 +181,8 @@ export class ReactoscopeAudioProcessorNode {
 	/**
 	 * Stop interpolation
 	 */
-	   stop(): this {
-		   if (this._workletNode && this._isReady && this._isPlaying) {
+	stop(): this {
+		if (this._workletNode && this._isReady && this._isPlaying) {
 			this._workletNode.port.postMessage({ type: 'stop' });
 			this._isPlaying = false;
 
@@ -301,23 +321,69 @@ export class ReactoscopeAudioProcessorNode {
 
 	/**
 	 * Clean up resources
+	 * Note: Only disposes the internal worklet, keeping output gains permanent
+	 * This matches the NoiseWorkletNode pattern for proper lifecycle management
 	 */
 	dispose(): this {
 		if (this._isPlaying) {
 			this.stop();
 		}
 
+		// Only dispose the internal worklet and splitter, NOT the output gains
 		if (this._workletNode) {
 			this._workletNode.disconnect();
 			this._workletNode = null;
 		}
 
-		// ChannelSplitterNode was local; no stored reference to dispose
+		if (this._splitter) {
+			this._splitter.disconnect();
+			this._splitter = null;
+		}
 
-		Object.values(this.outputs).forEach((output) => output.dispose());
+		// Keep output gains alive - they are permanent wrappers
+		// Do NOT dispose them: Object.values(this.outputs).forEach((output) => output.dispose());
+
+		// Reset ready state so worklet can be recreated if needed
+		this._isReady = false;
 
 		if (this._debug) {
-			console.log('🧹 ReactoscopeProcessorNode disposed');
+			console.log(
+				'🧹 ReactoscopeAudioProcessorNode worklet disposed (outputs preserved)'
+			);
+		}
+
+		return this;
+	}
+
+	/**
+	 * Complete disposal for when React Flow node is removed
+	 * This disposes everything including the permanent output gains
+	 */
+	disposeCompletely(): this {
+		if (this._isPlaying) {
+			this.stop();
+		}
+
+		// Dispose internal worklet and splitter
+		if (this._workletNode) {
+			this._workletNode.disconnect();
+			this._workletNode = null;
+		}
+
+		if (this._splitter) {
+			this._splitter.disconnect();
+			this._splitter = null;
+		}
+
+		// Now dispose the output gains as well since node is being removed
+		Object.values(this.outputs).forEach((output) => {
+			output.dispose();
+		});
+
+		this._isReady = false;
+
+		if (this._debug) {
+			console.log('🧹 ReactoscopeAudioProcessorNode completely disposed');
 		}
 
 		return this;

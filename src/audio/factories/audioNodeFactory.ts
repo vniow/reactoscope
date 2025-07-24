@@ -6,6 +6,7 @@
  */
 
 import * as Tone from 'tone';
+import { NoiseWorkletNode } from '../core/NoiseWorkletNode';
 import type {
 	AudioNodeType,
 	AudioNodeParams,
@@ -54,6 +55,21 @@ export function createAudioNode(
 			case 'xyrgbMerge': {
 				// 5-channel merger for XYRGB
 				return new Tone.Merge(5);
+			}
+			case 'noise': {
+				// White noise generator via AudioWorklet
+				const opts = params as {
+					amplitude?: number;
+					autostart?: boolean;
+					debug?: boolean;
+				};
+				const node = new NoiseWorkletNode({
+					amplitude: opts.amplitude,
+					autostart: opts.autostart,
+					debug: opts.debug,
+				});
+				// Return the Gain output as the node
+				return node.output;
 			}
 			case 'oscillator': {
 				const oscParams = params as OscillatorParams;
@@ -286,8 +302,10 @@ export function disposeAudioNode(
 					outputNode.dispose();
 				}
 			});
-			// Dispose the main node if it has dispose method
-			if (isDisposableNode(audioNode)) {
+			// Special handling for ReactoscopeAudioProcessorNode - use complete disposal
+			if (isCompletelyDisposableNode(audioNode)) {
+				audioNode.disposeCompletely();
+			} else if (isDisposableNode(audioNode)) {
 				audioNode.dispose();
 			}
 		} else {
@@ -314,6 +332,10 @@ interface DisposableNode {
 	dispose: () => void;
 }
 
+interface CompletelyDisposableNode {
+	disposeCompletely: () => void;
+}
+
 function isStartableNode(node: Tone.ToneAudioNode): node is StartableNode {
 	return 'start' in node && typeof (node as StartableNode).start === 'function';
 }
@@ -328,6 +350,17 @@ function isDisposableNode(obj: unknown): obj is DisposableNode {
 		obj !== null &&
 		'dispose' in obj &&
 		typeof (obj as DisposableNode).dispose === 'function'
+	);
+}
+
+function isCompletelyDisposableNode(
+	obj: unknown
+): obj is CompletelyDisposableNode {
+	return (
+		typeof obj === 'object' &&
+		obj !== null &&
+		'disposeCompletely' in obj &&
+		typeof (obj as CompletelyDisposableNode).disposeCompletely === 'function'
 	);
 }
 

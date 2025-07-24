@@ -3,14 +3,14 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import * as Tone from 'tone';
-import { NoiseNode } from '../core/NoiseNode';
+import { NoiseWorkletNode } from '../core/NoiseWorkletNode';
 
 export interface UseNoiseWorkletOptions {
 	debug?: boolean;
 }
 
 export interface UseNoiseWorkletResult {
-	noiseNode: NoiseNode | null;
+	noiseNode: NoiseWorkletNode | null;
 	isReady: boolean;
 	isPlaying: boolean;
 	amplitude: number;
@@ -29,7 +29,7 @@ export function useNoiseWorklet(
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [amplitude, setAmplitudeState] = useState(0.5);
 
-	const noiseNodeRef = useRef<NoiseNode | null>(null);
+	const noiseNodeRef = useRef<NoiseWorkletNode | null>(null);
 	const mountedRef = useRef(true);
 
 	// Initialize the noise node
@@ -38,18 +38,12 @@ export function useNoiseWorklet(
 
 		const initializeNode = async () => {
 			try {
-								// Ensure the audio context is running before adding worklets
-								if (Tone.getContext().state !== 'running') {
-									await Tone.start();
-									console.log('🎵 Tone.js context started');
-								}
-								console.log('🎛️ Initializing noise worklet...');
-
-					 const node = new NoiseNode({
-						 amplitude: 0.5, // Use default, will be updated via setAmplitude
-						 debug: options.debug,
-					 });
-
+				if (Tone.getContext().state !== 'running') {
+					await Tone.start();
+					console.log('🎵 Tone.js context started');
+				}
+				console.log('🎛️ Initializing noise worklet...');
+				const node = new NoiseWorkletNode({ debug: options.debug });
 				await node.ready;
 
 				if (!mountedRef.current) {
@@ -59,7 +53,6 @@ export function useNoiseWorklet(
 
 				noiseNodeRef.current = node;
 				setIsReady(true);
-
 
 				console.log('✅ Noise worklet initialized successfully');
 			} catch (error) {
@@ -82,7 +75,7 @@ export function useNoiseWorklet(
 			setIsReady(false);
 			setIsPlaying(false);
 		};
-		}, [options.debug]);
+	}, [options.debug]);
 
 	const start = async (): Promise<void> => {
 		if (noiseNodeRef.current && isReady && !isPlaying) {
