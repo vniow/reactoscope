@@ -9,8 +9,7 @@ import type { BaseNodeData } from '../types';
 import { Canvas } from '@react-three/fiber';
 import { TriangleShape, SquareShape } from '../../../shared/shapes/BasicShapes';
 
-import { Vector3 } from 'three';
-import { ConnectingLine } from '../../../shared/shapes/ConnectingLine';
+// ...existing code...
 
 interface SixChannelNoiseGeneratorNodeData extends BaseNodeData {
 	amplitude?: number;
@@ -93,9 +92,7 @@ export function SixChannelNoiseGeneratorNode({
 	const [triangleRotation, setTriangleRotation] = useState(0);
 	const [squareRotation, setSquareRotation] = useState(0);
 
-	// Track vertex positions
-	const [triangleVertices, setTriangleVertices] = useState<Vector3[]>([]);
-	const [squareVertices, setSquareVertices] = useState<Vector3[]>([]);
+	// ...existing code...
 
 	return (
 		<BaseNode
@@ -157,21 +154,11 @@ export function SixChannelNoiseGeneratorNode({
 						<TriangleShape
 							lineWidth={2}
 							rotation={[0, 0, triangleRotation * Math.PI / 180]}
-							onVertexPositions={setTriangleVertices}
 						/>
 						<SquareShape
 							lineWidth={2}
 							rotation={[0, 0, squareRotation * Math.PI / 180]}
-							onVertexPositions={setSquareVertices}
 						/>
-						{triangleVertices.length > 0 && squareVertices.length > 0 && (
-							<ConnectingLine
-								start={triangleVertices[triangleVertices.length - 1]}
-								end={squareVertices[0]}
-								color="#ffcc00"
-								lineWidth={2}
-							/>
-						)}
 					</Canvas>
 				</div>
 			</div>
