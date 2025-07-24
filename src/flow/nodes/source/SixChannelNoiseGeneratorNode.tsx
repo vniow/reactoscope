@@ -1,11 +1,16 @@
 import { Position, type NodeProps } from '@xyflow/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BaseNode } from '../../../shared/components/BaseNode';
 import { NodeHandle } from '../../../shared/components/NodeHandle';
 import { GridControl } from '../../../shared/components/ui/GridControl';
 import { useSixChannelNoiseWorklet } from '../../../audio/hooks/useSixChannelNoiseWorklet';
 import { useAppStore } from '../../../shared/stores/appStore';
 import type { BaseNodeData } from '../types';
+import { Canvas } from '@react-three/fiber';
+import { TriangleShape, SquareShape } from '../../../shared/shapes/BasicShapes';
+
+import { Vector3 } from 'three';
+import { ConnectingLine } from '../../../shared/shapes/ConnectingLine';
 
 interface SixChannelNoiseGeneratorNodeData extends BaseNodeData {
 	amplitude?: number;
@@ -84,6 +89,14 @@ export function SixChannelNoiseGeneratorNode({
 	// track connections for handle status
 	const edges = useAppStore((state) => state.edges);
 
+	// Add rotation state for each shape
+	const [triangleRotation, setTriangleRotation] = useState(0);
+	const [squareRotation, setSquareRotation] = useState(0);
+
+	// Track vertex positions
+	const [triangleVertices, setTriangleVertices] = useState<Vector3[]>([]);
+	const [squareVertices, setSquareVertices] = useState<Vector3[]>([]);
+
 	return (
 		<BaseNode
 			nodeId={nodeId}
@@ -91,6 +104,77 @@ export function SixChannelNoiseGeneratorNode({
 			title='Noise Generator (6ch)'
 			variant='source'
 		>
+			{/* Rotation controls using GridControl */}
+			<div className='mb-3 flex gap-4'>
+				<GridControl
+					type='slider'
+					label='Triangle Rotation'
+					value={triangleRotation}
+					min={0}
+					max={360}
+					step={1}
+					showValue
+					formatValue={val => `${val}°`}
+					onChange={e => setTriangleRotation(Number(e.target.value))}
+					variant='node-variant'
+					layout='stacked'
+					className='flex-1'
+				/>
+				<GridControl
+					type='slider'
+					label='Square Rotation'
+					value={squareRotation}
+					min={0}
+					max={360}
+					step={1}
+					showValue
+					formatValue={val => `${val}°`}
+					onChange={e => setSquareRotation(Number(e.target.value))}
+					variant='node-variant'
+					layout='stacked'
+					className='flex-1'
+				/>
+			</div>
+			<div className='bg-node-secondary rounded overflow-hidden border border-node'>
+				<div
+					className='bg-black r3f-canvas-container'
+					style={{
+						width: 'var(--spacing-grid-8)',
+						height: 'var(--spacing-grid-8)',
+					}}
+				>
+					<Canvas
+						style={{ width: '100%', height: '100%' }}
+						camera={{ position: [0, 0, 5], fov: 50 }}
+						dpr={Math.min(window.devicePixelRatio || 1, 2)}
+						frameloop={isPlaying ? 'always' : 'demand'}
+						onCreated={({ gl, camera }) => {
+							gl.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+							camera.updateProjectionMatrix();
+						}}
+					>
+						<ambientLight intensity={1.0} />
+						<TriangleShape
+							lineWidth={2}
+							rotation={[0, 0, triangleRotation * Math.PI / 180]}
+							onVertexPositions={setTriangleVertices}
+						/>
+						<SquareShape
+							lineWidth={2}
+							rotation={[0, 0, squareRotation * Math.PI / 180]}
+							onVertexPositions={setSquareVertices}
+						/>
+						{triangleVertices.length > 0 && squareVertices.length > 0 && (
+							<ConnectingLine
+								start={triangleVertices[triangleVertices.length - 1]}
+								end={squareVertices[0]}
+								color="#ffcc00"
+								lineWidth={2}
+							/>
+						)}
+					</Canvas>
+				</div>
+			</div>
 			<div className='mb-3'>
 				<GridControl
 					type='toggle'
