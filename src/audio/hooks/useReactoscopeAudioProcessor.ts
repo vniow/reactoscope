@@ -39,26 +39,40 @@ export function useReactoscopeAudioProcessor(): UseReactoscopeProcessorReturn {
 	const [isPlaying, setIsPlaying] = useState(false);
 	const readyPromiseRef = useRef<Promise<void> | null>(null);
 
-		 // Initialize node once on mount
-		 useEffect(() => {
-			 if (nodeRef.current) return;
-			 const initialize = async () => {
-				 try {
-					 const node = new ReactoscopeAudioProcessorNode({ debug: true });
-					 nodeRef.current = node;
-					 readyPromiseRef.current = node.ready;
-					 await node.ready;
-					 setIsReady(true);
-					 setIsPlaying(node.isPlaying);
-					 console.log('🎵 Reactoscope Processor initialized');
-				 } catch (error) {
-					 console.error('❌ Failed to initialize Reactoscope Processor:', error);
-				 }
-			 };
-			 initialize();
-		 }, []);
+	// Initialize node once on mount and keep it alive
+	useEffect(() => {
+		if (nodeRef.current) return;
 
-		// No automatic disposal: worklet continues until explicitly stopped or disposed
+		const initialize = async () => {
+			try {
+				const node = new ReactoscopeAudioProcessorNode({ debug: true });
+				nodeRef.current = node;
+				readyPromiseRef.current = node.ready;
+				await node.ready;
+				setIsReady(true);
+				setIsPlaying(node.isPlaying);
+				console.log('🎵 Reactoscope Processor initialized and ready');
+			} catch (error) {
+				console.error('❌ Failed to initialize Reactoscope Processor:', error);
+				setIsReady(false);
+			}
+		};
+
+		initialize();
+
+		// Only dispose completely on actual component unmount
+		return () => {
+			if (nodeRef.current) {
+				nodeRef.current.disposeCompletely();
+				nodeRef.current = null;
+				setIsReady(false);
+				setIsPlaying(false);
+				console.log('🧹 Reactoscope Processor completely disposed on unmount');
+			}
+		};
+	}, []); // Empty dependency array - only run once
+
+	// No automatic disposal: worklet continues until explicitly stopped or disposed
 
 	// Stable callback functions
 	const updateVertices = useCallback(

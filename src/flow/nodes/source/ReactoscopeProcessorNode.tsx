@@ -154,13 +154,9 @@ export function ReactoscopeProcessorNode({
 			// Register this as a custom audio node type with the audio registry
 			appStore.registerAudioNode(nodeId, 'custom-xyrgb', {
 				node: processor.node,
-				outputs: processor.node.outputs, // Pass the 6-channel outputs
+				outputs: processor.node.outputs,
 			});
-
 			console.log(`🎵 Registered XYRGB audio node: ${nodeId}`);
-		} else if (!audioEnabled) {
-			// Unregister when disabled
-			appStore.unregisterAudioNode(nodeId);
 		}
 
 		return () => {
@@ -191,9 +187,8 @@ export function ReactoscopeProcessorNode({
 		if (audioEnabled) {
 			processor.start();
 		} else {
+			// Only stop worklet; keep splitter and gains intact so it can restart cleanly
 			processor.stop();
-			// Dispose when disabled to allow clean restart
-			processor.node?.dispose();
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [audioEnabled, scanRate, interpolationSteps]);

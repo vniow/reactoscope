@@ -44,7 +44,7 @@ export class ReactoscopeAudioProcessorNode {
 	};
 
 	private _workletNode: AudioWorkletNode | null = null;
-	private _splitter: ChannelSplitterNode | null = null;
+	private _splitter: ChannelSplitterNode;
 	private _isPlaying: boolean = false;
 	private _isReady: boolean = false;
 	private _readyPromise: Promise<void>;
@@ -71,8 +71,19 @@ export class ReactoscopeAudioProcessorNode {
 			r: new Tone.Gain({ context: Tone.getContext(), gain: 1 }),
 			g: new Tone.Gain({ context: Tone.getContext(), gain: 1 }),
 			b: new Tone.Gain({ context: Tone.getContext(), gain: 1 }),
-			z: new Tone.Gain({ context: Tone.getContext(), gain: 1 }), // Added Z output
+			z: new Tone.Gain({ context: Tone.getContext(), gain: 1 }),
 		};
+
+		// Create a permanent splitter node (never replaced except in disposeCompletely)
+		const raw = Tone.getContext().rawContext as AudioContext;
+		this._splitter = raw.createChannelSplitter(6);
+		// Connect splitter outputs to gain nodes (never reconnected)
+		this._splitter.connect(this.outputs.x.input, 0);
+		this._splitter.connect(this.outputs.y.input, 1);
+		this._splitter.connect(this.outputs.r.input, 2);
+		this._splitter.connect(this.outputs.g.input, 3);
+		this._splitter.connect(this.outputs.b.input, 4);
+		this._splitter.connect(this.outputs.z.input, 5);
 
 		// Setup ready promise
 		this._readyPromise = new Promise((resolve) => {
@@ -92,6 +103,21 @@ export class ReactoscopeAudioProcessorNode {
 	 * Initialize the AudioWorklet
 	 */
 	private async _initializeWorklet(): Promise<void> {
+		// Ensure splitter exists (recreate if disposed completely)
+		if (!this._splitter) {
+			const raw = Tone.getContext().rawContext as AudioContext;
+			this._splitter = raw.createChannelSplitter(6);
+			// Reconnect splitter outputs to gain nodes
+			this._splitter.connect(this.outputs.x.input, 0);
+			this._splitter.connect(this.outputs.y.input, 1);
+			this._splitter.connect(this.outputs.r.input, 2);
+			this._splitter.connect(this.outputs.g.input, 3);
+			this._splitter.connect(this.outputs.b.input, 4);
+			this._splitter.connect(this.outputs.z.input, 5);
+			if (this._debug) {
+				console.log('🔧 Recreated splitter after complete disposal');
+			}
+		}
 		try {
 			// Create and register worklet
 			const workletBlob = new Blob([reactoscopeProcessorWorklet], {
@@ -121,16 +147,12 @@ export class ReactoscopeAudioProcessorNode {
 			);
 			this._workletNode = workletNode;
 
-			// Split multichannel output into 6 mono channels
-			const splitter = raw.createChannelSplitter(6);
-			this._splitter = splitter;
-			this._workletNode.connect(splitter);
-			splitter.connect(this.outputs.x.input, 0);
-			splitter.connect(this.outputs.y.input, 1);
-			splitter.connect(this.outputs.r.input, 2);
-			splitter.connect(this.outputs.g.input, 3);
-			splitter.connect(this.outputs.b.input, 4);
-			splitter.connect(this.outputs.z.input, 5);
+			// Connect worklet node output to the splitter (with safety check)
+			if (this._splitter) {
+				this._workletNode.connect(this._splitter);
+			} else {
+				throw new Error('Splitter is still null after recreation attempt');
+			}
 
 			// Send initial configuration
 			this._workletNode.port.postMessage({
@@ -329,19 +351,14 @@ export class ReactoscopeAudioProcessorNode {
 			this.stop();
 		}
 
-		// Only dispose the internal worklet and splitter, NOT the output gains
+		// Only dispose the internal worklet, NOT the splitter or output gains
 		if (this._workletNode) {
 			this._workletNode.disconnect();
 			this._workletNode = null;
 		}
 
-		if (this._splitter) {
-			this._splitter.disconnect();
-			this._splitter = null;
-		}
-
-		// Keep output gains alive - they are permanent wrappers
-		// Do NOT dispose them: Object.values(this.outputs).forEach((output) => output.dispose());
+		// Keep splitter and output gains alive - they are permanent wrappers
+		// Do NOT dispose or disconnect splitter or outputs here
 
 		// Reset ready state so worklet can be recreated if needed
 		this._isReady = false;
@@ -364,14 +381,16 @@ export class ReactoscopeAudioProcessorNode {
 			this.stop();
 		}
 
-		// Dispose internal worklet and splitter
+		// Dispose internal worklet
 		if (this._workletNode) {
 			this._workletNode.disconnect();
 			this._workletNode = null;
 		}
 
+		// Dispose splitter
 		if (this._splitter) {
 			this._splitter.disconnect();
+			// @ts-expect-error: allow nulling for cleanup
 			this._splitter = null;
 		}
 

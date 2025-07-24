@@ -14,6 +14,7 @@ import { ReactoscopeViewerNode } from './signal/ReactoscopeViewerNode';
 import { FilterNode } from './component/FilterNode';
 import { OscillatorNode } from './source/OscillatorNode';
 import { NoiseGeneratorNode } from './source/NoiseGeneratorNode';
+import { SixChannelNoiseGeneratorNode } from './source/SixChannelNoiseGeneratorNode';
 
 // Central registry entry type
 export interface NodeRegistryEntry {
@@ -117,6 +118,15 @@ export const NODE_REGISTRY: NodeRegistryEntry[] = [
 		emoji: '🌫️',
 		variant: 'source',
 		component: NoiseGeneratorNode,
+	},
+	{
+		type: 'noise-generator-6ch',
+		name: 'Noise Generator (6ch)',
+		description:
+			'Generates white noise with six independent outputs and toggleable channels',
+		emoji: '🌫️6',
+		variant: 'source',
+		component: SixChannelNoiseGeneratorNode,
 	},
 	// Add more nodes here as needed
 ];
