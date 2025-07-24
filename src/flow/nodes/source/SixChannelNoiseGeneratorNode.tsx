@@ -52,19 +52,15 @@ export function SixChannelNoiseGeneratorNode({
 		}
 	}, [nodeId, updateNode, amplitude, isPlaying, activeChannels, isReady]);
 
-	// register audio outputs
+	// register audio outputs and main node
 	useEffect(() => {
 		if (isReady && noiseNode) {
 			const register = useAppStore.getState().registerAudioNode;
 			const unregister = useAppStore.getState().unregisterAudioNode;
-			noiseNode.outputs.forEach((gainNode, idx) => {
-				// register each channel under a custom-noise type for routing
-				register(`${nodeId}-${idx}`, 'custom-noise', { node: gainNode });
-			});
+			// Register multi-channel outputs; connection logic maps handleId to array index
+			register(nodeId, 'custom-noise', { node: noiseNode.outputs });
 			return () => {
-				noiseNode.outputs.forEach((_, idx) => {
-					unregister(`${nodeId}-${idx}`);
-				});
+				unregister(nodeId);
 			};
 		}
 	}, [isReady, noiseNode, nodeId]);
@@ -165,8 +161,8 @@ export function SixChannelNoiseGeneratorNode({
 				</div>
 			</div>
 
-			{activeChannels.map((_, idx) => {
-				const handleId = `output-${idx}`;
+			{[0,1,2,3,4,5].map((idx) => {
+				const handleId = `output-${idx + 1}`;
 				const connectionStatus = edges.some(
 					(edge) => edge.source === nodeId && edge.sourceHandle === handleId
 				)
@@ -180,7 +176,7 @@ export function SixChannelNoiseGeneratorNode({
 						position={Position.Right}
 						label={`Out ${idx + 1}`}
 						style={{
-							top: `${((idx + 1) / (activeChannels.length + 1)) * 100}%`,
+							top: `${((idx + 1) / 7) * 100}%`, // 6 handles, so 7 for spacing
 						}}
 						connectionStatus={connectionStatus}
 					/>

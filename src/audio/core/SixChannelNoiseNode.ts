@@ -6,6 +6,7 @@ import {
 	sixChannelNoiseProcessorWorklet,
 	workletName as sixWorkletName,
 } from './worklet/SixChannelNoiseProcessor.worklet';
+import { ensureWorkletModule } from '../utils/workletRegistry';
 
 export interface SixChannelNoiseNodeOptions {
 	amplitude?: number;
@@ -25,70 +26,71 @@ export class SixChannelNoiseNode {
 	private _resolveReady!: () => void;
 	private _debug: boolean;
 
-	constructor(options: SixChannelNoiseNodeOptions = {}) {
-		this._amplitude = options.amplitude ?? 0.5;
-		this._debug = options.debug ?? false;
 
-		// prepare output gains
-		for (let i = 0; i < 6; i++) {
-			this.outputs[i] = new Tone.Gain({
-				context: Tone.getContext(),
-				gain: 1,
+		constructor(options: SixChannelNoiseNodeOptions = {}) {
+			this._amplitude = options.amplitude ?? 0.5;
+			this._debug = options.debug ?? false;
+
+			// prepare output gains
+			for (let i = 0; i < 6; i++) {
+				this.outputs[i] = new Tone.Gain({
+					context: Tone.getContext(),
+					gain: 1,
+				});
+			}
+
+			// ready promise
+			this._readyPromise = new Promise((res) => {
+				this._resolveReady = res;
 			});
+
+			this._initializeWorklet();
+
+			if (options.autostart) {
+				this._readyPromise.then(() => this.start());
+			}
 		}
-
-		// ready promise
-		this._readyPromise = new Promise((res) => {
-			this._resolveReady = res;
-		});
-
-		this._initializeWorklet();
-
-		if (options.autostart) {
-			this._readyPromise.then(() => this.start());
-		}
-	}
 
 	private async _initializeWorklet(): Promise<void> {
-		try {
-			const blob = new Blob([sixChannelNoiseProcessorWorklet], {
-				type: 'text/javascript',
-			});
-			const url = URL.createObjectURL(blob);
-			try {
-				await Tone.getContext().addAudioWorkletModule(url);
-			} finally {
-				URL.revokeObjectURL(url);
-			}
+				try {
+					const ctx = Tone.getContext().rawContext as AudioContext;
+					const blob = new Blob([sixChannelNoiseProcessorWorklet], { type: 'text/javascript' });
+					const url = URL.createObjectURL(blob);
+					try {
+						await ensureWorkletModule(ctx, sixWorkletName, url);
+					} finally {
+						URL.revokeObjectURL(url);
+					}
 
-			this._workletNode = Tone.getContext().createAudioWorkletNode(
-				sixWorkletName,
-				{
-					numberOfInputs: 0,
-					numberOfOutputs: 1,
-					outputChannelCount: [6],
-					parameterData: { amplitude: this._amplitude },
+					this._workletNode = Tone.getContext().createAudioWorkletNode(
+						sixWorkletName,
+						{
+							numberOfInputs: 0,
+							numberOfOutputs: 1,
+							outputChannelCount: [6],
+							parameterData: { amplitude: this._amplitude },
+						}
+					);
+
+					// splitter channels to gains
+					this._splitter = ctx.createChannelSplitter(6);
+					if (this._splitter) {
+						this._workletNode.connect(this._splitter);
+						for (let ch = 0; ch < 6; ch++) {
+							this._splitter.connect(this.outputs[ch].input, ch, 0);
+						}
+					}
+
+					this._isReady = true;
+					this._resolveReady();
+
+					if (this._debug) {
+						console.log('✅ SixChannelNoiseNode ready');
+					}
+				} catch (err) {
+					console.error('❌ Failed to init SixChannelNoiseNode', err);
+					throw err;
 				}
-			);
-
-			// splitter channels to gains
-			const rawCtx = Tone.getContext().rawContext;
-			this._splitter = rawCtx.createChannelSplitter(6);
-			this._workletNode.connect(this._splitter);
-			for (let ch = 0; ch < 6; ch++) {
-				this._splitter.connect(this.outputs[ch].input, ch);
-			}
-
-			this._isReady = true;
-			this._resolveReady();
-
-			if (this._debug) {
-				console.log('✅ SixChannelNoiseNode ready');
-			}
-		} catch (err) {
-			console.error('❌ Failed to init SixChannelNoiseNode', err);
-			throw err;
-		}
 	}
 
 	async start(): Promise<this> {
