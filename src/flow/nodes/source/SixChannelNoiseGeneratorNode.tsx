@@ -85,6 +85,9 @@ export function SixChannelNoiseGeneratorNode({
 		setActiveChannels(Array(6).fill(checked));
 	};
 
+	// track connections for handle status
+	const edges = useAppStore((state) => state.edges);
+
 	return (
 		<BaseNode
 			nodeId={nodeId}
@@ -162,15 +165,27 @@ export function SixChannelNoiseGeneratorNode({
 				</div>
 			</div>
 
-			{activeChannels.map((_, idx) => (
-				<NodeHandle
-					key={idx}
-					id={`output-${idx}`}
-					type='source'
-					position={Position.Right}
-					label={`Out ${idx + 1}`}
-				/>
-			))}
+			{activeChannels.map((_, idx) => {
+				const handleId = `output-${idx}`;
+				const connectionStatus = edges.some(
+					(edge) => edge.source === nodeId && edge.sourceHandle === handleId
+				)
+					? 'connected'
+					: 'default';
+				return (
+					<NodeHandle
+						key={idx}
+						id={handleId}
+						type='source'
+						position={Position.Right}
+						label={`Out ${idx + 1}`}
+						style={{
+							top: `${((idx + 1) / (activeChannels.length + 1)) * 100}%`,
+						}}
+						connectionStatus={connectionStatus}
+					/>
+				);
+			})}
 		</BaseNode>
 	);
 }
