@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@react-three/drei':
-        specifier: ^10.3.0
-        version: 10.3.0(@react-three/fiber@9.1.2(@types/react@19.1.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.177.0))(@types/react@19.1.4)(@types/three@0.177.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.177.0)
+        specifier: ^10.6.0
+        version: 10.6.0(@react-three/fiber@9.1.2(@types/react@19.1.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.177.0))(@types/react@19.1.4)(@types/three@0.177.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.177.0)
       '@react-three/fiber':
         specifier: ^9.1.2
         version: 9.1.2(@types/react@19.1.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.177.0)
@@ -564,8 +564,8 @@ packages:
   '@radix-ui/rect@1.0.0':
     resolution: {integrity: sha512-d0O68AYy/9oeEy1DdC07bz1/ZXX+DqCskRd3i4JzLSTXwefzaepQrKjXC7aNM8lTHjFLDO0pDgaEiQ7jEk+HVg==}
 
-  '@react-three/drei@10.3.0':
-    resolution: {integrity: sha512-+4NHCAUI38jp8XlbuKKWl/23y3F/JKdkvnYsrVXxhw150OyWKJoft+Yyd7dl6awxfV/Gn08x3R9pRRFUuDQwDA==}
+  '@react-three/drei@10.6.0':
+    resolution: {integrity: sha512-edjwtUxhQzFVnHpOgndnaKf0NBrlYD8fyEnwILgIDHWsBZ5LcX2Tao19WjYPYR21Gzzc0OMQZVNrQeUOU5cfHA==}
     peerDependencies:
       '@react-three/fiber': ^9.0.0
       react: ^19
@@ -1100,8 +1100,9 @@ packages:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
     engines: {node: '>=6'}
 
-  camera-controls@2.10.1:
-    resolution: {integrity: sha512-KnaKdcvkBJ1Irbrzl8XD6WtZltkRjp869Jx8c0ujs9K+9WD+1D7ryBsCiVqJYUqt6i/HR5FxT7RLASieUD+Q5w==}
+  camera-controls@3.1.0:
+    resolution: {integrity: sha512-w5oULNpijgTRH0ARFJJ0R5ct1nUM3R3WP7/b8A6j9uTGpRfnsypc/RBMPQV8JQDPayUe37p/TZZY1PcUr4czOQ==}
+    engines: {node: '>=20.11.0', npm: '>=10.8.2'}
     peerDependencies:
       three: '>=0.126.1'
 
@@ -2605,14 +2606,14 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.27.1
 
-  '@react-three/drei@10.3.0(@react-three/fiber@9.1.2(@types/react@19.1.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.177.0))(@types/react@19.1.4)(@types/three@0.177.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.177.0)':
+  '@react-three/drei@10.6.0(@react-three/fiber@9.1.2(@types/react@19.1.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.177.0))(@types/react@19.1.4)(@types/three@0.177.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.177.0)':
     dependencies:
       '@babel/runtime': 7.27.1
       '@mediapipe/tasks-vision': 0.10.17
       '@monogrid/gainmap-js': 3.1.0(three@0.177.0)
       '@react-three/fiber': 9.1.2(@types/react@19.1.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(three@0.177.0)
       '@use-gesture/react': 10.3.1(react@19.1.0)
-      camera-controls: 2.10.1(three@0.177.0)
+      camera-controls: 3.1.0(three@0.177.0)
       cross-env: 7.0.3
       detect-gpu: 5.0.70
       glsl-noise: 0.0.0
@@ -3138,7 +3139,7 @@ snapshots:
 
   callsites@3.1.0: {}
 
-  camera-controls@2.10.1(three@0.177.0):
+  camera-controls@3.1.0(three@0.177.0):
     dependencies:
       three: 0.177.0
 

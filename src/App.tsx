@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { CanvasProvider } from './shared/three/CanvasProvider';
 import { ReactFlow, Background, BackgroundVariant } from '@xyflow/react';
 
 import '@xyflow/react/dist/base.css';
@@ -69,34 +70,36 @@ export default function App() {
 	};
 
 	return (
-		<div className='w-full h-screen'>
-			<ReactFlow
-				nodes={nodes}
-				nodeTypes={nodeTypes}
-				onNodesChange={onNodesChange}
-				edges={edges}
-				edgeTypes={edgeTypes}
-				onEdgesChange={onEdgesChange}
-				onConnect={onConnect}
-				onReconnect={onReconnect}
-				fitView
-				snapToGrid
-				snapGrid={[32, 32]}
-				minZoom={0.1}
-				maxZoom={4}
-				proOptions={{ hideAttribution: true }}
-			>
-				<Background
-					gap={64}
-					size={6}
-					lineWidth={2}
-					offset={3}
-					variant={BackgroundVariant.Cross}
-					color={getBackgroundColor()}
-				/>
-				<FlowControls />
-				<StyledMiniMap />
-			</ReactFlow>
-		</div>
+		<CanvasProvider>
+			<div className='w-full h-screen'>
+				<ReactFlow
+					nodes={nodes}
+					nodeTypes={nodeTypes}
+					onNodesChange={onNodesChange}
+					edges={edges}
+					edgeTypes={edgeTypes}
+					onEdgesChange={onEdgesChange}
+					onConnect={onConnect}
+					onReconnect={onReconnect}
+					fitView
+					snapToGrid
+					snapGrid={[32, 32]}
+					minZoom={0.1}
+					maxZoom={4}
+					proOptions={{ hideAttribution: true }}
+				>
+					<Background
+						gap={64}
+						size={6}
+						lineWidth={2}
+						offset={3}
+						variant={BackgroundVariant.Cross}
+						color={getBackgroundColor()}
+					/>
+					<FlowControls />
+					<StyledMiniMap />
+				</ReactFlow>
+			</div>
+		</CanvasProvider>
 	);
 }
