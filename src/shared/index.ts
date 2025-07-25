@@ -10,7 +10,6 @@ export * from './utils/nodeFactory';
 export * from './utils/nodeStyles';
 export * from './utils/nodeUtils';
 export * from './utils/styleUtils';
-export * from './config/grid';
 export * from './config/nodeTypes';
 export * from './config/panelLayout';
 export * from './types/ui';

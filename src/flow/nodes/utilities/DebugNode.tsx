@@ -10,9 +10,10 @@
  *
  * @module DebugNode
  */
-import { Position, type NodeProps } from '@xyflow/react';
-import { useState } from 'react';
 
+import { Position, type NodeProps } from '@xyflow/react';
+import { useState, useRef } from 'react';
+import { View } from '@react-three/drei';
 import { type DebugNode } from '../types';
 import { BaseNode } from '../../../shared/components/BaseNode';
 import { NodeHandle } from '../../../shared/components/NodeHandle';
@@ -26,30 +27,19 @@ import { GridControl } from '../../../shared/components/ui/GridControl';
  * - Interactive UI controls demonstration
  * - Debug mode selection
  * - Export functionality
- *
- * @param id - Node identifier
- * @param positionAbsoluteX - Absolute X position on canvas
- * @param positionAbsoluteY - Absolute Y position on canvas
- * @param data - Node data
- * @param selected - Whether node is currently selected
  */
-export function DebugNode({
-	id,
-	positionAbsoluteX,
-	positionAbsoluteY,
-	data,
-	selected = false,
-}: NodeProps<DebugNode>) {
-	// Format position values
-	const x = Math.round(positionAbsoluteX || 0);
-	const y = Math.round(positionAbsoluteY || 0);
+export function DebugNode(props: NodeProps<DebugNode>) {
+	const { id, data, selected, positionAbsoluteX, positionAbsoluteY } = props;
+	const x = Math.round(positionAbsoluteX ?? 0);
+	const y = Math.round(positionAbsoluteY ?? 0);
 
-	// State for UI elements
-	const [selectedOption, setSelectedOption] = useState('position');
-	const [sliderValue, setSliderValue] = useState(50);
-	const [isToggled, setIsToggled] = useState(false);
+	// UI state
+	const [selectedOption, setSelectedOption] = useState<string>('position');
+	const [sliderValue, setSliderValue] = useState<number>(50);
+	const [isToggled, setIsToggled] = useState<boolean>(false);
 
-	// Options for the dropdown
+	const viewRef = useRef<HTMLDivElement>(null);
+
 	const debugOptions = [
 		{ value: 'position', label: '📍 Position Data' },
 		{ value: 'performance', label: '⚡ Performance' },
@@ -63,43 +53,42 @@ export function DebugNode({
 			nodeId={id as string}
 			selected={selected}
 			title={data.label || 'Debug Info'}
-			className='w-grid-6 h-grid-2' // Increased size to accommodate new UI elements
 		>
-			<div className='relative w-full h-full overflow-visible flex flex-col p-2 space-y-3'>
+			<div className='relative w-full h-full flex flex-col p-2 gap-3'>
 				{/* Debug Mode Selector */}
-				<div className='flex-shrink-0'>
-					<GridControl
-						type='select'
-						options={debugOptions}
-						value={selectedOption}
-						onChange={(e) => setSelectedOption(e.target.value)}
-						layout='minimal'
-						className='w-full h-8'
-					/>
-				</div>
+				<GridControl
+					type='select'
+					options={debugOptions}
+					value={selectedOption}
+					onChange={(e) => setSelectedOption(e.target.value)}
+					layout='minimal'
+					className='w-full h-8'
+					aria-label='Debug mode selector'
+				/>
 
 				{/* Position Display */}
-				<div className='flex-shrink-0 p-2 rounded bg-[var(--node-bg-interactive)]'>
-					<div className='text-center space-y-1'>
-						<h3 className='debug-title text-sm'>🐛 Position Data</h3>
-						<div className='flex justify-between text-xs'>
-							<div className='debug-text'>
-								<span className='font-semibold'>X:</span>{' '}
-								<span className='debug-value text-xs px-2 py-0.5'>{x}px</span>
-							</div>
-							<div className='debug-text'>
-								<span className='font-semibold'>Y:</span>{' '}
-								<span className='debug-value text-xs px-2 py-0.5'>{y}px</span>
-							</div>
-						</div>
+				<div className='flex-shrink-0 p-2 rounded bg-node-interactive text-xs text-center'>
+					<h3 className='font-semibold mb-1'>🐛 Position Data</h3>
+					<div className='flex justify-between'>
+						<span>
+							<span className='font-semibold'>X:</span>{' '}
+							<span className='px-2 py-0.5'>{x}px</span>
+						</span>
+						<span>
+							<span className='font-semibold'>Y:</span>{' '}
+							<span className='px-2 py-0.5'>{y}px</span>
+						</span>
 					</div>
 				</div>
 
 				{/* Debug Intensity Slider */}
-				<div className='flex-shrink-0'>
-					<div className='debug-label text-xs mb-1'>
+				<div>
+					<label
+						className='block text-xs mb-1'
+						htmlFor={`debug-slider-${id}`}
+					>
 						Debug Intensity: {sliderValue}%
-					</div>
+					</label>
 					<GridControl
 						type='slider'
 						value={sliderValue}
@@ -109,63 +98,82 @@ export function DebugNode({
 						step={1}
 						layout='minimal'
 						className='w-full h-6'
+						aria-label='Debug intensity slider'
 					/>
 				</div>
 
 				{/* Toggle and Action Button Row */}
-				<div className='flex-shrink-0 flex gap-2'>
-					{/* Toggle Switch */}
+				<div className='flex gap-2'>
 					<GridControl
 						type='toggle'
 						checked={isToggled}
-						onChange={(checked) => setIsToggled(checked)}
+						onChange={setIsToggled}
 						toggleLabel={`Live Updates ${isToggled ? 'ON' : 'OFF'}`}
-						showLabel={true}
+						showLabel
 						className='flex-1'
+						aria-label='Live updates toggle'
 					/>
-				</div>
-
-				{/* Action Button */}
-				<div className='flex-shrink-0'>
 					<GridControl
 						type='button'
 						buttonLabel='📊 Export Debug Data'
-						onClick={() =>
+						onClick={() => {
 							console.log('Exporting debug data...', {
 								x,
 								y,
 								sliderValue,
 								isToggled,
 								selectedOption,
-							})
-						}
+							});
+						}}
 						variant='node-variant'
 						icon='📊'
-						className='w-full h-8'
+						className='flex-1 h-8'
+						aria-label='Export debug data'
 					/>
 				</div>
 
 				{/* Status Label */}
 				<div className='flex-1 flex items-end justify-center'>
-					<div className='debug-label text-xs text-center'>
+					<span className='text-xs text-center text-node-accent'>
 						Debug Node Active
-					</div>
+					</span>
 				</div>
+
+				{/* 3D window using <View> */}
+				<View
+					ref={viewRef}
+					className='bg-node-secondary rounded overflow-hidden r3f-canvas-container flex items-center justify-center mt-2'
+					style={{
+						width: 'var(--spacing-grid-8)',
+						height: 'var(--spacing-grid-8)',
+						pointerEvents: 'auto',
+					}}
+					aria-label='3D debug window'
+				>
+					<group position={[0, 0, 0]}>
+						<mesh>
+							<boxGeometry args={[1, 1, 1]} />
+							<meshStandardMaterial color='#3b82f6' />
+						</mesh>
+					</group>
+				</View>
 			</div>
 
-			{/* Input handle - left side */}
 			<NodeHandle
 				id={`${id}-debug-in`}
 				type='target'
 				position={Position.Left}
-				size='sm'
+				size='lg'
+				aria-label='Input handle'
+				label='Input'
 			/>
-			{/* Output handle - right side */}
 			<NodeHandle
 				id={`${id}-debug-out`}
 				type='source'
 				position={Position.Right}
-				size='sm'
+				size='lg'
+				aria-label='Output handle'
+				label='Output'
 			/>
 		</BaseNode>
 	);
