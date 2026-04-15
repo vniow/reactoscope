@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# Tests and test tooling
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+e2e/
+playwright.config.ts
+vitest.config.ts
+
+# CI/CD (not yet configured for public use)
+.github/
+
+# Internal docs and reference files
+PROGRESS.md
+oscilloscope/

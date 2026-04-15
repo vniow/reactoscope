@@ -1,215 +1,166 @@
-import { ReactFlow, Background, Controls, MiniMap } from '@xyflow/react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import Box from '@mui/material/Box';
+import { WoscopeProvider } from './contexts/WoahscopeContext';
+import { ErrorBoundary }   from './components';
+import { WoahscopePanel }    from './daw/WoahscopePanel';
+import { SpinningRectPanel } from './daw/SpinningRectPanel';
+import { DawCanvas }         from './daw/DawCanvas';
+import { debugRef } from './components/WoahcopeSceneR3F';
 
-import '@xyflow/react/dist/base.css';
-import 'tailwindcss';
+const DEV_DEBUG = import.meta.env.DEV &&
+	new URLSearchParams(window.location.search).has('debug');
 
-import { nodeTypes } from './nodes';
-import { edgeTypes } from './flow/edges';
-import { useStore } from './shared/stores/useStore';
-import { debugAudioRegistry } from './audio/stores/audioSlice';
+const DebugPanel = DEV_DEBUG
+	? lazy(() => import('./debug/DebugPanel').then(m => ({ default: m.DebugPanel })))
+	: null;
 
-export default function App() {
-	const nodes = useStore((state) => state.nodes);
-	const edges = useStore((state) => state.edges);
-	const onNodesChange = useStore((state) => state.onNodesChange);
-	const onEdgesChange = useStore((state) => state.onEdgesChange);
-	const onConnect = useStore((state) => state.onConnect);
-	const addNode = useStore((state) => state.addNode);
-	const addOscillatorDestinationPair = useStore(
-		(state) => state.addOscillatorDestinationPair
-	);
-	const addMultiOscillator = useStore((state) => state.addMultiOscillator);
-	const addOscilloscope = useStore((state) => state.addOscilloscope);
+const SPLIT_KEY     = 'woahscope-daw-split';
+const DEFAULT_SPLIT = 50;  // percent
+const MIN_SPLIT     = 15;
+const MAX_SPLIT     = 85;
 
-	const handleAddOscillator = () => {
-		addNode('oscillator', { x: Math.random() * 400, y: Math.random() * 400 });
-	};
+function clampSplit(v: number) {
+	return Math.min(MAX_SPLIT, Math.max(MIN_SPLIT, v));
+}
 
-	const handleAddDestination = () => {
-		addNode('destination', { x: Math.random() * 400, y: Math.random() * 400 });
-	};
+function readStoredSplit(): number {
+	try {
+		const raw = localStorage.getItem(SPLIT_KEY);
+		if (raw !== null) return clampSplit(Number(raw));
+	} catch {
+		// localStorage unavailable (e.g. private browsing restrictions)
+	}
+	return DEFAULT_SPLIT;
+}
 
-	const handleAddOscDestPair = () => {
-		addOscillatorDestinationPair();
-	};
+export function App() {
+	const [splitPercent, setSplitPercent] = useState(readStoredSplit);
+	const isDraggingRef   = useRef(false);
+	const containerRef    = useRef<HTMLDivElement>(null);
 
-	const handleAddMultiOscillator = () => {
-		addMultiOscillator();
-	};
+	// Persist whenever the split changes
+	useEffect(() => {
+		try {
+			localStorage.setItem(SPLIT_KEY, String(splitPercent));
+		} catch {
+			// ignore
+		}
+	}, [splitPercent]);
 
-	const handleAddOscilloscope = () => {
-		addOscilloscope();
-	};
+	const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
+		e.preventDefault();
+		isDraggingRef.current = true;
+		document.body.style.cursor = 'col-resize';
+		// Prevent text selection while dragging
+		document.body.style.userSelect = 'none';
+	}, []);
 
-	const handleAddSimpleOsc = () => {
-		addNode('simpleosc', { x: Math.random() * 400, y: Math.random() * 400 });
-	};
-
-	const handleAddSimpleXY = () => {
-		addNode('simplexy', { x: Math.random() * 400, y: Math.random() * 400 });
-	};
-
-	const handleAddNoiseGenerator = () => {
-		addNode('noisegen', { x: Math.random() * 400, y: Math.random() * 400 });
-	};
-
-	const handleAddThreeFiber = () => {
-		addNode('threefiber', { x: Math.random() * 400, y: Math.random() * 400 });
-	};
-
-	const handleDebug = () => {
-		debugAudioRegistry();
-	};
+	useEffect(() => {
+		const onMouseMove = (e: MouseEvent) => {
+			if (!isDraggingRef.current || !containerRef.current) return;
+			const rect = containerRef.current.getBoundingClientRect();
+			const pct  = ((e.clientX - rect.left) / rect.width) * 100;
+			setSplitPercent(clampSplit(pct));
+		};
+		const onMouseUp = () => {
+			if (!isDraggingRef.current) return;
+			isDraggingRef.current        = false;
+			document.body.style.cursor     = '';
+			document.body.style.userSelect = '';
+		};
+		window.addEventListener('mousemove', onMouseMove);
+		window.addEventListener('mouseup',   onMouseUp);
+		return () => {
+			window.removeEventListener('mousemove', onMouseMove);
+			window.removeEventListener('mouseup',   onMouseUp);
+		};
+	}, []);
 
 	return (
-		<div style={{ width: '100vw', height: '100vh' }}>
-			<div
-				style={{
-					position: 'absolute',
-					top: 10,
-					left: 10,
-					zIndex: 4,
-					background: 'white',
-					padding: '10px',
-					borderRadius: '8px',
-					boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+		<ErrorBoundary>
+		<WoscopeProvider>
+			<noscript>gotta enable JavaScript yo</noscript>
+
+			{/* Full-viewport two-column layout */}
+			<Box
+				ref={containerRef}
+				sx={{
+					display:        'flex',
+					flexDirection:  'row',
+					height:         '100%',
+					overflow:       'hidden',
+					// Prevent cursor flicker when dragging fast
+					'&.dragging':   { cursor: 'col-resize' },
 				}}
 			>
-				<button
-					onClick={handleAddOscDestPair}
-					style={{
-						marginRight: '10px',
-						backgroundColor: '#007acc',
-						color: 'white',
-						border: 'none',
-						padding: '8px 12px',
-						borderRadius: '4px',
-						cursor: 'pointer',
+				{/* Left column — stacked canvases */}
+				<Box
+					sx={{
+						width:     `${splitPercent}%`,
+						flexShrink: 0,
+						height:    '100%',
+						overflow:  'hidden',
+						position:  'relative',
+						bgcolor:   '#000',
+						display:   'flex',
+						flexDirection: 'column',
 					}}
 				>
-					🎵 Add Synth Setup
-				</button>
-				<button
-					onClick={handleAddOscillator}
-					style={{ marginRight: '10px' }}
-				>
-					Add Oscillator
-				</button>
-				<button
-					onClick={handleAddDestination}
-					style={{ marginRight: '10px' }}
-				>
-					Add Destination
-				</button>
-				<button
-					onClick={handleAddMultiOscillator}
-					style={{
-						marginRight: '10px',
-						backgroundColor: '#8B5CF6',
-						color: 'white',
-						border: 'none',
-						padding: '8px 12px',
-						borderRadius: '4px',
-						cursor: 'pointer',
-					}}
-				>
-					🎛️ Add Multi-Osc
-				</button>
-				<button
-					onClick={handleAddOscilloscope}
-					style={{
-						marginRight: '10px',
-						backgroundColor: '#10B981',
-						color: 'white',
-						border: 'none',
-						padding: '8px 12px',
-						borderRadius: '4px',
-						cursor: 'pointer',
-					}}
-				>
-					📊 Add Scope
-				</button>
-				<button
-					onClick={handleAddSimpleOsc}
-					style={{
-						marginRight: '10px',
-						backgroundColor: '#00ff00',
-						color: 'black',
-						border: 'none',
-						padding: '8px 12px',
-						borderRadius: '4px',
-						cursor: 'pointer',
-						fontFamily: 'monospace',
-						fontWeight: 'bold',
-					}}
-				>
-					📺 Simple Scope
-				</button>
-				<button
-					onClick={handleAddSimpleXY}
-					style={{
-						marginRight: '10px',
-						backgroundColor: '#00ffff',
-						color: 'black',
-						border: 'none',
-						padding: '8px 12px',
-						borderRadius: '4px',
-						cursor: 'pointer',
-						fontFamily: 'monospace',
-						fontWeight: 'bold',
-					}}
-				>
-					📊 XY Scope
-				</button>
-				<button
-					onClick={handleAddNoiseGenerator}
-					style={{
-						marginRight: '10px',
-						backgroundColor: '#9333ea',
-						color: 'white',
-						border: 'none',
-						padding: '8px 12px',
-						borderRadius: '4px',
-						cursor: 'pointer',
-						fontFamily: 'monospace',
-						fontWeight: 'bold',
-					}}
-				>
-					🔊 Noise Gen
-				</button>
-				<button
-					onClick={handleAddThreeFiber}
-					style={{
-						marginRight: '10px',
-						backgroundColor: '#7c3aed',
-						color: 'white',
-						border: 'none',
-						padding: '8px 12px',
-						borderRadius: '4px',
-						cursor: 'pointer',
-						fontFamily: 'monospace',
-						fontWeight: 'bold',
-					}}
-				>
-					🎮 3D View
-				</button>
-				<button onClick={handleDebug}>Debug Audio</button>
-			</div>
+					<Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+						<WoahscopePanel />
+						{DEV_DEBUG && DebugPanel && (
+							<Suspense fallback={null}>
+								<DebugPanel debugRef={debugRef} />
+							</Suspense>
+						)}
+					</Box>
+					<Box sx={{ flex: 1, overflow: 'hidden' }}>
+						<SpinningRectPanel />
+					</Box>
+				</Box>
 
-			<ReactFlow
-				nodes={nodes}
-				nodeTypes={nodeTypes}
-				onNodesChange={onNodesChange}
-				edges={edges}
-				edgeTypes={edgeTypes}
-				onEdgesChange={onEdgesChange}
-				onConnect={onConnect}
-				fitView
-			>
-				<Background />
-				<MiniMap />
-				<Controls />
-			</ReactFlow>
-		</div>
+				{/* Drag divider */}
+				<Box
+					onMouseDown={handleDividerMouseDown}
+					sx={{
+						width:      6,
+						flexShrink: 0,
+						position:   'relative',
+						cursor:     'col-resize',
+						bgcolor:    '#1a1a1a',
+						borderLeft:  '1px solid #2a2a2a',
+						borderRight: '1px solid #2a2a2a',
+						zIndex:     10,
+						transition: 'background-color 0.15s',
+						'&:hover':  { bgcolor: 'rgba(34, 221, 34, 0.4)' },
+						// Grip dots
+						'&::after': {
+							content:    '""',
+							position:   'absolute',
+							top:        '50%',
+							left:       '50%',
+							transform:  'translate(-50%, -50%)',
+							width:      2,
+							height:     32,
+							borderRadius: 1,
+							bgcolor:    '#555',
+						},
+					}}
+				/>
+
+				{/* Right column — React Flow DAW canvas */}
+				<Box
+					sx={{
+						flex:     1,
+						height:   '100%',
+						overflow: 'hidden',
+						minWidth: 0,
+					}}
+				>
+					<DawCanvas />
+				</Box>
+			</Box>
+		</WoscopeProvider>
+		</ErrorBoundary>
 	);
 }

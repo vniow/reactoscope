@@ -1,0 +1,47 @@
+html,
+body,
+#root {
+	height: 100%;
+	max-height: 100%;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+}
+
+/* ─── React Flow dark theme overrides ───────────────────────────────────────── */
+
+.react-flow {
+	background: #111;
+}
+
+.react-flow__controls {
+	background: #1a1a1a;
+	border: 1px solid #333;
+}
+
+.react-flow__controls-button {
+	background: #1a1a1a;
+	border-bottom: 1px solid #333;
+	color: #aaa;
+	fill: #aaa;
+}
+
+.react-flow__controls-button:hover {
+	background: #252525;
+}
+
+.react-flow__minimap {
+	background: #111;
+}
+
+/* noscript and .error messages are absolutely positioned overlays */
+noscript,
+.error {
+	position: absolute;
+	width: 100%;
+	top: 200px;
+	text-align: center;
+	font-size: 1.5rem;
+	color: #f66;
+}
