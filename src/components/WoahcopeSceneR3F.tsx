@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { usePlayback, useAxis, useEffects } from '../contexts/WoahscopeContext';
+import { useAxis, useEffects } from '../contexts/WoahscopeContext';
 import { updateGeometryArrays, getColourFromHue } from '../woahscope/utils';
 import { DEFAULT_AUDIO_SETTINGS } from '../config';
 import { getWaveformData } from '../audio/graph';
+import { useDawStore, MASTER_NODE_ID } from '../store/daw';
+import type { MasterOutputNodeData } from '../store/dawTypes';
 import type { DebugSnapshot } from '../debug/types';
 import { EMPTY_SNAPSHOT } from '../debug/types';
 import {
@@ -27,6 +29,7 @@ let _debugGetToneContext: (() => { state: string }) | null = null;
 if (isDebugMode) {
 	try {
 		// eslint-disable-next-line @typescript-eslint/no-require-imports
+		// @ts-ignore — require is available at runtime in Vite dev mode
 		const { getContext } = require('tone') as typeof import('tone');
 		_debugGetToneContext = getContext;
 	} catch {
@@ -48,21 +51,25 @@ function readCenter(
 }
 
 export function WoscopeSceneR3F() {
-	const { isPlaying } = usePlayback();
 	const { swapXY, invertXY, gain, intensity, hue } = useAxis();
 	const { crtEnabled, persistence, glowStrength, scatterStrength, lanczosEnabled, lanczosSteps } = useEffects();
 	const { camera, size, invalidate } = useThree();
 
+	// Track multichannel mode via a ref so useFrame always sees the latest value
+	const isMultichannel = useDawStore(s => {
+		const master = s.nodes.find(n => n.id === MASTER_NODE_ID);
+		return (master?.data as MasterOutputNodeData | undefined)?.mode === 'multichannel';
+	});
+	const isMultichannelRef = useRef(isMultichannel);
+	useEffect(() => { isMultichannelRef.current = isMultichannel; }, [isMultichannel]);
 
 	useEffect(() => {
 		const cam = camera as THREE.OrthographicCamera;
 		const aspect = size.width / size.height;
 		if (aspect >= 1) {
-			// wider than tall — expand horizontal bounds
 			cam.left = -aspect; cam.right  =  aspect;
 			cam.top  =  1;      cam.bottom = -1;
 		} else {
-			// taller than wide — expand vertical bounds
 			cam.left = -1;         cam.right  = 1;
 			cam.top  = 1 / aspect; cam.bottom = -(1 / aspect);
 		}
@@ -72,21 +79,22 @@ export function WoscopeSceneR3F() {
 		invalidate();
 	}, [camera, size, invalidate]);
 
-	// ── scene resources (lifecycle managed inside each hook) ──────────────────
+	// ── scene resources ───────────────────────────────────────────────────────
 	const { lineRT, blur1RT, blur2RT, blur3RT, blur4RT } = useRenderTargets();
 	const { fadeScene, fadeMat }                         = useFadePass();
 	const { geometry, lineMat, lineScene,
-	        startArray, endArray, aIdxArray }             = useLineMesh();
+	        startArray, endArray, aIdxArray,
+	        aColorArray }                                = useLineMesh();
 	const { whiteTex, screenTextureRef }                 = useCRTTexture();
 	const { passScene, passQuad, copyMat,
 	        blurMat, outputMat }                          = usePassPipeline();
 	const { upsamplerRef, smoothedX, smoothedY,
+	        smoothedR, smoothedG, smoothedB, smoothedA,
 	        nPointsRef }                                  = useLanczos(lanczosSteps);
 
-
 	useEffect(() => {
-		invalidate(); // kick off a frame on any settings or playback state change
-	}, [gain, intensity, hue, crtEnabled, persistence, glowStrength, scatterStrength, invertXY, swapXY, isPlaying, invalidate]);
+		invalidate();
+	}, [gain, intensity, hue, crtEnabled, persistence, glowStrength, scatterStrength, invertXY, swapXY, invalidate]);
 
 	const gainPowRef      = useRef(Math.pow(2, gain));
 	const intensityPowRef = useRef(0.005 * Math.pow(2, intensity));
@@ -105,47 +113,76 @@ export function WoscopeSceneR3F() {
 	}, [hue]);
 
 	const prevNPointsRef = useRef(-1);
-
-	const frameCountRef = useRef(0);
+	const frameCountRef  = useRef(0);
 
 	useFrame(({ gl, camera: cam, invalidate: inv }) => {
-		if (isPlaying) {
-			const { left, right } = getWaveformData();
-			let xBuf: Float32Array = swapXY ? right : left;
-			let yBuf: Float32Array = swapXY ? left  : right;
+		const waveform = getWaveformData();
+		let xBuf: Float32Array = swapXY ? waveform.y : waveform.x;
+		let yBuf: Float32Array = swapXY ? waveform.x : waveform.y;
+		let rBuf: Float32Array = waveform.r;
+		let gBuf: Float32Array = waveform.g;
+		let bBuf: Float32Array = waveform.b;
+		let aBuf: Float32Array = waveform.a;
 
-			let nPoints: number = N_SAMPLES;
-			if (lanczosEnabled) {
-				upsamplerRef.current.apply(xBuf, smoothedX.current);
-				upsamplerRef.current.apply(yBuf, smoothedY.current);
-				nPoints = upsamplerRef.current.outputLength;
-				xBuf = smoothedX.current;
-				yBuf = smoothedY.current;
+		let nPoints: number = N_SAMPLES;
+		if (lanczosEnabled) {
+			upsamplerRef.current.apply(xBuf, smoothedX.current);
+			upsamplerRef.current.apply(yBuf, smoothedY.current);
+			upsamplerRef.current.apply(rBuf, smoothedR.current);
+			upsamplerRef.current.apply(gBuf, smoothedG.current);
+			upsamplerRef.current.apply(bBuf, smoothedB.current);
+			upsamplerRef.current.apply(aBuf, smoothedA.current);
+			nPoints = upsamplerRef.current.outputLength;
+			xBuf = smoothedX.current;
+			yBuf = smoothedY.current;
+			rBuf = smoothedR.current;
+			gBuf = smoothedG.current;
+			bBuf = smoothedB.current;
+			aBuf = smoothedA.current;
+		}
+
+		updateGeometryArrays(nPoints, aIdxArray, startArray, endArray, xBuf, yBuf);
+
+		// Fill per-point colour buffer
+		const [hr, hg, hb] = hueColourRef.current;
+		const multi = isMultichannelRef.current;
+		for (let i = 0; i < nPoints; i++) {
+			const cr = multi ? 0.5 + 0.5 * rBuf[i] : hr;
+			const cg = multi ? 0.5 + 0.5 * gBuf[i] : hg;
+			const cb = multi ? 0.5 + 0.5 * bBuf[i] : hb;
+			const ca = multi ? 0.5 + 0.5 * aBuf[i] : 1.0;
+			const base = i * 4 * 4; // 4 verts × 4 floats
+			for (let v = 0; v < 4; v++) {
+				const off = base + v * 4;
+				aColorArray[off    ] = cr;
+				aColorArray[off + 1] = cg;
+				aColorArray[off + 2] = cb;
+				aColorArray[off + 3] = ca;
 			}
+		}
 
-			updateGeometryArrays(nPoints, aIdxArray, startArray, endArray, xBuf, yBuf);
-			(geometry.getAttribute('aStart') as THREE.BufferAttribute).needsUpdate = true;
-			(geometry.getAttribute('aEnd')   as THREE.BufferAttribute).needsUpdate = true;
-			(geometry.getAttribute('aIdx')   as THREE.BufferAttribute).needsUpdate = true;
-			geometry.setDrawRange(0, (nPoints - 1) * 2 * 3);
-			nPointsRef.current = nPoints;
+		(geometry.getAttribute('aStart') as THREE.BufferAttribute).needsUpdate = true;
+		(geometry.getAttribute('aEnd')   as THREE.BufferAttribute).needsUpdate = true;
+		(geometry.getAttribute('aIdx')   as THREE.BufferAttribute).needsUpdate = true;
+		(geometry.getAttribute('aColor') as THREE.BufferAttribute).needsUpdate = true;
+		geometry.setDrawRange(0, (nPoints - 1) * 2 * 3);
+		nPointsRef.current = nPoints;
 
-			if (isDebugMode) {
-				const { left: dbgLeft, right: dbgRight } = getWaveformData();
-				let lMin = Infinity, lMax = -Infinity;
-				for (let i = 0; i < dbgLeft.length; i++) {
-					if (dbgLeft[i] < lMin) lMin = dbgLeft[i];
-					if (dbgLeft[i] > lMax) lMax = dbgLeft[i];
-				}
-				let rMin = Infinity, rMax = -Infinity;
-				for (let i = 0; i < dbgRight.length; i++) {
-					if (dbgRight[i] < rMin) rMin = dbgRight[i];
-					if (dbgRight[i] > rMax) rMax = dbgRight[i];
-				}
-				debugRef.current.waveformLeft  = { min: lMin, max: lMax, sample: Array.from(dbgLeft.subarray(0, 4)) };
-				debugRef.current.waveformRight = { min: rMin, max: rMax, sample: Array.from(dbgRight.subarray(0, 4)) };
-				debugRef.current.nPoints       = nPoints;
+		if (isDebugMode) {
+			const dbg = getWaveformData();
+			let lMin = Infinity, lMax = -Infinity;
+			for (let i = 0; i < dbg.x.length; i++) {
+				if (dbg.x[i] < lMin) lMin = dbg.x[i];
+				if (dbg.x[i] > lMax) lMax = dbg.x[i];
 			}
+			let rMin = Infinity, rMax = -Infinity;
+			for (let i = 0; i < dbg.y.length; i++) {
+				if (dbg.y[i] < rMin) rMin = dbg.y[i];
+				if (dbg.y[i] > rMax) rMax = dbg.y[i];
+			}
+			debugRef.current.waveformLeft  = { min: lMin, max: lMax, sample: Array.from(dbg.x.subarray(0, 4)) };
+			debugRef.current.waveformRight = { min: rMin, max: rMax, sample: Array.from(dbg.y.subarray(0, 4)) };
+			debugRef.current.nPoints       = nPoints;
 		}
 
 		const screenTex = crtEnabled && screenTextureRef.current
@@ -162,7 +199,6 @@ export function WoscopeSceneR3F() {
 		}
 		lm.uniforms.uFadeAmount.value = FADE_AMOUNT;
 		lm.uniforms.uIntensity.value  = intensityPowRef.current;
-
 
 		gl.autoClear = false;
 		fadeMat.uniforms.uAlpha.value = persistPowRef.current * FADE_AMOUNT;
@@ -217,14 +253,12 @@ export function WoscopeSceneR3F() {
 
 		if (isDebugMode) debugRef.current.blur3RTPixel = readCenter(gl, blur3RT);
 
-		const [r, g, b] = hueColourRef.current;
 		passQuad.material = outputMat;
 		outputMat.uniforms.uTexture0.value        = lineRT.texture;
 		outputMat.uniforms.uTexture1.value        = blur1RT.texture;
 		outputMat.uniforms.uTexture2.value        = blur3RT.texture;
 		outputMat.uniforms.uTexture3.value        = screenTex;
 		outputMat.uniforms.uExposure.value        = exposurePowRef.current;
-		outputMat.uniforms.uColour.value.set(r, g, b);
 		outputMat.uniforms.uGlowStrength.value    = glowStrength;
 		outputMat.uniforms.uScatterStrength.value = scatterStrength;
 		gl.autoClear = true;
@@ -238,7 +272,7 @@ export function WoscopeSceneR3F() {
 			debugRef.current.audioContextState    = _debugGetToneContext?.().state ?? 'unavailable';
 		}
 
-		if (isPlaying) inv(); // keep loop running while playing; paused frames are one-shots
+		inv();
 	}, 1);
 
 	return null;

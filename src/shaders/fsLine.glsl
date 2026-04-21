@@ -9,6 +9,7 @@ uniform sampler2D uScreen;
 // See vsLine.glsl for the packing convention.
 varying vec4 uvl;
 varying vec2 vTexCoord;
+varying vec4 vColor;
 
 float gaussian(float x, float sigma) {
     return exp(-(x * x) / (2.0 * sigma * sigma)) / (SQRT_TWO_PI * sigma);
@@ -46,6 +47,7 @@ void main (void) {
 
     float brightness = mix(lineBrightness, pointBrightness, isPoint) * uvl.w;
 
-    gl_FragColor = 2.0 * texture2D(uScreen, vTexCoord) * brightness;
-    gl_FragColor.a = 1.0;
+    // vColor.rgb = beam colour; vColor.a modulates overall intensity (alpha = 0 → dim)
+    vec3 tinted = 2.0 * texture2D(uScreen, vTexCoord).rgb * brightness * vColor.rgb * vColor.a;
+    gl_FragColor = vec4(tinted, 1.0);
 }

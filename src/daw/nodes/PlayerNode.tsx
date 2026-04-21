@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Slider from '@mui/material/Slider';
 import Typography from '@mui/material/Typography';
+import CloseIcon from '@mui/icons-material/Close';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
@@ -51,7 +52,7 @@ const speedMarks = [
 	{ value: 2,   label: '2×'   },
 ];
 
-export const PlayerNode = memo(function PlayerNode({ id, data }: NodeProps<PlayerFlowNode>) {
+export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeProps<PlayerFlowNode>) {
 	const rafRef          = useRef<number>(0);
 	const isScrubbingRef  = useRef<boolean>(false);
 	const durationRef     = useRef(0);
@@ -61,7 +62,12 @@ export const PlayerNode = memo(function PlayerNode({ id, data }: NodeProps<Playe
 	const mountedRef      = useRef(true);
 
 	const { setIsPlaying: setVizPlaying } = usePlayback();
-	const updateNodeData = useDawStore(s => s.updateNodeData);
+	const updateNodeData  = useDawStore(s => s.updateNodeData);
+	const onNodesChange   = useDawStore(s => s.onNodesChange);
+
+	const handleDelete = useCallback(() => {
+		onNodesChange([{ type: 'remove', id }]);
+	}, [id, onNodesChange]);
 
 	const [isPlaying, setIsPlaying]   = useState(false);
 	const [isMuted, setIsMuted]       = useState(false);
@@ -205,8 +211,29 @@ export const PlayerNode = memo(function PlayerNode({ id, data }: NodeProps<Playe
 				display: 'flex',
 				flexDirection: 'column',
 				gap: 1,
+				position: 'relative',
 			}}
 		>
+			{selected && (
+				<IconButton
+					size='small'
+					onClick={handleDelete}
+					aria-label='Delete node'
+					className='nodrag'
+					sx={{
+						position:  'absolute',
+						top:       4,
+						right:     4,
+						zIndex:    10,
+						color:     'text.secondary',
+						p:         0.25,
+						'&:hover': { color: 'error.main' },
+					}}
+				>
+					<CloseIcon sx={{ fontSize: 14 }} />
+				</IconButton>
+			)}
+
 			{/* Screen-reader status */}
 			<Box role='status' aria-live='polite' aria-atomic='true' sx={srOnlySx}>
 				{statusMessage}
@@ -313,12 +340,24 @@ export const PlayerNode = memo(function PlayerNode({ id, data }: NodeProps<Playe
 				/>
 			</Box>
 
-			{/* Audio output handle */}
+			{/* L/R output labels */}
+			<Box sx={{ display: 'flex', justifyContent: 'space-between', px: '26%' }}>
+				<Typography variant='caption' color='text.secondary' sx={{ fontSize: 9 }}>L</Typography>
+				<Typography variant='caption' color='text.secondary' sx={{ fontSize: 9 }}>R</Typography>
+			</Box>
+
+			{/* Stereo output handles */}
 			<Handle
 				type='source'
 				position={Position.Bottom}
-				id='audio-out'
-				style={{ background: '#22dd22', border: '2px solid #22dd22' }}
+				id='out-0'
+				style={{ left: '33%', background: '#22dd22', border: '2px solid #22dd22' }}
+			/>
+			<Handle
+				type='source'
+				position={Position.Bottom}
+				id='out-1'
+				style={{ left: '67%', background: '#22dd22', border: '2px solid #22dd22' }}
 			/>
 		</Box>
 	);

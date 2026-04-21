@@ -14,7 +14,6 @@ uniform float uScatterBias;
 // At uWhitePoint = 0.0 the colour stays pure at mid-brightness;
 // at 1.0 it begins mixing toward white much earlier.
 uniform float uWhitePoint;
-uniform vec3 uColour;
 
 varying vec2 vTexCoord;
 varying vec2 vTexCoordCanvas;
@@ -33,7 +32,9 @@ void main(void) {
     // channels to 1.0 and removing the modulation entirely.
     vec4 screen = texture2D(uTexture3, vTexCoord);
 
-    float light = line.r + uGlowStrength * screen.g * screen.g * tightGlow.r;
+    // Luminance of the per-point coloured beam stored in lineRT
+    float luma = dot(line.rgb, vec3(0.2126, 0.7152, 0.0722));
+    float light = luma + uGlowStrength * screen.g * screen.g * dot(tightGlow.rgb, vec3(0.333));
     light += uScatterStrength * scatter.g * (2.0 + screen.g + 0.5 * screen.r);
 
     // Filmic tone mapping: maps [0, ∞) → [0, 1) with an exposure-controlled knee.
@@ -41,9 +42,10 @@ void main(void) {
     // Raise to the 6th power for a strong highlight roll-off.
     float tlight2 = tlight * tlight * tlight;
 
-    // Mix beam colour toward white as brightness increases, simulating phosphor
-    // saturation. uWhitePoint controls the base mix offset: at uWhitePoint = 0.3
-    // the beam is already 30% toward white at mid-brightness.
-    gl_FragColor.rgb = mix(uColour, vec3(1.0), uWhitePoint + tlight2 * tlight2 * 0.5) * tlight;
+    // Recover per-point hue from lineRT (colour baked in by fsLine).
+    // Normalise by luminance to extract hue direction, then re-apply tone-mapped brightness.
+    // Mix toward white at high brightness to simulate phosphor saturation.
+    vec3 beamHue = line.rgb / (luma + 0.001);
+    gl_FragColor.rgb = mix(beamHue, vec3(1.0), uWhitePoint + tlight2 * tlight2 * 0.5) * tlight;
     gl_FragColor.a = 1.0;
 }

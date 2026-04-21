@@ -8,6 +8,7 @@ uniform float uFadeAmount;
 uniform float uIntensity;
 attribute vec2 aStart, aEnd;
 attribute float aIdx;
+attribute vec4 aColor;
 
 // uvl packs four logically distinct values into one varying to stay within
 // the GLSL ES 1.00 varying limit:
@@ -17,6 +18,7 @@ attribute float aIdx;
 //   uvl.w  = per-edge intensity weight (fades older edges via uFadeAmount)
 varying vec4 uvl;
 varying vec2 vTexCoord;
+varying vec4 vColor;
 
 void main () {
     float tang;
@@ -48,4 +50,5 @@ void main () {
     vec4 pos = vec4((current + (tang * dir + norm * side) * uSize) * uInvert, 0.0, 1.0);
     gl_Position = pos;
     vTexCoord = 0.5 * pos.xy + 0.5;
+    vColor = aColor;
 }

@@ -1,4 +1,4 @@
-import { ShaderMaterial, AdditiveBlending, DataTexture, RGBAFormat, UnsignedByteType, Vector2, Vector3 } from 'three';
+import { ShaderMaterial, AdditiveBlending, DataTexture, RGBAFormat, UnsignedByteType, Vector2 } from 'three';
 import vsLine from '../shaders/vsLine.glsl';
 import fsLine from '../shaders/fsLine.glsl';
 import vsBlur from '../shaders/vsBlur.glsl';
@@ -77,7 +77,6 @@ export function createOutputMaterial(): ShaderMaterial {
 			uTexture2:       { value: null },   // blur3RT (scatter)
 			uTexture3:       { value: null },   // screenTexture (CRT noise)
 			uExposure:       { value: 1.0 },
-			uColour:         { value: new Vector3(0, 1, 0) },
 			uGlowStrength:   { value: 1.5 },
 			uScatterStrength:{ value: 0.4 },
 			uScatterBias:    { value: 0.35 },   // ambient scatter floor

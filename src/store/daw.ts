@@ -7,9 +7,15 @@
  *   state avoids spurious re-renders and impossible serialization.
  * - `audioVersion` is a counter in Zustand state that bumps whenever the
  *   audio topology changes, giving components a stable signal to subscribe to.
- * - The MasterOutputNode owns the Gain → Split → Analysers chain. All source
- *   nodes connect to its inputGain. The oscilloscope reads from its analysers.
- * - The getWaveformData() export replaces the one in audio/graph.ts.
+ * - The MasterOutputNode owns the stereo chain:
+ *     inputGainL → merge(channel 0) → toDestination() (stereo)
+ *     inputGainL → leftAnalyser  (oscilloscope X axis)
+ *     inputGainR → merge(channel 1)
+ *     inputGainR → rightAnalyser (oscilloscope Y axis)
+ * - Handle ID convention:
+ *     Source handles: 'out-0', 'out-1', ...  (position Bottom)
+ *     Target handles: 'in-0',  'in-1',  ...  (position Top)
+ *   MasterOutput: 'in-0' = Left, 'in-1' = Right
  */
 
 import { create } from 'zustand';
@@ -17,16 +23,22 @@ import {
 	applyNodeChanges,
 	applyEdgeChanges,
 	addEdge,
+	reconnectEdge,
 	type OnNodesChange,
 	type OnEdgesChange,
 	type OnConnect,
 	type NodeChange,
+	type Connection,
 } from '@xyflow/react';
 import {
 	Player,
 	Gain,
-	Split,
+	Merge,
 	Analyser,
+	Oscillator,
+	Split,
+	Noise,
+	Signal,
 	getTransport,
 	start as toneStart,
 } from 'tone';
@@ -37,11 +49,16 @@ import type {
 	AudioNodeMap,
 	PlayerAudioEntry,
 	MasterOutputAudioEntry,
+	OscillatorAudioEntry,
+	GainAudioEntry,
+	NoiseAudioEntry,
+	DCSignalAudioEntry,
+	StubKind,
 } from './dawTypes';
 
 const { nSamples } = DEFAULT_AUDIO_SETTINGS;
 
-export const MASTER_NODE_ID   = 'master-output';
+export const MASTER_NODE_ID    = 'master-output';
 export const DEFAULT_PLAYER_ID = 'player-default';
 
 // ─── Module-level audio node registry ────────────────────────────────────────
@@ -55,43 +72,149 @@ let _masterEntry: MasterOutputAudioEntry | null = null;
 function getMasterEntry(): MasterOutputAudioEntry {
 	if (_masterEntry) return _masterEntry;
 
-	const inputGain    = new Gain();
-	const split        = new Split(2);
-	const leftAnalyser  = new Analyser('waveform', nSamples);
-	const rightAnalyser = new Analyser('waveform', nSamples);
+	const inputGainX = new Gain();
+	const inputGainY = new Gain();
+	const inputGainR = new Gain();
+	const inputGainG = new Gain();
+	const inputGainB = new Gain();
+	const inputGainA = new Gain();
+	const merge      = new Merge(6);
+	const xAnalyser  = new Analyser('waveform', nSamples);
+	const yAnalyser  = new Analyser('waveform', nSamples);
+	const rAnalyser  = new Analyser('waveform', nSamples);
+	const gAnalyser  = new Analyser('waveform', nSamples);
+	const bAnalyser  = new Analyser('waveform', nSamples);
+	const aAnalyser  = new Analyser('waveform', nSamples);
 
-	inputGain.connect(split);
-	split.connect(leftAnalyser,  0);
-	split.connect(rightAnalyser, 1);
-	inputGain.toDestination();
+	// connect(destination, outputNumber, inputNumber)
+	inputGainX.connect(merge, 0, 0); inputGainX.connect(xAnalyser);
+	inputGainY.connect(merge, 0, 1); inputGainY.connect(yAnalyser);
+	inputGainR.connect(merge, 0, 2); inputGainR.connect(rAnalyser);
+	inputGainG.connect(merge, 0, 3); inputGainG.connect(gAnalyser);
+	inputGainB.connect(merge, 0, 4); inputGainB.connect(bAnalyser);
+	inputGainA.connect(merge, 0, 5); inputGainA.connect(aAnalyser);
 
-	_masterEntry = { kind: 'masterOutput', inputGain, split, leftAnalyser, rightAnalyser };
+	merge.toDestination();
+
+	_masterEntry = {
+		kind: 'masterOutput',
+		inputGainX, inputGainY, inputGainR, inputGainG, inputGainB, inputGainA,
+		merge,
+		xAnalyser, yAnalyser, rAnalyser, gAnalyser, bAnalyser, aAnalyser,
+	};
 	_audioNodes.set(MASTER_NODE_ID, _masterEntry);
 	return _masterEntry;
 }
 
-// ─── getWaveformData — replaces the export in audio/graph.ts ─────────────────
+// ─── getWaveformData — for the oscilloscope ───────────────────────────────────
 
 /**
  * Returns the current waveform snapshot for both channels.
- * CONTRACT: same as the original graph.ts — do not hold references across
- * async boundaries. Copy the arrays if you need to retain the data.
+ * CONTRACT: do not hold references across async boundaries.
+ * Copy the arrays if you need to retain the data.
  */
-export function getWaveformData(): { left: Float32Array; right: Float32Array } {
+export function getWaveformData(): {
+	x: Float32Array; y: Float32Array;
+	r: Float32Array; g: Float32Array; b: Float32Array; a: Float32Array;
+} {
 	const entry = getMasterEntry();
 	return {
-		left:  entry.leftAnalyser.getValue()  as Float32Array,
-		right: entry.rightAnalyser.getValue() as Float32Array,
+		x: entry.xAnalyser.getValue() as Float32Array,
+		y: entry.yAnalyser.getValue() as Float32Array,
+		r: entry.rAnalyser.getValue() as Float32Array,
+		g: entry.gAnalyser.getValue() as Float32Array,
+		b: entry.bAnalyser.getValue() as Float32Array,
+		a: entry.aAnalyser.getValue() as Float32Array,
 	};
+}
+
+// ─── Audio routing helpers ────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ToneInputNode = any;
+
+/** Returns the Tone.js input node for a given target handle. */
+function _getTargetToneNode(
+	tgt: NonNullable<ReturnType<typeof _audioNodes.get>> | MasterOutputAudioEntry,
+	targetHandle: string,
+): ToneInputNode | null {
+	if (tgt.kind === 'masterOutput') {
+		if (targetHandle === 'in-0') return tgt.inputGainX;
+		if (targetHandle === 'in-1') return tgt.inputGainY;
+		if (targetHandle === 'in-2') return tgt.inputGainR;
+		if (targetHandle === 'in-3') return tgt.inputGainG;
+		if (targetHandle === 'in-4') return tgt.inputGainB;
+		if (targetHandle === 'in-5') return tgt.inputGainA;
+		return null;
+	}
+	if (tgt.kind === 'gain') return tgt.toneNode;
+	if (tgt.kind === 'noise') return tgt.toneNode;
+	return null;
+}
+
+function connectAudioNodes(
+	sourceId:     string,
+	sourceHandle: string,
+	targetId:     string,
+	targetHandle: string,
+): void {
+	const src = _audioNodes.get(sourceId);
+	const tgt = targetId === MASTER_NODE_ID
+		? getMasterEntry()
+		: _audioNodes.get(targetId);
+	if (!src || !tgt) return;
+
+	const destNode = _getTargetToneNode(tgt, targetHandle);
+	if (!destNode) return;
+
+	try {
+		if (src.kind === 'player') {
+			const outputIndex = sourceHandle === 'out-1' ? 1 : 0;
+			src.split.connect(destNode, outputIndex, 0);
+		} else if (src.kind === 'oscillator' || src.kind === 'gain' || src.kind === 'noise' || src.kind === 'dcSignal') {
+			src.toneNode.connect(destNode);
+		}
+	} catch {
+		// Already connected — ignore
+	}
+}
+
+function disconnectAudioNodes(
+	sourceId:     string,
+	sourceHandle: string,
+	targetId:     string,
+	targetHandle: string,
+): void {
+	const src = _audioNodes.get(sourceId);
+	const tgt = _audioNodes.get(targetId) ??
+		(targetId === MASTER_NODE_ID ? getMasterEntry() : undefined);
+	if (!src || !tgt) return;
+
+	const destNode = _getTargetToneNode(tgt, targetHandle);
+	if (!destNode) return;
+
+	try {
+		if (src.kind === 'player') {
+			const outputIndex = sourceHandle === 'out-1' ? 1 : 0;
+			src.split.disconnect(destNode, outputIndex);
+		} else if (src.kind === 'oscillator' || src.kind === 'gain' || src.kind === 'noise' || src.kind === 'dcSignal') {
+			src.toneNode.disconnect(destNode);
+		}
+	} catch {
+		// Not connected — ignore
+	}
 }
 
 // ─── Player audio node lifecycle ─────────────────────────────────────────────
 
 function createPlayerEntry(id: string): PlayerAudioEntry {
 	const toneNode = new Player();
+	const split    = new Split(2);
+	toneNode.connect(split);
 	const entry: PlayerAudioEntry = {
 		kind:           'player',
 		toneNode,
+		split,
 		startOffset:    0,
 		currentRate:    1,
 		isExplicitStop: false,
@@ -115,36 +238,157 @@ function createPlayerEntry(id: string): PlayerAudioEntry {
 	return entry;
 }
 
-function connectAudioNodes(sourceId: string, targetId: string): void {
-	const src = _audioNodes.get(sourceId);
-	// Ensure master entry exists before accessing it
-	const tgt = targetId === MASTER_NODE_ID
-		? getMasterEntry()
-		: _audioNodes.get(targetId);
-	if (!src || !tgt) return;
+// ─── Oscillator audio node lifecycle ─────────────────────────────────────────
 
-	if (src.kind === 'player' && tgt.kind === 'masterOutput') {
-		try {
-			src.toneNode.connect(tgt.inputGain);
-		} catch {
-			// Already connected — ignore
+function createOscillatorEntry(id: string): OscillatorAudioEntry {
+	const toneNode = new Oscillator(440, 'sine');
+	const entry: OscillatorAudioEntry = { kind: 'oscillator', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+
+/**
+ * Re-connects all edges where this node is the source.
+ * Called after recreating a source node (e.g. Oscillator/Noise after .stop()).
+ */
+function _reconnectSourceEdges(id: string): void {
+	const edges = useDawStore.getState().edges;
+	for (const edge of edges) {
+		if (edge.source === id && edge.sourceHandle && edge.targetHandle) {
+			connectAudioNodes(id, edge.sourceHandle, edge.target, edge.targetHandle);
 		}
 	}
 }
 
-function disconnectAudioNodes(sourceId: string, targetId: string): void {
-	const src = _audioNodes.get(sourceId);
-	const tgt = _audioNodes.get(targetId);
-	if (!src || !tgt) return;
+export async function startOscillator(id: string): Promise<void> {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'oscillator') return;
 
-	if (src.kind === 'player' && tgt.kind === 'masterOutput') {
-		try {
-			src.toneNode.disconnect(tgt.inputGain);
-		} catch {
-			// Not connected — ignore
-		}
+	await toneStart();
+
+	// Tone.Oscillator cannot be restarted after stop() — recreate if needed.
+	if (entry.toneNode.state === 'stopped') {
+		const freq = entry.toneNode.frequency.value as number;
+		const type = entry.toneNode.type;
+		entry.toneNode.dispose();
+		entry.toneNode = new Oscillator(freq, type);
+		_reconnectSourceEdges(id);
+	}
+
+	if (entry.toneNode.state !== 'started') {
+		entry.toneNode.start();
 	}
 }
+
+export function stopOscillator(id: string): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'oscillator') return;
+	if (entry.toneNode.state === 'started') {
+		entry.toneNode.stop();
+	}
+}
+
+export function setOscillatorFrequency(id: string, freq: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'oscillator') return;
+	entry.toneNode.frequency.value = freq;
+}
+
+export function setOscillatorType(
+	id:   string,
+	type: 'sine' | 'square' | 'triangle' | 'sawtooth',
+): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'oscillator') return;
+	entry.toneNode.type = type;
+}
+
+// ─── Gain audio node lifecycle ────────────────────────────────────────────────
+
+function createGainEntry(id: string, gainValue = 1): GainAudioEntry {
+	const toneNode = new Gain(gainValue);
+	const entry: GainAudioEntry = { kind: 'gain', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+
+export function setGainValue(id: string, gain: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'gain') return;
+	entry.toneNode.gain.value = gain;
+}
+
+// ─── Noise audio node lifecycle ───────────────────────────────────────────────
+
+function createNoiseEntry(
+	id:        string,
+	noiseType: 'white' | 'pink' | 'brown' = 'white',
+	vol:       number = -6,
+): NoiseAudioEntry {
+	const toneNode = new Noise(noiseType);
+	toneNode.volume.value = vol;
+	const entry: NoiseAudioEntry = { kind: 'noise', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+
+export async function startNoise(id: string): Promise<void> {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'noise') return;
+
+	await toneStart();
+
+	// Tone.Noise cannot be restarted after stop() — recreate if needed.
+	if (entry.toneNode.state === 'stopped') {
+		const vol  = entry.toneNode.volume.value;
+		const type = entry.toneNode.type;
+		entry.toneNode.dispose();
+		entry.toneNode = new Noise(type);
+		entry.toneNode.volume.value = vol;
+		_reconnectSourceEdges(id);
+	}
+
+	if (entry.toneNode.state !== 'started') {
+		entry.toneNode.start();
+	}
+}
+
+export function stopNoise(id: string): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'noise') return;
+	if (entry.toneNode.state === 'started') {
+		entry.toneNode.stop();
+	}
+}
+
+export function setNoiseType(id: string, type: 'white' | 'pink' | 'brown'): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'noise') return;
+	entry.toneNode.type = type;
+}
+
+export function setNoiseVolume(id: string, db: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'noise') return;
+	entry.toneNode.volume.value = db;
+}
+
+// ─── DC Signal audio node lifecycle ──────────────────────────────────────────
+
+function createDCSignalEntry(id: string, value = 1): DCSignalAudioEntry {
+	const toneNode = new Signal<'audioRange'>(value, 'audioRange');
+	const entry: DCSignalAudioEntry = { kind: 'dcSignal', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+
+export function setDCSignalValue(id: string, value: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'dcSignal') return;
+	entry.toneNode.value = value;
+}
+
+// ─── Generic node disposal ────────────────────────────────────────────────────
 
 function disposeAudioNode(id: string): void {
 	const entry = _audioNodes.get(id);
@@ -156,7 +400,23 @@ function disposeAudioNode(id: string): void {
 			entry.toneNode.stop();
 		}
 		entry.toneNode.dispose();
+		entry.split.dispose();
+	} else if (entry.kind === 'oscillator') {
+		if (entry.toneNode.state === 'started') {
+			entry.toneNode.stop();
+		}
+		entry.toneNode.dispose();
+	} else if (entry.kind === 'gain') {
+		entry.toneNode.dispose();
+	} else if (entry.kind === 'noise') {
+		if (entry.toneNode.state === 'started') {
+			entry.toneNode.stop();
+		}
+		entry.toneNode.dispose();
+	} else if (entry.kind === 'dcSignal') {
+		entry.toneNode.dispose();
 	}
+
 	_audioNodes.delete(id);
 }
 
@@ -278,20 +538,31 @@ export function clearNodePlaybackEndCallback(id: string): void {
 	entry.playbackEndCb = null;
 }
 
+// ─── Stub labels ──────────────────────────────────────────────────────────────
+
+const STUB_LABELS: Record<StubKind, string> = {
+	reverb:         'Reverb',
+	delay:          'Delay',
+	filter:         'Filter',
+	distortion:     'Distortion',
+	compressor:     'Compressor',
+	noiseGenerator: 'Noise',
+	panner:         'Panner',
+	split:          'Split',
+	merge:          'Merge',
+};
+
 // ─── Initial graph setup ──────────────────────────────────────────────────────
 
-// Create the default player entry and wire it to the master output.
-// Audio nodes are created lazily (getMasterEntry is called inside connectAudioNodes),
-// so AudioContext is not touched until the first getWaveformData() or play call.
 createPlayerEntry(DEFAULT_PLAYER_ID);
-connectAudioNodes(DEFAULT_PLAYER_ID, MASTER_NODE_ID);
+// connectAudioNodes is called after store init (see module-level call below)
 
 const initialNodes: AppNode[] = [
 	{
 		id:        MASTER_NODE_ID,
 		type:      'masterOutput',
 		position:  { x: 300, y: 250 },
-		data:      { label: 'Master Output' },
+		data:      { label: 'Master Output', mode: 'stereo' as const },
 		deletable: false,
 	},
 	{
@@ -304,11 +575,24 @@ const initialNodes: AppNode[] = [
 
 const initialEdges: AppEdge[] = [
 	{
-		id:       'e-default',
-		source:   DEFAULT_PLAYER_ID,
-		target:   MASTER_NODE_ID,
-		animated: true,
-		style:    { stroke: '#22dd22' },
+		id:           'e-default',
+		source:       DEFAULT_PLAYER_ID,
+		sourceHandle: 'out-0',
+		target:       MASTER_NODE_ID,
+		targetHandle: 'in-0',
+		animated:     true,
+		type:         'deletable',
+		style:        { stroke: '#22dd22' },
+	},
+	{
+		id:           'e-default-r',
+		source:       DEFAULT_PLAYER_ID,
+		sourceHandle: 'out-1',
+		target:       MASTER_NODE_ID,
+		targetHandle: 'in-1',
+		animated:     true,
+		type:         'deletable',
+		style:        { stroke: '#22dd22' },
 	},
 ];
 
@@ -320,12 +604,19 @@ type DawState = {
 	audioVersion:   number;
 	selectedNodeId: string | null;
 
-	onNodesChange:    OnNodesChange<AppNode>;
-	onEdgesChange:    OnEdgesChange<AppEdge>;
-	onConnect:        OnConnect;
-	addPlayerNode:    (trackUrl: string, position: { x: number; y: number }) => string;
-	updateNodeData:   (id: string, data: Partial<{ trackUrl: string; label: string }>) => void;
+	onNodesChange:     OnNodesChange<AppNode>;
+	onEdgesChange:     OnEdgesChange<AppEdge>;
+	onConnect:         OnConnect;
+	onReconnect:       (oldEdge: AppEdge, newConnection: Connection) => void;
+	addPlayerNode:     (trackUrl: string, position: { x: number; y: number }) => string;
+	addOscillatorNode: (position: { x: number; y: number }) => string;
+	addGainNode:       (position: { x: number; y: number }) => string;
+	addNoiseNode:      (position: { x: number; y: number }) => string;
+	addDCSignalNode:   (position: { x: number; y: number }) => string;
+	addStubNode:       (kind: StubKind, position: { x: number; y: number }) => string;
+	updateNodeData:    (id: string, data: Partial<Record<string, unknown>>) => void;
 	setSelectedNodeId: (id: string | null) => void;
+	setMasterMode:     (mode: 'stereo' | 'multichannel') => void;
 };
 
 export const useDawStore = create<DawState>((set, get) => ({
@@ -339,7 +630,7 @@ export const useDawStore = create<DawState>((set, get) => ({
 		const safeChanges = changes.filter(
 			c => !(c.type === 'remove' && c.id === MASTER_NODE_ID),
 		);
-		// Dispose audio nodes for nodes that are being removed
+		// Dispose audio for removed nodes
 		safeChanges
 			.filter(c => c.type === 'remove')
 			.forEach(c => disposeAudioNode(c.id));
@@ -353,19 +644,55 @@ export const useDawStore = create<DawState>((set, get) => ({
 			.filter(c => c.type === 'remove')
 			.forEach(c => {
 				const edge = currentEdges.find(e => e.id === c.id);
-				if (edge) disconnectAudioNodes(edge.source, edge.target);
+				if (edge?.sourceHandle && edge?.targetHandle) {
+					disconnectAudioNodes(
+						edge.source, edge.sourceHandle,
+						edge.target, edge.targetHandle,
+					);
+				}
 			});
 		set({ edges: applyEdgeChanges(changes, get().edges) });
 	},
 
 	onConnect: (connection) => {
 		if (!connection.source || !connection.target) return;
-		connectAudioNodes(connection.source, connection.target);
+		if (!connection.sourceHandle || !connection.targetHandle) return;
+		connectAudioNodes(
+			connection.source, connection.sourceHandle,
+			connection.target, connection.targetHandle,
+		);
 		set({
 			edges: addEdge(
-				{ ...connection, animated: true, style: { stroke: '#22dd22' } },
+				{
+					...connection,
+					animated: true,
+					type:     'deletable',
+					style:    { stroke: '#22dd22' },
+				},
 				get().edges,
 			),
+			audioVersion: get().audioVersion + 1,
+		});
+	},
+
+	onReconnect: (oldEdge, newConnection) => {
+		// Disconnect the old audio path
+		if (oldEdge.sourceHandle && oldEdge.targetHandle) {
+			disconnectAudioNodes(
+				oldEdge.source, oldEdge.sourceHandle,
+				oldEdge.target, oldEdge.targetHandle,
+			);
+		}
+		// Connect the new audio path
+		if (newConnection.source && newConnection.target &&
+			newConnection.sourceHandle && newConnection.targetHandle) {
+			connectAudioNodes(
+				newConnection.source, newConnection.sourceHandle,
+				newConnection.target, newConnection.targetHandle,
+			);
+		}
+		set({
+			edges:        reconnectEdge(oldEdge, newConnection, get().edges),
 			audioVersion: get().audioVersion + 1,
 		});
 	},
@@ -386,6 +713,83 @@ export const useDawStore = create<DawState>((set, get) => ({
 		return id;
 	},
 
+	addOscillatorNode: (position) => {
+		const id = `oscillator-${Date.now()}`;
+		createOscillatorEntry(id);
+		const newNode: AppNode = {
+			id,
+			type:     'oscillator',
+			position,
+			data:     { label: 'Oscillator', frequency: 440, type: 'sine' },
+		};
+		set({
+			nodes:        [...get().nodes, newNode],
+			audioVersion: get().audioVersion + 1,
+		});
+		return id;
+	},
+
+	addGainNode: (position) => {
+		const id = `gain-${Date.now()}`;
+		createGainEntry(id, 1);
+		const newNode: AppNode = {
+			id,
+			type:     'gain',
+			position,
+			data:     { label: 'Gain', gain: 1.0 },
+		};
+		set({
+			nodes:        [...get().nodes, newNode],
+			audioVersion: get().audioVersion + 1,
+		});
+		return id;
+	},
+
+	addNoiseNode: (position) => {
+		const id = `noiseGenerator-${Date.now()}`;
+		createNoiseEntry(id);
+		const newNode: AppNode = {
+			id,
+			type:     'noiseGenerator',
+			position,
+			data:     { label: 'Noise', noiseType: 'white', volume: -6 },
+		};
+		set({
+			nodes:        [...get().nodes, newNode],
+			audioVersion: get().audioVersion + 1,
+		});
+		return id;
+	},
+
+	addDCSignalNode: (position) => {
+		const id = `dcSignal-${Date.now()}`;
+		createDCSignalEntry(id, 1);
+		const newNode: AppNode = {
+			id,
+			type:     'dcSignal',
+			position,
+			data:     { label: 'DC Signal', value: 1 },
+		};
+		set({
+			nodes:        [...get().nodes, newNode],
+			audioVersion: get().audioVersion + 1,
+		});
+		return id;
+	},
+
+	addStubNode: (kind, position) => {
+		const id = `${kind}-${Date.now()}`;
+		// Stubs have no audio entry — they are UI-only for now
+		const newNode: AppNode = {
+			id,
+			type:     'stub',
+			position,
+			data:     { label: STUB_LABELS[kind], kind },
+		};
+		set({ nodes: [...get().nodes, newNode] });
+		return id;
+	},
+
 	updateNodeData: (id, data) => {
 		set({
 			nodes: get().nodes.map(n =>
@@ -395,7 +799,21 @@ export const useDawStore = create<DawState>((set, get) => ({
 	},
 
 	setSelectedNodeId: (id) => set({ selectedNodeId: id }),
+
+	setMasterMode: (mode) => {
+		set({
+			nodes: get().nodes.map(n =>
+				n.id === MASTER_NODE_ID
+					? ({ ...n, data: { ...n.data, mode } } as AppNode)
+					: n,
+			),
+		});
+	},
 }));
+
+// Wire up the default player → master connections (stereo) after store is created
+connectAudioNodes(DEFAULT_PLAYER_ID, 'out-0', MASTER_NODE_ID, 'in-0');
+connectAudioNodes(DEFAULT_PLAYER_ID, 'out-1', MASTER_NODE_ID, 'in-1');
 
 // ─── Cleanup on page unload ───────────────────────────────────────────────────
 
@@ -409,11 +827,35 @@ window.addEventListener(
 					entry.toneNode.stop();
 				}
 				entry.toneNode.dispose();
-			} else if (entry.kind === 'masterOutput') {
-				entry.inputGain.dispose();
 				entry.split.dispose();
-				entry.leftAnalyser.dispose();
-				entry.rightAnalyser.dispose();
+			} else if (entry.kind === 'oscillator') {
+				if (entry.toneNode.state === 'started') {
+					entry.toneNode.stop();
+				}
+				entry.toneNode.dispose();
+			} else if (entry.kind === 'gain') {
+				entry.toneNode.dispose();
+			} else if (entry.kind === 'noise') {
+				if (entry.toneNode.state === 'started') {
+					entry.toneNode.stop();
+				}
+				entry.toneNode.dispose();
+			} else if (entry.kind === 'dcSignal') {
+				entry.toneNode.dispose();
+			} else if (entry.kind === 'masterOutput') {
+				entry.inputGainX.dispose();
+				entry.inputGainY.dispose();
+				entry.inputGainR.dispose();
+				entry.inputGainG.dispose();
+				entry.inputGainB.dispose();
+				entry.inputGainA.dispose();
+				entry.merge.dispose();
+				entry.xAnalyser.dispose();
+				entry.yAnalyser.dispose();
+				entry.rAnalyser.dispose();
+				entry.gAnalyser.dispose();
+				entry.bAnalyser.dispose();
+				entry.aAnalyser.dispose();
 			}
 		}
 		_audioNodes.clear();

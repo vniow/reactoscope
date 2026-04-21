@@ -100,32 +100,36 @@ export function useFadePass(): FadePass {
 
 
 export interface LineMesh {
-	geometry:   THREE.BufferGeometry;
-	lineMat:    THREE.Material;
-	lineScene:  THREE.Scene;
-	startArray: Float32Array;
-	endArray:   Float32Array;
-	aIdxArray:  Float32Array;
+	geometry:    THREE.BufferGeometry;
+	lineMat:     THREE.Material;
+	lineScene:   THREE.Scene;
+	startArray:  Float32Array;
+	endArray:    Float32Array;
+	aIdxArray:   Float32Array;
+	aColorArray: Float32Array;  // vec4 per vertex: r, g, b, a
 }
 
 export function useLineMesh(): LineMesh {
-	const startArray = useMemo(() => new Float32Array(MAX_VERTS * 2), []);
-	const endArray   = useMemo(() => new Float32Array(MAX_VERTS * 2), []);
-	const aIdxArray  = useMemo(() => new Float32Array(MAX_VERTS), []);
-	const indexArray = useMemo(() => makeVertexIndexArray(MAX_POINTS), []);
+	const startArray  = useMemo(() => new Float32Array(MAX_VERTS * 2), []);
+	const endArray    = useMemo(() => new Float32Array(MAX_VERTS * 2), []);
+	const aIdxArray   = useMemo(() => new Float32Array(MAX_VERTS), []);
+	const aColorArray = useMemo(() => new Float32Array(MAX_VERTS * 4), []);
+	const indexArray  = useMemo(() => makeVertexIndexArray(MAX_POINTS), []);
 
 	const geometry = useMemo(() => {
 		const geom = new THREE.BufferGeometry();
-		const sa = new THREE.BufferAttribute(startArray, 2); sa.usage = THREE.DynamicDrawUsage;
-		const ea = new THREE.BufferAttribute(endArray,   2); ea.usage = THREE.DynamicDrawUsage;
-		const ia = new THREE.BufferAttribute(aIdxArray,  1); ia.usage = THREE.DynamicDrawUsage;
+		const sa = new THREE.BufferAttribute(startArray,  2); sa.usage = THREE.DynamicDrawUsage;
+		const ea = new THREE.BufferAttribute(endArray,    2); ea.usage = THREE.DynamicDrawUsage;
+		const ia = new THREE.BufferAttribute(aIdxArray,   1); ia.usage = THREE.DynamicDrawUsage;
+		const ca = new THREE.BufferAttribute(aColorArray, 4); ca.usage = THREE.DynamicDrawUsage;
 		geom.setAttribute('aStart', sa);
 		geom.setAttribute('aEnd',   ea);
 		geom.setAttribute('aIdx',   ia);
+		geom.setAttribute('aColor', ca);
 		geom.setIndex(new THREE.BufferAttribute(indexArray, 1));
 		geom.setDrawRange(0, 0);
 		return geom;
-	}, [startArray, endArray, aIdxArray, indexArray]);
+	}, [startArray, endArray, aIdxArray, aColorArray, indexArray]);
 
 	const lineMat = useMemo(() => createLineMaterial(), []);
 
@@ -139,7 +143,7 @@ export function useLineMesh(): LineMesh {
 
 	useEffect(() => () => { geometry.dispose(); lineMat.dispose(); }, [geometry, lineMat]);
 
-	return { geometry, lineMat, lineScene, startArray, endArray, aIdxArray };
+	return { geometry, lineMat, lineScene, startArray, endArray, aIdxArray, aColorArray };
 }
 
 
@@ -210,6 +214,10 @@ export interface LanczosResources {
 	upsamplerRef: React.RefObject<LanczosUpsampler>;
 	smoothedX:    React.RefObject<Float32Array>;
 	smoothedY:    React.RefObject<Float32Array>;
+	smoothedR:    React.RefObject<Float32Array>;
+	smoothedG:    React.RefObject<Float32Array>;
+	smoothedB:    React.RefObject<Float32Array>;
+	smoothedA:    React.RefObject<Float32Array>;
 	nPointsRef:   React.RefObject<number>;
 }
 
@@ -217,11 +225,15 @@ export function useLanczos(steps: number): LanczosResources {
 	const upsamplerRef = useRef(new LanczosUpsampler(N_SAMPLES, steps));
 	const smoothedX    = useRef(new Float32Array(MAX_POINTS));
 	const smoothedY    = useRef(new Float32Array(MAX_POINTS));
+	const smoothedR    = useRef(new Float32Array(MAX_POINTS));
+	const smoothedG    = useRef(new Float32Array(MAX_POINTS));
+	const smoothedB    = useRef(new Float32Array(MAX_POINTS));
+	const smoothedA    = useRef(new Float32Array(MAX_POINTS));
 	const nPointsRef   = useRef<number>(N_SAMPLES);
 
 	useEffect(() => {
 		upsamplerRef.current = new LanczosUpsampler(N_SAMPLES, steps);
 	}, [steps]);
 
-	return { upsamplerRef, smoothedX, smoothedY, nPointsRef };
+	return { upsamplerRef, smoothedX, smoothedY, smoothedR, smoothedG, smoothedB, smoothedA, nPointsRef };
 }
