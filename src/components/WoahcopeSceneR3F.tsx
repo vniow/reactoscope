@@ -183,6 +183,16 @@ export function WoscopeSceneR3F() {
 			debugRef.current.waveformLeft  = { min: lMin, max: lMax, sample: Array.from(dbg.x.subarray(0, 4)) };
 			debugRef.current.waveformRight = { min: rMin, max: rMax, sample: Array.from(dbg.y.subarray(0, 4)) };
 			debugRef.current.nPoints       = nPoints;
+
+			// Silence detector: track when waveform energy drops to near-zero and when it resumes.
+			// silenceEndMs >= silenceStartMs means "was silent, now recovered"; the inverse means "currently silent".
+			const isSilent = Math.abs(lMax) < 0.001 && Math.abs(rMax) < 0.001;
+			const wasSilent = debugRef.current.silenceStartMs > debugRef.current.silenceEndMs;
+			if (isSilent && !wasSilent) {
+				debugRef.current.silenceStartMs = performance.now();
+			} else if (!isSilent && wasSilent) {
+				debugRef.current.silenceEndMs = performance.now();
+			}
 		}
 
 		const screenTex = crtEnabled && screenTextureRef.current

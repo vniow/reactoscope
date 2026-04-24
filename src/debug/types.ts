@@ -10,6 +10,13 @@ export interface DebugSnapshot {
 	waveformRight: { min: number; max: number; sample: number[] };
 	audioContextState: string;
 	nPoints: number;
+	// drag correlation fields
+	isDragging: boolean;
+	lastDragStartMs: number;
+	lastDragStopMs: number;
+	audioVersionAtDragStop: number;
+	silenceStartMs: number;
+	silenceEndMs: number;
 }
 
 export const EMPTY_SNAPSHOT: DebugSnapshot = {
@@ -24,4 +31,10 @@ export const EMPTY_SNAPSHOT: DebugSnapshot = {
 	waveformRight: { min: 0, max: 0, sample: [] },
 	audioContextState: 'unknown',
 	nPoints: 0,
+	isDragging: false,
+	lastDragStartMs: 0,
+	lastDragStopMs: 0,
+	audioVersionAtDragStop: -1,
+	silenceStartMs: 0,
+	silenceEndMs: 0,
 };

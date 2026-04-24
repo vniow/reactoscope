@@ -1,33 +1,36 @@
-import { useRef } from 'react';
+import { useMemo } from 'react';
 import Box from '@mui/material/Box';
-import { Canvas, useFrame } from '@react-three/fiber';
-import type * as THREE from 'three';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
+import * as THREE from 'three';
 import { useSquareSize } from '../hooks/useSquareSize';
+import { useSceneToAudio } from '../scene/useSceneToAudio';
 
 /**
- * A simple spinning rectangle rendered in its own R3F canvas.
- *
  * Two canvases rationale: the oscilloscope uses frameloop="demand" (only renders
  * when audio is active) while this canvas uses frameloop="always" (always
  * animating). Their render loops are fundamentally incompatible with a shared
  * WebGL context via <View>, so separate contexts is the correct choice here.
  * Browser WebGL context limits (8–16) are not a concern for two canvases.
  */
-function SpinningRect() {
-	const ref = useRef<THREE.Mesh>(null);
 
-	useFrame((_, delta) => {
-		if (ref.current) {
-			ref.current.rotation.z -= delta * 0.8;
-		}
-	});
+const BOX_GEO = new THREE.BoxGeometry(1, 1, 1);
+
+function WireframeCube() {
+	const edgesArgs = useMemo<[THREE.BufferGeometry]>(() => [BOX_GEO], []);
 
 	return (
-		<mesh ref={ref}>
-			<planeGeometry args={[1.2, 0.75]} />
-			<meshBasicMaterial color='#22dd22' />
-		</mesh>
+		<lineSegments>
+			<edgesGeometry args={edgesArgs} />
+			<lineBasicMaterial color='#22dd22' />
+		</lineSegments>
 	);
+}
+
+/** Runs useSceneToAudio inside the Canvas context so useThree() works. */
+function SceneAudioBridge() {
+	useSceneToAudio();
+	return null;
 }
 
 export function SpinningRectPanel() {
@@ -56,15 +59,17 @@ export function SpinningRectPanel() {
 							right:    1,
 							top:      1,
 							bottom:   -1,
-							near:     -1,
-							far:      1,
-							position: [0, 0, 0],
+							near:     0.01,
+							far:      100,
+							position: [0, 0, 5],
 						}}
 						frameloop='always'
 						gl={{ antialias: true }}
 						style={{ width: '100%', height: '100%', display: 'block' }}
 					>
-						<SpinningRect />
+						<OrbitControls makeDefault />
+						<WireframeCube />
+						<SceneAudioBridge />
 					</Canvas>
 				)}
 			</Box>

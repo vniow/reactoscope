@@ -1,6 +1,7 @@
 import {
 	createContext,
 	useState,
+	useCallback,
 	type ReactNode,
 	useContext,
 	useMemo,
@@ -28,7 +29,11 @@ export interface AxisContextType {
 }
 
 
+export type VizMode = 'oscilloscope' | 'laser';
+
 export interface EffectsContextType {
+	vizMode: VizMode;
+	setVizMode: (mode: VizMode) => void;
 	crtEnabled: boolean;
 	setCrtEnabled: (value: boolean) => void;
 	persistence: number;
@@ -62,12 +67,25 @@ export function WoscopeProvider({ children }: VizProviderProps) {
 	const [intensity, setIntensity] = useLocalStorage('woscope.intensity', 1);
 	const [hue,       setHue]       = useLocalStorage('woscope.hue',       125);
 
+	const [vizMode,         setVizModeRaw]      = useLocalStorage<VizMode>('woscope.vizMode',         'oscilloscope');
 	const [crtEnabled,      setCrtEnabled]      = useLocalStorage('woscope.crtEnabled',      true);
 	const [persistence,     setPersistence]     = useLocalStorage('woscope.persistence',     0.1);
 	const [glowStrength,    setGlowStrength]    = useLocalStorage('woscope.glowStrength',    0.1);
 	const [scatterStrength, setScatterStrength] = useLocalStorage('woscope.scatterStrength', 0.1);
 	const [lanczosEnabled,  setLanczosEnabled]  = useLocalStorage('woscope.lanczosEnabled',  true);
 	const [lanczosSteps,    setLanczosSteps]    = useLocalStorage('woscope.lanczosSteps',    6);
+
+	const OSCILLOSCOPE_PRESET = { crtEnabled: true,  persistence: 0.1, glowStrength: 0.1, scatterStrength: 0.1 };
+	const LASER_PRESET        = { crtEnabled: false, persistence: 0.0, glowStrength: 0.4, scatterStrength: 0.0 };
+
+	const setVizMode = useCallback((mode: VizMode) => {
+		const preset = mode === 'laser' ? LASER_PRESET : OSCILLOSCOPE_PRESET;
+		setVizModeRaw(mode);
+		setCrtEnabled(preset.crtEnabled);
+		setPersistence(preset.persistence);
+		setGlowStrength(preset.glowStrength);
+		setScatterStrength(preset.scatterStrength);
+	}, [setVizModeRaw, setCrtEnabled, setPersistence, setGlowStrength, setScatterStrength]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const playbackValue = useMemo<PlaybackContextType>(
 		() => ({ isPlaying, setIsPlaying }),
@@ -87,6 +105,7 @@ export function WoscopeProvider({ children }: VizProviderProps) {
 
 	const effectsValue = useMemo<EffectsContextType>(
 		() => ({
+			vizMode, setVizMode,
 			crtEnabled, setCrtEnabled,
 			persistence, setPersistence,
 			glowStrength, setGlowStrength,
@@ -96,7 +115,7 @@ export function WoscopeProvider({ children }: VizProviderProps) {
 		}),
 		// Setter functions are stable — only state values in deps.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[crtEnabled, persistence, glowStrength, scatterStrength, lanczosEnabled, lanczosSteps],
+		[vizMode, crtEnabled, persistence, glowStrength, scatterStrength, lanczosEnabled, lanczosSteps],
 	);
 
 	return (

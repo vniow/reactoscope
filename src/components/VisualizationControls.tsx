@@ -10,7 +10,7 @@ const toggleSx = {
 	},
 } as const;
 
-export function VisualizationControls() {
+export function VisualizationControls({ hideCrt = false }: { hideCrt?: boolean }) {
 	const { swapXY, setSwapXY, invertXY, setInvertXY } = useAxis();
 	const { crtEnabled, setCrtEnabled, lanczosEnabled, setLanczosEnabled } = useEffects();
 
@@ -34,24 +34,26 @@ export function VisualizationControls() {
 			>
 				invert
 			</ToggleButton>
+			{!hideCrt && (
+				<ToggleButton
+					value='crtEnabled'
+					selected={crtEnabled}
+					onChange={() => setCrtEnabled(!crtEnabled)}
+					size='small'
+					sx={toggleSx}
+				>
+					CRT
+				</ToggleButton>
+			)}
 			<ToggleButton
-				value='crtEnabled'
-				selected={crtEnabled}
-				onChange={() => setCrtEnabled(!crtEnabled)}
+				value='lanczosEnabled'
+				selected={lanczosEnabled}
+				onChange={() => setLanczosEnabled(!lanczosEnabled)}
 				size='small'
 				sx={toggleSx}
 			>
-				CRT
+				smooth
 			</ToggleButton>
-		<ToggleButton
-			value='lanczosEnabled'
-			selected={lanczosEnabled}
-			onChange={() => setLanczosEnabled(!lanczosEnabled)}
-			size='small'
-			sx={toggleSx}
-		>
-			smooth
-		</ToggleButton>
 		</Box>
 	);
 }

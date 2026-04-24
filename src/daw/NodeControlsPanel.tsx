@@ -1,29 +1,13 @@
-import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
 import { useDawStore } from '../store/daw';
-import { GainControl }           from '../components/GainControl';
-import { VisualizationControls } from '../components/VisualizationControls';
-import { PhosphorControl }       from '../components/PhosphorControl';
 
 /**
- * Right sidebar panel.
- * When no node is selected: shows the woahscope visualization controls.
- * When a node is selected: the node's own inline controls are sufficient,
- * so this panel is hidden (returns null).
+ * Right sidebar panel. Visualiser settings have moved to the canvas overlay (VizSettingsOverlay).
+ * This panel is retained as a mount point for future node-specific controls surfaced outside
+ * the node card itself, but currently renders nothing.
  */
 export function NodeControlsPanel() {
-	const selectedNodeId = useDawStore(s => s.selectedNodeId);
-
-	if (selectedNodeId !== null) return null;
-
-	return (
-		<Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-			<Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, alignItems: 'center' }}>
-				<PhosphorControl />
-				<VisualizationControls />
-			</Box>
-			<Divider />
-			<GainControl />
-		</Box>
-	);
+	// Keep the store subscription so the component re-renders when selection changes,
+	// ready to show node-specific controls here if needed in future.
+	useDawStore(s => s.selectedNodeId);
+	return null;
 }

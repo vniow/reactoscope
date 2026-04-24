@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import { WoscopeProvider } from './contexts/WoahscopeContext';
 import { ErrorBoundary }   from './components';
 import { WoahscopePanel }    from './daw/WoahscopePanel';
-import { SpinningRectPanel } from './daw/SpinningRectPanel';
+import { SpinningRectPanel } from './daw/InputPanel';
 import { DawCanvas }         from './daw/DawCanvas';
 import { debugRef } from './components/WoahcopeSceneR3F';
 

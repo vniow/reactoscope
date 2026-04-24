@@ -4,6 +4,18 @@ import glsl from 'vite-plugin-glsl';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 
 export default defineConfig({
+	server: {
+		headers: {
+			'Cross-Origin-Opener-Policy':   'same-origin',
+			'Cross-Origin-Embedder-Policy': 'require-corp',
+		},
+	},
+	preview: {
+		headers: {
+			'Cross-Origin-Opener-Policy':   'same-origin',
+			'Cross-Origin-Embedder-Policy': 'require-corp',
+		},
+	},
 	optimizeDeps: {
 		esbuildOptions: {
 			sourcemap: false,

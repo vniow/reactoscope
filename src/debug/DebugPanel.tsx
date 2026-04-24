@@ -58,10 +58,22 @@ export function DebugPanel({ debugRef }: Props) {
 		blur1RTPixel, blur3RTPixel,
 		canvasPixelAfterBlit,
 		waveformLeft, waveformRight, audioContextState,
+		isDragging, lastDragStartMs, lastDragStopMs, audioVersionAtDragStop,
+		silenceStartMs, silenceEndMs,
 	} = snap;
 
 	const lSamples = waveformLeft.sample.map(v => v.toFixed(3)).join(', ');
 	const rSamples = waveformRight.sample.map(v => v.toFixed(3)).join(', ');
+
+	const dragDelta = lastDragStopMs > 0 && lastDragStartMs > 0
+		? `Δ${(lastDragStopMs - lastDragStartMs).toFixed(1)}ms`
+		: '—';
+	const silenceGap = silenceStartMs > 0 && silenceEndMs >= silenceStartMs
+		? `Δ${(silenceEndMs - silenceStartMs).toFixed(1)}ms`
+		: silenceStartMs > 0 ? 'ongoing' : 'none';
+	const silenceOffsetFromDrag = silenceStartMs > 0 && lastDragStartMs > 0
+		? `${(silenceStartMs - lastDragStartMs).toFixed(1)}ms after dragStart / ${(silenceStartMs - lastDragStopMs).toFixed(1)}ms after dragStop`
+		: '—';
 
 	return (
 		<div style={panelStyle}>
@@ -75,7 +87,13 @@ export function DebugPanel({ debugRef }: Props) {
 ─── audio ─────────────────────────────────
   ctx: ${audioContextState}
   L  min:${waveformLeft.min.toFixed(4)}  max:${waveformLeft.max.toFixed(4)}   [${lSamples}]
-  R  min:${waveformRight.min.toFixed(4)}  max:${waveformRight.max.toFixed(4)}   [${rSamples}]`}
+  R  min:${waveformRight.min.toFixed(4)}  max:${waveformRight.max.toFixed(4)}   [${rSamples}]
+─── drag timing ────────────────────────────
+  dragging: ${isDragging ? '🟡 YES' : 'no'}
+  dragStart: ${lastDragStartMs > 0 ? lastDragStartMs.toFixed(1) + 'ms' : '—'}   dragStop: ${lastDragStopMs > 0 ? lastDragStopMs.toFixed(1) + 'ms' : '—'}   (${dragDelta})
+  audioVer@stop: ${audioVersionAtDragStop >= 0 ? audioVersionAtDragStop : '—'}
+  silence gap: ${silenceGap}
+  silence offset: ${silenceOffsetFromDrag}`}
 		</div>
 	);
 }

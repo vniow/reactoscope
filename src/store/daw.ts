@@ -40,9 +40,10 @@ import {
 	Noise,
 	Signal,
 	getTransport,
+	getContext,
 	start as toneStart,
 } from 'tone';
-import { DEFAULT_AUDIO_SETTINGS, BUILT_IN_TRACKS } from '../config';
+import { DEFAULT_AUDIO_SETTINGS } from '../config';
 import type {
 	AppNode,
 	AppEdge,
@@ -53,6 +54,7 @@ import type {
 	GainAudioEntry,
 	NoiseAudioEntry,
 	DCSignalAudioEntry,
+	SceneInputAudioEntry,
 	StubKind,
 } from './dawTypes';
 
@@ -60,6 +62,7 @@ const { nSamples } = DEFAULT_AUDIO_SETTINGS;
 
 export const MASTER_NODE_ID    = 'master-output';
 export const DEFAULT_PLAYER_ID = 'player-default';
+export const SCENE_INPUT_ID    = 'scene-input';
 
 // ─── Module-level audio node registry ────────────────────────────────────────
 
@@ -171,6 +174,11 @@ function connectAudioNodes(
 		if (src.kind === 'player') {
 			const outputIndex = sourceHandle === 'out-1' ? 1 : 0;
 			src.split.connect(destNode, outputIndex, 0);
+		} else if (src.kind === 'sceneInput') {
+			const outputIndex = parseInt(sourceHandle.replace('out-', ''), 10);
+			// split.output is the underlying ChannelSplitterNode (std-audio-context);
+			// destNode.input is the underlying GainNode — both live in the same context.
+			src.split.output.connect(destNode.input, outputIndex, 0);
 		} else if (src.kind === 'oscillator' || src.kind === 'gain' || src.kind === 'noise' || src.kind === 'dcSignal') {
 			src.toneNode.connect(destNode);
 		}
@@ -197,6 +205,9 @@ function disconnectAudioNodes(
 		if (src.kind === 'player') {
 			const outputIndex = sourceHandle === 'out-1' ? 1 : 0;
 			src.split.disconnect(destNode, outputIndex);
+		} else if (src.kind === 'sceneInput') {
+			const outputIndex = parseInt(sourceHandle.replace('out-', ''), 10);
+			src.split.output.disconnect(destNode.input, outputIndex, 0);
 		} else if (src.kind === 'oscillator' || src.kind === 'gain' || src.kind === 'noise' || src.kind === 'dcSignal') {
 			src.toneNode.disconnect(destNode);
 		}
@@ -388,6 +399,83 @@ export function setDCSignalValue(id: string, value: number): void {
 	entry.toneNode.value = value;
 }
 
+// ─── Scene Input audio node lifecycle ────────────────────────────────────────
+
+// Console styling for SceneInput store lifecycle events.
+const _DAW_INFO = [
+	'%c DAW / SceneInput %c',
+	'background:#004d40;color:#80cbc4;font-weight:bold;padding:2px 6px;border-radius:3px',
+	'color:inherit',
+] as const;
+const _DAW_OK = [
+	'%c DAW / SceneInput %c',
+	'background:#1b5e20;color:#a5d6a7;font-weight:bold;padding:2px 6px;border-radius:3px',
+	'color:inherit',
+] as const;
+
+async function initSceneInput(): Promise<void> {
+	// Tone.js v15 uses standardized-audio-context internally, so rawContext is NOT
+	// a native BaseAudioContext. Use Tone's own methods to create the AudioWorklet
+	// node — they handle standardized-audio-context correctly.
+	console.log(..._DAW_INFO, 'initSceneInput() — loading AudioWorklet module…');
+	const toneCtx    = getContext();
+	const sampleRate = toneCtx.rawContext.sampleRate;
+
+	await toneCtx.addAudioWorkletModule('/sceneInputProcessor.worklet.js');
+	console.log(..._DAW_INFO, 'AudioWorklet module loaded — creating node…');
+
+	const workletNode = toneCtx.createAudioWorkletNode('scene-input-processor', {
+		numberOfOutputs:    1,
+		outputChannelCount: [6],
+		processorOptions:   {},
+	});
+
+	// Tone.Split(6) wraps a ChannelSplitterNode via context.createChannelSplitter,
+	// keeping everything within the standardized-audio-context graph.
+	const toneSplit = new Split(6);
+	workletNode.connect(toneSplit.input);
+
+	const entry: SceneInputAudioEntry = {
+		kind: 'sceneInput',
+		workletNode,
+		split: toneSplit,
+	};
+	_audioNodes.set(SCENE_INPUT_ID, entry);
+
+	console.log(
+		..._DAW_OK,
+		`initSceneInput() complete — sampleRate: ${sampleRate} Hz, mode: coordinate-streaming`,
+	);
+}
+
+let _sceneRunning = false;
+
+export async function startSceneInput(): Promise<void> {
+	await toneStart();
+	_sceneRunning = true;
+	console.log(..._DAW_OK, 'startSceneInput() — scene audio running');
+}
+
+export function stopSceneInput(): void {
+	_sceneRunning = false;
+	console.log(..._DAW_INFO, 'stopSceneInput() — scene audio stopped');
+}
+
+/**
+ * Returns the AudioWorkletNode for the scene input so the main thread can
+ * forward coordinate buffers via workletNode.port.postMessage.
+ * Returns null if initSceneInput() hasn't completed yet.
+ */
+export function getSceneInputWorkletNode(): AudioWorkletNode | null {
+	const entry = _audioNodes.get(SCENE_INPUT_ID);
+	if (!entry || entry.kind !== 'sceneInput') return null;
+	return entry.workletNode as AudioWorkletNode;
+}
+
+export function getSceneRunning(): boolean {
+	return _sceneRunning;
+}
+
 // ─── Generic node disposal ────────────────────────────────────────────────────
 
 function disposeAudioNode(id: string): void {
@@ -415,6 +503,9 @@ function disposeAudioNode(id: string): void {
 		entry.toneNode.dispose();
 	} else if (entry.kind === 'dcSignal') {
 		entry.toneNode.dispose();
+	} else if (entry.kind === 'sceneInput') {
+		try { entry.workletNode.disconnect(); } catch {}
+		entry.split.dispose();
 	}
 
 	_audioNodes.delete(id);
@@ -554,46 +645,32 @@ const STUB_LABELS: Record<StubKind, string> = {
 
 // ─── Initial graph setup ──────────────────────────────────────────────────────
 
-createPlayerEntry(DEFAULT_PLAYER_ID);
-// connectAudioNodes is called after store init (see module-level call below)
+// Player nodes are created on demand via addPlayerNode — no default player.
 
 const initialNodes: AppNode[] = [
 	{
 		id:        MASTER_NODE_ID,
 		type:      'masterOutput',
 		position:  { x: 300, y: 250 },
-		data:      { label: 'Master Output', mode: 'stereo' as const },
+		data:      { label: 'Master Output', mode: 'multichannel' as const },
 		deletable: false,
 	},
 	{
-		id:       DEFAULT_PLAYER_ID,
-		type:     'player',
-		position: { x: 75, y: 50 },
-		data:     { trackUrl: BUILT_IN_TRACKS[0].file, label: 'Player' },
+		id:        SCENE_INPUT_ID,
+		type:      'sceneInput',
+		position:  { x: -250, y: 250 },
+		data:      { label: 'Scene Input', scanFrequency: 50 },
+		deletable: false,
 	},
 ];
 
 const initialEdges: AppEdge[] = [
-	{
-		id:           'e-default',
-		source:       DEFAULT_PLAYER_ID,
-		sourceHandle: 'out-0',
-		target:       MASTER_NODE_ID,
-		targetHandle: 'in-0',
-		animated:     true,
-		type:         'deletable',
-		style:        { stroke: '#22dd22' },
-	},
-	{
-		id:           'e-default-r',
-		source:       DEFAULT_PLAYER_ID,
-		sourceHandle: 'out-1',
-		target:       MASTER_NODE_ID,
-		targetHandle: 'in-1',
-		animated:     true,
-		type:         'deletable',
-		style:        { stroke: '#22dd22' },
-	},
+	{ id: 'e-scene-x', source: SCENE_INPUT_ID, sourceHandle: 'out-0', target: MASTER_NODE_ID, targetHandle: 'in-0', animated: true, type: 'deletable', style: { stroke: '#22dd22' } },
+	{ id: 'e-scene-y', source: SCENE_INPUT_ID, sourceHandle: 'out-1', target: MASTER_NODE_ID, targetHandle: 'in-1', animated: true, type: 'deletable', style: { stroke: '#22dd22' } },
+	{ id: 'e-scene-r', source: SCENE_INPUT_ID, sourceHandle: 'out-2', target: MASTER_NODE_ID, targetHandle: 'in-2', animated: true, type: 'deletable', style: { stroke: '#22dd22' } },
+	{ id: 'e-scene-g', source: SCENE_INPUT_ID, sourceHandle: 'out-3', target: MASTER_NODE_ID, targetHandle: 'in-3', animated: true, type: 'deletable', style: { stroke: '#22dd22' } },
+	{ id: 'e-scene-b', source: SCENE_INPUT_ID, sourceHandle: 'out-4', target: MASTER_NODE_ID, targetHandle: 'in-4', animated: true, type: 'deletable', style: { stroke: '#22dd22' } },
+	{ id: 'e-scene-a', source: SCENE_INPUT_ID, sourceHandle: 'out-5', target: MASTER_NODE_ID, targetHandle: 'in-5', animated: true, type: 'deletable', style: { stroke: '#22dd22' } },
 ];
 
 // ─── Zustand store ────────────────────────────────────────────────────────────
@@ -614,9 +691,10 @@ type DawState = {
 	addNoiseNode:      (position: { x: number; y: number }) => string;
 	addDCSignalNode:   (position: { x: number; y: number }) => string;
 	addStubNode:       (kind: StubKind, position: { x: number; y: number }) => string;
-	updateNodeData:    (id: string, data: Partial<Record<string, unknown>>) => void;
-	setSelectedNodeId: (id: string | null) => void;
-	setMasterMode:     (mode: 'stereo' | 'multichannel') => void;
+	updateNodeData:      (id: string, data: Partial<Record<string, unknown>>) => void;
+	updateNodePositions: (updatedNodes: AppNode[]) => void;
+	setSelectedNodeId:   (id: string | null) => void;
+	setMasterMode:       (mode: 'stereo' | 'multichannel') => void;
 };
 
 export const useDawStore = create<DawState>((set, get) => ({
@@ -626,9 +704,9 @@ export const useDawStore = create<DawState>((set, get) => ({
 	selectedNodeId: null,
 
 	onNodesChange: (changes: NodeChange<AppNode>[]) => {
-		// Never allow the master output node to be deleted
+		// Never allow the master output or scene input nodes to be deleted
 		const safeChanges = changes.filter(
-			c => !(c.type === 'remove' && c.id === MASTER_NODE_ID),
+			c => !(c.type === 'remove' && (c.id === MASTER_NODE_ID || c.id === SCENE_INPUT_ID)),
 		);
 		// Dispose audio for removed nodes
 		safeChanges
@@ -636,6 +714,15 @@ export const useDawStore = create<DawState>((set, get) => ({
 			.forEach(c => disposeAudioNode(c.id));
 
 		set({ nodes: applyNodeChanges(safeChanges, get().nodes) });
+	},
+
+	updateNodePositions: (updatedNodes: AppNode[]) => {
+		const posMap = new Map(updatedNodes.map(n => [n.id, n.position]));
+		set({
+			nodes: get().nodes.map(n =>
+				posMap.has(n.id) ? { ...n, position: posMap.get(n.id)! } : n,
+			),
+		});
 	},
 
 	onEdgesChange: (changes) => {
@@ -811,9 +898,16 @@ export const useDawStore = create<DawState>((set, get) => ({
 	},
 }));
 
-// Wire up the default player → master connections (stereo) after store is created
-connectAudioNodes(DEFAULT_PLAYER_ID, 'out-0', MASTER_NODE_ID, 'in-0');
-connectAudioNodes(DEFAULT_PLAYER_ID, 'out-1', MASTER_NODE_ID, 'in-1');
+// Initialise the scene input AudioWorklet (async); wire its default connections once ready.
+// writeSceneAudio() guards against the entry not existing, so early writes are silently dropped.
+initSceneInput().then(() => {
+	connectAudioNodes(SCENE_INPUT_ID, 'out-0', MASTER_NODE_ID, 'in-0');
+	connectAudioNodes(SCENE_INPUT_ID, 'out-1', MASTER_NODE_ID, 'in-1');
+	connectAudioNodes(SCENE_INPUT_ID, 'out-2', MASTER_NODE_ID, 'in-2');
+	connectAudioNodes(SCENE_INPUT_ID, 'out-3', MASTER_NODE_ID, 'in-3');
+	connectAudioNodes(SCENE_INPUT_ID, 'out-4', MASTER_NODE_ID, 'in-4');
+	connectAudioNodes(SCENE_INPUT_ID, 'out-5', MASTER_NODE_ID, 'in-5');
+}).catch(console.error);
 
 // ─── Cleanup on page unload ───────────────────────────────────────────────────
 
@@ -856,6 +950,9 @@ window.addEventListener(
 				entry.gAnalyser.dispose();
 				entry.bAnalyser.dispose();
 				entry.aAnalyser.dispose();
+			} else if (entry.kind === 'sceneInput') {
+				try { entry.workletNode.disconnect(); } catch {}
+				entry.split.dispose();
 			}
 		}
 		_audioNodes.clear();

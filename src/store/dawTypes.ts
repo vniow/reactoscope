@@ -69,6 +69,13 @@ export type DCSignalNodeData = {
 
 export type DCSignalFlowNode = Node<DCSignalNodeData, 'dcSignal'>;
 
+export type SceneInputNodeData = {
+	label:        string;
+	scanFrequency: number;  // Hz — how many full traces per second (default 50)
+};
+
+export type SceneInputFlowNode = Node<SceneInputNodeData, 'sceneInput'>;
+
 export type AppNode =
 	| BuiltInNode
 	| PlayerFlowNode
@@ -77,7 +84,8 @@ export type AppNode =
 	| GainFlowNode
 	| StubFlowNode
 	| NoiseFlowNode
-	| DCSignalFlowNode;
+	| DCSignalFlowNode
+	| SceneInputFlowNode;
 
 export type AppEdge = Edge;
 
@@ -133,6 +141,16 @@ export type DCSignalAudioEntry = {
 	toneNode: Signal<'audioRange'>;
 };
 
+export type SceneInputAudioEntry = {
+	kind:        'sceneInput';
+	// workletNode is the standardized-audio-context AudioWorkletNode returned by
+	// toneCtx.createAudioWorkletNode() — typed as any to avoid standardized-audio-context
+	// type import chain; we only call .connect() / .port.postMessage() on it.
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	workletNode: any;
+	split:       Split;   // Tone.Split(6) — use split.output.connect(dest, ch, 0) per channel
+};
+
 // Stubs are NOT in the audio registry — they have no Tone.js instances yet.
 
 export type AudioNodeEntry =
@@ -141,6 +159,7 @@ export type AudioNodeEntry =
 	| OscillatorAudioEntry
 	| GainAudioEntry
 	| NoiseAudioEntry
-	| DCSignalAudioEntry;
+	| DCSignalAudioEntry
+	| SceneInputAudioEntry;
 
 export type AudioNodeMap = Map<string, AudioNodeEntry>;
