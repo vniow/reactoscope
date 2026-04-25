@@ -131,6 +131,14 @@ export function getWaveformData(): {
 	};
 }
 
+export function getSampleRate(): number {
+	return getContext().rawContext.sampleRate;
+}
+
+export function getAudioCurrentTime(): number {
+	return getContext().rawContext.currentTime;
+}
+
 // ─── Audio routing helpers ────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -458,6 +466,12 @@ export async function startSceneInput(): Promise<void> {
 
 export function stopSceneInput(): void {
 	_sceneRunning = false;
+	// Clear the worklet's coord buffer so the oscilloscope goes silent immediately
+	// rather than continuing to cycle through the last received frame.
+	const entry = _audioNodes.get(SCENE_INPUT_ID);
+	if (entry && entry.kind === 'sceneInput') {
+		(entry.workletNode as AudioWorkletNode).port.postMessage({ type: 'clear' });
+	}
 	console.log(..._DAW_INFO, 'stopSceneInput() — scene audio stopped');
 }
 
@@ -888,12 +902,26 @@ export const useDawStore = create<DawState>((set, get) => ({
 	setSelectedNodeId: (id) => set({ selectedNodeId: id }),
 
 	setMasterMode: (mode) => {
+		const validHandles = mode === 'stereo'
+			? new Set(['in-0', 'in-1'])
+			: new Set(['in-0', 'in-1', 'in-2', 'in-3', 'in-4', 'in-5']);
+
+		const currentEdges = get().edges;
+		const staleEdges = currentEdges.filter(
+			e => e.target === MASTER_NODE_ID && !validHandles.has(e.targetHandle ?? ''),
+		);
+		for (const e of staleEdges) {
+			disconnectAudioNodes(e.source, e.sourceHandle!, e.target, e.targetHandle!);
+		}
+		const staleIds = new Set(staleEdges.map(e => e.id));
+
 		set({
 			nodes: get().nodes.map(n =>
 				n.id === MASTER_NODE_ID
 					? ({ ...n, data: { ...n.data, mode } } as AppNode)
 					: n,
 			),
+			edges: currentEdges.filter(e => !staleIds.has(e.id)),
 		});
 	},
 }));

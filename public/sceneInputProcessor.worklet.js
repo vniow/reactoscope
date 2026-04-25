@@ -52,15 +52,40 @@ class SceneInputProcessor extends AudioWorkletProcessor {
 
 		this.port.onmessage = (e) => {
 			if (e.data.type === 'path') {
-				this._coords  = new Float32Array(e.data.data);
-				this._nPoints = e.data.nPoints;
+				const newCoords  = new Float32Array(e.data.data);
+				const newNPoints = e.data.nPoints;
+
+				// Phase-matched buffer swap: find the nearest point in the new buffer
+				// to the current beam position so the transition has no spatial jump.
+				// Without this, a different orderSegments traversal on the new frame
+				// maps the same _index to a different spatial position → spikey glitch.
+				if (this._coords && this._nPoints > 0 && newNPoints > 0) {
+					const curPos = Math.floor(this._index * this._nPoints) % this._nPoints;
+					const curX   = this._coords[curPos * STRIDE];
+					const curY   = this._coords[curPos * STRIDE + 1];
+					let bestIdx  = 0;
+					let bestDist = Infinity;
+					for (let i = 0; i < newNPoints; i++) {
+						const nx = newCoords[i * STRIDE];
+						const ny = newCoords[i * STRIDE + 1];
+						const d  = (nx - curX) * (nx - curX) + (ny - curY) * (ny - curY);
+						if (d < bestDist) { bestDist = d; bestIdx = i; }
+					}
+					this._index = bestIdx / newNPoints;
+				}
+
+				this._coords  = newCoords;
+				this._nPoints = newNPoints;
 				this._frameCount++;
-				// Do NOT reset _index — smooth transition between frames
 				if (this._frameCount === 1) {
 					const msg = `First coord frame received — nPoints: ${this._nPoints}, scanFreq: ${this._scanFreq} Hz`;
 					this.port.postMessage({ type: 'log', level: 'info', msg });
 					console.log(..._OK, msg);
 				}
+			} else if (e.data.type === 'clear') {
+				this._coords  = null;
+				this._nPoints = 0;
+				this._index   = 0;
 			} else if (e.data.type === 'scanFreq') {
 				this._scanFreq = e.data.value;
 				const msg = `Scan frequency updated — ${this._scanFreq} Hz`;
@@ -107,8 +132,9 @@ class SceneInputProcessor extends AudioWorkletProcessor {
 			const a     = this._coords[o + 5];
 			const blank = this._coords[o + 6] > 0.5;
 
-			if (out[0]) out[0][i] = x;
-			if (out[1]) out[1][i] = y;
+			// Clamp guards against corrupt buffer data causing runaway deflection
+			if (out[0]) out[0][i] = x < -1.5 ? -1 : x > 1.5 ? 1 : x;
+			if (out[1]) out[1][i] = y < -1.5 ? -1 : y > 1.5 ? 1 : y;
 			// Blank travel: beam still moves (XY) but color channels are silent
 			if (out[2]) out[2][i] = blank ? -1 : r;
 			if (out[3]) out[3][i] = blank ? -1 : g;
