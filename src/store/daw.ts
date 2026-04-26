@@ -139,6 +139,17 @@ export function getAudioCurrentTime(): number {
 	return getContext().rawContext.currentTime;
 }
 
+// ─── Scene-input phase register (SharedArrayBuffer) ──────────────────────────
+// The worklet writes its _index (0–1 scan phase) here every process() block.
+// Reading this on the main thread gives exact phase with no currentTime uncertainty.
+
+const _phaseSAB  = new SharedArrayBuffer(4);
+const _phaseView = new Float32Array(_phaseSAB);
+
+export function getSceneInputPhase(): number {
+	return _phaseView[0];
+}
+
 // ─── Audio routing helpers ────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -449,6 +460,9 @@ async function initSceneInput(): Promise<void> {
 		split: toneSplit,
 	};
 	_audioNodes.set(SCENE_INPUT_ID, entry);
+
+	// Give the worklet a direct write-path into the phase register.
+	(workletNode as AudioWorkletNode).port.postMessage({ type: 'phaseBuffer', buffer: _phaseSAB });
 
 	console.log(
 		..._DAW_OK,

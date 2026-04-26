@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useAxis, useEffects } from '../contexts/WoahscopeContext';
 import { updateGeometryArrays } from '../woahscope/utils';
 import { DEFAULT_AUDIO_SETTINGS } from '../config';
-import { getWaveformData, getSampleRate, getAudioCurrentTime } from '../store/daw';
+import { getWaveformData, getSampleRate, getSceneInputPhase } from '../store/daw';
 import {
 	N_SAMPLES,
 	FADE_AMOUNT,
@@ -164,11 +164,13 @@ export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannel
 
 			let startSample: number;
 			if (mode === 'clock' && sceneInputChs.has(chId)) {
-				// Newest buffer sample (index N_SAMPLES-1) ≈ currentTime.
-				// phaseAtNow is how far into the current cycle that sample sits.
-				// Subtracting it from the buffer end gives the last cycle boundary.
-				const phaseAtNow = Math.floor(getAudioCurrentTime() * sampleRate) % period;
-				startSample = (N_SAMPLES - 1) - phaseAtNow + phaseOffSamples + latComp;
+				// _phaseView[0] is the worklet's _index at the end of its last audio block —
+				// this is the phase of the most recent sample in the analyser buffer.
+				// Dividing by step gives how many samples ago this cycle started.
+				const phase    = getSceneInputPhase();             // 0–1
+				const step     = scanFreq / sampleRate;            // fraction per sample
+				const agoSamples = Math.floor(phase / step);       // samples since last cycle boundary
+				startSample = (N_SAMPLES - 1) - agoSamples + phaseOffSamples + latComp;
 				if (startSample + displaySamples > N_SAMPLES) startSample -= period;
 				if (startSample < 0)                          startSample += period;
 				startSample = Math.max(0, Math.min(N_SAMPLES - displaySamples, startSample));

@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useAxis, useEffects } from '../contexts/WoahscopeContext';
 import { updateGeometryArrays, getColourFromHue } from '../woahscope/utils';
 import { DEFAULT_AUDIO_SETTINGS } from '../config';
-import { getWaveformData } from '../audio/graph';
+import { getWaveformData } from '../store/daw';
 import { useDawStore, MASTER_NODE_ID } from '../store/daw';
 import type { MasterOutputNodeData } from '../store/dawTypes';
 import type { DebugSnapshot } from '../debug/types';

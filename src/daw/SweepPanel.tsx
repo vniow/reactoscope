@@ -52,7 +52,7 @@ export function SweepPanel({ height, fullWidth, onResize, onToggleFullWidth }: P
 		() => (localStorage.getItem('sweep-trigger-mode') ?? 'clock') as TriggerMode,
 	);
 	const [phaseOffset, setPhaseOffset] = useState<number>(
-		() => Number(localStorage.getItem('sweep-phase-offset') ?? 0),
+		() => Math.max(-1, Number(localStorage.getItem('sweep-phase-offset') ?? 0)),
 	);
 	const [latencyCompSamples, setLatencyCompSamples] = useState<number>(
 		() => Number(localStorage.getItem('sweep-latency-comp') ?? 0),
@@ -147,7 +147,7 @@ export function SweepPanel({ height, fullWidth, onResize, onToggleFullWidth }: P
 					sx={{ color: '#555', fontFamily: 'monospace', fontSize: '0.6rem', flexShrink: 0 }}>
 					{`PHASE ${Math.round(phaseOffset * 100)}%`}
 				</Typography>
-				<Slider size="small" min={0} max={0.999} step={0.001}
+				<Slider size="small" min={-1} max={0.999} step={0.001}
 					value={phaseOffset} onChange={(_, v) => setPhaseOffset(v as number)}
 					sx={{ width: '80px', flexShrink: 0, color: '#22dd22',
 					      '& .MuiSlider-thumb': { width: 10, height: 10 },

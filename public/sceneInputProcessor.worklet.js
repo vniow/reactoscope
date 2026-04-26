@@ -42,10 +42,11 @@ class SceneInputProcessor extends AudioWorkletProcessor {
 	constructor(options) {
 		super(options);
 
-		this._coords   = null;   // Float32Array — interleaved coord buffer
-		this._nPoints  = 0;
-		this._index    = 0;      // floating-point position in [0, 1)
-		this._scanFreq = 50;     // Hz — full traces per second
+		this._coords     = null;   // Float32Array — interleaved coord buffer
+		this._nPoints    = 0;
+		this._index      = 0;      // floating-point position in [0, 1)
+		this._scanFreq   = 50;     // Hz — full traces per second
+		this._phaseView  = null;   // Float32Array over SharedArrayBuffer from main thread
 
 		this._firstProcess = true;
 		this._frameCount   = 0;
@@ -91,6 +92,8 @@ class SceneInputProcessor extends AudioWorkletProcessor {
 				const msg = `Scan frequency updated — ${this._scanFreq} Hz`;
 				this.port.postMessage({ type: 'log', level: 'info', msg });
 				console.log(..._INFO, msg);
+			} else if (e.data.type === 'phaseBuffer') {
+				this._phaseView = new Float32Array(e.data.buffer);
 			}
 		};
 
@@ -122,15 +125,22 @@ class SceneInputProcessor extends AudioWorkletProcessor {
 		const step = this._scanFreq / sampleRate;
 
 		for (let i = 0; i < nSamples; i++) {
-			const pos   = Math.floor(this._index * this._nPoints) % this._nPoints;
-			const o     = pos * STRIDE;
-			const x     = this._coords[o];
-			const y     = this._coords[o + 1];
-			const r     = this._coords[o + 2];
-			const g     = this._coords[o + 3];
-			const b     = this._coords[o + 4];
-			const a     = this._coords[o + 5];
-			const blank = this._coords[o + 6] > 0.5;
+			const scaled = this._index * this._nPoints;
+			const pos0   = Math.floor(scaled) % this._nPoints;
+			const pos1   = (pos0 + 1) % this._nPoints;
+			const frac   = scaled - Math.floor(scaled);
+			const o0     = pos0 * STRIDE;
+			const o1     = pos1 * STRIDE;
+
+			// Linear interpolation between adjacent coordinate points
+			const x = this._coords[o0]     + frac * (this._coords[o1]     - this._coords[o0]);
+			const y = this._coords[o0 + 1] + frac * (this._coords[o1 + 1] - this._coords[o0 + 1]);
+			const r = this._coords[o0 + 2] + frac * (this._coords[o1 + 2] - this._coords[o0 + 2]);
+			const g = this._coords[o0 + 3] + frac * (this._coords[o1 + 3] - this._coords[o0 + 3]);
+			const b = this._coords[o0 + 4] + frac * (this._coords[o1 + 4] - this._coords[o0 + 4]);
+			const a = this._coords[o0 + 5] + frac * (this._coords[o1 + 5] - this._coords[o0 + 5]);
+			// Blank is binary — use the current point's value, don't blend it
+			const blank = this._coords[o0 + 6] > 0.5;
 
 			// Clamp guards against corrupt buffer data causing runaway deflection
 			if (out[0]) out[0][i] = x < -1.5 ? -1 : x > 1.5 ? 1 : x;
@@ -143,6 +153,10 @@ class SceneInputProcessor extends AudioWorkletProcessor {
 
 			this._index = (this._index + step) % 1.0;
 		}
+
+		// Publish the phase so the main thread can read the exact cycle position
+		// without relying on audioContext.currentTime inference.
+		if (this._phaseView) this._phaseView[0] = this._index;
 
 		return true;
 	}
