@@ -46,6 +46,10 @@ export interface EffectsContextType {
 	setLanczosEnabled: (value: boolean) => void;
 	lanczosSteps: number;
 	setLanczosSteps: (value: number) => void;
+	nSamples: number;
+	setNSamples: (value: number) => void;
+	coordBufferSize: number;
+	setCoordBufferSize: (value: number) => void;
 }
 
 export type VizContextType = PlaybackContextType & AxisContextType & EffectsContextType;
@@ -74,6 +78,8 @@ export function WoscopeProvider({ children }: VizProviderProps) {
 	const [scatterStrength, setScatterStrength] = useLocalStorage('woscope.scatterStrength', 0.1);
 	const [lanczosEnabled,  setLanczosEnabled]  = useLocalStorage('woscope.lanczosEnabled',  true);
 	const [lanczosSteps,    setLanczosSteps]    = useLocalStorage('woscope.lanczosSteps',    6);
+	const [nSamples,        setNSamples]        = useLocalStorage('woscope.nSamples',        2048);
+	const [coordBufferSize, setCoordBufferSize] = useLocalStorage('woscope.coordBufferSize', 1024);
 
 	const OSCILLOSCOPE_PRESET = { crtEnabled: true,  persistence: 0.1, glowStrength: 0.1, scatterStrength: 0.1 };
 	const LASER_PRESET        = { crtEnabled: false, persistence: 0.0, glowStrength: 0.4, scatterStrength: 0.0 };
@@ -112,10 +118,12 @@ export function WoscopeProvider({ children }: VizProviderProps) {
 			scatterStrength, setScatterStrength,
 			lanczosEnabled, setLanczosEnabled,
 			lanczosSteps, setLanczosSteps,
+			nSamples, setNSamples,
+			coordBufferSize, setCoordBufferSize,
 		}),
 		// Setter functions are stable — only state values in deps.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[vizMode, crtEnabled, persistence, glowStrength, scatterStrength, lanczosEnabled, lanczosSteps],
+		[vizMode, crtEnabled, persistence, glowStrength, scatterStrength, lanczosEnabled, lanczosSteps, nSamples, coordBufferSize],
 	);
 
 	return (

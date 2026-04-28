@@ -1,7 +1,8 @@
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useRef } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
+import InputBase from '@mui/material/InputBase';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import Slider from '@mui/material/Slider';
@@ -27,16 +28,19 @@ const HANDLES = [
 ] as const;
 
 const DEFAULT_SCAN_FREQ = 50;
-const SCAN_FREQ_MIN     = 10;
-const SCAN_FREQ_MAX     = 200;
+const SCAN_FREQ_MIN     = 1;
+const SCAN_FREQ_MAX     = 2000;
 
 export const SceneInputNode = memo(function SceneInputNode({
 	data,
 }: NodeProps<SceneInputFlowNode>) {
-	const [isRunning,   setIsRunning]   = useState(false);
-	const [sampleRate,  setSampleRate]  = useState<SampleRate>(getStoredSampleRate);
-	const [needsReload, setNeedsReload] = useState(false);
-	const [scanFreq,    setScanFreq]    = useState<number>(data.scanFrequency ?? DEFAULT_SCAN_FREQ);
+	const [isRunning,      setIsRunning]      = useState(false);
+	const [sampleRate,     setSampleRate]     = useState<SampleRate>(getStoredSampleRate);
+	const [needsReload,    setNeedsReload]    = useState(false);
+	const [scanFreq,       setScanFreq]       = useState<number>(data.scanFrequency ?? DEFAULT_SCAN_FREQ);
+	const [editingScan,    setEditingScan]    = useState(false);
+	const [scanFreqInput,  setScanFreqInput]  = useState('');
+	const scanInputRef = useRef<HTMLInputElement>(null);
 
 	const handlePlay = useCallback(async () => {
 		await startSceneInput();
@@ -61,6 +65,15 @@ export const SceneInputNode = memo(function SceneInputNode({
 			node.port.postMessage({ type: 'scanFreq', value });
 		}
 	}, []);
+
+	const commitScanFreqInput = useCallback(() => {
+		const parsed = parseInt(scanFreqInput, 10);
+		if (!isNaN(parsed)) {
+			const clamped = Math.min(SCAN_FREQ_MAX, Math.max(SCAN_FREQ_MIN, parsed));
+			handleScanFreq(clamped);
+		}
+		setEditingScan(false);
+	}, [scanFreqInput, handleScanFreq]);
 
 	return (
 		<Box
@@ -143,9 +156,33 @@ export const SceneInputNode = memo(function SceneInputNode({
 					onChange={(_, v) => handleScanFreq(v as number)}
 					sx={{ flex: 1, color: '#22dd22', py: '6px' }}
 				/>
-				<Typography variant='caption' color='text.disabled' sx={{ fontSize: 9, flexShrink: 0, minWidth: 32 }}>
-					{scanFreq} Hz
-				</Typography>
+				{editingScan ? (
+					<InputBase
+						inputRef={scanInputRef}
+						value={scanFreqInput}
+						onChange={e => setScanFreqInput(e.target.value)}
+						onBlur={commitScanFreqInput}
+						onKeyDown={e => {
+							if (e.key === 'Enter') commitScanFreqInput();
+							if (e.key === 'Escape') setEditingScan(false);
+						}}
+						sx={{
+							fontSize: 9,
+							color: 'text.disabled',
+							width: 48,
+							'.MuiInputBase-input': { p: 0, textAlign: 'right' },
+						}}
+					/>
+				) : (
+					<Typography
+						variant='caption'
+						color='text.disabled'
+						sx={{ fontSize: 9, flexShrink: 0, minWidth: 32, cursor: 'text', userSelect: 'none' }}
+						onClick={() => { setScanFreqInput(String(scanFreq)); setEditingScan(true); setTimeout(() => scanInputRef.current?.select(), 0); }}
+					>
+						{scanFreq} Hz
+					</Typography>
+				)}
 			</Box>
 
 			{needsReload && (

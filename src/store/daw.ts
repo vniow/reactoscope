@@ -131,6 +131,32 @@ export function getWaveformData(): {
 	};
 }
 
+/**
+ * Replaces all six analysers with new instances at the given size.
+ * Existing gain→analyser connections are restored; gain→merge connections are untouched.
+ */
+export function setAnalyserSize(newSize: number): void {
+	if (!_masterEntry) return;
+	const { inputGainX, inputGainY, inputGainR, inputGainG, inputGainB, inputGainA } = _masterEntry;
+
+	const pairs: [Gain, 'xAnalyser' | 'yAnalyser' | 'rAnalyser' | 'gAnalyser' | 'bAnalyser' | 'aAnalyser'][] = [
+		[inputGainX, 'xAnalyser'],
+		[inputGainY, 'yAnalyser'],
+		[inputGainR, 'rAnalyser'],
+		[inputGainG, 'gAnalyser'],
+		[inputGainB, 'bAnalyser'],
+		[inputGainA, 'aAnalyser'],
+	];
+
+	for (const [gain, key] of pairs) {
+		gain.disconnect(_masterEntry[key]);
+		_masterEntry[key].dispose();
+		const fresh = new Analyser('waveform', newSize);
+		gain.connect(fresh);
+		_masterEntry[key] = fresh;
+	}
+}
+
 export function getSampleRate(): number {
 	return getContext().rawContext.sampleRate;
 }

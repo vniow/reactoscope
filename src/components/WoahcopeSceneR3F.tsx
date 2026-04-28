@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useAxis, useEffects } from '../contexts/WoahscopeContext';
 import { updateGeometryArrays, getColourFromHue } from '../woahscope/utils';
 import { DEFAULT_AUDIO_SETTINGS } from '../config';
-import { getWaveformData } from '../store/daw';
+import { getWaveformData, setAnalyserSize } from '../store/daw';
 import { useDawStore, MASTER_NODE_ID } from '../store/daw';
 import type { MasterOutputNodeData } from '../store/dawTypes';
 import type { DebugSnapshot } from '../debug/types';
@@ -52,7 +52,7 @@ function readCenter(
 
 export function WoscopeSceneR3F() {
 	const { swapXY, invertXY, gain, intensity, hue } = useAxis();
-	const { crtEnabled, persistence, glowStrength, scatterStrength, lanczosEnabled, lanczosSteps } = useEffects();
+	const { crtEnabled, persistence, glowStrength, scatterStrength, lanczosEnabled, lanczosSteps, nSamples } = useEffects();
 	const { camera, size, invalidate } = useThree();
 
 	// Track multichannel mode via a ref so useFrame always sees the latest value
@@ -90,11 +90,15 @@ export function WoscopeSceneR3F() {
 	        blurMat, outputMat }                          = usePassPipeline();
 	const { upsamplerRef, smoothedX, smoothedY,
 	        smoothedR, smoothedG, smoothedB, smoothedA,
-	        nPointsRef }                                  = useLanczos(lanczosSteps);
+	        nPointsRef }                                  = useLanczos(lanczosSteps, nSamples);
 
 	useEffect(() => {
 		invalidate();
 	}, [gain, intensity, hue, crtEnabled, persistence, glowStrength, scatterStrength, invertXY, swapXY, invalidate]);
+
+	useEffect(() => {
+		setAnalyserSize(nSamples);
+	}, [nSamples]);
 
 	const gainPowRef      = useRef(Math.pow(2, gain));
 	const intensityPowRef = useRef(0.005 * Math.pow(2, intensity));

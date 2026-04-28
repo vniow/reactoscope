@@ -30,8 +30,8 @@ const FLOATS_PER_VERTEX  = 6;   // x, y, intensity, r, g, b
 const VERTICES_PER_SEG   = 2;
 const FLOATS_PER_SEGMENT = FLOATS_PER_VERTEX * VERTICES_PER_SEG;
 
-// Fixed resolution for the coord buffer — decouples scan rate from scene complexity.
-const COORD_BUFFER_SIZE = 1024;
+// Coord buffer resolution — adjustable at runtime via 'setCoordBufferSize' message.
+let _coordBufferSize = 1024;
 
 // ─── Console styling ──────────────────────────────────────────────────────────
 const _INFO = [
@@ -55,8 +55,13 @@ let _frameCount = 0;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (self as any).onmessage = (event: MessageEvent) => {
 	const msg = event.data as
-		| { type: 'geometry'; segmentData: ArrayBuffer; prevEnd: { x: number; y: number } };
+		| { type: 'geometry'; segmentData: ArrayBuffer; prevEnd: { x: number; y: number } }
+		| { type: 'setCoordBufferSize'; size: number };
 
+	if (msg.type === 'setCoordBufferSize') {
+		_coordBufferSize = msg.size;
+		return;
+	}
 	if (msg.type !== 'geometry') return;
 
 	_frameCount++;
@@ -82,7 +87,7 @@ let _frameCount = 0;
 
 	const t0   = performance.now();
 	const path = orderSegments(segments, prevEnd);
-	const result = buildCoordBuffer(path, COORD_BUFFER_SIZE, prevEnd);
+	const result = buildCoordBuffer(path, _coordBufferSize, prevEnd);
 	const computeMs = performance.now() - t0;
 
 	if (_frameCount === 1) {

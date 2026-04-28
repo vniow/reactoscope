@@ -1,7 +1,8 @@
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, useRef, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
+import InputBase from '@mui/material/InputBase';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { type SelectChangeEvent } from '@mui/material/Select';
 import Slider from '@mui/material/Slider';
@@ -26,9 +27,12 @@ export const OscillatorNode = memo(function OscillatorNode({
 	data,
 	selected,
 }: NodeProps<OscillatorFlowNode>) {
-	const [isPlaying,  setIsPlaying]  = useState(false);
-	const [frequency,  setFreqState]  = useState(data.frequency ?? 440);
-	const [oscType,    setOscType]    = useState<OscType>(data.type ?? 'sine');
+	const [isPlaying,    setIsPlaying]    = useState(false);
+	const [frequency,    setFreqState]    = useState(data.frequency ?? 440);
+	const [oscType,      setOscType]      = useState<OscType>(data.type ?? 'sine');
+	const [editingFreq,  setEditingFreq]  = useState(false);
+	const [freqInput,    setFreqInput]    = useState('');
+	const freqInputRef = useRef<HTMLInputElement>(null);
 
 	const onNodesChange = useDawStore(s => s.onNodesChange);
 
@@ -57,6 +61,16 @@ export const OscillatorNode = memo(function OscillatorNode({
 		setOscType(t);
 		setOscillatorType(id, t);
 	};
+
+	const commitFreqInput = useCallback(() => {
+		const parsed = parseFloat(freqInput);
+		if (!isNaN(parsed)) {
+			const clamped = Math.min(4000, Math.max(20, parsed));
+			setFreqState(clamped);
+			setOscillatorFrequency(id, clamped);
+		}
+		setEditingFreq(false);
+	}, [freqInput, id]);
 
 	return (
 		<Box
@@ -117,9 +131,35 @@ export const OscillatorNode = memo(function OscillatorNode({
 
 			{/* Frequency slider */}
 			<Box className='nodrag nowheel' sx={{ px: 0.5 }}>
-				<Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+				<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 					<Typography variant='caption' color='text.secondary'>freq</Typography>
-					<Typography variant='caption' color='text.secondary'>{frequency} Hz</Typography>
+					{editingFreq ? (
+						<InputBase
+							inputRef={freqInputRef}
+							value={freqInput}
+							onChange={e => setFreqInput(e.target.value)}
+							onBlur={commitFreqInput}
+							onKeyDown={e => {
+								if (e.key === 'Enter') commitFreqInput();
+								if (e.key === 'Escape') setEditingFreq(false);
+							}}
+							sx={{
+								fontSize: 12,
+								color: 'text.secondary',
+								width: 72,
+								'.MuiInputBase-input': { p: 0, textAlign: 'right' },
+							}}
+						/>
+					) : (
+						<Typography
+							variant='caption'
+							color='text.secondary'
+							sx={{ cursor: 'text', userSelect: 'none' }}
+							onClick={() => { setFreqInput(String(frequency)); setEditingFreq(true); setTimeout(() => freqInputRef.current?.select(), 0); }}
+						>
+							{frequency} Hz
+						</Typography>
+					)}
 				</Box>
 				<Slider
 					aria-label='Frequency'

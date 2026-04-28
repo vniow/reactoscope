@@ -54,6 +54,8 @@ export function GainControl() {
 		glowStrength, setGlowStrength,
 		scatterStrength, setScatterStrength,
 		lanczosEnabled, lanczosSteps, setLanczosSteps,
+		nSamples, setNSamples,
+		coordBufferSize, setCoordBufferSize,
 	} = useEffects();
 
 	return (
@@ -74,6 +76,24 @@ export function GainControl() {
 					formatValue={(v) => String(Math.round(v))}
 				/>
 			)}
+			<SliderRow
+				label='analyser samples'
+				value={Math.log2(nSamples)}
+				min={8}
+				max={11}
+				step={1}
+				onChange={(v) => setNSamples(1 << v)}
+				formatValue={(v) => String(1 << v)}
+			/>
+			<SliderRow
+				label='coord buffer'
+				value={Math.log2(coordBufferSize)}
+				min={8}
+				max={12}
+				step={1}
+				onChange={(v) => setCoordBufferSize(1 << v)}
+				formatValue={(v) => String(1 << v)}
+			/>
 		</Box>
 	);
 }

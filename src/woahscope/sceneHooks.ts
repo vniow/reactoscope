@@ -221,19 +221,19 @@ export interface LanczosResources {
 	nPointsRef:   React.RefObject<number>;
 }
 
-export function useLanczos(steps: number): LanczosResources {
-	const upsamplerRef = useRef(new LanczosUpsampler(N_SAMPLES, steps));
+export function useLanczos(steps: number, nSamples: number): LanczosResources {
+	const upsamplerRef = useRef(new LanczosUpsampler(nSamples, steps));
 	const smoothedX    = useRef(new Float32Array(MAX_POINTS));
 	const smoothedY    = useRef(new Float32Array(MAX_POINTS));
 	const smoothedR    = useRef(new Float32Array(MAX_POINTS));
 	const smoothedG    = useRef(new Float32Array(MAX_POINTS));
 	const smoothedB    = useRef(new Float32Array(MAX_POINTS));
 	const smoothedA    = useRef(new Float32Array(MAX_POINTS));
-	const nPointsRef   = useRef<number>(N_SAMPLES);
+	const nPointsRef   = useRef<number>(nSamples);
 
 	useEffect(() => {
-		upsamplerRef.current = new LanczosUpsampler(N_SAMPLES, steps);
-	}, [steps]);
+		upsamplerRef.current = new LanczosUpsampler(nSamples, steps);
+	}, [steps, nSamples]);
 
 	return { upsamplerRef, smoothedX, smoothedY, smoothedR, smoothedG, smoothedB, smoothedA, nPointsRef };
 }

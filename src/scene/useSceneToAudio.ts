@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { getContext as getToneContext } from 'tone';
 import { getSceneRunning, getSceneInputWorkletNode } from '../store/daw';
+import { useEffects } from '../contexts/WoahscopeContext';
 import { collectSegments } from './pathBuilder';
 import type { Segment } from './pathBuilder';
 
@@ -62,6 +63,7 @@ export function useSceneToAudio(): void {
 	const prevEndPos  = useRef({ x: 0, y: 0 });
 	const workerRef   = useRef<Worker | null>(null);
 	const workerBusy  = useRef(false);
+	const { coordBufferSize } = useEffects();
 
 	useEffect(() => {
 		// Read the actual sample rate from Tone's AudioContext for logging.
@@ -108,6 +110,7 @@ export function useSceneToAudio(): void {
 			console.error(..._WARN, 'Worker error:', e.message);
 		};
 
+		worker.postMessage({ type: 'setCoordBufferSize', size: coordBufferSize });
 		workerRef.current = worker;
 		return () => {
 			console.log(..._OK, 'Path worker terminated (component unmounting)');
@@ -115,6 +118,12 @@ export function useSceneToAudio(): void {
 			workerRef.current = null;
 		};
 	}, []);
+
+	useEffect(() => {
+		if (workerRef.current) {
+			workerRef.current.postMessage({ type: 'setCoordBufferSize', size: coordBufferSize });
+		}
+	}, [coordBufferSize]);
 
 	useFrame(() => {
 		if (!workerRef.current) return;

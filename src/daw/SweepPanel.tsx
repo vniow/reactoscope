@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
+import InputBase from '@mui/material/InputBase';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Slider from '@mui/material/Slider';
@@ -51,12 +52,16 @@ export function SweepPanel({ height, fullWidth, onResize, onToggleFullWidth }: P
 	const [triggerMode, setTriggerMode] = useState<TriggerMode>(
 		() => (localStorage.getItem('sweep-trigger-mode') ?? 'clock') as TriggerMode,
 	);
-	const [phaseOffset, setPhaseOffset] = useState<number>(
-		() => Math.max(-1, Number(localStorage.getItem('sweep-phase-offset') ?? 0)),
-	);
+	const [phaseOffset, setPhaseOffset] = useState<number>(0);
 	const [latencyCompSamples, setLatencyCompSamples] = useState<number>(
 		() => Number(localStorage.getItem('sweep-latency-comp') ?? 0),
 	);
+	const [editingPhase, setEditingPhase] = useState(false);
+	const [phaseInput,   setPhaseInput]   = useState('');
+	const phaseInputRef = useRef<HTMLInputElement>(null);
+	const [editingLat,   setEditingLat]   = useState(false);
+	const [latInput,     setLatInput]     = useState('');
+	const latInputRef   = useRef<HTMLInputElement>(null);
 	useEffect(() => { localStorage.setItem('sweep-trigger-mode',  triggerMode);                }, [triggerMode]);
 	useEffect(() => { localStorage.setItem('sweep-phase-offset',  String(phaseOffset));        }, [phaseOffset]);
 	useEffect(() => { localStorage.setItem('sweep-latency-comp',  String(latencyCompSamples)); }, [latencyCompSamples]);
@@ -143,26 +148,66 @@ export function SweepPanel({ height, fullWidth, onResize, onToggleFullWidth }: P
 
 				<Box sx={{ width: '1px', height: 16, bgcolor: '#2a2a2a', flexShrink: 0 }} />
 
-				<Typography variant="caption"
-					sx={{ color: '#555', fontFamily: 'monospace', fontSize: '0.6rem', flexShrink: 0 }}>
-					{`PHASE ${Math.round(phaseOffset * 100)}%`}
-				</Typography>
+				{editingPhase ? (
+					<InputBase
+						inputRef={phaseInputRef}
+						value={phaseInput}
+						onChange={e => setPhaseInput(e.target.value)}
+						onBlur={() => {
+							const p = parseFloat(phaseInput);
+							if (!isNaN(p)) setPhaseOffset(Math.min(0.999, Math.max(-1, p / 100)));
+							setEditingPhase(false);
+						}}
+						onKeyDown={e => {
+							if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+							if (e.key === 'Escape') setEditingPhase(false);
+						}}
+						sx={{ color: '#555', fontFamily: 'monospace', fontSize: '0.6rem', width: 56,
+						      '.MuiInputBase-input': { p: 0 } }}
+					/>
+				) : (
+					<Typography variant="caption"
+						onClick={() => { setPhaseInput(String(Math.round(phaseOffset * 100))); setEditingPhase(true); setTimeout(() => phaseInputRef.current?.select(), 0); }}
+						sx={{ color: '#555', fontFamily: 'monospace', fontSize: '0.6rem', flexShrink: 0, cursor: 'text', userSelect: 'none' }}>
+						{`PHASE ${Math.round(phaseOffset * 100)}%`}
+					</Typography>
+				)}
 				<Slider size="small" min={-1} max={0.999} step={0.001}
 					value={phaseOffset} onChange={(_, v) => setPhaseOffset(v as number)}
-					sx={{ width: '80px', flexShrink: 0, color: '#22dd22',
+					sx={{ width: '160px', flexShrink: 0, color: '#22dd22',
 					      '& .MuiSlider-thumb': { width: 10, height: 10 },
 					      '& .MuiSlider-rail':  { bgcolor: '#333' } }}
 				/>
 
 				<Box sx={{ width: '1px', height: 16, bgcolor: '#2a2a2a', flexShrink: 0 }} />
 
-				<Typography variant="caption"
-					sx={{ color: '#555', fontFamily: 'monospace', fontSize: '0.6rem', flexShrink: 0 }}>
-					{`LAT ${latencyCompSamples > 0 ? '+' : ''}${latencyCompSamples}smp`}
-				</Typography>
+				{editingLat ? (
+					<InputBase
+						inputRef={latInputRef}
+						value={latInput}
+						onChange={e => setLatInput(e.target.value)}
+						onBlur={() => {
+							const n = parseInt(latInput, 10);
+							if (!isNaN(n)) setLatencyCompSamples(Math.min(512, Math.max(-512, n)));
+							setEditingLat(false);
+						}}
+						onKeyDown={e => {
+							if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+							if (e.key === 'Escape') setEditingLat(false);
+						}}
+						sx={{ color: '#555', fontFamily: 'monospace', fontSize: '0.6rem', width: 64,
+						      '.MuiInputBase-input': { p: 0 } }}
+					/>
+				) : (
+					<Typography variant="caption"
+						onClick={() => { setLatInput(String(latencyCompSamples)); setEditingLat(true); setTimeout(() => latInputRef.current?.select(), 0); }}
+						sx={{ color: '#555', fontFamily: 'monospace', fontSize: '0.6rem', flexShrink: 0, cursor: 'text', userSelect: 'none' }}>
+						{`LAT ${latencyCompSamples > 0 ? '+' : ''}${latencyCompSamples}smp`}
+					</Typography>
+				)}
 				<Slider size="small" min={-512} max={512} step={1}
 					value={latencyCompSamples} onChange={(_, v) => setLatencyCompSamples(v as number)}
-					sx={{ width: '80px', flexShrink: 0, color: '#22dd22',
+					sx={{ width: '160px', flexShrink: 0, color: '#22dd22',
 					      '& .MuiSlider-thumb': { width: 10, height: 10 },
 					      '& .MuiSlider-rail':  { bgcolor: '#333' } }}
 				/>

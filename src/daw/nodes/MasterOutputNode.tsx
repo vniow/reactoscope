@@ -1,10 +1,14 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
 import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useDawStore } from '../../store/daw';
 import type { MasterOutputFlowNode } from '../../store/dawTypes';
+import { MiniScope } from './MiniScope';
 
 // Handle definitions for each mode
 const STEREO_HANDLES = [
@@ -27,6 +31,8 @@ export const MasterOutputNode = memo<NodeProps<MasterOutputFlowNode>>(
 		const mode = data.mode ?? 'stereo';
 		const isMulti = mode === 'multichannel';
 		const handles = isMulti ? MULTI_HANDLES : STEREO_HANDLES;
+		const [expanded, setExpanded] = useState(false);
+		const canvasSize = isMulti ? 220 : 160;
 
 		return (
 			<Box
@@ -88,6 +94,20 @@ export const MasterOutputNode = memo<NodeProps<MasterOutputFlowNode>>(
 						multi
 					</Typography>
 				</Box>
+
+				{/* Scope expand toggle */}
+				<Box className='nodrag' sx={{ display: 'flex', justifyContent: 'center', mt: 0.25 }}>
+					<IconButton size='small' onClick={() => setExpanded(v => !v)} sx={{ p: 0.25 }}>
+						{expanded ? <ExpandLessIcon sx={{ fontSize: 14 }} /> : <ExpandMoreIcon sx={{ fontSize: 14 }} />}
+					</IconButton>
+				</Box>
+
+				{/* Mini scope canvas */}
+				{expanded && (
+					<Box className='nodrag' sx={{ mt: 0.75 }}>
+						<MiniScope mode={mode} width={canvasSize} height={canvasSize} />
+					</Box>
+				)}
 			</Box>
 		);
 	},
