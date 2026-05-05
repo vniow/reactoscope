@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useAxis, useEffects } from '../contexts/WoahscopeContext';
 import { updateGeometryArrays } from '../woahscope/utils';
 import { DEFAULT_AUDIO_SETTINGS } from '../config';
-import { getWaveformData, getSampleRate, getSceneInputPhase } from '../store/daw';
+import { getWaveformData, getSampleRate, getSceneInputPhase, getWaveformDataFromSAB, getWaveformWriteIndex } from '../store/daw';
 import {
 	N_SAMPLES,
 	FADE_AMOUNT,
@@ -36,9 +36,10 @@ interface Props {
 	triggerMode:        TriggerMode;
 	phaseOffset:        number;
 	latencyCompSamples: number;
+	nCycles:            number;
 }
 
-export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannels, triggerMode, phaseOffset, latencyCompSamples }: Props) {
+export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannels, triggerMode, phaseOffset, latencyCompSamples, nCycles }: Props) {
 	const { gain, intensity } = useAxis();
 	const { crtEnabled, persistence, glowStrength, scatterStrength } = useEffects();
 	const { camera, invalidate } = useThree();
@@ -73,7 +74,8 @@ export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannel
 	const { passScene, passQuad, copyMat, blurMat, outputMat } = usePassPipeline();
 
 	// Sample rate is stable for the session — read once on mount
-	const sampleRateRef = useRef(getSampleRate());
+	const sampleRateRef     = useRef(getSampleRate());
+	const lastWriteIndexRef = useRef(0);
 
 	// Refs keep frame-loop closures current without requiring re-subscription
 	const gainPowRef      = useRef(Math.pow(2, gain));
@@ -96,6 +98,7 @@ export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannel
 	const triggerModeRef        = useRef(triggerMode);
 	const phaseOffsetRef        = useRef(phaseOffset);
 	const latencyCompRef        = useRef(latencyCompSamples);
+	const nCyclesRef            = useRef(nCycles);
 	useEffect(() => {
 		activeChannelsRef.current     = activeChannels;
 		scanFrequencyRef.current      = scanFrequency;
@@ -103,15 +106,24 @@ export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannel
 		triggerModeRef.current        = triggerMode;
 		phaseOffsetRef.current        = phaseOffset;
 		latencyCompRef.current        = latencyCompSamples;
+		nCyclesRef.current            = nCycles;
 		invalidate();
-	}, [activeChannels, scanFrequency, sceneInputChannels, triggerMode, phaseOffset, latencyCompSamples, invalidate]);
+	}, [activeChannels, scanFrequency, sceneInputChannels, triggerMode, phaseOffset, latencyCompSamples, nCycles, invalidate]);
 
 	// Scratch buffers — sized to the maximum possible display window
 	const sweepX = useMemo(() => new Float32Array(N_SAMPLES), []);
 	const sweepY = useMemo(() => new Float32Array(N_SAMPLES), []);
 
 	useFrame(({ gl, camera: cam, invalidate: inv }) => {
-		const waveform       = getWaveformData();
+		// SAB push model: only render when the worklet has written a new frame.
+		// Falls back to Analyser reads until the capture worklet is initialised.
+		const sabData = getWaveformDataFromSAB();
+		if (sabData !== null) {
+			const writeIdx = getWaveformWriteIndex();
+			if (writeIdx === lastWriteIndexRef.current) { inv(); return; }
+			lastWriteIndexRef.current = writeIdx;
+		}
+		const waveform       = sabData ?? getWaveformData();
 		const active         = activeChannelsRef.current;
 		const nLanes         = active.length;
 		const scanFreq       = scanFrequencyRef.current;
@@ -141,14 +153,10 @@ export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannel
 					// Scan rate so low the period exceeds the buffer — best-effort
 					displaySamples = DISPLAY_SAMPLES;
 					searchWindow   = DISPLAY_SAMPLES;
-				} else if (period > DISPLAY_SAMPLES) {
-					// One cycle is larger than the default window; show exactly one cycle
-					displaySamples = period;
-					searchWindow   = Math.max(1, N_SAMPLES - period - 1);
 				} else {
-					// Normal case: fill the window with as many whole cycles as fit
-					const nCycles  = Math.max(1, Math.floor(DISPLAY_SAMPLES / period));
-					displaySamples = nCycles * period;
+					// User-controlled: show exactly nCycles complete periods
+					const cycles   = nCyclesRef.current;
+					displaySamples = Math.min(cycles * period, N_SAMPLES);
 					searchWindow   = Math.min(period, N_SAMPLES - displaySamples - 1);
 				}
 			} else {

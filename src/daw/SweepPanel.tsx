@@ -9,7 +9,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 import { Canvas } from '@react-three/fiber';
-import { useDawStore, MASTER_NODE_ID, SCENE_INPUT_ID } from '../store/daw';
+import { useDawStore, MASTER_NODE_ID, SCENE_INPUT_ID, setAnalyserSize, getSampleRate } from '../store/daw';
 import type { SceneInputNodeData } from '../store/dawTypes';
 import { SweepSceneR3F, type TriggerMode } from '../components/SweepSceneR3F';
 import { channelHex, CHANNEL_LABEL, CHANNEL_ORDER, type ChannelId } from '../woahscope/sweepUtils';
@@ -56,6 +56,12 @@ export function SweepPanel({ height, fullWidth, onResize, onToggleFullWidth }: P
 	const [latencyCompSamples, setLatencyCompSamples] = useState<number>(
 		() => Number(localStorage.getItem('sweep-latency-comp') ?? 0),
 	);
+	const [nCycles, setNCycles] = useState<number>(
+		() => Number(localStorage.getItem('sweep-n-cycles') ?? 1),
+	);
+	const [nSamples, setNSamples] = useState<number>(
+		() => Number(localStorage.getItem('sweep-n-samples') ?? 2048),
+	);
 	const [editingPhase, setEditingPhase] = useState(false);
 	const [phaseInput,   setPhaseInput]   = useState('');
 	const phaseInputRef = useRef<HTMLInputElement>(null);
@@ -65,6 +71,17 @@ export function SweepPanel({ height, fullWidth, onResize, onToggleFullWidth }: P
 	useEffect(() => { localStorage.setItem('sweep-trigger-mode',  triggerMode);                }, [triggerMode]);
 	useEffect(() => { localStorage.setItem('sweep-phase-offset',  String(phaseOffset));        }, [phaseOffset]);
 	useEffect(() => { localStorage.setItem('sweep-latency-comp',  String(latencyCompSamples)); }, [latencyCompSamples]);
+	useEffect(() => { localStorage.setItem('sweep-n-cycles',      String(nCycles));            }, [nCycles]);
+	useEffect(() => { localStorage.setItem('sweep-n-samples',     String(nSamples));           }, [nSamples]);
+
+	const period     = Math.round(getSampleRate() / scanFrequency);
+	const needed     = nCycles * period;
+	const bufferWarn = triggerMode === 'clock' && needed > nSamples;
+
+	function handleNSamples(v: number) {
+		setAnalyserSize(v);
+		setNSamples(v);
+	}
 
 	const isDraggingRef     = useRef(false);
 	const startYRef         = useRef(0);
@@ -211,6 +228,51 @@ export function SweepPanel({ height, fullWidth, onResize, onToggleFullWidth }: P
 					      '& .MuiSlider-thumb': { width: 10, height: 10 },
 					      '& .MuiSlider-rail':  { bgcolor: '#333' } }}
 				/>
+
+				<Box sx={{ width: '1px', height: 16, bgcolor: '#2a2a2a', flexShrink: 0 }} />
+
+				{/* nCycles stepper — only meaningful in clock mode */}
+				<Typography variant="caption" sx={{
+					color: triggerMode === 'clock' ? '#555' : '#2a2a2a',
+					fontFamily: 'monospace', fontSize: '0.6rem', flexShrink: 0, userSelect: 'none',
+				}}>
+					{`CYC ${nCycles}`}
+				</Typography>
+				<IconButton size="small" disabled={triggerMode !== 'clock' || nCycles <= 1}
+					onClick={() => setNCycles(c => Math.max(1, c - 1))}
+					sx={{ p: 0.25, color: '#555', '&:not(:disabled):hover': { color: '#22dd22' } }}
+				>−</IconButton>
+				<IconButton size="small" disabled={triggerMode !== 'clock' || nCycles >= 8}
+					onClick={() => setNCycles(c => Math.min(8, c + 1))}
+					sx={{ p: 0.25, color: '#555', '&:not(:disabled):hover': { color: '#22dd22' } }}
+				>+</IconButton>
+
+				<Box sx={{ width: '1px', height: 16, bgcolor: '#2a2a2a', flexShrink: 0 }} />
+
+				{/* nSamples buffer size selector */}
+				<ToggleButtonGroup
+					exclusive size="small" value={nSamples}
+					onChange={(_, v) => v && handleNSamples(v)}
+					sx={{ flexShrink: 0, '& .MuiToggleButton-root': {
+						py: 0, px: 0.75, fontSize: '0.6rem', fontFamily: 'monospace',
+						color: '#444', border: '1px solid #222', lineHeight: '20px',
+						'&.Mui-selected': { color: '#22dd22', bgcolor: 'rgba(34,221,34,0.08)' },
+					}}}
+				>
+					<ToggleButton value={1024}>1K</ToggleButton>
+					<ToggleButton value={2048}>2K</ToggleButton>
+					<ToggleButton value={4096}>4K</ToggleButton>
+					<ToggleButton value={8192}>8K</ToggleButton>
+				</ToggleButtonGroup>
+
+				{/* Buffer overflow warning */}
+				{bufferWarn && (
+					<Typography variant="caption" sx={{
+						color: '#dd2222', fontFamily: 'monospace', fontSize: '0.6rem', flexShrink: 0,
+					}}>
+						{`${needed}>${nSamples}`}
+					</Typography>
+				)}
 			</Box>
 
 			{/* Canvas + overlays */}
@@ -229,6 +291,7 @@ export function SweepPanel({ height, fullWidth, onResize, onToggleFullWidth }: P
 						triggerMode={triggerMode}
 						phaseOffset={phaseOffset}
 						latencyCompSamples={latencyCompSamples}
+						nCycles={nCycles}
 					/>
 				</Canvas>
 

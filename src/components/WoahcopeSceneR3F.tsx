@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useAxis, useEffects } from '../contexts/WoahscopeContext';
 import { updateGeometryArrays, getColourFromHue } from '../woahscope/utils';
 import { DEFAULT_AUDIO_SETTINGS } from '../config';
-import { getWaveformData, setAnalyserSize } from '../store/daw';
+import { getWaveformData, setAnalyserSize, getWaveformDataFromSAB, getWaveformWriteIndex, setWaveformCaptureSize } from '../store/daw';
 import { useDawStore, MASTER_NODE_ID } from '../store/daw';
 import type { MasterOutputNodeData } from '../store/dawTypes';
 import type { DebugSnapshot } from '../debug/types';
@@ -98,6 +98,7 @@ export function WoscopeSceneR3F() {
 
 	useEffect(() => {
 		setAnalyserSize(nSamples);
+		setWaveformCaptureSize(nSamples);
 	}, [nSamples]);
 
 	const gainPowRef      = useRef(Math.pow(2, gain));
@@ -116,11 +117,20 @@ export function WoscopeSceneR3F() {
 		hueColourRef.current = getColourFromHue(hue);
 	}, [hue]);
 
-	const prevNPointsRef = useRef(-1);
-	const frameCountRef  = useRef(0);
+	const lastWriteIndexRef = useRef(0);
+	const prevNPointsRef    = useRef(-1);
+	const frameCountRef     = useRef(0);
 
 	useFrame(({ gl, camera: cam, invalidate: inv }) => {
-		const waveform = getWaveformData();
+		// SAB push model: only render when the worklet has written a new frame.
+		// Falls back to Analyser reads until the capture worklet is initialised.
+		const sabData = getWaveformDataFromSAB();
+		if (sabData !== null) {
+			const writeIdx = getWaveformWriteIndex();
+			if (writeIdx === lastWriteIndexRef.current) { inv(); return; }
+			lastWriteIndexRef.current = writeIdx;
+		}
+		const waveform = sabData ?? getWaveformData();
 		let xBuf: Float32Array = swapXY ? waveform.y : waveform.x;
 		let yBuf: Float32Array = swapXY ? waveform.x : waveform.y;
 		let rBuf: Float32Array = waveform.r;
