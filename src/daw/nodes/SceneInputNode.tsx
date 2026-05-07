@@ -4,7 +4,9 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { NodeHeader } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
+import { GRID_UNIT } from './gridSystem';
 import { outputHandleStyle, outputLabel } from './handleStyles';
+import { METAL_BG } from './metalBackground';
 import type { SceneInputFlowNode } from '../../store/dawTypes';
 
 const HANDLES = [
@@ -24,8 +26,9 @@ export const SceneInputNode = memo(function SceneInputNode({
 			border:       '1px solid',
 			borderColor:  NODE_COLORS.scene,
 			borderRadius: 1,
-			bgcolor:      `${NODE_COLORS.scene}0D`,
-			minWidth:     200,
+			backgroundImage: METAL_BG,
+			width:        3 * GRID_UNIT,
+			height:       2 * GRID_UNIT,
 			position:     'relative',
 			pb:           3,
 		}}>

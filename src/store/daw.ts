@@ -807,14 +807,14 @@ const initialNodes: AppNode[] = [
 	{
 		id:        MASTER_NODE_ID,
 		type:      'masterOutput',
-		position:  { x: 300, y: 250 },
+		position:  { x: 288, y: 240 },
 		data:      { label: 'Master Output', mode: 'multichannel' as const },
 		deletable: false,
 	},
 	{
 		id:        SCENE_INPUT_ID,
 		type:      'sceneInput',
-		position:  { x: -250, y: 250 },
+		position:  { x: -240, y: 240 },
 		data:      { label: 'Scene Input', scanFrequency: 50 },
 		deletable: false,
 	},

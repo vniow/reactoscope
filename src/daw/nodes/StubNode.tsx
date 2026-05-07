@@ -5,7 +5,9 @@ import Typography from '@mui/material/Typography';
 import { useDawStore } from '../../store/daw';
 import { NodeHeader, NODE_HEADER_HEIGHT } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
+import { GRID_UNIT } from './gridSystem';
 import { inputHandleStyle, outputHandleStyle, inputLabel, outputLabel } from './handleStyles';
+import { METAL_BG } from './metalBackground';
 import type { StubFlowNode, StubKind } from '../../store/dawTypes';
 
 const STUB_TOPOLOGY: Record<StubKind, { inputs: string[]; outputs: string[] }> = {
@@ -47,8 +49,9 @@ export const StubNode = memo(function StubNode({
 			border:       '1px dashed',
 			borderColor:  NODE_COLORS.processor,
 			borderRadius: 1,
-			bgcolor:      `${NODE_COLORS.processor}0D`,
-			minWidth:     140,
+			backgroundImage: METAL_BG,
+			width:        2 * GRID_UNIT,
+			height:       2 * GRID_UNIT,
 			position:     'relative',
 			opacity:      0.8,
 			pb:           3,

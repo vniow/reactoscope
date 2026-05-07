@@ -9,7 +9,9 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useDawStore } from '../../store/daw';
 import { NodeHeader, NODE_HEADER_HEIGHT } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
+import { GRID_UNIT } from './gridSystem';
 import { inputHandleStyle, inputLabel } from './handleStyles';
+import { METAL_BG } from './metalBackground';
 import type { MasterOutputFlowNode } from '../../store/dawTypes';
 import { MiniScope } from './MiniScope';
 
@@ -39,16 +41,18 @@ export const MasterOutputNode = memo<NodeProps<MasterOutputFlowNode>>(
 		const isMulti = mode === 'multichannel';
 		const handles = isMulti ? MULTI_HANDLES : STEREO_HANDLES;
 		const [expanded, setExpanded] = useState(false);
-		const canvasSize = isMulti ? 220 : 160;
+		const canvasSize = isMulti ? 2 * GRID_UNIT : 2 * GRID_UNIT; // 192px fits both modes
+		const height = expanded ? (isMulti ? 6 : 5) * GRID_UNIT : 3 * GRID_UNIT;
 
 		return (
 			<Box sx={{
 				border:       '1px solid',
 				borderColor:  NODE_COLORS.output,
 				borderRadius: 1,
-				bgcolor:      `${NODE_COLORS.output}0D`,
+				backgroundImage: METAL_BG,
 				boxShadow:    `0 0 8px ${NODE_COLORS.output}4D`,
-				minWidth:     isMulti ? 220 : 180,
+				width:        2 * GRID_UNIT,
+				height,
 				position:     'relative',
 			}}>
 				<NodeHeader label='Master Output' accentColor={NODE_COLORS.output} />

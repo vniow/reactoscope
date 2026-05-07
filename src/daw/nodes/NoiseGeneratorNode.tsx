@@ -11,7 +11,9 @@ import StopIcon from '@mui/icons-material/Stop';
 import { startNoise, stopNoise, setNoiseType, setNoiseVolume } from '../../store/daw';
 import { NodeHeader } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
+import { GRID_UNIT } from './gridSystem';
 import { outputHandleStyle, outputLabel } from './handleStyles';
+import { METAL_BG } from './metalBackground';
 import type { NoiseFlowNode } from '../../store/dawTypes';
 
 const NOISE_TYPES = ['white', 'pink', 'brown'] as const;
@@ -48,8 +50,9 @@ export const NoiseGeneratorNode = memo(function NoiseGeneratorNode({
 			border:       '1px solid',
 			borderColor:  NODE_COLORS.source,
 			borderRadius: 1,
-			bgcolor:      `${NODE_COLORS.source}0D`,
-			minWidth:     200,
+			backgroundImage: METAL_BG,
+			width:        2 * GRID_UNIT,
+			height:       3 * GRID_UNIT,
 			position:     'relative',
 			pb:           3,
 		}}>

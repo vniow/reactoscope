@@ -6,7 +6,9 @@ import Typography from '@mui/material/Typography';
 import { setGainValue } from '../../store/daw';
 import { NodeHeader, NODE_HEADER_HEIGHT } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
+import { GRID_UNIT } from './gridSystem';
 import { inputHandleStyle, outputHandleStyle, inputLabel, outputLabel } from './handleStyles';
+import { METAL_BG } from './metalBackground';
 import type { GainFlowNode } from '../../store/dawTypes';
 
 export const GainNode = memo(function GainNode({
@@ -24,17 +26,18 @@ export const GainNode = memo(function GainNode({
 
 	return (
 		<Box sx={{
-			border:       '1px solid',
-			borderColor:  NODE_COLORS.processor,
+			border:      '1px solid',
+			borderColor: NODE_COLORS.processor,
 			borderRadius: 1,
-			bgcolor:      `${NODE_COLORS.processor}0D`,
-			minWidth:     180,
-			position:     'relative',
-			pb:           3,
+			backgroundImage: METAL_BG,
+			width:       2 * GRID_UNIT,
+			height:      2 * GRID_UNIT,
+			position:    'relative',
+			pb:          3,
 		}}>
 			<NodeHeader id={id} label='Gain' selected={selected} accentColor={NODE_COLORS.processor} />
 
-			<Box sx={{ px: 1.5, py: 1 }} className='nodrag nowheel'>
+			<Box sx={{ px: 1.5, py: 1, overflow: 'hidden' }} className='nodrag nowheel'>
 				<Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
 					<Typography variant='caption' color='text.secondary'>gain</Typography>
 					<Typography variant='caption' color='text.secondary'>{gain.toFixed(2)}</Typography>

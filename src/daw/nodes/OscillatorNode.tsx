@@ -15,7 +15,9 @@ import {
 } from '../../store/daw';
 import { NodeHeader } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
+import { GRID_UNIT } from './gridSystem';
 import { outputHandleStyle, outputLabel } from './handleStyles';
+import { METAL_BG } from './metalBackground';
 import type { OscillatorFlowNode } from '../../store/dawTypes';
 
 const OSC_TYPES = ['sine', 'square', 'triangle', 'sawtooth'] as const;
@@ -65,8 +67,9 @@ export const OscillatorNode = memo(function OscillatorNode({
 			border:       '1px solid',
 			borderColor:  NODE_COLORS.source,
 			borderRadius: 1,
-			bgcolor:      `${NODE_COLORS.source}0D`,
-			minWidth:     200,
+			backgroundImage: METAL_BG,
+			width:        2 * GRID_UNIT,
+			height:       3 * GRID_UNIT,
 			position:     'relative',
 			pb:           3,
 		}}>

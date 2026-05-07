@@ -24,7 +24,9 @@ import {
 } from '../../store/daw';
 import { NodeHeader } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
+import { GRID_UNIT } from './gridSystem';
 import { outputHandleStyle, outputLabel } from './handleStyles';
+import { METAL_BG } from './metalBackground';
 import { TrackSelector } from '../../components/TrackSelector';
 import { usePlayback } from '../../contexts/WoahscopeContext';
 import { BUILT_IN_TRACKS, ERROR_MESSAGES } from '../../config';
@@ -206,8 +208,9 @@ export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeP
 				border:       '1px solid',
 				borderColor:  NODE_COLORS.source,
 				borderRadius: 1,
-				bgcolor:      `${NODE_COLORS.source}0D`,
-				minWidth:     260,
+				backgroundImage: METAL_BG,
+				width:        3 * GRID_UNIT,
+				height:       4 * GRID_UNIT,
 				position:     'relative',
 				pb:           3,
 			}}

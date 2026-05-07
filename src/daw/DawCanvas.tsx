@@ -1,6 +1,7 @@
 import '@xyflow/react/dist/style.css';
 import { useState, useEffect, useCallback, useRef, startTransition } from 'react';
 import { debugRef } from '../components/WoahcopeSceneR3F';
+import { GRID_SUBUNIT } from './nodes/gridSystem';
 import {
 	ReactFlow,
 	Background,
@@ -159,6 +160,8 @@ export function DawCanvas() {
 			}}
 			connectionLineStyle={{ stroke: '#22dd22' }}
 			proOptions={{ hideAttribution: true }}
+			snapToGrid
+			snapGrid={[GRID_SUBUNIT, GRID_SUBUNIT]}
 			fitView
 		>
 			<Background variant={BackgroundVariant.Cross} color='#2a2a2a' gap={24} size={6} />
