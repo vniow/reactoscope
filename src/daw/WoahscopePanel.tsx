@@ -1,7 +1,6 @@
 import Box from '@mui/material/Box';
 import { VisualizationCanvasR3F } from '../components';
 import { useSquareSize } from '../hooks/useSquareSize';
-import { VizSettingsOverlay } from './VizSettingsOverlay';
 
 /**
  * Oscilloscope panel. Always renders the canvas as a 1:1 square, centred inside
@@ -30,7 +29,6 @@ export function WoahscopePanel() {
 		>
 			<Box sx={{ width: size, height: size, flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
 				<VisualizationCanvasR3F />
-				<VizSettingsOverlay />
 			</Box>
 		</Box>
 	);

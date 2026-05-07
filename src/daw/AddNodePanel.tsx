@@ -53,6 +53,12 @@ const CATALOGUE: CatalogueCategory[] = [
 			{ label: 'Merge', action: 'merge' },
 		],
 	},
+	{
+		label: 'Utility',
+		items: [
+			{ label: 'Debug', action: 'debug' },
+		],
+	},
 ];
 
 const STUB_ACTIONS = new Set<string>([
@@ -77,6 +83,7 @@ export function AddNodePanel() {
 	const addDCSignalNode   = useDawStore(s => s.addDCSignalNode);
 	const addPlayerNode     = useDawStore(s => s.addPlayerNode);
 	const addStubNode       = useDawStore(s => s.addStubNode);
+	const addDebugNode      = useDawStore(s => s.addDebugNode);
 
 	/** Convert screen center of the React Flow canvas to flow coordinates. */
 	const getDropPosition = useCallback((): { x: number; y: number } => {
@@ -105,11 +112,13 @@ export function AddNodePanel() {
 		} else if (action === 'player') {
 			// Empty trackUrl — user picks a track using the in-node selector
 			addPlayerNode('', pos);
+		} else if (action === 'debug') {
+			addDebugNode(pos);
 		} else if (STUB_ACTIONS.has(action)) {
 			addStubNode(action as StubKind, pos);
 		}
 		setOpen(false);
-	}, [getDropPosition, addOscillatorNode, addGainNode, addNoiseNode, addDCSignalNode, addPlayerNode, addStubNode]);
+	}, [getDropPosition, addOscillatorNode, addGainNode, addNoiseNode, addDCSignalNode, addPlayerNode, addStubNode, addDebugNode]);
 
 	return (
 		<div ref={containerRef} style={{ position: 'relative' }}>

@@ -1,13 +1,13 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, Fragment } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import CloseIcon from '@mui/icons-material/Close';
 import { useDawStore } from '../../store/daw';
+import { NodeHeader, NODE_HEADER_HEIGHT } from './NodeHeader';
+import { NODE_COLORS } from './nodeColors';
+import { inputHandleStyle, outputHandleStyle, inputLabel, outputLabel } from './handleStyles';
 import type { StubFlowNode, StubKind } from '../../store/dawTypes';
 
-// Handle topology for each stub kind
 const STUB_TOPOLOGY: Record<StubKind, { inputs: string[]; outputs: string[] }> = {
 	reverb:         { inputs: ['in-0'],         outputs: ['out-0'] },
 	delay:          { inputs: ['in-0'],         outputs: ['out-0'] },
@@ -20,7 +20,11 @@ const STUB_TOPOLOGY: Record<StubKind, { inputs: string[]; outputs: string[] }> =
 	merge:          { inputs: ['in-0', 'in-1'], outputs: ['out-0'] },
 };
 
-/** Distribute N handles evenly as percentages across the node width. */
+function getHandleTop(index: number, total: number): string {
+	const fraction = total === 1 ? 0.5 : (index + 1) / (total + 1);
+	return `calc(${NODE_HEADER_HEIGHT}px + ${fraction} * (100% - ${NODE_HEADER_HEIGHT}px))`;
+}
+
 function getHandleLeft(index: number, total: number): string {
 	if (total === 1) return '50%';
 	return `${((index + 1) / (total + 1)) * 100}%`;
@@ -39,82 +43,47 @@ export const StubNode = memo(function StubNode({
 	}, [id, onNodesChange]);
 
 	return (
-		<Box
-			sx={{
-				p:           1.5,
-				border:      '1px dashed',
-				borderColor: 'text.disabled',
-				borderRadius: 1,
-				bgcolor:     'background.paper',
-				minWidth:    140,
-				textAlign:   'center',
-				position:    'relative',
-				opacity:     0.8,
-			}}
-		>
-			{selected && (
-				<IconButton
-					size='small'
-					onClick={handleDelete}
-					aria-label='Delete node'
-					className='nodrag'
-					sx={{
-						position:  'absolute',
-						top:       4,
-						right:     4,
-						zIndex:    10,
-						color:     'text.secondary',
-						p:         0.25,
-						'&:hover': { color: 'error.main' },
-					}}
-				>
-					<CloseIcon sx={{ fontSize: 14 }} />
-				</IconButton>
-			)}
+		<Box sx={{
+			border:       '1px dashed',
+			borderColor:  NODE_COLORS.processor,
+			borderRadius: 1,
+			bgcolor:      `${NODE_COLORS.processor}0D`,
+			minWidth:     140,
+			position:     'relative',
+			opacity:      0.8,
+			pb:           3,
+		}}>
+			<NodeHeader id={id} label={data.label} selected={selected} accentColor={NODE_COLORS.processor} />
 
-			<Typography
-				variant='caption'
-				color='text.disabled'
-				sx={{ fontWeight: 600, letterSpacing: 0.5, display: 'block' }}
-			>
-				{data.label.toUpperCase()}
-			</Typography>
-			<Typography
-				variant='caption'
-				color='text.disabled'
-				display='block'
-				sx={{ mt: 0.25, fontSize: 9 }}
-			>
-				stub
-			</Typography>
+			<Box sx={{ px: 1.5, py: 1, textAlign: 'center' }}>
+				<Typography variant='caption' color='text.disabled' sx={{ fontSize: 9 }}>
+					stub
+				</Typography>
+			</Box>
 
-			{topo.inputs.map((handleId, i) => (
-				<Handle
-					key={handleId}
-					type='target'
-					position={Position.Top}
-					id={handleId}
-					style={{
-						left:       getHandleLeft(i, topo.inputs.length),
-						background: '#666',
-						border:     '2px solid #666',
-					}}
-				/>
-			))}
+			{topo.inputs.map((handleId, i) => {
+				const top = getHandleTop(i, topo.inputs.length);
+				const label = topo.inputs.length === 1 ? 'in' : `in ${i}`;
+				return (
+					<Fragment key={handleId}>
+						<Handle type='target' position={Position.Left} id={handleId}
+							style={{ ...inputHandleStyle(NODE_COLORS.processor), top }} />
+						{inputLabel(label, top, NODE_COLORS.processor)}
+					</Fragment>
+				);
+			})}
 
-			{topo.outputs.map((handleId, i) => (
-				<Handle
-					key={handleId}
-					type='source'
-					position={Position.Bottom}
-					id={handleId}
-					style={{
-						left:       getHandleLeft(i, topo.outputs.length),
-						background: '#666',
-						border:     '2px solid #666',
-					}}
-				/>
-			))}
+			{topo.outputs.map((handleId, i) => {
+				const left = getHandleLeft(i, topo.outputs.length);
+				const label = topo.outputs.length === 1 ? 'out' : `out ${i}`;
+				return (
+					<Fragment key={handleId}>
+						<Handle type='source' position={Position.Bottom} id={handleId}
+							style={{ ...outputHandleStyle(NODE_COLORS.processor), left }} />
+						{outputLabel(label, NODE_COLORS.processor, left)}
+					</Fragment>
+				);
+			})}
 		</Box>
 	);
 });

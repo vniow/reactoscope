@@ -1,12 +1,33 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import InputBase from '@mui/material/InputBase';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import Slider from '@mui/material/Slider';
+import Typography from '@mui/material/Typography';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import StopIcon from '@mui/icons-material/Stop';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import SwapVertIcon from '@mui/icons-material/SwapVert';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
+import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 import { WoscopeProvider } from './contexts/WoahscopeContext';
 import { ErrorBoundary }   from './components';
 import { WoahscopePanel }    from './daw/WoahscopePanel';
 import { SpinningRectPanel } from './daw/InputPanel';
 import { DawCanvas }         from './daw/DawCanvas';
 import { SweepPanel }        from './daw/SweepPanel';
+import { VizSettingsOverlay } from './daw/VizSettingsOverlay';
 import { debugRef } from './components/WoahcopeSceneR3F';
+import {
+	startSceneInput, stopSceneInput, getSceneInputWorkletNode, SCENE_INPUT_ID,
+} from './store/daw';
+import { useDawStore } from './store/daw';
+import {
+	SAMPLE_RATE_OPTIONS, getStoredSampleRate, setStoredSampleRate, type SampleRate,
+} from './scene/audioSetup';
 
 const DEV_DEBUG = import.meta.env.DEV &&
 	new URLSearchParams(window.location.search).has('debug');
@@ -20,11 +41,19 @@ const DEFAULT_SPLIT = 50;
 const MIN_SPLIT     = 15;
 const MAX_SPLIT     = 85;
 
-const SWEEP_HEIGHT_KEY     = 'woahscope-sweep-height';
-const SWEEP_FULLWIDTH_KEY  = 'woahscope-sweep-fullwidth';
-const DEFAULT_SWEEP_HEIGHT = 150;
-const MIN_SWEEP_HEIGHT     = 60;
-const MAX_SWEEP_HEIGHT     = 500;
+const SWEEP_HEIGHT_KEY      = 'woahscope-sweep-height';
+const SWEEP_FULLWIDTH_KEY   = 'woahscope-sweep-fullwidth';
+const SWEEP_VISIBLE_KEY     = 'woahscope-sweep-visible';
+const CANVAS_SWAP_KEY       = 'woahscope-canvases-swapped';
+const COLUMN_SWAP_KEY       = 'woahscope-columns-swapped';
+const TOOLBAR_COLLAPSED_KEY = 'woahscope-toolbar-collapsed';
+const DEFAULT_SWEEP_HEIGHT  = 150;
+const MIN_SWEEP_HEIGHT      = 60;
+const MAX_SWEEP_HEIGHT      = 500;
+
+const DEFAULT_SCAN_FREQ = 50;
+const SCAN_FREQ_MIN     = 1;
+const SCAN_FREQ_MAX     = 2000;
 
 function clampSplit(v: number) {
 	return Math.min(MAX_SPLIT, Math.max(MIN_SPLIT, v));
@@ -44,34 +73,74 @@ function readStored<T>(key: string, parse: (raw: string) => T, fallback: T): T {
 	return fallback;
 }
 
+const toggleBtnSx = {
+	color: '#444',
+	borderRadius: 1,
+	'&:hover': { color: '#22dd22' },
+};
+
+const labelSx = { fontSize: 9, color: '#555', flexShrink: 0, userSelect: 'none' as const };
+
 export function App() {
-	const [splitPercent,   setSplitPercent]   = useState(() =>
+	const [splitPercent,    setSplitPercent]    = useState(() =>
 		readStored(SPLIT_KEY, v => clampSplit(Number(v)), DEFAULT_SPLIT),
 	);
-	const [sweepHeight,    setSweepHeight]    = useState(() =>
+	const [sweepHeight,     setSweepHeight]     = useState(() =>
 		readStored(SWEEP_HEIGHT_KEY, v => clampSweepHeight(Number(v)), DEFAULT_SWEEP_HEIGHT),
 	);
-	const [sweepFullWidth, setSweepFullWidth] = useState(() =>
+	const [sweepFullWidth,  setSweepFullWidth]  = useState(() =>
 		readStored(SWEEP_FULLWIDTH_KEY, v => v === 'true', false),
 	);
+	const [sweepVisible,    setSweepVisible]    = useState(() =>
+		readStored(SWEEP_VISIBLE_KEY, v => v === 'true', false),
+	);
+	const [canvasesSwapped, setCanvasesSwapped] = useState(() =>
+		readStored(CANVAS_SWAP_KEY, v => v === 'true', false),
+	);
+	const [columnsSwapped,  setColumnsSwapped]  = useState(() =>
+		readStored(COLUMN_SWAP_KEY, v => v === 'true', false),
+	);
+	const [toolbarCollapsed, setToolbarCollapsed] = useState(() =>
+		readStored(TOOLBAR_COLLAPSED_KEY, v => v === 'true', false),
+	);
 
-	const isDraggingRef = useRef(false);
-	const containerRef  = useRef<HTMLDivElement>(null);
+	// Scene input controls
+	const updateNodeData  = useDawStore(s => s.updateNodeData);
+	const [isRunning,     setIsRunning]     = useState(false);
+	const [sampleRate,    setSampleRate]    = useState<SampleRate>(getStoredSampleRate);
+	const [needsReload,   setNeedsReload]   = useState(false);
+	const [scanFreq,      setScanFreq]      = useState(DEFAULT_SCAN_FREQ);
+	const [editingScan,   setEditingScan]   = useState(false);
+	const [scanFreqInput, setScanFreqInput] = useState('');
+	const scanInputRef = useRef<HTMLInputElement>(null);
 
-	// Persist split
+	const isDraggingRef     = useRef(false);
+	const containerRef      = useRef<HTMLDivElement>(null);
+	// Ref so the drag handler closure always sees the latest swap state.
+	const columnsSwappedRef = useRef(columnsSwapped);
+	useEffect(() => { columnsSwappedRef.current = columnsSwapped; }, [columnsSwapped]);
+
 	useEffect(() => {
-		try { localStorage.setItem(SPLIT_KEY, String(splitPercent)); } catch { /* ignore */ }
+		try { localStorage.setItem(SPLIT_KEY,            String(splitPercent));    } catch { /* ignore */ }
 	}, [splitPercent]);
-
-	// Persist sweep height
 	useEffect(() => {
-		try { localStorage.setItem(SWEEP_HEIGHT_KEY, String(sweepHeight)); } catch { /* ignore */ }
+		try { localStorage.setItem(SWEEP_HEIGHT_KEY,     String(sweepHeight));     } catch { /* ignore */ }
 	}, [sweepHeight]);
-
-	// Persist sweep full-width mode
 	useEffect(() => {
-		try { localStorage.setItem(SWEEP_FULLWIDTH_KEY, String(sweepFullWidth)); } catch { /* ignore */ }
+		try { localStorage.setItem(SWEEP_FULLWIDTH_KEY,  String(sweepFullWidth));  } catch { /* ignore */ }
 	}, [sweepFullWidth]);
+	useEffect(() => {
+		try { localStorage.setItem(SWEEP_VISIBLE_KEY,    String(sweepVisible));    } catch { /* ignore */ }
+	}, [sweepVisible]);
+	useEffect(() => {
+		try { localStorage.setItem(CANVAS_SWAP_KEY,      String(canvasesSwapped)); } catch { /* ignore */ }
+	}, [canvasesSwapped]);
+	useEffect(() => {
+		try { localStorage.setItem(COLUMN_SWAP_KEY,      String(columnsSwapped));  } catch { /* ignore */ }
+	}, [columnsSwapped]);
+	useEffect(() => {
+		try { localStorage.setItem(TOOLBAR_COLLAPSED_KEY, String(toolbarCollapsed)); } catch { /* ignore */ }
+	}, [toolbarCollapsed]);
 
 	// Horizontal split drag
 	const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
@@ -84,8 +153,11 @@ export function App() {
 	useEffect(() => {
 		const onMouseMove = (e: MouseEvent) => {
 			if (!isDraggingRef.current || !containerRef.current) return;
-			const rect = containerRef.current.getBoundingClientRect();
-			const pct  = ((e.clientX - rect.left) / rect.width) * 100;
+			const rect   = containerRef.current.getBoundingClientRect();
+			const rawPct = ((e.clientX - rect.left) / rect.width) * 100;
+			// When columns are visually swapped the canvas column is on the right,
+			// so the split percentage runs in the opposite direction.
+			const pct = columnsSwappedRef.current ? 100 - rawPct : rawPct;
 			setSplitPercent(clampSplit(pct));
 		};
 		const onMouseUp = () => {
@@ -110,6 +182,38 @@ export function App() {
 		setSweepFullWidth(v => !v);
 	}, []);
 
+	// Scene input handlers
+	const handlePlay = useCallback(async () => {
+		await startSceneInput();
+		setIsRunning(true);
+	}, []);
+
+	const handleStop = useCallback(() => {
+		stopSceneInput();
+		setIsRunning(false);
+	}, []);
+
+	const handleSampleRate = useCallback((rate: SampleRate) => {
+		setStoredSampleRate(rate);
+		setSampleRate(rate);
+		setNeedsReload(true);
+	}, []);
+
+	const handleScanFreq = useCallback((value: number) => {
+		setScanFreq(value);
+		updateNodeData(SCENE_INPUT_ID, { scanFrequency: value });
+		const node = getSceneInputWorkletNode();
+		if (node) node.port.postMessage({ type: 'scanFreq', value });
+	}, [updateNodeData]);
+
+	const commitScanFreqInput = useCallback(() => {
+		const parsed = parseInt(scanFreqInput, 10);
+		if (!isNaN(parsed)) {
+			handleScanFreq(Math.min(SCAN_FREQ_MAX, Math.max(SCAN_FREQ_MIN, parsed)));
+		}
+		setEditingScan(false);
+	}, [scanFreqInput, handleScanFreq]);
+
 	const sweepPanel = (
 		<SweepPanel
 			height={sweepHeight}
@@ -119,97 +223,265 @@ export function App() {
 		/>
 	);
 
+	const divider = (
+		<Box
+			onMouseDown={handleDividerMouseDown}
+			sx={{
+				width:       6,
+				flexShrink:  0,
+				position:    'relative',
+				cursor:      'col-resize',
+				bgcolor:     '#1a1a1a',
+				borderLeft:  '1px solid #2a2a2a',
+				borderRight: '1px solid #2a2a2a',
+				zIndex:      10,
+				transition:  'background-color 0.15s',
+				'&:hover':   { bgcolor: 'rgba(34, 221, 34, 0.4)' },
+				'&::after':  {
+					content:      '""',
+					position:     'absolute',
+					top:          '50%',
+					left:         '50%',
+					transform:    'translate(-50%, -50%)',
+					width:        2,
+					height:       32,
+					borderRadius: 1,
+					bgcolor:      '#555',
+				},
+			}}
+		/>
+	);
+
 	return (
 		<ErrorBoundary>
 		<WoscopeProvider>
 			<noscript>gotta enable JavaScript yo</noscript>
 
-			{/* Outer column: main row + optional full-width sweep row */}
 			<Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
-				{/* Main two-column row */}
+				{/* Main two-column row.
+				    flexDirection drives column swap — no child reordering needed. */}
 				<Box
 					ref={containerRef}
 					sx={{
 						display:       'flex',
-						flexDirection: 'row',
+						flexDirection: columnsSwapped ? 'row-reverse' : 'row',
 						flex:          1,
 						minHeight:     0,
 						overflow:      'hidden',
 					}}
 				>
-					{/* Left column — stacked canvases */}
+					{/* Canvas column — always first in the DOM tree */}
 					<Box
 						sx={{
 							width:         `${splitPercent}%`,
 							flexShrink:    0,
 							height:        '100%',
 							overflow:      'hidden',
-							position:      'relative',
 							bgcolor:       '#000',
 							display:       'flex',
-							flexDirection: 'column',
+							flexDirection: 'row',
 						}}
 					>
-						<Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-							<WoahscopePanel />
-							{DEV_DEBUG && DebugPanel && (
-								<Suspense fallback={null}>
-									<DebugPanel debugRef={debugRef} />
-								</Suspense>
-							)}
-						</Box>
-						<Box sx={{ flex: 1, overflow: 'hidden' }}>
-							<SpinningRectPanel />
+						{/* Permanent left strip — holds the collapse toggle */}
+						<Box sx={{
+							width:          24,
+							flexShrink:     0,
+							display:        'flex',
+							alignItems:     'center',
+							justifyContent: 'center',
+							bgcolor:        '#0a0a0a',
+							borderRight:    '1px solid #1a1a1a',
+						}}>
+							<IconButton
+								size="small"
+								onClick={() => setToolbarCollapsed(v => !v)}
+								title={toolbarCollapsed ? 'Expand toolbar' : 'Collapse toolbar'}
+								sx={{ ...toggleBtnSx, color: '#333', '&:hover': { color: '#22dd22' } }}
+							>
+								{toolbarCollapsed
+									? <UnfoldMoreIcon sx={{ fontSize: 14 }} />
+									: <UnfoldLessIcon sx={{ fontSize: 14 }} />
+								}
+							</IconButton>
 						</Box>
 
-						{/* Sweep panel in left-column (default) mode */}
-						{!sweepFullWidth && sweepPanel}
+						{/* Canvas + toolbar column.
+						    flexDirection drives canvas swap — WoahscopePanel and
+						    SpinningRectPanel stay in fixed DOM positions; only the
+						    visual order flips. The toolbar stays between them either way
+						    because it is the middle sibling. */}
+						<Box sx={{
+							flex:          1,
+							display:       'flex',
+							flexDirection: canvasesSwapped ? 'column-reverse' : 'column',
+							overflow:      'hidden',
+							minWidth:      0,
+						}}>
+							{/* Top canvas (WoahscopePanel) — always first child */}
+							<Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+								<WoahscopePanel />
+								{DEV_DEBUG && DebugPanel && (
+									<Suspense fallback={null}>
+										<DebugPanel debugRef={debugRef} />
+									</Suspense>
+								)}
+							</Box>
+
+							{/* Toolbar — always middle child, collapses to height 0.
+							    MUI Popover / Select menus use portals so overflow:hidden
+							    here does not clip them. */}
+							<Box sx={{
+								flexShrink: 0,
+								overflow:   'hidden',
+								height:     toolbarCollapsed ? 0 : 'auto',
+								bgcolor:    '#0a0a0a',
+								borderTop:    '1px solid #1a1a1a',
+								borderBottom: '1px solid #1a1a1a',
+							}}>
+								<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1 }}>
+									{/* Viz settings */}
+									<VizSettingsOverlay />
+
+									<Box sx={{ width: '1px', height: 16, bgcolor: '#1e1e1e', flexShrink: 0 }} />
+
+									{/* Play / stop */}
+									<IconButton
+										size="small"
+										onClick={isRunning ? handleStop : handlePlay}
+										aria-label={isRunning ? 'Stop' : 'Start'}
+										sx={{
+											p: 0.25, borderRadius: 1,
+											color: isRunning ? '#22dd22' : '#444',
+											'&:hover': { color: isRunning ? 'error.main' : '#22dd22' },
+										}}
+									>
+										{isRunning
+											? <StopIcon sx={{ fontSize: 16 }} />
+											: <PlayArrowIcon sx={{ fontSize: 16 }} />
+										}
+									</IconButton>
+
+									{/* Sample rate */}
+									<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+										<Typography variant="caption" sx={labelSx}>RATE</Typography>
+										<Select
+											size="small"
+											value={sampleRate}
+											onChange={e => handleSampleRate(Number(e.target.value) as SampleRate)}
+											sx={{
+												fontSize: 10, height: 20, color: '#888',
+												'.MuiSelect-select': { py: '2px', px: '6px' },
+												'.MuiOutlinedInput-notchedOutline': { borderColor: '#2a2a2a' },
+												'&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#444' },
+											}}
+										>
+											{SAMPLE_RATE_OPTIONS.map(r => (
+												<MenuItem key={r} value={r} sx={{ fontSize: 11 }}>
+													{r >= 1000 ? `${r / 1000} kHz` : `${r} Hz`}
+												</MenuItem>
+											))}
+										</Select>
+									</Box>
+
+									{/* Scan frequency */}
+									<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flex: 1, minWidth: 80 }}>
+										<Typography variant="caption" sx={labelSx}>SCAN</Typography>
+										<Slider
+											size="small"
+											min={SCAN_FREQ_MIN} max={SCAN_FREQ_MAX} step={1}
+											value={scanFreq}
+											onChange={(_, v) => handleScanFreq(v as number)}
+											sx={{ flex: 1, color: '#22dd22', py: '6px' }}
+										/>
+										{editingScan ? (
+											<InputBase
+												inputRef={scanInputRef}
+												value={scanFreqInput}
+												onChange={e => setScanFreqInput(e.target.value)}
+												onBlur={commitScanFreqInput}
+												onKeyDown={e => {
+													if (e.key === 'Enter') commitScanFreqInput();
+													if (e.key === 'Escape') setEditingScan(false);
+												}}
+												sx={{
+													fontSize: 9, color: '#888', width: 48, flexShrink: 0,
+													'.MuiInputBase-input': { p: 0, textAlign: 'right' },
+												}}
+											/>
+										) : (
+											<Typography
+												variant="caption"
+												sx={{ ...labelSx, color: '#666', minWidth: 40, textAlign: 'right', cursor: 'text' }}
+												onClick={() => {
+													setScanFreqInput(String(scanFreq));
+													setEditingScan(true);
+													setTimeout(() => scanInputRef.current?.select(), 0);
+												}}
+											>
+												{scanFreq} Hz
+											</Typography>
+										)}
+									</Box>
+
+									{/* Reload notice */}
+									{needsReload && (
+										<Typography
+											variant="caption"
+											sx={{ fontSize: 9, color: '#dd8822', cursor: 'pointer', flexShrink: 0, '&:hover': { color: '#ffaa44' } }}
+											onClick={() => window.location.reload()}
+										>
+											↻ reload
+										</Typography>
+									)}
+
+									<Box sx={{ flex: 1 }} />
+
+									{/* Layout toggles */}
+									<IconButton size="small"
+										onClick={() => setSweepVisible(v => !v)}
+										title={sweepVisible ? 'Hide sweep' : 'Show sweep'}
+										sx={{ ...toggleBtnSx, color: sweepVisible ? '#22dd22' : '#444' }}
+									>
+										<ShowChartIcon fontSize="small" />
+									</IconButton>
+									<IconButton size="small"
+										onClick={() => setCanvasesSwapped(v => !v)}
+										title="Swap canvas panels"
+										sx={{ ...toggleBtnSx, color: canvasesSwapped ? '#22dd22' : '#444' }}
+									>
+										<SwapVertIcon fontSize="small" />
+									</IconButton>
+									<IconButton size="small"
+										onClick={() => setColumnsSwapped(v => !v)}
+										title="Swap visualiser / DAW"
+										sx={{ ...toggleBtnSx, color: columnsSwapped ? '#22dd22' : '#444' }}
+									>
+										<SwapHorizIcon fontSize="small" />
+									</IconButton>
+								</Box>
+							</Box>
+
+							{/* Bottom canvas (SpinningRectPanel) — always last child */}
+							<Box sx={{ flex: 1, overflow: 'hidden' }}>
+								<SpinningRectPanel />
+							</Box>
+						</Box>
+
+						{/* Sweep panel in left-column mode */}
+						{!sweepFullWidth && sweepVisible && sweepPanel}
 					</Box>
 
-					{/* Drag divider */}
-					<Box
-						onMouseDown={handleDividerMouseDown}
-						sx={{
-							width:       6,
-							flexShrink:  0,
-							position:    'relative',
-							cursor:      'col-resize',
-							bgcolor:     '#1a1a1a',
-							borderLeft:  '1px solid #2a2a2a',
-							borderRight: '1px solid #2a2a2a',
-							zIndex:      10,
-							transition:  'background-color 0.15s',
-							'&:hover':   { bgcolor: 'rgba(34, 221, 34, 0.4)' },
-							'&::after':  {
-								content:      '""',
-								position:     'absolute',
-								top:          '50%',
-								left:         '50%',
-								transform:    'translate(-50%, -50%)',
-								width:        2,
-								height:       32,
-								borderRadius: 1,
-								bgcolor:      '#555',
-							},
-						}}
-					/>
+					{divider}
 
-					{/* Right column — React Flow DAW canvas */}
-					<Box
-						sx={{
-							flex:     1,
-							height:   '100%',
-							overflow: 'hidden',
-							minWidth: 0,
-						}}
-					>
+					{/* DAW column — always last in the DOM tree */}
+					<Box sx={{ flex: 1, height: '100%', overflow: 'hidden', minWidth: 0 }}>
 						<DawCanvas />
 					</Box>
 				</Box>
 
-				{/* Sweep panel in full-width mode (below both columns) */}
-				{sweepFullWidth && sweepPanel}
+				{/* Sweep panel in full-width mode */}
+				{sweepFullWidth && sweepVisible && sweepPanel}
 			</Box>
 		</WoscopeProvider>
 		</ErrorBoundary>

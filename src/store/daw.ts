@@ -63,6 +63,7 @@ const { nSamples } = DEFAULT_AUDIO_SETTINGS;
 export const MASTER_NODE_ID    = 'master-output';
 export const DEFAULT_PLAYER_ID = 'player-default';
 export const SCENE_INPUT_ID    = 'scene-input';
+export const DEBUG_NODE_ID     = 'debug-default';
 
 // ─── Module-level audio node registry ────────────────────────────────────────
 
@@ -817,6 +818,12 @@ const initialNodes: AppNode[] = [
 		data:      { label: 'Scene Input', scanFrequency: 50 },
 		deletable: false,
 	},
+	{
+		id:       DEBUG_NODE_ID,
+		type:     'debug',
+		position: { x: 0, y: -120 },
+		data:     { label: 'Debug' },
+	},
 ];
 
 const initialEdges: AppEdge[] = [
@@ -846,6 +853,7 @@ type DawState = {
 	addNoiseNode:      (position: { x: number; y: number }) => string;
 	addDCSignalNode:   (position: { x: number; y: number }) => string;
 	addStubNode:       (kind: StubKind, position: { x: number; y: number }) => string;
+	addDebugNode:      (position: { x: number; y: number }) => string;
 	updateNodeData:      (id: string, data: Partial<Record<string, unknown>>) => void;
 	updateNodePositions: (updatedNodes: AppNode[]) => void;
 	setSelectedNodeId:   (id: string | null) => void;
@@ -1016,6 +1024,18 @@ export const useDawStore = create<DawState>((set, get) => ({
 			nodes:        [...get().nodes, newNode],
 			audioVersion: get().audioVersion + 1,
 		});
+		return id;
+	},
+
+	addDebugNode: (position) => {
+		const id = `debug-${Date.now()}`;
+		const newNode: AppNode = {
+			id,
+			type:     'debug',
+			position,
+			data:     { label: 'Debug' },
+		};
+		set({ nodes: [...get().nodes, newNode] });
 		return id;
 	},
 

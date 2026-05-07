@@ -1,11 +1,12 @@
-import { memo, useCallback, useState } from 'react';
+import { memo, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
 import Slider from '@mui/material/Slider';
 import Typography from '@mui/material/Typography';
-import CloseIcon from '@mui/icons-material/Close';
-import { setGainValue, useDawStore } from '../../store/daw';
+import { setGainValue } from '../../store/daw';
+import { NodeHeader, NODE_HEADER_HEIGHT } from './NodeHeader';
+import { NODE_COLORS } from './nodeColors';
+import { inputHandleStyle, outputHandleStyle, inputLabel, outputLabel } from './handleStyles';
 import type { GainFlowNode } from '../../store/dawTypes';
 
 export const GainNode = memo(function GainNode({
@@ -15,12 +16,6 @@ export const GainNode = memo(function GainNode({
 }: NodeProps<GainFlowNode>) {
 	const [gain, setGain] = useState(data.gain ?? 1.0);
 
-	const onNodesChange = useDawStore(s => s.onNodesChange);
-
-	const handleDelete = useCallback(() => {
-		onNodesChange([{ type: 'remove', id }]);
-	}, [id, onNodesChange]);
-
 	const handleGainChange = (_: Event, value: number | number[]) => {
 		const g = value as number;
 		setGain(g);
@@ -28,57 +23,25 @@ export const GainNode = memo(function GainNode({
 	};
 
 	return (
-		<Box
-			sx={{
-				p:           1.5,
-				border:      '1px solid',
-				borderColor: 'divider',
-				borderRadius: 1,
-				bgcolor:     'background.paper',
-				minWidth:    180,
-				position:    'relative',
-			}}
-		>
-			{selected && (
-				<IconButton
-					size='small'
-					onClick={handleDelete}
-					aria-label='Delete node'
-					className='nodrag'
-					sx={{
-						position:  'absolute',
-						top:       4,
-						right:     4,
-						zIndex:    10,
-						color:     'text.secondary',
-						p:         0.25,
-						'&:hover': { color: 'error.main' },
-					}}
-				>
-					<CloseIcon sx={{ fontSize: 14 }} />
-				</IconButton>
-			)}
+		<Box sx={{
+			border:       '1px solid',
+			borderColor:  NODE_COLORS.processor,
+			borderRadius: 1,
+			bgcolor:      `${NODE_COLORS.processor}0D`,
+			minWidth:     180,
+			position:     'relative',
+			pb:           3,
+		}}>
+			<NodeHeader id={id} label='Gain' selected={selected} accentColor={NODE_COLORS.processor} />
 
-			<Typography
-				variant='caption'
-				color='text.secondary'
-				sx={{ fontWeight: 600, letterSpacing: 0.5, mb: 1, display: 'block' }}
-			>
-				GAIN
-			</Typography>
-
-			<Box className='nodrag nowheel' sx={{ px: 0.5 }}>
-				<Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+			<Box sx={{ px: 1.5, py: 1 }} className='nodrag nowheel'>
+				<Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
 					<Typography variant='caption' color='text.secondary'>gain</Typography>
-					<Typography variant='caption' color='text.secondary'>
-						{gain.toFixed(2)}
-					</Typography>
+					<Typography variant='caption' color='text.secondary'>{gain.toFixed(2)}</Typography>
 				</Box>
 				<Slider
 					aria-label='Gain'
-					min={0}
-					max={2}
-					step={0.01}
+					min={0} max={2} step={0.01}
 					value={gain}
 					onChange={handleGainChange}
 					size='small'
@@ -88,16 +51,18 @@ export const GainNode = memo(function GainNode({
 
 			<Handle
 				type='target'
-				position={Position.Top}
+				position={Position.Left}
 				id='in-0'
-				style={{ background: '#22dd22', border: '2px solid #22dd22' }}
+				style={{ ...inputHandleStyle(NODE_COLORS.processor), top: `calc(${NODE_HEADER_HEIGHT}px + (100% - ${NODE_HEADER_HEIGHT}px) / 2)` }}
 			/>
+			{inputLabel('in', `calc(${NODE_HEADER_HEIGHT}px + (100% - ${NODE_HEADER_HEIGHT}px) / 2)`, NODE_COLORS.processor)}
 			<Handle
 				type='source'
 				position={Position.Bottom}
 				id='out-0'
-				style={{ background: '#22dd22', border: '2px solid #22dd22' }}
+				style={outputHandleStyle(NODE_COLORS.processor)}
 			/>
+			{outputLabel('out', NODE_COLORS.processor)}
 		</Box>
 	);
 });

@@ -32,15 +32,9 @@ export function VizSettingsOverlay() {
 				size='small'
 				aria-label='Visualiser settings'
 				sx={{
-					position: 'absolute',
-					bottom: 10,
-					right: 10,
-					color: '#fff',
-					opacity: 0.25,
-					transition: 'opacity 0.15s',
-					'&:hover': { opacity: 1 },
-					zIndex: 10,
-					p: 0.5,
+					color: open ? '#22dd22' : '#444',
+					borderRadius: 1,
+					'&:hover': { color: '#22dd22' },
 				}}
 			>
 				<SettingsIcon fontSize='small' />

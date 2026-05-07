@@ -5,7 +5,6 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Slider from '@mui/material/Slider';
 import Typography from '@mui/material/Typography';
-import CloseIcon from '@mui/icons-material/Close';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
@@ -23,6 +22,9 @@ import {
 	clearNodePlaybackEndCallback,
 	useDawStore,
 } from '../../store/daw';
+import { NodeHeader } from './NodeHeader';
+import { NODE_COLORS } from './nodeColors';
+import { outputHandleStyle, outputLabel } from './handleStyles';
 import { TrackSelector } from '../../components/TrackSelector';
 import { usePlayback } from '../../contexts/WoahscopeContext';
 import { BUILT_IN_TRACKS, ERROR_MESSAGES } from '../../config';
@@ -33,7 +35,6 @@ const srOnlySx = {
 	position: 'absolute',
 	width: 1,
 	height: 1,
-	overflow: 'hidden',
 	clip: 'rect(0 0 0 0)',
 	clipPath: 'inset(50%)',
 	whiteSpace: 'nowrap',
@@ -202,37 +203,18 @@ export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeP
 	return (
 		<Box
 			sx={{
-				p: 1.5,
-				border: '1px solid',
-				borderColor: 'divider',
+				border:       '1px solid',
+				borderColor:  NODE_COLORS.source,
 				borderRadius: 1,
-				bgcolor: 'background.paper',
-				minWidth: 260,
-				display: 'flex',
-				flexDirection: 'column',
-				gap: 1,
-				position: 'relative',
+				bgcolor:      `${NODE_COLORS.source}0D`,
+				minWidth:     260,
+				position:     'relative',
+				pb:           3,
 			}}
 		>
-			{selected && (
-				<IconButton
-					size='small'
-					onClick={handleDelete}
-					aria-label='Delete node'
-					className='nodrag'
-					sx={{
-						position:  'absolute',
-						top:       4,
-						right:     4,
-						zIndex:    10,
-						color:     'text.secondary',
-						p:         0.25,
-						'&:hover': { color: 'error.main' },
-					}}
-				>
-					<CloseIcon sx={{ fontSize: 14 }} />
-				</IconButton>
-			)}
+			<NodeHeader id={id} label='Player' selected={selected} accentColor={NODE_COLORS.source} />
+
+			<Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
 
 			{/* Screen-reader status */}
 			<Box role='status' aria-live='polite' aria-atomic='true' sx={srOnlySx}>
@@ -340,25 +322,23 @@ export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeP
 				/>
 			</Box>
 
-			{/* L/R output labels */}
-			<Box sx={{ display: 'flex', justifyContent: 'space-between', px: '26%' }}>
-				<Typography variant='caption' color='text.secondary' sx={{ fontSize: 9 }}>L</Typography>
-				<Typography variant='caption' color='text.secondary' sx={{ fontSize: 9 }}>R</Typography>
-			</Box>
+			</Box>{/* end body */}
 
 			{/* Stereo output handles */}
 			<Handle
 				type='source'
 				position={Position.Bottom}
 				id='out-0'
-				style={{ left: '33%', background: '#22dd22', border: '2px solid #22dd22' }}
+				style={{ ...outputHandleStyle(NODE_COLORS.source), left: '33%' }}
 			/>
+			{outputLabel('L', NODE_COLORS.source, '33%')}
 			<Handle
 				type='source'
 				position={Position.Bottom}
 				id='out-1'
-				style={{ left: '67%', background: '#22dd22', border: '2px solid #22dd22' }}
+				style={{ ...outputHandleStyle(NODE_COLORS.source), left: '67%' }}
 			/>
+			{outputLabel('R', NODE_COLORS.source, '67%')}
 		</Box>
 	);
 });

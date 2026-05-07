@@ -4,6 +4,7 @@ import { debugRef } from '../components/WoahcopeSceneR3F';
 import {
 	ReactFlow,
 	Background,
+	BackgroundVariant,
 	Controls,
 	ControlButton,
 	useReactFlow,
@@ -24,6 +25,7 @@ import { StubNode }           from './nodes/StubNode';
 import { NoiseGeneratorNode } from './nodes/NoiseGeneratorNode';
 import { DCSignalNode }       from './nodes/DCSignalNode';
 import { SceneInputNode }    from './nodes/SceneInputNode';
+import { DebugNode }         from './nodes/DebugNode';
 import { DeletableEdge }    from './edges/DeletableEdge';
 import { AddNodePanel }     from './AddNodePanel';
 import type { AppNode, AppEdge } from '../store/dawTypes';
@@ -39,6 +41,7 @@ const nodeTypes = {
 	noiseGenerator:  NoiseGeneratorNode,
 	dcSignal:        DCSignalNode,
 	sceneInput:      SceneInputNode,
+	debug:           DebugNode,
 };
 
 const edgeTypes = {
@@ -136,6 +139,7 @@ export function DawCanvas() {
 
 	return (
 		<ReactFlow<AppNode, AppEdge>
+			style={{ background: '#141414' }}
 			nodes={localNodes}
 			edges={edges}
 			onNodesChange={handleNodesChange}
@@ -157,7 +161,7 @@ export function DawCanvas() {
 			proOptions={{ hideAttribution: true }}
 			fitView
 		>
-			<Background color='#2a2a2a' gap={20} />
+			<Background variant={BackgroundVariant.Cross} color='#2a2a2a' gap={24} size={6} />
 			<CustomControls />
 		</ReactFlow>
 	);

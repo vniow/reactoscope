@@ -76,6 +76,9 @@ export type SceneInputNodeData = {
 
 export type SceneInputFlowNode = Node<SceneInputNodeData, 'sceneInput'>;
 
+export type DebugNodeData = { label: string };
+export type DebugFlowNode = Node<DebugNodeData, 'debug'>;
+
 export type AppNode =
 	| BuiltInNode
 	| PlayerFlowNode
@@ -85,7 +88,8 @@ export type AppNode =
 	| StubFlowNode
 	| NoiseFlowNode
 	| DCSignalFlowNode
-	| SceneInputFlowNode;
+	| SceneInputFlowNode
+	| DebugFlowNode;
 
 export type AppEdge = Edge;
 

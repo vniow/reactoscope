@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import Box from '@mui/material/Box';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -14,15 +13,23 @@ import { useSceneToAudio } from '../scene/useSceneToAudio';
  * Browser WebGL context limits (8–16) are not a concern for two canvases.
  */
 
-const BOX_GEO = new THREE.BoxGeometry(1, 1, 1);
+const EDGES_GEO = (() => {
+	const geo = new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1));
+	const pos = geo.getAttribute('position');
+	const colors = new Float32Array(pos.count * 3);
+	for (let i = 0; i < pos.count; i++) {
+		colors[i * 3]     = pos.getX(i) + 0.5;
+		colors[i * 3 + 1] = pos.getY(i) + 0.5;
+		colors[i * 3 + 2] = pos.getZ(i) + 0.5;
+	}
+	geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+	return geo;
+})();
 
 function WireframeCube() {
-	const edgesArgs = useMemo<[THREE.BufferGeometry]>(() => [BOX_GEO], []);
-
 	return (
-		<lineSegments>
-			<edgesGeometry args={edgesArgs} />
-			<lineBasicMaterial color='#22dd22' />
+		<lineSegments geometry={EDGES_GEO}>
+			<lineBasicMaterial vertexColors />
 		</lineSegments>
 	);
 }

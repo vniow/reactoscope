@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAxis } from '../../contexts/WoahscopeContext';
-import { getWaveformData } from '../../store/daw';
+import { getWaveformData, getWaveformDataFromSAB, getWaveformWriteIndex } from '../../store/daw';
 import { getColourFromHue } from '../../woahscope/utils';
 
 interface MiniScopeProps {
@@ -34,15 +34,23 @@ export function MiniScope({ mode, width, height }: MiniScopeProps) {
 
 		let rafId: number;
 		let last = 0;
+		let lastWriteIndex = -1;
 
 		function loop(now: number) {
 			rafId = requestAnimationFrame(loop);
 			if (now - last < INTERVAL) return;
 			last = now;
 
+			const sabData = getWaveformDataFromSAB();
+			if (sabData !== null) {
+				const writeIdx = getWaveformWriteIndex();
+				if (writeIdx === lastWriteIndex) return;
+				lastWriteIndex = writeIdx;
+			}
+
 			ctx.clearRect(0, 0, width, height);
 
-			const { x, y, r, g, b, a } = getWaveformData();
+			const { x, y, r, g, b, a } = sabData ?? getWaveformData();
 			const multi = modeRef.current === 'multichannel';
 
 			let stereoR = 0, stereoG = 0, stereoB = 0;
