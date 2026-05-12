@@ -20,8 +20,6 @@ export interface AxisContextType {
 	setSwapXY: (value: boolean) => void;
 	invertXY: boolean;
 	setInvertXY: (value: boolean) => void;
-	gain: number;
-	setGain: (value: number) => void;
 	intensity: number;
 	setIntensity: (value: number) => void;
 	hue: number;
@@ -67,7 +65,6 @@ export function WoscopeProvider({ children }: VizProviderProps) {
 
 	const [swapXY,    setSwapXY]    = useLocalStorage('woscope.swapXY',    false);
 	const [invertXY,  setInvertXY]  = useLocalStorage('woscope.invertXY',  false);
-	const [gain,      setGain]      = useLocalStorage('woscope.gain',      0);
 	const [intensity, setIntensity] = useLocalStorage('woscope.intensity', 1);
 	const [hue,       setHue]       = useLocalStorage('woscope.hue',       125);
 
@@ -101,12 +98,12 @@ export function WoscopeProvider({ children }: VizProviderProps) {
 	const axisValue = useMemo<AxisContextType>(
 		() => ({
 			swapXY, setSwapXY, invertXY, setInvertXY,
-			gain, setGain, intensity, setIntensity, hue, setHue,
+			intensity, setIntensity, hue, setHue,
 		}),
 		// Setter functions from useLocalStorage are stable (useCallback-wrapped)
 		// and never change — only the state values need to be in deps.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[swapXY, invertXY, gain, intensity, hue],
+		[swapXY, invertXY, intensity, hue],
 	);
 
 	const effectsValue = useMemo<EffectsContextType>(

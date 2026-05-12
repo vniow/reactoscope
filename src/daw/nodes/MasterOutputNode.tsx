@@ -2,32 +2,44 @@ import { memo, useState, Fragment } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
-import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon  from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon  from '@mui/icons-material/ExpandMore';
+import VolumeUpIcon    from '@mui/icons-material/VolumeUp';
+import VolumeOffIcon   from '@mui/icons-material/VolumeOff';
+import SyncAltIcon     from '@mui/icons-material/SyncAlt';
+import GridViewIcon    from '@mui/icons-material/GridView';
 import { useDawStore } from '../../store/daw';
 import { NodeHeader, NODE_HEADER_HEIGHT } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
 import { GRID_UNIT } from './gridSystem';
-import { inputHandleStyle, inputLabel } from './handleStyles';
+import { inputHandleStyle, inputLabel, outputLabel } from './handleStyles';
 import { METAL_BG } from './metalBackground';
+import { hwIconBtn, hwIconBtnLit } from './hwStyles';
 import type { MasterOutputFlowNode } from '../../store/dawTypes';
 import { MiniScope } from './MiniScope';
 
-const STEREO_HANDLES = [
-	{ id: 'in-0', label: 'X' },
-	{ id: 'in-1', label: 'Y' },
-];
+const color = NODE_COLORS.output;
 
-const MULTI_HANDLES = [
+// in-0 = X, in-1 = Y  →  left edge (stereo)
+// in-0 = X, in-1 = Y, in-5 = A  →  left edge (multi)
+const STEREO_LEFT = [
 	{ id: 'in-0', label: 'X' },
 	{ id: 'in-1', label: 'Y' },
-	{ id: 'in-2', label: 'R' },
-	{ id: 'in-3', label: 'G' },
-	{ id: 'in-4', label: 'B' },
+] as const;
+
+const MULTI_LEFT = [
+	{ id: 'in-0', label: 'X' },
+	{ id: 'in-1', label: 'Y' },
 	{ id: 'in-5', label: 'A' },
-];
+] as const;
+
+// in-2 = R, in-3 = G, in-4 = B  →  bottom edge (multi only)
+const MULTI_BOTTOM = [
+	{ id: 'in-2', label: 'R', pct: '25%' },
+	{ id: 'in-3', label: 'G', pct: '50%' },
+	{ id: 'in-4', label: 'B', pct: '75%' },
+] as const;
 
 function getHandleTop(index: number, total: number): string {
 	const fraction = (index + 1) / (total + 1);
@@ -36,55 +48,75 @@ function getHandleTop(index: number, total: number): string {
 
 export const MasterOutputNode = memo<NodeProps<MasterOutputFlowNode>>(
 	function MasterOutputNode({ data }) {
-		const setMasterMode = useDawStore(s => s.setMasterMode);
-		const mode    = data.mode ?? 'stereo';
-		const isMulti = mode === 'multichannel';
-		const handles = isMulti ? MULTI_HANDLES : STEREO_HANDLES;
+		const setMasterMode    = useDawStore(s => s.setMasterMode);
+		const setSpeakersMuted = useDawStore(s => s.setSpeakersMuted);
+		const mode          = data.mode ?? 'stereo';
+		const isMulti       = mode === 'multichannel';
+		const speakersMuted = data.speakersMuted ?? true;
+		const leftHandles   = isMulti ? MULTI_LEFT : STEREO_LEFT;
 		const [expanded, setExpanded] = useState(false);
-		const canvasSize = isMulti ? 2 * GRID_UNIT : 2 * GRID_UNIT; // 192px fits both modes
-		const height = expanded ? (isMulti ? 6 : 5) * GRID_UNIT : 3 * GRID_UNIT;
+
+		const canvasSize = 2 * GRID_UNIT;
+		const height = expanded
+			? (isMulti ? 4 : 2) * GRID_UNIT
+			: (isMulti ? 4 : 2) * GRID_UNIT;
 
 		return (
 			<Box sx={{
-				border:       '1px solid',
-				borderColor:  NODE_COLORS.output,
-				borderRadius: 1,
+				border:          '1px solid',
+				borderColor:     color,
+				borderRadius:    1,
 				backgroundImage: METAL_BG,
-				boxShadow:    `0 0 8px ${NODE_COLORS.output}4D`,
-				width:        2 * GRID_UNIT,
+				boxShadow:       `0 0 8px ${color}4D`,
+				width:           2 * GRID_UNIT,
 				height,
-				position:     'relative',
+				position:        'relative',
+				pb:              3,
 			}}>
-				<NodeHeader label='Master Output' accentColor={NODE_COLORS.output} />
+				<NodeHeader label='Master Output' accentColor={color} />
 
-				<Box sx={{ px: 1.5, py: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+				<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
 					<Typography variant='caption' color='text.secondary' sx={{ fontSize: 10 }}>
 						→ woahscope
 					</Typography>
 
-					{/* Mode toggle */}
-					<Box
-						className='nodrag'
-						sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-					>
-						<Typography variant='caption' color={isMulti ? 'text.disabled' : 'text.secondary'} sx={{ fontSize: 10 }}>
-							stereo
-						</Typography>
-						<Switch
-							size='small'
-							checked={isMulti}
-							onChange={() => setMasterMode(isMulti ? 'stereo' : 'multichannel')}
-							sx={{ '& .MuiSwitch-thumb': { width: 10, height: 10 }, '& .MuiSwitch-switchBase': { p: '5px' } }}
-						/>
-						<Typography variant='caption' color={isMulti ? 'text.secondary' : 'text.disabled'} sx={{ fontSize: 10 }}>
-							multi
-						</Typography>
+					{/* Speaker + mode icon buttons */}
+					<Box className='nodrag' sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+						{/* SPK */}
+						<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25 }}>
+							<Typography variant='caption' sx={{ fontSize: 9, color: 'text.disabled', lineHeight: 1, userSelect: 'none' }}>spk</Typography>
+							<IconButton size='small' onClick={() => setSpeakersMuted(!speakersMuted)}
+								sx={!speakersMuted ? { ...hwIconBtnLit(color), p: 0.5 } : { ...hwIconBtn(color), p: 0.5 }}>
+								{speakersMuted
+									? <VolumeOffIcon sx={{ fontSize: 12 }} />
+									: <VolumeUpIcon  sx={{ fontSize: 12 }} />
+								}
+							</IconButton>
+						</Box>
+						{/* STEREO */}
+						<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25 }}>
+							<Typography variant='caption' sx={{ fontSize: 9, color: 'text.disabled', lineHeight: 1, userSelect: 'none' }}>stereo</Typography>
+							<IconButton size='small' onClick={() => setMasterMode('stereo')}
+								sx={!isMulti ? { ...hwIconBtnLit(color), p: 0.5 } : { ...hwIconBtn(color), p: 0.5 }}>
+								<SyncAltIcon sx={{ fontSize: 12 }} />
+							</IconButton>
+						</Box>
+						{/* MULTI */}
+						<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25 }}>
+							<Typography variant='caption' sx={{ fontSize: 9, color: 'text.disabled', lineHeight: 1, userSelect: 'none' }}>multi</Typography>
+							<IconButton size='small' onClick={() => setMasterMode('multichannel')}
+								sx={isMulti ? { ...hwIconBtnLit(color), p: 0.5 } : { ...hwIconBtn(color), p: 0.5 }}>
+								<GridViewIcon sx={{ fontSize: 12 }} />
+							</IconButton>
+						</Box>
 					</Box>
 
 					{/* Scope expand toggle */}
-					<Box className='nodrag' sx={{ display: 'flex', justifyContent: 'center' }}>
-						<IconButton size='small' onClick={() => setExpanded(v => !v)} sx={{ p: 0.25 }}>
-							{expanded ? <ExpandLessIcon sx={{ fontSize: 14 }} /> : <ExpandMoreIcon sx={{ fontSize: 14 }} />}
+					<Box className='nodrag' sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25 }}>
+						<Typography variant='caption' sx={{ fontSize: 9, color: 'text.disabled', lineHeight: 1, userSelect: 'none' }}>scope</Typography>
+						<IconButton size='small' onClick={() => setExpanded(v => !v)}
+							sx={expanded ? { ...hwIconBtnLit(color), p: 0.5 } : { ...hwIconBtn(color), p: 0.5 }}>
+							{expanded ? <ExpandLessIcon sx={{ fontSize: 12 }} /> : <ExpandMoreIcon sx={{ fontSize: 12 }} />}
 						</IconButton>
 					</Box>
 
@@ -96,16 +128,34 @@ export const MasterOutputNode = memo<NodeProps<MasterOutputFlowNode>>(
 					)}
 				</Box>
 
-				{handles.map((h, i) => {
-					const top = getHandleTop(i, handles.length);
+				{/* Left-edge handles: X, Y (stereo) or X, Y, A (multi) */}
+				{leftHandles.map((h, i) => {
+					const top = getHandleTop(i, leftHandles.length);
 					return (
 						<Fragment key={h.id}>
-							<Handle type='target' position={Position.Left} id={h.id}
-								style={{ ...inputHandleStyle(NODE_COLORS.output), top }} />
-						{inputLabel(h.label, top, NODE_COLORS.output)}
+							<Handle
+								type='target'
+								position={Position.Left}
+								id={h.id}
+								style={{ ...inputHandleStyle(color), top }}
+							/>
+							{inputLabel(h.label, top, color)}
 						</Fragment>
 					);
 				})}
+
+				{/* Bottom-edge handles: R, G, B (multi only) */}
+				{isMulti && MULTI_BOTTOM.map(h => (
+					<Fragment key={h.id}>
+						<Handle
+							type='target'
+							position={Position.Bottom}
+							id={h.id}
+							style={{ ...inputHandleStyle(color), left: h.pct }}
+						/>
+						{outputLabel(h.label, color, h.pct)}
+					</Fragment>
+				))}
 			</Box>
 		);
 	},

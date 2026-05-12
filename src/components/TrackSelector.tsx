@@ -1,8 +1,7 @@
 import Box from '@mui/material/Box';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
+import { hwSelectSx, hwSelectMenuProps } from '../daw/nodes/hwStyles';
 
 interface Track {
 	label: string;
@@ -13,35 +12,30 @@ interface TrackSelectorProps {
 	tracks: Track[];
 	currentTrack: string;
 	onTrackChange: (file: string) => void;
+	color: string;
 }
 
-export function TrackSelector({
-	tracks,
-	currentTrack,
-	onTrackChange,
-}: TrackSelectorProps) {
-	const handleChange = (e: SelectChangeEvent) => {
-		onTrackChange(e.target.value);
-	};
+export function TrackSelector({ tracks, currentTrack, onTrackChange, color }: TrackSelectorProps) {
+	const handleChange = (e: SelectChangeEvent) => onTrackChange(e.target.value);
 
 	return (
-		<Box sx={{ display: 'flex', justifyContent: 'center' }}>
-			<FormControl size='small' sx={{ width: '100%' }}>
-				<InputLabel id='track-select-label'>select a track</InputLabel>
-				<Select
-					labelId='track-select-label'
-					id='trackSelect'
-					value={currentTrack}
-					label='Select a track'
-					onChange={handleChange}
-				>
-					{tracks.map((track) => (
-						<MenuItem key={track.file} value={track.file}>
-							{track.label}
-						</MenuItem>
-					))}
-				</Select>
-			</FormControl>
+		<Box>
+			<Select
+				value={currentTrack}
+				onChange={handleChange}
+				size='small'
+				fullWidth
+				displayEmpty
+				sx={hwSelectSx(color)}
+				MenuProps={hwSelectMenuProps(color)}
+			>
+				<MenuItem value='' disabled sx={{ fontSize: 11, color: 'text.disabled' }}>select a track</MenuItem>
+				{tracks.map(track => (
+					<MenuItem key={track.file} value={track.file} sx={{ fontSize: 11 }}>
+						{track.label}
+					</MenuItem>
+				))}
+			</Select>
 		</Box>
 	);
 }

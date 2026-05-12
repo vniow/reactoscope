@@ -40,7 +40,7 @@ interface Props {
 }
 
 export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannels, triggerMode, phaseOffset, latencyCompSamples, nCycles }: Props) {
-	const { gain, intensity } = useAxis();
+	const { intensity } = useAxis();
 	const { crtEnabled, persistence, glowStrength, scatterStrength } = useEffects();
 	const { camera, invalidate } = useThree();
 
@@ -78,17 +78,16 @@ export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannel
 	const lastWriteIndexRef = useRef(0);
 
 	// Refs keep frame-loop closures current without requiring re-subscription
-	const gainPowRef      = useRef(Math.pow(2, gain));
+	const gainPowRef      = useRef(1.0);
 	const intensityPowRef = useRef(0.005 * Math.pow(2, intensity));
 	const exposurePowRef  = useRef(Math.pow(2, intensity - 2));
 	const persistPowRef   = useRef(Math.pow(0.5, persistence));
 	useEffect(() => {
-		gainPowRef.current      = Math.pow(2, gain);
 		intensityPowRef.current = 0.005 * Math.pow(2, intensity);
 		exposurePowRef.current  = Math.pow(2, intensity - 2);
 		persistPowRef.current   = Math.pow(0.5, persistence);
 		invalidate();
-	}, [gain, intensity, persistence, invalidate]);
+	}, [intensity, persistence, invalidate]);
 
 	useEffect(() => { invalidate(); }, [crtEnabled, glowStrength, scatterStrength, invalidate]);
 

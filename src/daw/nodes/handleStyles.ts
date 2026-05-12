@@ -1,27 +1,26 @@
 import type { CSSProperties, ReactElement } from 'react';
 import { createElement } from 'react';
 
-/** Hollow circle — signals "this accepts a connection." */
+/** Solid circle handle — both inputs and outputs use this shape. */
 export function inputHandleStyle(color: string): CSSProperties {
 	return {
 		width:        10,
 		height:       10,
 		borderRadius: '50%',
-		background:   'transparent',
-		border:       `2px solid ${color}`,
+		background:   color,
+		border:       'none',
 		zIndex:       10,
 	};
 }
 
-/** Filled downward triangle — signals "this emits a signal." */
+/** Solid circle handle — same shape as input for visual consistency. */
 export function outputHandleStyle(color: string): CSSProperties {
 	return {
 		width:        10,
 		height:       10,
-		borderRadius: 0,
+		borderRadius: '50%',
 		background:   color,
 		border:       'none',
-		clipPath:     'polygon(0% 0%, 100% 0%, 50% 100%)',
 		zIndex:       10,
 	};
 }
@@ -35,19 +34,38 @@ function labelBase(color: string): CSSProperties {
 		whiteSpace:    'nowrap',
 		pointerEvents: 'none',
 		userSelect:    'none',
+		background:    'rgba(16,16,20,0.85)',
+		padding:       '2px 4px',
+		borderRadius:  '2px',
 	};
 }
 
-/** Tiny label adjacent to a left-edge (input) handle. `top` matches the handle's top value. */
-export function inputLabel(text: string, top: string, color: string): ReactElement {
+/**
+ * Label for a left-edge (input) handle — sits to the RIGHT of the handle,
+ * inside the node body, vertically centred on the handle.
+ */
+export function inputLabel(text: string, handleTop: string, color: string): ReactElement {
 	return createElement('span', {
-		style: { ...labelBase(color), left: 10, top, transform: 'translateY(-50%)' },
+		style: { ...labelBase(color), left: 14, top: handleTop, transform: 'translateY(-50%)' },
 	}, text);
 }
 
-/** Tiny label adjacent to a bottom-edge (output) handle. `left` matches the handle's left value. */
+/**
+ * Label for a right-edge (output) handle — sits to the LEFT of the handle,
+ * inside the node body, vertically centred on the handle.
+ */
+export function rightLabel(text: string, handleTop: string, color: string): ReactElement {
+	return createElement('span', {
+		style: { ...labelBase(color), right: 14, top: handleTop, transform: 'translateY(-50%)' },
+	}, text);
+}
+
+/**
+ * Label for a bottom-edge handle — sits ABOVE the handle, inside the node.
+ * `left` matches the handle's left value.
+ */
 export function outputLabel(text: string, color: string, left = '50%'): ReactElement {
 	return createElement('span', {
-		style: { ...labelBase(color), bottom: 12, left, transform: 'translateX(-50%)' },
+		style: { ...labelBase(color), bottom: 16, left, transform: 'translateX(-50%)' },
 	}, text);
 }

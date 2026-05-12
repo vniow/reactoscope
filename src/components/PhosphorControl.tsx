@@ -15,9 +15,9 @@ export function PhosphorControl() {
 	}, [hue]);
 
 	return (
-		<Box sx={{ px: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-			<Typography variant='body2' color='text.secondary'>
-				phosphor
+		<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+			<Typography variant='caption' color='text.disabled' sx={{ fontSize: 9 }}>
+				colour
 			</Typography>
 
 			<Box

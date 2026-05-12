@@ -2,6 +2,10 @@ import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
 import Typography from '@mui/material/Typography';
 import { useAxis, useEffects } from '../contexts/WoahscopeContext';
+import { NODE_COLORS } from '../daw/nodes/nodeColors';
+import { hwSliderSx } from '../daw/nodes/hwStyles';
+
+const color = NODE_COLORS.scene;
 
 function SliderRow({
 	label,
@@ -25,11 +29,11 @@ function SliderRow({
 		: `${value > 0 ? '+' : ''}${value.toFixed(1)}`;
 	return (
 		<Box>
-			<Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-				<Typography variant='body2' color='text.secondary'>
+			<Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
+				<Typography variant='caption' color='text.disabled' sx={{ fontSize: 9, letterSpacing: 0.5 }}>
 					{label}
 				</Typography>
-				<Typography variant='body2' color='text.secondary'>
+				<Typography variant='caption' color='text.disabled' sx={{ fontSize: 9 }}>
 					{displayValue}
 				</Typography>
 			</Box>
@@ -41,14 +45,14 @@ function SliderRow({
 				value={value}
 				onChange={(_e, v) => onChange(v as number)}
 				size='small'
-				color='primary'
+				sx={hwSliderSx(color)}
 			/>
 		</Box>
 	);
 }
 
-export function GainControl() {
-	const { gain, setGain, intensity, setIntensity } = useAxis();
+export function EffectsControl() {
+	const { intensity, setIntensity } = useAxis();
 	const {
 		persistence, setPersistence,
 		glowStrength, setGlowStrength,
@@ -59,8 +63,7 @@ export function GainControl() {
 	} = useEffects();
 
 	return (
-		<Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 2, px: 1 }}>
-			<SliderRow label='gain'        value={gain}            min={-1} max={4} step={0.1}  onChange={setGain} />
+		<Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 2 }}>
 			<SliderRow label='intensity'   value={intensity}       min={-2} max={4} step={0.1}  onChange={setIntensity} />
 			<SliderRow label='persistence' value={persistence}     min={0}  max={4} step={0.1}  onChange={setPersistence} />
 			<SliderRow label='glow'        value={glowStrength}    min={0}  max={4} step={0.05} onChange={setGlowStrength} />
@@ -77,7 +80,7 @@ export function GainControl() {
 				/>
 			)}
 			<SliderRow
-				label='analyser samples'
+				label='samples'
 				value={Math.log2(nSamples)}
 				min={8}
 				max={11}
@@ -86,7 +89,7 @@ export function GainControl() {
 				formatValue={(v) => String(1 << v)}
 			/>
 			<SliderRow
-				label='coord buffer'
+				label='coord buf'
 				value={Math.log2(coordBufferSize)}
 				min={8}
 				max={12}

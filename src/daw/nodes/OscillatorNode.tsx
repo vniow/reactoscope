@@ -18,10 +18,20 @@ import { NODE_COLORS } from './nodeColors';
 import { GRID_UNIT } from './gridSystem';
 import { outputHandleStyle, outputLabel } from './handleStyles';
 import { METAL_BG } from './metalBackground';
+import { HW_INSET, hwSliderSx, hwSelectSx, hwSelectMenuProps, hwIconBtn, hwIconBtnLit } from './hwStyles';
 import type { OscillatorFlowNode } from '../../store/dawTypes';
 
 const OSC_TYPES = ['sine', 'square', 'triangle', 'sawtooth'] as const;
 type OscType = typeof OSC_TYPES[number];
+
+const color = NODE_COLORS.source;
+const nodeSx = {
+	slider:     hwSliderSx(color),
+	select:     hwSelectSx(color),
+	selectMenu: hwSelectMenuProps(color),
+	iconBtn:    hwIconBtn(color),
+	iconBtnLit: hwIconBtnLit(color),
+};
 
 export const OscillatorNode = memo(function OscillatorNode({
 	id,
@@ -64,55 +74,55 @@ export const OscillatorNode = memo(function OscillatorNode({
 
 	return (
 		<Box sx={{
-			border:       '1px solid',
-			borderColor:  NODE_COLORS.source,
-			borderRadius: 1,
+			border:          '1px solid',
+			borderColor:     color,
+			borderRadius:    1,
 			backgroundImage: METAL_BG,
-			width:        2 * GRID_UNIT,
-			height:       3 * GRID_UNIT,
-			position:     'relative',
-			pb:           3,
+			width:           2 * GRID_UNIT,
+			position:        'relative',
+			pb:              2,
 		}}>
-			<NodeHeader id={id} label='Oscillator' selected={selected} accentColor={NODE_COLORS.source} />
+			<NodeHeader id={id} label='Oscillator' selected={selected} accentColor={color} />
 
-			<Box sx={{ px: 1.5, py: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
 				<Box className='nodrag'>
 					<Select
 						value={oscType}
 						onChange={handleTypeChange}
 						size='small'
 						fullWidth
-						sx={{ fontSize: 12 }}
+						sx={nodeSx.select}
+						MenuProps={nodeSx.selectMenu}
 					>
 						{OSC_TYPES.map(t => (
-							<MenuItem key={t} value={t} sx={{ fontSize: 12 }}>{t}</MenuItem>
+							<MenuItem key={t} value={t} sx={{ fontSize: 11 }}>{t}</MenuItem>
 						))}
 					</Select>
 				</Box>
 
 				<Box className='nodrag nowheel'>
 					<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.25 }}>
-						<Typography variant='caption' color='text.secondary'>freq</Typography>
+						<Typography variant='caption' color='text.secondary' sx={{ fontSize: 10 }}>freq</Typography>
 						{editingFreq ? (
-							<InputBase
-								inputRef={freqInputRef}
-								value={freqInput}
-								onChange={e => setFreqInput(e.target.value)}
-								onBlur={commitFreqInput}
-								onKeyDown={e => {
-									if (e.key === 'Enter') commitFreqInput();
-									if (e.key === 'Escape') setEditingFreq(false);
-								}}
-								sx={{
-									fontSize: 12, color: 'text.secondary', width: 72,
-									'.MuiInputBase-input': { p: 0, textAlign: 'right' },
-								}}
-							/>
+							<Box sx={{ ...HW_INSET, px: 0.5, display: 'flex', alignItems: 'center' }}>
+								<InputBase
+									inputRef={freqInputRef}
+									value={freqInput}
+									onChange={e => setFreqInput(e.target.value)}
+									onBlur={commitFreqInput}
+									onKeyDown={e => {
+										if (e.key === 'Enter') commitFreqInput();
+										if (e.key === 'Escape') setEditingFreq(false);
+									}}
+									sx={{ fontSize: 11, color: 'text.primary', width: 64,
+										'& .MuiInputBase-input': { p: '2px 0', textAlign: 'right' } }}
+								/>
+							</Box>
 						) : (
 							<Typography
 								variant='caption'
 								color='text.secondary'
-								sx={{ cursor: 'text', userSelect: 'none' }}
+								sx={{ fontSize: 10, cursor: 'text', userSelect: 'none' }}
 								onClick={() => {
 									setFreqInput(String(frequency));
 									setEditingFreq(true);
@@ -129,19 +139,18 @@ export const OscillatorNode = memo(function OscillatorNode({
 						value={frequency}
 						onChange={handleFreqChange}
 						size='small'
-						color='primary'
+						sx={nodeSx.slider}
 					/>
 				</Box>
 
-				<Box sx={{ display: 'flex', justifyContent: 'center' }}>
+				<Box sx={{ display: 'flex', justifyContent: 'center' }} className='nodrag'>
 					<IconButton
 						onClick={handleToggle}
-						className='nodrag'
 						size='small'
 						aria-label={isPlaying ? 'Stop oscillator' : 'Start oscillator'}
-						sx={{ color: isPlaying ? 'primary.main' : 'text.secondary' }}
+						sx={isPlaying ? nodeSx.iconBtnLit : nodeSx.iconBtn}
 					>
-						{isPlaying ? <StopIcon fontSize='small' /> : <PlayArrowIcon fontSize='small' />}
+						{isPlaying ? <StopIcon sx={{ fontSize: 14 }} /> : <PlayArrowIcon sx={{ fontSize: 14 }} />}
 					</IconButton>
 				</Box>
 			</Box>
@@ -150,9 +159,9 @@ export const OscillatorNode = memo(function OscillatorNode({
 				type='source'
 				position={Position.Bottom}
 				id='out-0'
-				style={outputHandleStyle(NODE_COLORS.source)}
+				style={outputHandleStyle(color)}
 			/>
-			{outputLabel('out', NODE_COLORS.source)}
+			{outputLabel('out', color)}
 		</Box>
 	);
 });

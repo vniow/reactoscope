@@ -1,8 +1,7 @@
-import { memo, useCallback, Fragment } from 'react';
+import { memo, Fragment } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { useDawStore } from '../../store/daw';
 import { NodeHeader, NODE_HEADER_HEIGHT } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
 import { GRID_UNIT } from './gridSystem';
@@ -37,12 +36,7 @@ export const StubNode = memo(function StubNode({
 	data,
 	selected,
 }: NodeProps<StubFlowNode>) {
-	const onNodesChange = useDawStore(s => s.onNodesChange);
 	const topo = STUB_TOPOLOGY[data.kind];
-
-	const handleDelete = useCallback(() => {
-		onNodesChange([{ type: 'remove', id }]);
-	}, [id, onNodesChange]);
 
 	return (
 		<Box sx={{

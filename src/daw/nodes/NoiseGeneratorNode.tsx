@@ -14,10 +14,20 @@ import { NODE_COLORS } from './nodeColors';
 import { GRID_UNIT } from './gridSystem';
 import { outputHandleStyle, outputLabel } from './handleStyles';
 import { METAL_BG } from './metalBackground';
+import { hwSliderSx, hwSelectSx, hwSelectMenuProps, hwIconBtn, hwIconBtnLit } from './hwStyles';
 import type { NoiseFlowNode } from '../../store/dawTypes';
 
 const NOISE_TYPES = ['white', 'pink', 'brown'] as const;
 type NoiseType = typeof NOISE_TYPES[number];
+
+const color = NODE_COLORS.source;
+const nodeSx = {
+	slider:     hwSliderSx(color),
+	select:     hwSelectSx(color),
+	selectMenu: hwSelectMenuProps(color),
+	iconBtn:    hwIconBtn(color),
+	iconBtnLit: hwIconBtnLit(color),
+};
 
 export const NoiseGeneratorNode = memo(function NoiseGeneratorNode({
 	id,
@@ -47,36 +57,36 @@ export const NoiseGeneratorNode = memo(function NoiseGeneratorNode({
 
 	return (
 		<Box sx={{
-			border:       '1px solid',
-			borderColor:  NODE_COLORS.source,
-			borderRadius: 1,
+			border:          '1px solid',
+			borderColor:     color,
+			borderRadius:    1,
 			backgroundImage: METAL_BG,
-			width:        2 * GRID_UNIT,
-			height:       3 * GRID_UNIT,
-			position:     'relative',
-			pb:           3,
+			width:           2 * GRID_UNIT,
+			position:        'relative',
+			pb:              2,
 		}}>
-			<NodeHeader id={id} label='Noise' selected={selected} accentColor={NODE_COLORS.source} />
+			<NodeHeader id={id} label='Noise' selected={selected} accentColor={color} />
 
-			<Box sx={{ px: 1.5, py: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
 				<Box className='nodrag'>
 					<Select
 						value={noiseType}
 						onChange={handleTypeChange}
 						size='small'
 						fullWidth
-						sx={{ fontSize: 12 }}
+						sx={nodeSx.select}
+						MenuProps={nodeSx.selectMenu}
 					>
 						{NOISE_TYPES.map(t => (
-							<MenuItem key={t} value={t} sx={{ fontSize: 12 }}>{t}</MenuItem>
+							<MenuItem key={t} value={t} sx={{ fontSize: 11 }}>{t}</MenuItem>
 						))}
 					</Select>
 				</Box>
 
 				<Box className='nodrag nowheel'>
 					<Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
-						<Typography variant='caption' color='text.secondary'>volume</Typography>
-						<Typography variant='caption' color='text.secondary'>{volume} dB</Typography>
+						<Typography variant='caption' color='text.secondary' sx={{ fontSize: 10 }}>volume</Typography>
+						<Typography variant='caption' color='text.disabled'  sx={{ fontSize: 10 }}>{volume} dB</Typography>
 					</Box>
 					<Slider
 						aria-label='Volume'
@@ -84,19 +94,18 @@ export const NoiseGeneratorNode = memo(function NoiseGeneratorNode({
 						value={volume}
 						onChange={handleVolumeChange}
 						size='small'
-						color='primary'
+						sx={nodeSx.slider}
 					/>
 				</Box>
 
-				<Box sx={{ display: 'flex', justifyContent: 'center' }}>
+				<Box sx={{ display: 'flex', justifyContent: 'center' }} className='nodrag'>
 					<IconButton
 						onClick={handleToggle}
-						className='nodrag'
 						size='small'
 						aria-label={isPlaying ? 'Stop noise' : 'Start noise'}
-						sx={{ color: isPlaying ? 'primary.main' : 'text.secondary' }}
+						sx={isPlaying ? nodeSx.iconBtnLit : nodeSx.iconBtn}
 					>
-						{isPlaying ? <StopIcon fontSize='small' /> : <PlayArrowIcon fontSize='small' />}
+						{isPlaying ? <StopIcon sx={{ fontSize: 14 }} /> : <PlayArrowIcon sx={{ fontSize: 14 }} />}
 					</IconButton>
 				</Box>
 			</Box>
@@ -105,9 +114,9 @@ export const NoiseGeneratorNode = memo(function NoiseGeneratorNode({
 				type='source'
 				position={Position.Bottom}
 				id='out-0'
-				style={outputHandleStyle(NODE_COLORS.source)}
+				style={outputHandleStyle(color)}
 			/>
-			{outputLabel('out', NODE_COLORS.source)}
+			{outputLabel('out', color)}
 		</Box>
 	);
 });

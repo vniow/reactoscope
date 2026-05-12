@@ -51,7 +51,7 @@ function readCenter(
 }
 
 export function WoscopeSceneR3F() {
-	const { swapXY, invertXY, gain, intensity, hue } = useAxis();
+	const { swapXY, invertXY, intensity, hue } = useAxis();
 	const { crtEnabled, persistence, glowStrength, scatterStrength, lanczosEnabled, lanczosSteps, nSamples } = useEffects();
 	const { camera, size, invalidate } = useThree();
 
@@ -94,23 +94,22 @@ export function WoscopeSceneR3F() {
 
 	useEffect(() => {
 		invalidate();
-	}, [gain, intensity, hue, crtEnabled, persistence, glowStrength, scatterStrength, invertXY, swapXY, invalidate]);
+	}, [intensity, hue, crtEnabled, persistence, glowStrength, scatterStrength, invertXY, swapXY, invalidate]);
 
 	useEffect(() => {
 		setAnalyserSize(nSamples);
 		setWaveformCaptureSize(nSamples);
 	}, [nSamples]);
 
-	const gainPowRef      = useRef(Math.pow(2, gain));
+	const gainPowRef      = useRef(1.0);
 	const intensityPowRef = useRef(0.005 * Math.pow(2, intensity));
 	const exposurePowRef  = useRef(Math.pow(2, intensity - 2));
 	const persistPowRef   = useRef(Math.pow(0.5, persistence));
 	useEffect(() => {
-		gainPowRef.current      = Math.pow(2, gain);
 		intensityPowRef.current = 0.005 * Math.pow(2, intensity);
 		exposurePowRef.current  = Math.pow(2, intensity - 2);
 		persistPowRef.current   = Math.pow(0.5, persistence);
-	}, [gain, intensity, persistence]);
+	}, [intensity, persistence]);
 
 	const hueColourRef = useRef(getColourFromHue(hue));
 	useEffect(() => {

@@ -27,6 +27,7 @@ import { NODE_COLORS } from './nodeColors';
 import { GRID_UNIT } from './gridSystem';
 import { outputHandleStyle, outputLabel } from './handleStyles';
 import { METAL_BG } from './metalBackground';
+import { hwSliderSx, hwIconBtn, hwIconBtnLit } from './hwStyles';
 import { TrackSelector } from '../../components/TrackSelector';
 import { usePlayback } from '../../contexts/WoahscopeContext';
 import { BUILT_IN_TRACKS, ERROR_MESSAGES } from '../../config';
@@ -48,12 +49,12 @@ function formatTime(seconds: number): string {
 	return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-const speedMarks = [
-	{ value: 0.5, label: '0.5×' },
-	{ value: 1,   label: '1×'   },
-	{ value: 1.5, label: '1.5×' },
-	{ value: 2,   label: '2×'   },
-];
+const color = NODE_COLORS.source;
+const nodeSx = {
+	slider:     hwSliderSx(color),
+	iconBtn:    hwIconBtn(color),
+	iconBtnLit: hwIconBtnLit(color),
+};
 
 export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeProps<PlayerFlowNode>) {
 	const rafRef          = useRef<number>(0);
@@ -66,11 +67,6 @@ export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeP
 
 	const { setIsPlaying: setVizPlaying } = usePlayback();
 	const updateNodeData  = useDawStore(s => s.updateNodeData);
-	const onNodesChange   = useDawStore(s => s.onNodesChange);
-
-	const handleDelete = useCallback(() => {
-		onNodesChange([{ type: 'remove', id }]);
-	}, [id, onNodesChange]);
 
 	const [isPlaying, setIsPlaying]   = useState(false);
 	const [isMuted, setIsMuted]       = useState(false);
@@ -205,19 +201,18 @@ export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeP
 	return (
 		<Box
 			sx={{
-				border:       '1px solid',
-				borderColor:  NODE_COLORS.source,
-				borderRadius: 1,
+				border:          '1px solid',
+				borderColor:     color,
+				borderRadius:    1,
 				backgroundImage: METAL_BG,
-				width:        3 * GRID_UNIT,
-				height:       4 * GRID_UNIT,
-				position:     'relative',
-				pb:           3,
+				width:           3 * GRID_UNIT,
+				position:        'relative',
+				pb:              2,
 			}}
 		>
-			<NodeHeader id={id} label='Player' selected={selected} accentColor={NODE_COLORS.source} />
+			<NodeHeader id={id} label='Player' selected={selected} accentColor={color} />
 
-			<Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
 
 			{/* Screen-reader status */}
 			<Box role='status' aria-live='polite' aria-atomic='true' sx={srOnlySx}>
@@ -241,6 +236,7 @@ export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeP
 					tracks={BUILT_IN_TRACKS as unknown as { label: string; file: string }[]}
 					currentTrack={data.trackUrl}
 					onTrackChange={handleTrackChange}
+					color={color}
 				/>
 				{credit && (
 					<Typography variant='caption' color='text.secondary' sx={{ pl: 0.5, display: 'block', mt: 0.5 }}>
@@ -257,9 +253,9 @@ export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeP
 					disabled={!isLoaded}
 					size='small'
 					className='nodrag'
-					sx={{ color: isPlaying ? 'primary.main' : 'text.secondary', flexShrink: 0 }}
+					sx={{ ...(isPlaying ? nodeSx.iconBtnLit : nodeSx.iconBtn), flexShrink: 0 }}
 				>
-					{isPlaying ? <PauseIcon fontSize='small' /> : <PlayArrowIcon fontSize='small' />}
+					{isPlaying ? <PauseIcon sx={{ fontSize: 14 }} /> : <PlayArrowIcon sx={{ fontSize: 14 }} />}
 				</IconButton>
 
 				<Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0, minWidth: 0 }}>
@@ -278,7 +274,7 @@ export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeP
 						className='nodrag nowheel'
 						style={{
 							width: '100%',
-							accentColor: '#22dd22',
+							accentColor: color,
 							cursor: isLoaded ? 'pointer' : 'default',
 							margin: 0,
 						}}
@@ -299,29 +295,28 @@ export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeP
 					disabled={!isLoaded}
 					size='small'
 					className='nodrag'
-					sx={{ color: isMuted ? 'primary.main' : 'text.secondary', flexShrink: 0 }}
+					sx={{ ...(isMuted ? nodeSx.iconBtnLit : nodeSx.iconBtn), flexShrink: 0 }}
 				>
-					{isMuted ? <VolumeOffIcon fontSize='small' /> : <VolumeUpIcon fontSize='small' />}
+					{isMuted ? <VolumeOffIcon sx={{ fontSize: 14 }} /> : <VolumeUpIcon sx={{ fontSize: 14 }} />}
 				</IconButton>
 			</Box>
 
 			{/* Speed control */}
-			<Box sx={{ px: 1, pb: 0.5 }} className='nodrag nowheel'>
-				<Typography variant='caption' color='text.secondary'>
-					speed
-				</Typography>
+			<Box className='nodrag nowheel'>
+				<Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
+					<Typography variant='caption' color='text.secondary' sx={{ fontSize: 10 }}>speed</Typography>
+					<Typography variant='caption' color='text.disabled'  sx={{ fontSize: 10 }}>{playbackRate.toFixed(2)}×</Typography>
+				</Box>
 				<Slider
 					aria-label='Playback speed'
-					min={0.001}
+					min={0.25}
 					max={2}
 					step={0.01}
+					marks={[{ value: 0.5 }, { value: 0.75 }, { value: 1 }, { value: 1.5 }]}
 					value={playbackRate}
 					onChange={handleSpeedChange}
-					marks={speedMarks}
-					valueLabelDisplay='auto'
 					size='small'
-					color='primary'
-					sx={{ mt: 0.5 }}
+					sx={nodeSx.slider}
 				/>
 			</Box>
 
@@ -332,16 +327,16 @@ export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeP
 				type='source'
 				position={Position.Bottom}
 				id='out-0'
-				style={{ ...outputHandleStyle(NODE_COLORS.source), left: '33%' }}
+				style={{ ...outputHandleStyle(color), left: '33%' }}
 			/>
-			{outputLabel('L', NODE_COLORS.source, '33%')}
+			{outputLabel('L', color, '33%')}
 			<Handle
 				type='source'
 				position={Position.Bottom}
 				id='out-1'
-				style={{ ...outputHandleStyle(NODE_COLORS.source), left: '67%' }}
+				style={{ ...outputHandleStyle(color), left: '67%' }}
 			/>
-			{outputLabel('R', NODE_COLORS.source, '67%')}
+			{outputLabel('R', color, '67%')}
 		</Box>
 	);
 });

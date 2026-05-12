@@ -44,6 +44,24 @@ import {
 	start as toneStart,
 } from 'tone';
 import { DEFAULT_AUDIO_SETTINGS } from '../config';
+import { NODE_COLORS } from '../daw/nodes/nodeColors';
+
+const NODE_TYPE_EDGE_COLOR: Record<string, string> = {
+	masterOutput:   NODE_COLORS.output,
+	gain:           NODE_COLORS.processor,
+	player:         NODE_COLORS.source,
+	oscillator:     NODE_COLORS.source,
+	noiseGenerator: NODE_COLORS.source,
+	dcSignal:       NODE_COLORS.source,
+	sceneInput:     NODE_COLORS.scene,
+	debug:          NODE_COLORS.debug,
+	stub:           NODE_COLORS.processor,
+};
+
+function edgeColorForSource(sourceId: string, nodes: AppNode[]): string {
+	const node = nodes.find(n => n.id === sourceId);
+	return NODE_TYPE_EDGE_COLOR[node?.type ?? ''] ?? NODE_COLORS.output;
+}
 import type {
 	AppNode,
 	AppEdge,
@@ -98,12 +116,14 @@ function getMasterEntry(): MasterOutputAudioEntry {
 	inputGainB.connect(merge, 0, 4); inputGainB.connect(bAnalyser);
 	inputGainA.connect(merge, 0, 5); inputGainA.connect(aAnalyser);
 
-	merge.toDestination();
+	const speakerGain = new Gain(0); // muted by default
+	merge.connect(speakerGain);
+	speakerGain.toDestination();
 
 	_masterEntry = {
 		kind: 'masterOutput',
 		inputGainX, inputGainY, inputGainR, inputGainG, inputGainB, inputGainA,
-		merge,
+		merge, speakerGain,
 		xAnalyser, yAnalyser, rAnalyser, gAnalyser, bAnalyser, aAnalyser,
 	};
 	_audioNodes.set(MASTER_NODE_ID, _masterEntry);
@@ -808,7 +828,7 @@ const initialNodes: AppNode[] = [
 		id:        MASTER_NODE_ID,
 		type:      'masterOutput',
 		position:  { x: 288, y: 240 },
-		data:      { label: 'Master Output', mode: 'multichannel' as const },
+		data:      { label: 'Master Output', mode: 'multichannel' as const, speakersMuted: true },
 		deletable: false,
 	},
 	{
@@ -827,12 +847,12 @@ const initialNodes: AppNode[] = [
 ];
 
 const initialEdges: AppEdge[] = [
-	{ id: 'e-scene-x', source: SCENE_INPUT_ID, sourceHandle: 'out-0', target: MASTER_NODE_ID, targetHandle: 'in-0', animated: true, type: 'deletable', style: { stroke: '#22dd22' } },
-	{ id: 'e-scene-y', source: SCENE_INPUT_ID, sourceHandle: 'out-1', target: MASTER_NODE_ID, targetHandle: 'in-1', animated: true, type: 'deletable', style: { stroke: '#22dd22' } },
-	{ id: 'e-scene-r', source: SCENE_INPUT_ID, sourceHandle: 'out-2', target: MASTER_NODE_ID, targetHandle: 'in-2', animated: true, type: 'deletable', style: { stroke: '#22dd22' } },
-	{ id: 'e-scene-g', source: SCENE_INPUT_ID, sourceHandle: 'out-3', target: MASTER_NODE_ID, targetHandle: 'in-3', animated: true, type: 'deletable', style: { stroke: '#22dd22' } },
-	{ id: 'e-scene-b', source: SCENE_INPUT_ID, sourceHandle: 'out-4', target: MASTER_NODE_ID, targetHandle: 'in-4', animated: true, type: 'deletable', style: { stroke: '#22dd22' } },
-	{ id: 'e-scene-a', source: SCENE_INPUT_ID, sourceHandle: 'out-5', target: MASTER_NODE_ID, targetHandle: 'in-5', animated: true, type: 'deletable', style: { stroke: '#22dd22' } },
+	{ id: 'e-scene-x', source: SCENE_INPUT_ID, sourceHandle: 'out-0', target: MASTER_NODE_ID, targetHandle: 'in-0', animated: false, type: 'deletable', style: { stroke: NODE_COLORS.scene } },
+	{ id: 'e-scene-y', source: SCENE_INPUT_ID, sourceHandle: 'out-1', target: MASTER_NODE_ID, targetHandle: 'in-1', animated: false, type: 'deletable', style: { stroke: NODE_COLORS.scene } },
+	{ id: 'e-scene-r', source: SCENE_INPUT_ID, sourceHandle: 'out-2', target: MASTER_NODE_ID, targetHandle: 'in-2', animated: false, type: 'deletable', style: { stroke: NODE_COLORS.scene } },
+	{ id: 'e-scene-g', source: SCENE_INPUT_ID, sourceHandle: 'out-3', target: MASTER_NODE_ID, targetHandle: 'in-3', animated: false, type: 'deletable', style: { stroke: NODE_COLORS.scene } },
+	{ id: 'e-scene-b', source: SCENE_INPUT_ID, sourceHandle: 'out-4', target: MASTER_NODE_ID, targetHandle: 'in-4', animated: false, type: 'deletable', style: { stroke: NODE_COLORS.scene } },
+	{ id: 'e-scene-a', source: SCENE_INPUT_ID, sourceHandle: 'out-5', target: MASTER_NODE_ID, targetHandle: 'in-5', animated: false, type: 'deletable', style: { stroke: NODE_COLORS.scene } },
 ];
 
 // ─── Zustand store ────────────────────────────────────────────────────────────
@@ -842,6 +862,7 @@ type DawState = {
 	edges:          AppEdge[];
 	audioVersion:   number;
 	selectedNodeId: string | null;
+	sceneRunning:   boolean;
 
 	onNodesChange:     OnNodesChange<AppNode>;
 	onEdgesChange:     OnEdgesChange<AppEdge>;
@@ -858,13 +879,29 @@ type DawState = {
 	updateNodePositions: (updatedNodes: AppNode[]) => void;
 	setSelectedNodeId:   (id: string | null) => void;
 	setMasterMode:       (mode: 'stereo' | 'multichannel') => void;
+	setSpeakersMuted:    (muted: boolean) => void;
+	edgePathType:        'bezier' | 'straight' | 'step' | 'smoothstep';
+	setEdgePathType:     (type: 'bezier' | 'straight' | 'step' | 'smoothstep') => void;
+	startScene:          () => Promise<void>;
+	stopScene:           () => void;
 };
 
 export const useDawStore = create<DawState>((set, get) => ({
 	nodes:          initialNodes,
 	edges:          initialEdges,
 	audioVersion:   0,
+	edgePathType:   'smoothstep',
+	setEdgePathType: (type) => set({ edgePathType: type }),
 	selectedNodeId: null,
+	sceneRunning:   false,
+	startScene: async () => {
+		await startSceneInput();
+		set({ sceneRunning: true });
+	},
+	stopScene: () => {
+		stopSceneInput();
+		set({ sceneRunning: false });
+	},
 
 	onNodesChange: (changes: NodeChange<AppNode>[]) => {
 		// Never allow the master output or scene input nodes to be deleted
@@ -915,9 +952,9 @@ export const useDawStore = create<DawState>((set, get) => ({
 			edges: addEdge(
 				{
 					...connection,
-					animated: true,
+					animated: false,
 					type:     'deletable',
-					style:    { stroke: '#22dd22' },
+					style:    { stroke: edgeColorForSource(connection.source, get().nodes) },
 				},
 				get().edges,
 			),
@@ -1061,6 +1098,17 @@ export const useDawStore = create<DawState>((set, get) => ({
 	},
 
 	setSelectedNodeId: (id) => set({ selectedNodeId: id }),
+
+	setSpeakersMuted: (muted) => {
+		getMasterEntry().speakerGain.gain.value = muted ? 0 : 1;
+		set({
+			nodes: get().nodes.map(n =>
+				n.id === MASTER_NODE_ID
+					? ({ ...n, data: { ...n.data, speakersMuted: muted } } as AppNode)
+					: n,
+			),
+		});
+	},
 
 	setMasterMode: (mode) => {
 		const validHandles = mode === 'stereo'

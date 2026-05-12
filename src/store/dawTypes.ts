@@ -15,8 +15,9 @@ export type PlayerNodeData = {
 };
 
 export type MasterOutputNodeData = {
-	label: string;
-	mode:  'stereo' | 'multichannel';
+	label:         string;
+	mode:          'stereo' | 'multichannel';
+	speakersMuted: boolean;
 };
 
 export type OscillatorNodeData = {
@@ -116,7 +117,8 @@ export type MasterOutputAudioEntry = {
 	inputGainG: Gain;     // in-3 = Green
 	inputGainB: Gain;     // in-4 = Blue
 	inputGainA: Gain;     // in-5 = Alpha
-	merge:      Merge;    // 6-channel merge → toDestination()
+	merge:       Merge;    // 6-channel merge → speakerGain
+	speakerGain: Gain;    // gates audio to destination; gain=0 when muted
 	xAnalyser:  Analyser; // X axis of oscilloscope (stereo L)
 	yAnalyser:  Analyser; // Y axis of oscilloscope (stereo R)
 	rAnalyser:  Analyser; // Red colour channel

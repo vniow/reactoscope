@@ -3,6 +3,8 @@ import {
 	BaseEdge,
 	EdgeLabelRenderer,
 	getBezierPath,
+	getSmoothStepPath,
+	getStraightPath,
 	type EdgeProps,
 } from '@xyflow/react';
 import IconButton from '@mui/material/IconButton';
@@ -21,16 +23,15 @@ export function DeletableEdge({
 	style,
 	markerEnd,
 }: EdgeProps) {
-	const [edgePath, labelX, labelY] = getBezierPath({
-		sourceX,
-		sourceY,
-		sourcePosition,
-		targetX,
-		targetY,
-		targetPosition,
-	});
-
+	const edgePathType = useDawStore(s => s.edgePathType);
 	const onEdgesChange = useDawStore(s => s.onEdgesChange);
+
+	const pathArgs = { sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition };
+	const [edgePath, labelX, labelY] =
+		edgePathType === 'bezier'     ? getBezierPath(pathArgs)                              :
+		edgePathType === 'straight'   ? getStraightPath(pathArgs)                            :
+		edgePathType === 'step'       ? getSmoothStepPath({ ...pathArgs, borderRadius: 0 })  :
+		                                getSmoothStepPath(pathArgs);
 
 	const handleDelete = useCallback(
 		(e: React.MouseEvent) => {

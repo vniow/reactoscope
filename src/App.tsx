@@ -8,12 +8,11 @@ import Slider from '@mui/material/Slider';
 import Typography from '@mui/material/Typography';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
-import SwapVertIcon from '@mui/icons-material/SwapVert';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
-import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 import { WoscopeProvider } from './contexts/WoahscopeContext';
+import { NODE_COLORS }                                from './daw/nodes/nodeColors';
+import { METAL_BG }                                   from './daw/nodes/metalBackground';
+import { HW_INSET, hwIconBtn, hwIconBtnLit,
+         hwSelectSx, hwSelectMenuProps, hwSliderSx }  from './daw/nodes/hwStyles';
 import { ErrorBoundary }   from './components';
 import { WoahscopePanel }    from './daw/WoahscopePanel';
 import { SpinningRectPanel } from './daw/InputPanel';
@@ -22,7 +21,7 @@ import { SweepPanel }        from './daw/SweepPanel';
 import { VizSettingsOverlay } from './daw/VizSettingsOverlay';
 import { debugRef } from './components/WoahcopeSceneR3F';
 import {
-	startSceneInput, stopSceneInput, getSceneInputWorkletNode, SCENE_INPUT_ID,
+	getSceneInputWorkletNode, SCENE_INPUT_ID,
 } from './store/daw';
 import { useDawStore } from './store/daw';
 import {
@@ -53,7 +52,7 @@ const MAX_SWEEP_HEIGHT      = 500;
 
 const DEFAULT_SCAN_FREQ = 50;
 const SCAN_FREQ_MIN     = 1;
-const SCAN_FREQ_MAX     = 2000;
+const SCAN_FREQ_MAX     = 9000;
 
 function clampSplit(v: number) {
 	return Math.min(MAX_SPLIT, Math.max(MIN_SPLIT, v));
@@ -73,15 +72,11 @@ function readStored<T>(key: string, parse: (raw: string) => T, fallback: T): T {
 	return fallback;
 }
 
-const toggleBtnSx = {
-	color: '#444',
-	borderRadius: 1,
-	'&:hover': { color: '#22dd22' },
-};
-
-const labelSx = { fontSize: 9, color: '#555', flexShrink: 0, userSelect: 'none' as const };
+const labelSx = { fontSize: 9, color: 'text.disabled' as const, flexShrink: 0, userSelect: 'none' as const };
 
 export function App() {
+	const color = NODE_COLORS.scene;
+
 	const [splitPercent,    setSplitPercent]    = useState(() =>
 		readStored(SPLIT_KEY, v => clampSplit(Number(v)), DEFAULT_SPLIT),
 	);
@@ -106,7 +101,9 @@ export function App() {
 
 	// Scene input controls
 	const updateNodeData  = useDawStore(s => s.updateNodeData);
-	const [isRunning,     setIsRunning]     = useState(false);
+	const isRunning       = useDawStore(s => s.sceneRunning);
+	const startScene      = useDawStore(s => s.startScene);
+	const stopScene       = useDawStore(s => s.stopScene);
 	const [sampleRate,    setSampleRate]    = useState<SampleRate>(getStoredSampleRate);
 	const [needsReload,   setNeedsReload]   = useState(false);
 	const [scanFreq,      setScanFreq]      = useState(DEFAULT_SCAN_FREQ);
@@ -183,15 +180,8 @@ export function App() {
 	}, []);
 
 	// Scene input handlers
-	const handlePlay = useCallback(async () => {
-		await startSceneInput();
-		setIsRunning(true);
-	}, []);
-
-	const handleStop = useCallback(() => {
-		stopSceneInput();
-		setIsRunning(false);
-	}, []);
+	const handlePlay = useCallback(async () => { await startScene(); }, [startScene]);
+	const handleStop = useCallback(() => { stopScene(); }, [stopScene]);
 
 	const handleSampleRate = useCallback((rate: SampleRate) => {
 		setStoredSampleRate(rate);
@@ -280,31 +270,9 @@ export function App() {
 							overflow:      'hidden',
 							bgcolor:       '#000',
 							display:       'flex',
-							flexDirection: 'row',
+							flexDirection: 'column',
 						}}
 					>
-						{/* Permanent left strip — holds the collapse toggle */}
-						<Box sx={{
-							width:          24,
-							flexShrink:     0,
-							display:        'flex',
-							alignItems:     'center',
-							justifyContent: 'center',
-							bgcolor:        '#0a0a0a',
-							borderRight:    '1px solid #1a1a1a',
-						}}>
-							<IconButton
-								size="small"
-								onClick={() => setToolbarCollapsed(v => !v)}
-								title={toolbarCollapsed ? 'Expand toolbar' : 'Collapse toolbar'}
-								sx={{ ...toggleBtnSx, color: '#333', '&:hover': { color: '#22dd22' } }}
-							>
-								{toolbarCollapsed
-									? <UnfoldMoreIcon sx={{ fontSize: 14 }} />
-									: <UnfoldLessIcon sx={{ fontSize: 14 }} />
-								}
-							</IconButton>
-						</Box>
 
 						{/* Canvas + toolbar column.
 						    flexDirection drives canvas swap — WoahscopePanel and
@@ -328,37 +296,30 @@ export function App() {
 								)}
 							</Box>
 
-							{/* Toolbar — always middle child, collapses to height 0.
-							    MUI Popover / Select menus use portals so overflow:hidden
-							    here does not clip them. */}
+							{/* Toolbar — collapses to height 0.
+							    MUI portals escape overflow:hidden so menus still appear. */}
 							<Box sx={{
-								flexShrink: 0,
-								overflow:   'hidden',
-								height:     toolbarCollapsed ? 0 : 'auto',
-								bgcolor:    '#0a0a0a',
-								borderTop:    '1px solid #1a1a1a',
-								borderBottom: '1px solid #1a1a1a',
+								flexShrink:      0,
+								overflow:        'hidden',
+								height:          toolbarCollapsed ? 0 : 28,
+								backgroundImage: METAL_BG,
 							}}>
-								<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1 }}>
+								<Box sx={{ display: 'flex', alignItems: 'center', height: 28, gap: 1, px: 1 }}>
 									{/* Viz settings */}
 									<VizSettingsOverlay />
 
-									<Box sx={{ width: '1px', height: 16, bgcolor: '#1e1e1e', flexShrink: 0 }} />
+									<Box sx={{ width: '1px', height: 16, background: `${color}20`, flexShrink: 0 }} />
 
 									{/* Play / stop */}
 									<IconButton
 										size="small"
 										onClick={isRunning ? handleStop : handlePlay}
 										aria-label={isRunning ? 'Stop' : 'Start'}
-										sx={{
-											p: 0.25, borderRadius: 1,
-											color: isRunning ? '#22dd22' : '#444',
-											'&:hover': { color: isRunning ? 'error.main' : '#22dd22' },
-										}}
+										sx={isRunning ? { ...hwIconBtnLit(color), p: 0.5 } : { ...hwIconBtn(color), p: 0.5 }}
 									>
 										{isRunning
-											? <StopIcon sx={{ fontSize: 16 }} />
-											: <PlayArrowIcon sx={{ fontSize: 16 }} />
+											? <StopIcon sx={{ fontSize: 12 }} />
+											: <PlayArrowIcon sx={{ fontSize: 12 }} />
 										}
 									</IconButton>
 
@@ -369,15 +330,11 @@ export function App() {
 											size="small"
 											value={sampleRate}
 											onChange={e => handleSampleRate(Number(e.target.value) as SampleRate)}
-											sx={{
-												fontSize: 10, height: 20, color: '#888',
-												'.MuiSelect-select': { py: '2px', px: '6px' },
-												'.MuiOutlinedInput-notchedOutline': { borderColor: '#2a2a2a' },
-												'&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#444' },
-											}}
+											sx={{ ...hwSelectSx(color), fontSize: 9, '& .MuiSelect-select': { py: '3px', px: '6px' } }}
+											MenuProps={hwSelectMenuProps(color)}
 										>
 											{SAMPLE_RATE_OPTIONS.map(r => (
-												<MenuItem key={r} value={r} sx={{ fontSize: 11 }}>
+												<MenuItem key={r} value={r} sx={{ fontSize: 9 }}>
 													{r >= 1000 ? `${r / 1000} kHz` : `${r} Hz`}
 												</MenuItem>
 											))}
@@ -387,32 +344,27 @@ export function App() {
 									{/* Scan frequency */}
 									<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flex: 1, minWidth: 80 }}>
 										<Typography variant="caption" sx={labelSx}>SCAN</Typography>
-										<Slider
-											size="small"
-											min={SCAN_FREQ_MIN} max={SCAN_FREQ_MAX} step={1}
-											value={scanFreq}
-											onChange={(_, v) => handleScanFreq(v as number)}
-											sx={{ flex: 1, color: '#22dd22', py: '6px' }}
-										/>
 										{editingScan ? (
-											<InputBase
-												inputRef={scanInputRef}
-												value={scanFreqInput}
-												onChange={e => setScanFreqInput(e.target.value)}
-												onBlur={commitScanFreqInput}
-												onKeyDown={e => {
-													if (e.key === 'Enter') commitScanFreqInput();
-													if (e.key === 'Escape') setEditingScan(false);
-												}}
-												sx={{
-													fontSize: 9, color: '#888', width: 48, flexShrink: 0,
-													'.MuiInputBase-input': { p: 0, textAlign: 'right' },
-												}}
-											/>
+											<Box sx={{ ...HW_INSET, px: 0.75, display: 'flex', alignItems: 'center', width: 52, flexShrink: 0 }}>
+												<InputBase
+													inputRef={scanInputRef}
+													value={scanFreqInput}
+													onChange={e => setScanFreqInput(e.target.value)}
+													onBlur={commitScanFreqInput}
+													onKeyDown={e => {
+														if (e.key === 'Enter') commitScanFreqInput();
+														if (e.key === 'Escape') setEditingScan(false);
+													}}
+													sx={{
+														fontSize: 9, color: 'text.secondary', width: '100%',
+														'& .MuiInputBase-input': { p: 0, textAlign: 'right' },
+													}}
+												/>
+											</Box>
 										) : (
 											<Typography
 												variant="caption"
-												sx={{ ...labelSx, color: '#666', minWidth: 40, textAlign: 'right', cursor: 'text' }}
+												sx={{ fontSize: 9, color: 'text.disabled', width: 52, textAlign: 'right', cursor: 'text', userSelect: 'none', flexShrink: 0 }}
 												onClick={() => {
 													setScanFreqInput(String(scanFreq));
 													setEditingScan(true);
@@ -422,6 +374,18 @@ export function App() {
 												{scanFreq} Hz
 											</Typography>
 										)}
+										<Slider
+											size="small"
+											min={SCAN_FREQ_MIN} max={SCAN_FREQ_MAX} step={1}
+											value={scanFreq}
+											onChange={(_, v) => handleScanFreq(v as number)}
+											sx={[hwSliderSx(color), {
+												flex: 1,
+												'& .MuiSlider-rail':  { height: 4 },
+												'& .MuiSlider-track': { height: 4 },
+												'& .MuiSlider-thumb': { width: 10, height: 10 },
+											}]}
+										/>
 									</Box>
 
 									{/* Reload notice */}
@@ -435,30 +399,6 @@ export function App() {
 										</Typography>
 									)}
 
-									<Box sx={{ flex: 1 }} />
-
-									{/* Layout toggles */}
-									<IconButton size="small"
-										onClick={() => setSweepVisible(v => !v)}
-										title={sweepVisible ? 'Hide sweep' : 'Show sweep'}
-										sx={{ ...toggleBtnSx, color: sweepVisible ? '#22dd22' : '#444' }}
-									>
-										<ShowChartIcon fontSize="small" />
-									</IconButton>
-									<IconButton size="small"
-										onClick={() => setCanvasesSwapped(v => !v)}
-										title="Swap canvas panels"
-										sx={{ ...toggleBtnSx, color: canvasesSwapped ? '#22dd22' : '#444' }}
-									>
-										<SwapVertIcon fontSize="small" />
-									</IconButton>
-									<IconButton size="small"
-										onClick={() => setColumnsSwapped(v => !v)}
-										title="Swap visualiser / DAW"
-										sx={{ ...toggleBtnSx, color: columnsSwapped ? '#22dd22' : '#444' }}
-									>
-										<SwapHorizIcon fontSize="small" />
-									</IconButton>
 								</Box>
 							</Box>
 
@@ -466,17 +406,26 @@ export function App() {
 							<Box sx={{ flex: 1, overflow: 'hidden' }}>
 								<SpinningRectPanel />
 							</Box>
-						</Box>
 
-						{/* Sweep panel in left-column mode */}
-						{!sweepFullWidth && sweepVisible && sweepPanel}
+							{/* Sweep panel in left-column mode — stacks below canvases */}
+							{!sweepFullWidth && sweepVisible && sweepPanel}
+						</Box>
 					</Box>
 
 					{divider}
 
 					{/* DAW column — always last in the DOM tree */}
 					<Box sx={{ flex: 1, height: '100%', overflow: 'hidden', minWidth: 0 }}>
-						<DawCanvas />
+						<DawCanvas
+							columnsSwapped={columnsSwapped}
+							onColumnsSwap={() => setColumnsSwapped(v => !v)}
+							canvasesSwapped={canvasesSwapped}
+							onCanvasesSwap={() => setCanvasesSwapped(v => !v)}
+							sweepVisible={sweepVisible}
+							onSweepToggle={() => setSweepVisible(v => !v)}
+							toolbarCollapsed={toolbarCollapsed}
+							onToolbarToggle={() => setToolbarCollapsed(v => !v)}
+						/>
 					</Box>
 				</Box>
 

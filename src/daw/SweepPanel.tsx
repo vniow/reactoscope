@@ -13,8 +13,9 @@ import { useDawStore, MASTER_NODE_ID, SCENE_INPUT_ID, setAnalyserSize, getSample
 import type { SceneInputNodeData } from '../store/dawTypes';
 import { SweepSceneR3F, type TriggerMode } from '../components/SweepSceneR3F';
 import { channelHex, CHANNEL_LABEL, CHANNEL_ORDER, type ChannelId } from '../woahscope/sweepUtils';
-
-const HANDLE_HEIGHT = 6;
+import { NODE_COLORS } from './nodes/nodeColors';
+import { METAL_BG }    from './nodes/metalBackground';
+import { HW_INSET, hwToggleSx, hwIconBtn, hwSliderSx } from './nodes/hwStyles';
 
 interface Props {
 	height: number;
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function SweepPanel({ height, fullWidth, onResize, onToggleFullWidth }: Props) {
+	const color = NODE_COLORS.scene;
 	const edges = useDawStore(s => s.edges);
 
 	const activeChannels: ChannelId[] = CHANNEL_ORDER.filter((_ch, idx) =>
@@ -90,6 +92,7 @@ export function SweepPanel({ height, fullWidth, onResize, onToggleFullWidth }: P
 	useEffect(() => { onResizeRef.current = onResize; }, [onResize]);
 
 	const handleMouseDown = useCallback((e: React.MouseEvent) => {
+		if ((e.target as HTMLElement).closest('button, input, [role="slider"], [role="combobox"]')) return;
 		e.preventDefault();
 		isDraggingRef.current    = true;
 		startYRef.current        = e.clientY;
@@ -132,132 +135,124 @@ export function SweepPanel({ height, fullWidth, onResize, onToggleFullWidth }: P
 				overflow:   'hidden',
 			}}
 		>
-			{/* Drag handle — at the top so dragging up expands the panel */}
+			{/* Trigger controls — also serves as drag handle */}
 			<Box
 				onMouseDown={handleMouseDown}
-				sx={{
-					height:     HANDLE_HEIGHT,
-					flexShrink: 0,
-					cursor:     'row-resize',
-					bgcolor:    '#1a1a1a',
-					borderTop:  '1px solid #2a2a2a',
-					transition: 'background-color 0.15s',
-					'&:hover':  { bgcolor: 'rgba(34, 221, 34, 0.4)' },
-				}}
-			/>
-
-			{/* Trigger controls */}
-			<Box sx={{ height: 36, flexShrink: 0, display: 'flex', alignItems: 'center',
-			           gap: 1.5, px: 1, bgcolor: '#0a0a0a', borderBottom: '1px solid #1a1a1a' }}>
+				sx={{ height: 28, flexShrink: 0, display: 'flex', alignItems: 'center',
+				      gap: 1, px: 1, backgroundImage: METAL_BG, cursor: 'row-resize',
+				      '&:hover': { backgroundImage: METAL_BG } }}
+			>
 				<ToggleButtonGroup
 					exclusive size="small" value={triggerMode}
 					onChange={(_, v) => v && setTriggerMode(v)}
-					sx={{ flexShrink: 0, '& .MuiToggleButton-root': {
-						py: 0, px: 0.75, fontSize: '0.6rem', fontFamily: 'monospace',
-						color: '#444', border: '1px solid #222', lineHeight: '20px',
-						'&.Mui-selected': { color: '#22dd22', bgcolor: 'rgba(34,221,34,0.08)' },
-					}}}
+					sx={[hwToggleSx(color), { flexShrink: 0, '& .MuiToggleButton-root': { py: 0.2, fontSize: 9 } }]}
 				>
 					<ToggleButton value="clock">CLK</ToggleButton>
 					<ToggleButton value="edge">EDG</ToggleButton>
 					<ToggleButton value="free">FREE</ToggleButton>
 				</ToggleButtonGroup>
 
-				<Box sx={{ width: '1px', height: 16, bgcolor: '#2a2a2a', flexShrink: 0 }} />
+				<Box sx={{ width: '1px', height: 16, background: `${color}20`, flexShrink: 0 }} />
 
 				{editingPhase ? (
-					<InputBase
-						inputRef={phaseInputRef}
-						value={phaseInput}
-						onChange={e => setPhaseInput(e.target.value)}
-						onBlur={() => {
-							const p = parseFloat(phaseInput);
-							if (!isNaN(p)) setPhaseOffset(Math.min(0.999, Math.max(-1, p / 100)));
-							setEditingPhase(false);
-						}}
-						onKeyDown={e => {
-							if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-							if (e.key === 'Escape') setEditingPhase(false);
-						}}
-						sx={{ color: '#555', fontFamily: 'monospace', fontSize: '0.6rem', width: 56,
-						      '.MuiInputBase-input': { p: 0 } }}
-					/>
+					<Box sx={{ ...HW_INSET, px: 0.75, display: 'flex', alignItems: 'center', width: 60, flexShrink: 0 }}>
+						<InputBase
+							inputRef={phaseInputRef}
+							value={phaseInput}
+							onChange={e => setPhaseInput(e.target.value)}
+							onBlur={() => {
+								const p = parseFloat(phaseInput);
+								if (!isNaN(p)) setPhaseOffset(Math.min(0.999, Math.max(-1, p / 100)));
+								setEditingPhase(false);
+							}}
+							onKeyDown={e => {
+								if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+								if (e.key === 'Escape') setEditingPhase(false);
+							}}
+							sx={{ fontSize: 9, color: 'text.secondary', width: '100%',
+							      '& .MuiInputBase-input': { p: 0 } }}
+						/>
+					</Box>
 				) : (
 					<Typography variant="caption"
 						onClick={() => { setPhaseInput(String(Math.round(phaseOffset * 100))); setEditingPhase(true); setTimeout(() => phaseInputRef.current?.select(), 0); }}
-						sx={{ color: '#555', fontFamily: 'monospace', fontSize: '0.6rem', flexShrink: 0, cursor: 'text', userSelect: 'none' }}>
+						sx={{ fontSize: 9, color: 'text.disabled', flexShrink: 0, cursor: 'text', userSelect: 'none', minWidth: 72 }}>
 						{`PHASE ${Math.round(phaseOffset * 100)}%`}
 					</Typography>
 				)}
 				<Slider size="small" min={-1} max={0.999} step={0.001}
 					value={phaseOffset} onChange={(_, v) => setPhaseOffset(v as number)}
-					sx={{ width: '160px', flexShrink: 0, color: '#22dd22',
-					      '& .MuiSlider-thumb': { width: 10, height: 10 },
-					      '& .MuiSlider-rail':  { bgcolor: '#333' } }}
+					sx={[hwSliderSx(color), {
+						width: '160px', flexShrink: 0,
+						'& .MuiSlider-rail':  { height: 4 },
+						'& .MuiSlider-track': { height: 4 },
+						'& .MuiSlider-thumb': { width: 10, height: 10 },
+					}]}
 				/>
 
-				<Box sx={{ width: '1px', height: 16, bgcolor: '#2a2a2a', flexShrink: 0 }} />
+				<Box sx={{ width: '1px', height: 16, background: `${color}20`, flexShrink: 0 }} />
 
 				{editingLat ? (
-					<InputBase
-						inputRef={latInputRef}
-						value={latInput}
-						onChange={e => setLatInput(e.target.value)}
-						onBlur={() => {
-							const n = parseInt(latInput, 10);
-							if (!isNaN(n)) setLatencyCompSamples(Math.min(512, Math.max(-512, n)));
-							setEditingLat(false);
-						}}
-						onKeyDown={e => {
-							if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-							if (e.key === 'Escape') setEditingLat(false);
-						}}
-						sx={{ color: '#555', fontFamily: 'monospace', fontSize: '0.6rem', width: 64,
-						      '.MuiInputBase-input': { p: 0 } }}
-					/>
+					<Box sx={{ ...HW_INSET, px: 0.75, display: 'flex', alignItems: 'center', width: 68, flexShrink: 0 }}>
+						<InputBase
+							inputRef={latInputRef}
+							value={latInput}
+							onChange={e => setLatInput(e.target.value)}
+							onBlur={() => {
+								const n = parseInt(latInput, 10);
+								if (!isNaN(n)) setLatencyCompSamples(Math.min(512, Math.max(-512, n)));
+								setEditingLat(false);
+							}}
+							onKeyDown={e => {
+								if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+								if (e.key === 'Escape') setEditingLat(false);
+							}}
+							sx={{ fontSize: 9, color: 'text.secondary', width: '100%',
+							      '& .MuiInputBase-input': { p: 0 } }}
+						/>
+					</Box>
 				) : (
 					<Typography variant="caption"
 						onClick={() => { setLatInput(String(latencyCompSamples)); setEditingLat(true); setTimeout(() => latInputRef.current?.select(), 0); }}
-						sx={{ color: '#555', fontFamily: 'monospace', fontSize: '0.6rem', flexShrink: 0, cursor: 'text', userSelect: 'none' }}>
+						sx={{ fontSize: 9, color: 'text.disabled', flexShrink: 0, cursor: 'text', userSelect: 'none', minWidth: 68 }}>
 						{`LAT ${latencyCompSamples > 0 ? '+' : ''}${latencyCompSamples}smp`}
 					</Typography>
 				)}
 				<Slider size="small" min={-512} max={512} step={1}
 					value={latencyCompSamples} onChange={(_, v) => setLatencyCompSamples(v as number)}
-					sx={{ width: '160px', flexShrink: 0, color: '#22dd22',
-					      '& .MuiSlider-thumb': { width: 10, height: 10 },
-					      '& .MuiSlider-rail':  { bgcolor: '#333' } }}
+					sx={[hwSliderSx(color), {
+						width: '160px', flexShrink: 0,
+						'& .MuiSlider-rail':  { height: 4 },
+						'& .MuiSlider-track': { height: 4 },
+						'& .MuiSlider-thumb': { width: 10, height: 10 },
+					}]}
 				/>
 
-				<Box sx={{ width: '1px', height: 16, bgcolor: '#2a2a2a', flexShrink: 0 }} />
+				<Box sx={{ width: '1px', height: 16, background: `${color}20`, flexShrink: 0 }} />
 
 				{/* nCycles stepper — only meaningful in clock mode */}
 				<Typography variant="caption" sx={{
-					color: triggerMode === 'clock' ? '#555' : '#2a2a2a',
-					fontFamily: 'monospace', fontSize: '0.6rem', flexShrink: 0, userSelect: 'none',
+					fontSize: 9, flexShrink: 0, userSelect: 'none',
+					color: triggerMode === 'clock' ? 'text.secondary' : 'text.disabled',
 				}}>
 					{`CYC ${nCycles}`}
 				</Typography>
 				<IconButton size="small" disabled={triggerMode !== 'clock' || nCycles <= 1}
 					onClick={() => setNCycles(c => Math.max(1, c - 1))}
-					sx={{ p: 0.25, color: '#555', '&:not(:disabled):hover': { color: '#22dd22' } }}
+					sx={{ ...hwIconBtn(color), p: 0.5, fontSize: 9, lineHeight: 1 }}
 				>−</IconButton>
 				<IconButton size="small" disabled={triggerMode !== 'clock' || nCycles >= 8}
 					onClick={() => setNCycles(c => Math.min(8, c + 1))}
-					sx={{ p: 0.25, color: '#555', '&:not(:disabled):hover': { color: '#22dd22' } }}
+					sx={{ ...hwIconBtn(color), p: 0.5, fontSize: 9, lineHeight: 1 }}
 				>+</IconButton>
 
-				<Box sx={{ width: '1px', height: 16, bgcolor: '#2a2a2a', flexShrink: 0 }} />
+				<Box sx={{ width: '1px', height: 16, background: `${color}20`, flexShrink: 0 }} />
 
 				{/* nSamples buffer size selector */}
 				<ToggleButtonGroup
 					exclusive size="small" value={nSamples}
 					onChange={(_, v) => v && handleNSamples(v)}
-					sx={{ flexShrink: 0, '& .MuiToggleButton-root': {
-						py: 0, px: 0.75, fontSize: '0.6rem', fontFamily: 'monospace',
-						color: '#444', border: '1px solid #222', lineHeight: '20px',
-						'&.Mui-selected': { color: '#22dd22', bgcolor: 'rgba(34,221,34,0.08)' },
-					}}}
+					sx={[hwToggleSx(color), { flexShrink: 0, '& .MuiToggleButton-root': { py: 0.2, fontSize: 9 } }]}
 				>
 					<ToggleButton value={1024}>1K</ToggleButton>
 					<ToggleButton value={2048}>2K</ToggleButton>
@@ -268,7 +263,7 @@ export function SweepPanel({ height, fullWidth, onResize, onToggleFullWidth }: P
 				{/* Buffer overflow warning */}
 				{bufferWarn && (
 					<Typography variant="caption" sx={{
-						color: '#dd2222', fontFamily: 'monospace', fontSize: '0.6rem', flexShrink: 0,
+						color: '#dd2222', fontFamily: 'monospace', fontSize: 9, flexShrink: 0,
 					}}>
 						{`${needed}>${nSamples}`}
 					</Typography>
@@ -352,17 +347,11 @@ export function SweepPanel({ height, fullWidth, onResize, onToggleFullWidth }: P
 					size="small"
 					onClick={onToggleFullWidth}
 					title={fullWidth ? 'Collapse to left column' : 'Expand to full width'}
-					sx={{
-						position: 'absolute',
-						top:      4,
-						right:    4,
-						color:    '#444',
-						'&:hover': { color: '#22dd22' },
-					}}
+					sx={{ ...hwIconBtn(color), p: 0.5, position: 'absolute', top: 4, right: 4 }}
 				>
 					{fullWidth
-						? <CloseFullscreenIcon sx={{ fontSize: 14 }} />
-						: <OpenInFullIcon      sx={{ fontSize: 14 }} />
+						? <CloseFullscreenIcon sx={{ fontSize: 12 }} />
+						: <OpenInFullIcon      sx={{ fontSize: 12 }} />
 					}
 				</IconButton>
 			</Box>
