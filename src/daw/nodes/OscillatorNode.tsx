@@ -1,11 +1,7 @@
-import { memo, useCallback, useRef, useState } from 'react';
+import { memo, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import InputBase from '@mui/material/InputBase';
-import MenuItem from '@mui/material/MenuItem';
-import Select, { type SelectChangeEvent } from '@mui/material/Select';
-import Slider from '@mui/material/Slider';
+import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
@@ -18,59 +14,97 @@ import { NODE_COLORS } from './nodeColors';
 import { GRID_UNIT } from './gridSystem';
 import { outputHandleStyle, outputLabel } from './handleStyles';
 import { METAL_BG } from './metalBackground';
-import { HW_INSET, hwSliderSx, hwSelectSx, hwSelectMenuProps, hwIconBtn, hwIconBtnLit } from './hwStyles';
+import { HW_RAISED, hwLit, hwBtn, hwBtnLit } from './hwStyles';
+import { HwSliderField } from '../../components/HwSliderField';
 import type { OscillatorFlowNode } from '../../store/dawTypes';
 
 const OSC_TYPES = ['sine', 'square', 'triangle', 'sawtooth'] as const;
 type OscType = typeof OSC_TYPES[number];
 
 const color = NODE_COLORS.source;
-const nodeSx = {
-	slider:     hwSliderSx(color),
-	select:     hwSelectSx(color),
-	selectMenu: hwSelectMenuProps(color),
-	iconBtn:    hwIconBtn(color),
-	iconBtnLit: hwIconBtnLit(color),
+
+// ─── Waveform SVG icons ───────────────────────────────────────────────────────
+
+function SineIcon({ active }: { active: boolean }) {
+	const c = active ? color : 'currentColor';
+	return (
+		<svg viewBox='0 0 28 12' width={28} height={12} fill='none'>
+			<path
+				d='M 0,6 C 3.5,6 3.5,1 7,1 C 10.5,1 10.5,11 14,11 C 17.5,11 17.5,1 21,1 C 24.5,1 24.5,6 28,6'
+				stroke={c} strokeWidth={1.5} strokeLinecap='round'
+			/>
+		</svg>
+	);
+}
+
+function SquareIcon({ active }: { active: boolean }) {
+	const c = active ? color : 'currentColor';
+	return (
+		<svg viewBox='0 0 28 12' width={28} height={12} fill='none'>
+			<path
+				d='M 0,2 L 14,2 L 14,10 L 28,10'
+				stroke={c} strokeWidth={1.5} strokeLinecap='round' strokeLinejoin='round'
+			/>
+		</svg>
+	);
+}
+
+function TriangleIcon({ active }: { active: boolean }) {
+	const c = active ? color : 'currentColor';
+	return (
+		<svg viewBox='0 0 28 12' width={28} height={12} fill='none'>
+			<path
+				d='M 0,6 L 7,1 L 21,11 L 28,6'
+				stroke={c} strokeWidth={1.5} strokeLinecap='round' strokeLinejoin='round'
+			/>
+		</svg>
+	);
+}
+
+function SawtoothIcon({ active }: { active: boolean }) {
+	const c = active ? color : 'currentColor';
+	return (
+		<svg viewBox='0 0 28 12' width={28} height={12} fill='none'>
+			<path
+				d='M 0,11 L 13,1 L 13,11 L 26,1'
+				stroke={c} strokeWidth={1.5} strokeLinecap='round' strokeLinejoin='round'
+			/>
+		</svg>
+	);
+}
+
+const WAVE_ICONS: Record<OscType, (active: boolean) => React.ReactNode> = {
+	sine:     active => <SineIcon     active={active} />,
+	square:   active => <SquareIcon   active={active} />,
+	triangle: active => <TriangleIcon active={active} />,
+	sawtooth: active => <SawtoothIcon active={active} />,
 };
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export const OscillatorNode = memo(function OscillatorNode({
 	id,
 	data,
 	selected,
 }: NodeProps<OscillatorFlowNode>) {
-	const [isPlaying,   setIsPlaying]   = useState(false);
-	const [frequency,   setFreqState]   = useState(data.frequency ?? 440);
-	const [oscType,     setOscType]     = useState<OscType>(data.type ?? 'sine');
-	const [editingFreq, setEditingFreq] = useState(false);
-	const [freqInput,   setFreqInput]   = useState('');
-	const freqInputRef = useRef<HTMLInputElement>(null);
+	const [isPlaying, setIsPlaying] = useState(false);
+	const [frequency, setFreqState] = useState(data.frequency ?? 440);
+	const [oscType,   setOscType]   = useState<OscType>(data.type ?? 'sine');
 
 	const handleToggle = async () => {
 		if (isPlaying) { stopOscillator(id); setIsPlaying(false); }
 		else           { await startOscillator(id); setIsPlaying(true); }
 	};
 
-	const handleFreqChange = (_: Event, value: number | number[]) => {
-		const freq = value as number;
-		setFreqState(freq);
-		setOscillatorFrequency(id, freq);
-	};
-
-	const handleTypeChange = (e: SelectChangeEvent) => {
-		const t = e.target.value as OscType;
+	const handleTypeSelect = (t: OscType) => {
 		setOscType(t);
 		setOscillatorType(id, t);
 	};
 
-	const commitFreqInput = useCallback(() => {
-		const parsed = parseFloat(freqInput);
-		if (!isNaN(parsed)) {
-			const clamped = Math.min(4000, Math.max(20, parsed));
-			setFreqState(clamped);
-			setOscillatorFrequency(id, clamped);
-		}
-		setEditingFreq(false);
-	}, [freqInput, id]);
+	const handleFreqChange = (v: number) => {
+		setFreqState(v);
+		setOscillatorFrequency(id, v);
+	};
 
 	return (
 		<Box sx={{
@@ -85,74 +119,71 @@ export const OscillatorNode = memo(function OscillatorNode({
 			<NodeHeader id={id} label='Oscillator' selected={selected} accentColor={color} />
 
 			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-				<Box className='nodrag'>
-					<Select
-						value={oscType}
-						onChange={handleTypeChange}
-						size='small'
-						fullWidth
-						sx={nodeSx.select}
-						MenuProps={nodeSx.selectMenu}
-					>
-						{OSC_TYPES.map(t => (
-							<MenuItem key={t} value={t} sx={{ fontSize: 11 }}>{t}</MenuItem>
-						))}
-					</Select>
+
+				{/* Wave type toggle — 4 across */}
+				<Box className='nodrag' sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+					<Box sx={{ display: 'flex', gap: '1px' }}>
+						{OSC_TYPES.map((t, i) => {
+							const active = oscType === t;
+							const lit    = hwLit(color);
+							const radius = i === 0 ? '3px 0 0 3px' : i === 3 ? '0 3px 3px 0' : '0';
+							return (
+								<Box
+									key={t}
+									onClick={() => handleTypeSelect(t)}
+									sx={{
+										flex:           1,
+										display:        'flex',
+										alignItems:     'center',
+										justifyContent: 'center',
+										py:             0.75,
+										cursor:         'pointer',
+										color:          active ? color : 'text.disabled',
+										...(active ? lit : HW_RAISED),
+										borderRadius:   radius,
+										'&:hover': active
+											? { ...lit, filter: 'brightness(1.1)' }
+											: { background: 'linear-gradient(to bottom, #40404a 0%, #2e2e34 100%)', color: 'text.secondary' },
+									}}
+								>
+									{WAVE_ICONS[t](active)}
+								</Box>
+							);
+						})}
+					</Box>
+					<Typography sx={{ fontSize: 9, color: 'text.disabled', textAlign: 'center', letterSpacing: 0.5 }}>
+						{oscType}
+					</Typography>
 				</Box>
 
+				{/* Play / stop — full width */}
+				<Button
+					onClick={handleToggle}
+					fullWidth
+					className='nodrag'
+					aria-label={isPlaying ? 'Stop oscillator' : 'Start oscillator'}
+					sx={isPlaying ? { ...hwBtnLit(color), py: 0.4 } : { ...hwBtn(color), py: 0.4 }}
+				>
+					{isPlaying
+						? <StopIcon      sx={{ fontSize: 13 }} />
+						: <PlayArrowIcon sx={{ fontSize: 13 }} />}
+				</Button>
+
+				{/* Frequency slider */}
 				<Box className='nodrag nowheel'>
-					<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.25 }}>
-						<Typography variant='caption' color='text.secondary' sx={{ fontSize: 10 }}>freq</Typography>
-						{editingFreq ? (
-							<Box sx={{ ...HW_INSET, px: 0.5, display: 'flex', alignItems: 'center' }}>
-								<InputBase
-									inputRef={freqInputRef}
-									value={freqInput}
-									onChange={e => setFreqInput(e.target.value)}
-									onBlur={commitFreqInput}
-									onKeyDown={e => {
-										if (e.key === 'Enter') commitFreqInput();
-										if (e.key === 'Escape') setEditingFreq(false);
-									}}
-									sx={{ fontSize: 11, color: 'text.primary', width: 64,
-										'& .MuiInputBase-input': { p: '2px 0', textAlign: 'right' } }}
-								/>
-							</Box>
-						) : (
-							<Typography
-								variant='caption'
-								color='text.secondary'
-								sx={{ fontSize: 10, cursor: 'text', userSelect: 'none' }}
-								onClick={() => {
-									setFreqInput(String(frequency));
-									setEditingFreq(true);
-									setTimeout(() => freqInputRef.current?.select(), 0);
-								}}
-							>
-								{frequency} Hz
-							</Typography>
-						)}
-					</Box>
-					<Slider
-						aria-label='Frequency'
-						min={20} max={4000} step={1}
+					<HwSliderField
+						label='freq'
 						value={frequency}
+						min={20} max={4000} step={1}
+						color={color}
 						onChange={handleFreqChange}
-						size='small'
-						sx={nodeSx.slider}
+						format={v => String(v)}
+						unit='Hz'
+						allowValueEdit
+						allowBoundsEdit
 					/>
 				</Box>
 
-				<Box sx={{ display: 'flex', justifyContent: 'center' }} className='nodrag'>
-					<IconButton
-						onClick={handleToggle}
-						size='small'
-						aria-label={isPlaying ? 'Stop oscillator' : 'Start oscillator'}
-						sx={isPlaying ? nodeSx.iconBtnLit : nodeSx.iconBtn}
-					>
-						{isPlaying ? <StopIcon sx={{ fontSize: 14 }} /> : <PlayArrowIcon sx={{ fontSize: 14 }} />}
-					</IconButton>
-				</Box>
 			</Box>
 
 			<Handle

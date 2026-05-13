@@ -9,17 +9,39 @@ import { inputHandleStyle, outputHandleStyle, inputLabel, outputLabel } from './
 import { METAL_BG } from './metalBackground';
 import type { StubFlowNode, StubKind } from '../../store/dawTypes';
 
-const STUB_TOPOLOGY: Record<StubKind, { inputs: string[]; outputs: string[] }> = {
-	reverb:         { inputs: ['in-0'],         outputs: ['out-0'] },
-	delay:          { inputs: ['in-0'],         outputs: ['out-0'] },
-	filter:         { inputs: ['in-0'],         outputs: ['out-0'] },
-	distortion:     { inputs: ['in-0'],         outputs: ['out-0'] },
-	compressor:     { inputs: ['in-0'],         outputs: ['out-0'] },
+// Only entries that differ from the default mono in → mono out topology.
+const STUB_TOPOLOGY: Partial<Record<StubKind, { inputs: string[]; outputs: string[] }>> = {
 	noiseGenerator: { inputs: [],               outputs: ['out-0'] },
 	panner:         { inputs: ['in-0'],         outputs: ['out-0', 'out-1'] },
 	split:          { inputs: ['in-0'],         outputs: ['out-0', 'out-1'] },
 	merge:          { inputs: ['in-0', 'in-1'], outputs: ['out-0'] },
+	multibandSplit: { inputs: ['in-0'],         outputs: ['out-0', 'out-1', 'out-2'] },
+	crossFade:      { inputs: ['in-0', 'in-1'], outputs: ['out-0'] },
+	// Source-like stubs (instruments, oscillators) have no audio input
+	synth:          { inputs: [], outputs: ['out-0'] },
+	monoSynth:      { inputs: [], outputs: ['out-0'] },
+	polySynth:      { inputs: [], outputs: ['out-0'] },
+	fmSynth:        { inputs: [], outputs: ['out-0'] },
+	amSynth:        { inputs: [], outputs: ['out-0'] },
+	duoSynth:       { inputs: [], outputs: ['out-0'] },
+	membraneSynth:  { inputs: [], outputs: ['out-0'] },
+	metalSynth:     { inputs: [], outputs: ['out-0'] },
+	noiseSynth:     { inputs: [], outputs: ['out-0'] },
+	pluckSynth:     { inputs: [], outputs: ['out-0'] },
+	sampler:        { inputs: [], outputs: ['out-0'] },
+	fmOscillator:   { inputs: [], outputs: ['out-0'] },
+	amOscillator:   { inputs: [], outputs: ['out-0'] },
+	fatOscillator:  { inputs: [], outputs: ['out-0'] },
+	pulseOscillator: { inputs: [], outputs: ['out-0'] },
+	pwmOscillator:  { inputs: [], outputs: ['out-0'] },
+	omniOscillator: { inputs: [], outputs: ['out-0'] },
+	players:        { inputs: [], outputs: ['out-0'] },
+	grainPlayer:    { inputs: [], outputs: ['out-0'] },
+	userMedia:      { inputs: [], outputs: ['out-0'] },
+	lfo:            { inputs: [], outputs: ['out-0'] },
 };
+
+const DEFAULT_TOPO = { inputs: ['in-0'], outputs: ['out-0'] };
 
 function getHandleTop(index: number, total: number): string {
 	const fraction = total === 1 ? 0.5 : (index + 1) / (total + 1);
@@ -36,7 +58,7 @@ export const StubNode = memo(function StubNode({
 	data,
 	selected,
 }: NodeProps<StubFlowNode>) {
-	const topo = STUB_TOPOLOGY[data.kind];
+	const topo = STUB_TOPOLOGY[data.kind] ?? DEFAULT_TOPO;
 
 	return (
 		<Box sx={{

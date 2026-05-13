@@ -190,3 +190,21 @@ export function hwIconBtnLit(color: string) {
 		'&:active': HW_PRESSED,
 	};
 }
+
+export function hwDeleteIconBtn(color: string) {
+	return {
+		...HW_RAISED,
+		borderRadius: '50%',
+		p: 0.25,
+		color: `${color}90`,
+		'&:hover': {
+			background:     `linear-gradient(to bottom, ${color}ee 0%, ${color}cc 100%)`,
+			border:         `1px solid ${color}`,
+			borderTopColor: `${color}aa`,
+			boxShadow:      `0 2px 4px rgba(0,0,0,0.4), 0 0 8px ${color}50`,
+			borderRadius:   '50%',
+			color:          'rgba(0,0,0,0.7)',
+		},
+		'&:active': { ...HW_PRESSED, borderRadius: '50%', transform: 'translateY(1px)' },
+	};
+}

@@ -30,9 +30,10 @@ function Sect({ label, children }: { label: string; children: React.ReactNode })
 	);
 }
 
-export function VizSettingsOverlay() {
+export function VizSettingsOverlay({ onOpenChange }: { onOpenChange?: (open: boolean) => void } = {}) {
 	const anchorRef = useRef<HTMLButtonElement>(null);
 	const [open, setOpen] = useState(false);
+	const setOpenTracked = (v: boolean) => { setOpen(v); onOpenChange?.(v); };
 
 	const { vizMode, setVizMode } = useEffects();
 
@@ -45,7 +46,7 @@ export function VizSettingsOverlay() {
 		<>
 			<IconButton
 				ref={anchorRef}
-				onClick={() => setOpen(v => !v)}
+				onClick={() => setOpenTracked(!open)}
 				size='small'
 				aria-label='Visualiser settings'
 				sx={open ? { ...hwIconBtnLit(color), p: 0.5 } : { ...hwIconBtn(color), p: 0.5 }}
@@ -56,9 +57,9 @@ export function VizSettingsOverlay() {
 			<Popover
 				open={open}
 				anchorEl={anchorRef.current}
-				onClose={() => setOpen(false)}
-				anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-				transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+				onClose={() => setOpenTracked(false)}
+				anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
+				transformOrigin={{ vertical: 'center', horizontal: 'left' }}
 				slotProps={{
 					paper: {
 						sx: {

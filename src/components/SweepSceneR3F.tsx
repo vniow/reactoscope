@@ -35,11 +35,9 @@ interface Props {
 	sceneInputChannels: Set<ChannelId>;
 	triggerMode:        TriggerMode;
 	phaseOffset:        number;
-	latencyCompSamples: number;
-	nCycles:            number;
 }
 
-export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannels, triggerMode, phaseOffset, latencyCompSamples, nCycles }: Props) {
+export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannels, triggerMode, phaseOffset }: Props) {
 	const { intensity } = useAxis();
 	const { crtEnabled, persistence, glowStrength, scatterStrength } = useEffects();
 	const { camera, invalidate } = useThree();
@@ -96,18 +94,14 @@ export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannel
 	const sceneInputChannelsRef = useRef(sceneInputChannels);
 	const triggerModeRef        = useRef(triggerMode);
 	const phaseOffsetRef        = useRef(phaseOffset);
-	const latencyCompRef        = useRef(latencyCompSamples);
-	const nCyclesRef            = useRef(nCycles);
 	useEffect(() => {
 		activeChannelsRef.current     = activeChannels;
 		scanFrequencyRef.current      = scanFrequency;
 		sceneInputChannelsRef.current = sceneInputChannels;
 		triggerModeRef.current        = triggerMode;
 		phaseOffsetRef.current        = phaseOffset;
-		latencyCompRef.current        = latencyCompSamples;
-		nCyclesRef.current            = nCycles;
 		invalidate();
-	}, [activeChannels, scanFrequency, sceneInputChannels, triggerMode, phaseOffset, latencyCompSamples, nCycles, invalidate]);
+	}, [activeChannels, scanFrequency, sceneInputChannels, triggerMode, phaseOffset, invalidate]);
 
 	// Scratch buffers — sized to the maximum possible display window
 	const sweepX = useMemo(() => new Float32Array(N_SAMPLES), []);
@@ -153,9 +147,7 @@ export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannel
 					displaySamples = DISPLAY_SAMPLES;
 					searchWindow   = DISPLAY_SAMPLES;
 				} else {
-					// User-controlled: show exactly nCycles complete periods
-					const cycles   = nCyclesRef.current;
-					displaySamples = Math.min(cycles * period, N_SAMPLES);
+					displaySamples = Math.min(period, N_SAMPLES);
 					searchWindow   = Math.min(period, N_SAMPLES - displaySamples - 1);
 				}
 			} else {
@@ -167,7 +159,6 @@ export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannel
 			// ── Compute buffer start offset ────────────────────────────────────
 			const mode            = triggerModeRef.current;
 			const phaseOffSamples = Math.floor(phaseOffsetRef.current * period);
-			const latComp         = latencyCompRef.current;
 
 			let startSample: number;
 			if (mode === 'clock' && sceneInputChs.has(chId)) {
@@ -177,7 +168,7 @@ export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannel
 				const phase    = getSceneInputPhase();             // 0–1
 				const step     = scanFreq / sampleRate;            // fraction per sample
 				const agoSamples = Math.floor(phase / step);       // samples since last cycle boundary
-				startSample = (N_SAMPLES - 1) - agoSamples + phaseOffSamples + latComp;
+				startSample = (N_SAMPLES - 1) - agoSamples + phaseOffSamples;
 				if (startSample + displaySamples > N_SAMPLES) startSample -= period;
 				if (startSample < 0)                          startSample += period;
 				startSample = Math.max(0, Math.min(N_SAMPLES - displaySamples, startSample));
@@ -222,7 +213,8 @@ export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannel
 			lm.uniforms.uGain.value       = 1.0; // gain pre-applied in buildSweepPositions
 			lm.uniforms.uNEdges.value     = displaySamples - 1;
 			lm.uniforms.uFadeAmount.value = FADE_AMOUNT;
-			lm.uniforms.uIntensity.value  = intensityPowRef.current;
+			// The shader normalizes brightness by segment length; compensate so Hz changes don't dim the line.
+			lm.uniforms.uIntensity.value  = intensityPowRef.current * DISPLAY_SAMPLES / displaySamples;
 		}
 
 		// ── Render pipeline ────────────────────────────────────────────────────

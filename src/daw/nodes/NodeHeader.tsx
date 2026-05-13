@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
 import { useDawStore } from '../../store/daw';
 import { HEADER_HEIGHT } from './gridSystem';
+import { hwDeleteIconBtn } from './hwStyles';
 
 /** Exported for handle-position calc expressions in node components. */
 export const NODE_HEADER_HEIGHT = HEADER_HEIGHT;
@@ -57,7 +58,7 @@ export function NodeHeader({ label, id, selected, accentColor }: NodeHeaderProps
 					onClick={handleDelete}
 					aria-label='Delete node'
 					className='nodrag'
-					sx={{ p: 0.25, color: 'text.disabled', '&:hover': { color: 'error.main' } }}
+					sx={hwDeleteIconBtn(accentColor ?? '#888')}
 				>
 					<CloseIcon sx={{ fontSize: 12 }} />
 				</IconButton>

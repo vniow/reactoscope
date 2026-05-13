@@ -3,7 +3,6 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
-import Slider from '@mui/material/Slider';
 import Typography from '@mui/material/Typography';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -27,8 +26,9 @@ import { NODE_COLORS } from './nodeColors';
 import { GRID_UNIT } from './gridSystem';
 import { outputHandleStyle, outputLabel } from './handleStyles';
 import { METAL_BG } from './metalBackground';
-import { hwSliderSx, hwIconBtn, hwIconBtnLit } from './hwStyles';
+import { hwIconBtn, hwIconBtnLit } from './hwStyles';
 import { TrackSelector } from '../../components/TrackSelector';
+import { HwSliderField } from '../../components/HwSliderField';
 import { usePlayback } from '../../contexts/WoahscopeContext';
 import { BUILT_IN_TRACKS, ERROR_MESSAGES } from '../../config';
 import type { PlayerFlowNode } from '../../store/dawTypes';
@@ -51,7 +51,6 @@ function formatTime(seconds: number): string {
 
 const color = NODE_COLORS.source;
 const nodeSx = {
-	slider:     hwSliderSx(color),
 	iconBtn:    hwIconBtn(color),
 	iconBtnLit: hwIconBtnLit(color),
 };
@@ -186,10 +185,9 @@ export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeP
 		syncProgressDOM(newPos);
 	};
 
-	const handleSpeedChange = (_: Event, value: number | number[]) => {
-		const rate = value as number;
-		setNodeRate(id, rate);
-		setPlaybackRate(rate);
+	const handleSpeedChange = (v: number) => {
+		setNodeRate(id, v);
+		setPlaybackRate(v);
 	};
 
 	const handleTrackChange = (file: string) => {
@@ -303,20 +301,16 @@ export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeP
 
 			{/* Speed control */}
 			<Box className='nodrag nowheel'>
-				<Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
-					<Typography variant='caption' color='text.secondary' sx={{ fontSize: 10 }}>speed</Typography>
-					<Typography variant='caption' color='text.disabled'  sx={{ fontSize: 10 }}>{playbackRate.toFixed(2)}×</Typography>
-				</Box>
-				<Slider
-					aria-label='Playback speed'
-					min={0.25}
-					max={2}
-					step={0.01}
-					marks={[{ value: 0.5 }, { value: 0.75 }, { value: 1 }, { value: 1.5 }]}
+				<HwSliderField
+					label='speed'
 					value={playbackRate}
+					min={0.25} max={2} step={0.01}
+					color={color}
 					onChange={handleSpeedChange}
-					size='small'
-					sx={nodeSx.slider}
+					format={v => v.toFixed(2)}
+					unit='×'
+					marks={[{ value: 0.5 }, { value: 0.75 }, { value: 1 }, { value: 1.5 }]}
+					allowValueEdit
 				/>
 			</Box>
 

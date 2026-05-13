@@ -74,6 +74,12 @@ import type {
 	DCSignalAudioEntry,
 	SceneInputAudioEntry,
 	StubKind,
+	PatchFile,
+	MasterOutputNodeData,
+	OscillatorNodeData,
+	GainNodeData,
+	NoiseNodeData,
+	DCSignalNodeData,
 } from './dawTypes';
 
 const { nSamples } = DEFAULT_AUDIO_SETTINGS;
@@ -807,17 +813,42 @@ export function clearNodePlaybackEndCallback(id: string): void {
 
 // ─── Stub labels ──────────────────────────────────────────────────────────────
 
-const STUB_LABELS: Record<StubKind, string> = {
-	reverb:         'Reverb',
-	delay:          'Delay',
-	filter:         'Filter',
-	distortion:     'Distortion',
-	compressor:     'Compressor',
+// Only entries that need a display name different from their action key.
+// Everything else falls back to capitalising the action string.
+const STUB_LABELS: Partial<Record<StubKind, string>> = {
 	noiseGenerator: 'Noise',
-	panner:         'Panner',
-	split:          'Split',
-	merge:          'Merge',
+	jcReverb:       'JCReverb',
+	freeverb:       'Freeverb',
+	feedbackDelay:  'FeedbackDelay',
+	pingPongDelay:  'PingPongDelay',
+	bitCrusher:     'BitCrusher',
+	autoFilter:     'AutoFilter',
+	autoPanner:     'AutoPanner',
+	autoWah:        'AutoWah',
+	frequencyShifter: 'FrequencyShifter',
+	pitchShift:     'PitchShift',
+	stereoWidener:  'StereoWidener',
+	midSideCompressor:   'MidSideCompressor',
+	multibandCompressor: 'MultibandCompressor',
+	biquadFilter:   'BiquadFilter',
+	panVol:         'PanVol',
+	panner3d:       'Panner3D',
+	crossFade:      'CrossFade',
+	multibandSplit: 'MultibandSplit',
+	dcMeter:        'DCMeter',
+	amplitudeEnvelope:  'AmplitudeEnvelope',
+	frequencyEnvelope:  'FrequencyEnvelope',
+	waveShaper:     'WaveShaper',
+	scaleExp:       'ScaleExp',
+	greaterThan:    'GreaterThan',
+	audioToGain:    'AudioToGain',
+	gainToAudio:    'GainToAudio',
+	toneEvent:      'ToneEvent',
 };
+
+function stubLabel(kind: StubKind): string {
+	return STUB_LABELS[kind] ?? (kind.charAt(0).toUpperCase() + kind.slice(1));
+}
 
 // ─── Initial graph setup ──────────────────────────────────────────────────────
 
@@ -884,6 +915,7 @@ type DawState = {
 	setEdgePathType:     (type: 'bezier' | 'straight' | 'step' | 'smoothstep') => void;
 	startScene:          () => Promise<void>;
 	stopScene:           () => void;
+	loadPatch:           (patch: PatchFile) => void;
 };
 
 export const useDawStore = create<DawState>((set, get) => ({
@@ -1083,7 +1115,7 @@ export const useDawStore = create<DawState>((set, get) => ({
 			id,
 			type:     'stub',
 			position,
-			data:     { label: STUB_LABELS[kind], kind },
+			data:     { label: stubLabel(kind), kind },
 		};
 		set({ nodes: [...get().nodes, newNode] });
 		return id;
@@ -1107,6 +1139,81 @@ export const useDawStore = create<DawState>((set, get) => ({
 					? ({ ...n, data: { ...n.data, speakersMuted: muted } } as AppNode)
 					: n,
 			),
+		});
+	},
+
+	loadPatch: (patch) => {
+		const { nodes: currentNodes, edges: currentEdges, sceneRunning } = get();
+
+		if (sceneRunning) {
+			stopSceneInput();
+		}
+
+		// Disconnect every current audio edge
+		for (const edge of currentEdges) {
+			if (edge.sourceHandle && edge.targetHandle) {
+				disconnectAudioNodes(edge.source, edge.sourceHandle, edge.target, edge.targetHandle);
+			}
+		}
+
+		// Dispose all non-protected audio nodes
+		for (const node of currentNodes) {
+			if (node.id !== MASTER_NODE_ID && node.id !== SCENE_INPUT_ID) {
+				disposeAudioNode(node.id);
+			}
+		}
+
+		// Apply master output settings from patch
+		const patchMaster = patch.nodes.find(n => n.id === MASTER_NODE_ID);
+		if (patchMaster?.type === 'masterOutput') {
+			const d = patchMaster.data as MasterOutputNodeData;
+			getMasterEntry().speakerGain.gain.value = d.speakersMuted ? 0 : 1;
+		}
+
+		// Reconstruct audio entries from patch node data
+		for (const node of patch.nodes) {
+			if (node.id === MASTER_NODE_ID || node.id === SCENE_INPUT_ID) continue;
+			if (node.type === 'player') {
+				createPlayerEntry(node.id);
+			} else if (node.type === 'oscillator') {
+				const d = node.data as OscillatorNodeData;
+				createOscillatorEntry(node.id);
+				setOscillatorFrequency(node.id, d.frequency);
+				setOscillatorType(node.id, d.type);
+			} else if (node.type === 'gain') {
+				const d = node.data as GainNodeData;
+				createGainEntry(node.id, d.gain);
+			} else if (node.type === 'noiseGenerator') {
+				const d = node.data as NoiseNodeData;
+				createNoiseEntry(node.id, d.noiseType, d.volume);
+			} else if (node.type === 'dcSignal') {
+				const d = node.data as DCSignalNodeData;
+				createDCSignalEntry(node.id, d.value);
+			}
+			// debug, stub → no audio entry
+		}
+
+		// Wire edges per patch
+		for (const edge of patch.edges) {
+			if (edge.sourceHandle && edge.targetHandle) {
+				connectAudioNodes(edge.source, edge.sourceHandle, edge.target, edge.targetHandle);
+			}
+		}
+
+		// Ensure protected nodes keep deletable: false
+		const restoredNodes = patch.nodes.map(n =>
+			(n.id === MASTER_NODE_ID || n.id === SCENE_INPUT_ID)
+				? { ...n, deletable: false }
+				: n,
+		);
+
+		set({
+			nodes:          restoredNodes,
+			edges:          patch.edges,
+			edgePathType:   patch.edgePathType,
+			audioVersion:   get().audioVersion + 1,
+			sceneRunning:   false,
+			selectedNodeId: null,
 		});
 	},
 
@@ -1135,9 +1242,28 @@ export const useDawStore = create<DawState>((set, get) => ({
 	},
 }));
 
+// ─── Patch export helpers ─────────────────────────────────────────────────────
+
+export function exportPatch(name: string): PatchFile {
+	const { nodes, edges, edgePathType } = useDawStore.getState();
+	return { version: 1, savedAt: new Date().toISOString(), name, nodes, edges, edgePathType };
+}
+
+export function downloadPatch(patch: PatchFile, filenameStem?: string): void {
+	const stem = filenameStem ?? (patch.name.replace(/[^a-z0-9]/gi, '_') || 'patch');
+	const blob = new Blob([JSON.stringify(patch, null, 2)], { type: 'application/json' });
+	const url  = URL.createObjectURL(blob);
+	const a    = document.createElement('a');
+	a.href     = url;
+	a.download = `${stem}.reactoscope.json`;
+	a.click();
+	URL.revokeObjectURL(url);
+}
+
 // Initialise the scene input AudioWorklet (async); wire its default connections once ready.
 // writeSceneAudio() guards against the entry not existing, so early writes are silently dropped.
-initSceneInput().then(() => {
+// Exported so App.tsx can await full init before loading a default patch.
+export const dawInitPromise = initSceneInput().then(() => {
 	connectAudioNodes(SCENE_INPUT_ID, 'out-0', MASTER_NODE_ID, 'in-0');
 	connectAudioNodes(SCENE_INPUT_ID, 'out-1', MASTER_NODE_ID, 'in-1');
 	connectAudioNodes(SCENE_INPUT_ID, 'out-2', MASTER_NODE_ID, 'in-2');

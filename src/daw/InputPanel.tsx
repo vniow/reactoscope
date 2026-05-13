@@ -40,7 +40,7 @@ function SceneAudioBridge() {
 	return null;
 }
 
-export function SpinningRectPanel() {
+export function SceneInputPanel() {
 	const { ref, size } = useSquareSize();
 
 	return (

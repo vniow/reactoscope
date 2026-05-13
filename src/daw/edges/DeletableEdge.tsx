@@ -10,9 +10,24 @@ import {
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import { useDawStore } from '../../store/daw';
+import { hwDeleteIconBtn } from '../nodes/hwStyles';
+import { NODE_COLORS } from '../nodes/nodeColors';
+
+const TYPE_COLOR: Record<string, string> = {
+	oscillator:     NODE_COLORS.source,
+	noiseGenerator: NODE_COLORS.source,
+	dcSignal:       NODE_COLORS.source,
+	player:         NODE_COLORS.source,
+	gain:           NODE_COLORS.processor,
+	stub:           NODE_COLORS.processor,
+	sceneInput:     NODE_COLORS.scene,
+	masterOutput:   NODE_COLORS.output,
+	debug:          NODE_COLORS.debug,
+};
 
 export function DeletableEdge({
 	id,
+	source,
 	sourceX,
 	sourceY,
 	targetX,
@@ -25,6 +40,10 @@ export function DeletableEdge({
 }: EdgeProps) {
 	const edgePathType = useDawStore(s => s.edgePathType);
 	const onEdgesChange = useDawStore(s => s.onEdgesChange);
+	const edgeColor = useDawStore(s => {
+		const srcType = s.nodes.find(n => n.id === source)?.type ?? '';
+		return TYPE_COLOR[srcType] ?? NODE_COLORS.utility;
+	});
 
 	const pathArgs = { sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition };
 	const [edgePath, labelX, labelY] =
@@ -59,14 +78,7 @@ export function DeletableEdge({
 							size='small'
 							onClick={handleDelete}
 							aria-label='Delete edge'
-							sx={{
-								bgcolor:     'background.paper',
-								border:      '1px solid',
-								borderColor: 'divider',
-								p:           0.25,
-								color:       'text.secondary',
-								'&:hover':   { color: 'error.main', borderColor: 'error.main' },
-							}}
+							sx={hwDeleteIconBtn(edgeColor)}
 						>
 							<CloseIcon sx={{ fontSize: 11 }} />
 						</IconButton>

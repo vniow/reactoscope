@@ -4,8 +4,6 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { type SelectChangeEvent } from '@mui/material/Select';
-import Slider from '@mui/material/Slider';
-import Typography from '@mui/material/Typography';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import { startNoise, stopNoise, setNoiseType, setNoiseVolume } from '../../store/daw';
@@ -14,7 +12,8 @@ import { NODE_COLORS } from './nodeColors';
 import { GRID_UNIT } from './gridSystem';
 import { outputHandleStyle, outputLabel } from './handleStyles';
 import { METAL_BG } from './metalBackground';
-import { hwSliderSx, hwSelectSx, hwSelectMenuProps, hwIconBtn, hwIconBtnLit } from './hwStyles';
+import { hwSelectSx, hwSelectMenuProps, hwIconBtn, hwIconBtnLit } from './hwStyles';
+import { HwSliderField } from '../../components/HwSliderField';
 import type { NoiseFlowNode } from '../../store/dawTypes';
 
 const NOISE_TYPES = ['white', 'pink', 'brown'] as const;
@@ -22,7 +21,6 @@ type NoiseType = typeof NOISE_TYPES[number];
 
 const color = NODE_COLORS.source;
 const nodeSx = {
-	slider:     hwSliderSx(color),
 	select:     hwSelectSx(color),
 	selectMenu: hwSelectMenuProps(color),
 	iconBtn:    hwIconBtn(color),
@@ -49,10 +47,9 @@ export const NoiseGeneratorNode = memo(function NoiseGeneratorNode({
 		setNoiseType(id, t);
 	};
 
-	const handleVolumeChange = (_: Event, value: number | number[]) => {
-		const db = value as number;
-		setVolumeState(db);
-		setNoiseVolume(id, db);
+	const handleVolumeChange = (v: number) => {
+		setVolumeState(v);
+		setNoiseVolume(id, v);
 	};
 
 	return (
@@ -84,17 +81,15 @@ export const NoiseGeneratorNode = memo(function NoiseGeneratorNode({
 				</Box>
 
 				<Box className='nodrag nowheel'>
-					<Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
-						<Typography variant='caption' color='text.secondary' sx={{ fontSize: 10 }}>volume</Typography>
-						<Typography variant='caption' color='text.disabled'  sx={{ fontSize: 10 }}>{volume} dB</Typography>
-					</Box>
-					<Slider
-						aria-label='Volume'
-						min={-40} max={0} step={1}
+					<HwSliderField
+						label='volume'
 						value={volume}
+						min={-40} max={0} step={1}
+						color={color}
 						onChange={handleVolumeChange}
-						size='small'
-						sx={nodeSx.slider}
+						format={v => String(v)}
+						unit='dB'
+						allowValueEdit
 					/>
 				</Box>
 

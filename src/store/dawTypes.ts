@@ -32,15 +32,30 @@ export type GainNodeData = {
 };
 
 export type StubKind =
-	| 'reverb'
-	| 'delay'
-	| 'filter'
-	| 'distortion'
-	| 'compressor'
-	| 'noiseGenerator'
-	| 'panner'
-	| 'split'
-	| 'merge';
+	// — existing —
+	| 'reverb' | 'delay' | 'filter' | 'distortion' | 'compressor' | 'noiseGenerator' | 'panner' | 'split' | 'merge'
+	// — Source / Instrument —
+	| 'fmOscillator' | 'amOscillator' | 'fatOscillator' | 'pulseOscillator' | 'pwmOscillator' | 'omniOscillator'
+	| 'players' | 'grainPlayer' | 'userMedia' | 'lfo'
+	| 'synth' | 'monoSynth' | 'polySynth' | 'fmSynth' | 'amSynth' | 'duoSynth'
+	| 'membraneSynth' | 'metalSynth' | 'noiseSynth' | 'pluckSynth' | 'sampler'
+	// — Effect —
+	| 'jcReverb' | 'freeverb' | 'feedbackDelay' | 'pingPongDelay'
+	| 'chorus' | 'phaser' | 'tremolo' | 'vibrato' | 'chebyshev' | 'bitCrusher'
+	| 'autoFilter' | 'autoPanner' | 'autoWah' | 'frequencyShifter' | 'pitchShift' | 'stereoWidener'
+	// — Dynamics —
+	| 'limiter' | 'gate' | 'midSideCompressor' | 'multibandCompressor'
+	// — Processing —
+	| 'biquadFilter' | 'eq3' | 'channel' | 'panVol' | 'panner3d' | 'crossFade'
+	| 'mono' | 'multibandSplit' | 'solo' | 'volume' | 'convolver'
+	// — Analysis —
+	| 'analyser' | 'fft' | 'meter' | 'dcMeter' | 'waveform' | 'follower' | 'recorder'
+	| 'amplitudeEnvelope' | 'frequencyEnvelope'
+	// — Signal —
+	| 'signal' | 'waveShaper' | 'scale' | 'scaleExp' | 'abs' | 'add' | 'multiply'
+	| 'negate' | 'greaterThan' | 'audioToGain' | 'gainToAudio'
+	// — Event —
+	| 'loop' | 'sequence' | 'pattern' | 'part' | 'toneEvent';
 
 export type StubNodeData = {
 	label: string;
@@ -169,3 +184,14 @@ export type AudioNodeEntry =
 	| SceneInputAudioEntry;
 
 export type AudioNodeMap = Map<string, AudioNodeEntry>;
+
+// ─── Patch file (serialised DAW session) ──────────────────────────────────────
+
+export type PatchFile = {
+	version:      1;
+	savedAt:      string;  // ISO 8601
+	name:         string;
+	nodes:        AppNode[];
+	edges:        AppEdge[];
+	edgePathType: 'bezier' | 'straight' | 'step' | 'smoothstep';
+};
