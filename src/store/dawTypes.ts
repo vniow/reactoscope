@@ -1,5 +1,7 @@
 import type { Node, Edge, BuiltInNode } from '@xyflow/react';
-import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal } from 'tone';
+import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia } from 'tone';
+
+export type OscType = 'sine' | 'square' | 'triangle' | 'sawtooth';
 
 // ─── Handle ID convention ─────────────────────────────────────────────────────
 //   Source handles: 'out-0', 'out-1', ...  (position Bottom)
@@ -21,9 +23,11 @@ export type MasterOutputNodeData = {
 };
 
 export type OscillatorNodeData = {
-	label: string;
+	label:     string;
 	frequency: number;
-	type: 'sine' | 'square' | 'triangle' | 'sawtooth';
+	type:      OscType;
+	detune:    number;   // cents, -1200–1200, default 0
+	phase:     number;   // degrees, 0–360, default 0
 };
 
 export type GainNodeData = {
@@ -35,8 +39,8 @@ export type StubKind =
 	// — existing —
 	| 'reverb' | 'delay' | 'filter' | 'distortion' | 'compressor' | 'noiseGenerator' | 'panner' | 'split' | 'merge'
 	// — Source / Instrument —
-	| 'fmOscillator' | 'amOscillator' | 'fatOscillator' | 'pulseOscillator' | 'pwmOscillator' | 'omniOscillator'
-	| 'players' | 'grainPlayer' | 'userMedia' | 'lfo'
+	| 'omniOscillator'
+	| 'players' | 'userMedia'
 	| 'synth' | 'monoSynth' | 'polySynth' | 'fmSynth' | 'amSynth' | 'duoSynth'
 	| 'membraneSynth' | 'metalSynth' | 'noiseSynth' | 'pluckSynth' | 'sampler'
 	// — Effect —
@@ -85,6 +89,84 @@ export type DCSignalNodeData = {
 
 export type DCSignalFlowNode = Node<DCSignalNodeData, 'dcSignal'>;
 
+export type LFONodeData = {
+	label:     string;
+	frequency: number;   // 0.1–20 Hz, default 1
+	type:      OscType;
+	min:       number;   // default -1
+	max:       number;   // default 1
+	phase:     number;   // degrees, 0–360, default 0
+};
+export type LFOFlowNode = Node<LFONodeData, 'lfo'>;
+
+export type FMOscillatorNodeData = {
+	label:           string;
+	frequency:       number;   // 20–4000 Hz, default 440
+	type:            OscType;
+	modulationType:  OscType;
+	modulationIndex: number;   // 0–50, default 10
+	harmonicity:     number;   // 0–20, default 3
+	detune:          number;   // cents, default 0
+	phase:           number;   // degrees, default 0
+};
+export type FMOscillatorFlowNode = Node<FMOscillatorNodeData, 'fmOscillator'>;
+
+export type AMOscillatorNodeData = {
+	label:          string;
+	frequency:      number;   // 20–4000 Hz, default 440
+	type:           OscType;
+	modulationType: OscType;
+	harmonicity:    number;   // 0–20, default 3
+	detune:         number;   // cents, default 0
+	phase:          number;   // degrees, default 0
+};
+export type AMOscillatorFlowNode = Node<AMOscillatorNodeData, 'amOscillator'>;
+
+export type FatOscillatorNodeData = {
+	label:     string;
+	frequency: number;   // 20–4000 Hz, default 440
+	type:      OscType;
+	count:     number;   // 1–5 unison voices, default 3
+	spread:    number;   // 0–100 cents per-voice detuning, default 20
+	detune:    number;   // master detune cents, default 0
+	phase:     number;   // degrees, default 0
+};
+export type FatOscillatorFlowNode = Node<FatOscillatorNodeData, 'fatOscillator'>;
+
+export type PulseOscillatorNodeData = {
+	label:     string;
+	frequency: number;   // 20–4000 Hz, default 440
+	width:     number;   // 0–1 duty cycle, default 0.5
+	detune:    number;   // cents, default 0
+	phase:     number;   // degrees, default 0
+};
+export type PulseOscillatorFlowNode = Node<PulseOscillatorNodeData, 'pulseOscillator'>;
+
+export type PWMOscillatorNodeData = {
+	label:               string;
+	frequency:           number;   // 20–4000 Hz, default 440
+	modulationFrequency: number;   // 0.1–20 Hz, default 0.4
+	detune:              number;   // cents, default 0
+	phase:               number;   // degrees, default 0
+};
+export type PWMOscillatorFlowNode = Node<PWMOscillatorNodeData, 'pwmOscillator'>;
+
+export type GrainPlayerNodeData = {
+	label:        string;
+	trackUrl:     string;
+	grainSize:    number;   // seconds, 0.01–2, default 0.2
+	overlap:      number;   // 0–1, default 0.1
+	playbackRate: number;   // 0.1–4, default 1
+	detune:       number;   // cents, default 0
+	loop:         boolean;  // default true
+};
+export type GrainPlayerFlowNode = Node<GrainPlayerNodeData, 'grainPlayer'>;
+
+export type MicInputNodeData = {
+	label: string;
+};
+export type MicInputFlowNode = Node<MicInputNodeData, 'micInput'>;
+
 export type SceneInputNodeData = {
 	label:        string;
 	scanFrequency: number;  // Hz — how many full traces per second (default 50)
@@ -105,7 +187,15 @@ export type AppNode =
 	| NoiseFlowNode
 	| DCSignalFlowNode
 	| SceneInputFlowNode
-	| DebugFlowNode;
+	| DebugFlowNode
+	| LFOFlowNode
+	| FMOscillatorFlowNode
+	| AMOscillatorFlowNode
+	| FatOscillatorFlowNode
+	| PulseOscillatorFlowNode
+	| PWMOscillatorFlowNode
+	| GrainPlayerFlowNode
+	| MicInputFlowNode;
 
 export type AppEdge = Edge;
 
@@ -162,6 +252,46 @@ export type DCSignalAudioEntry = {
 	toneNode: Signal<'audioRange'>;
 };
 
+export type LFOAudioEntry = {
+	kind:     'lfo';
+	toneNode: LFO;
+};
+
+export type FMOscillatorAudioEntry = {
+	kind:     'fmOscillator';
+	toneNode: FMOscillator;
+};
+
+export type AMOscillatorAudioEntry = {
+	kind:     'amOscillator';
+	toneNode: AMOscillator;
+};
+
+export type FatOscillatorAudioEntry = {
+	kind:     'fatOscillator';
+	toneNode: FatOscillator;
+};
+
+export type PulseOscillatorAudioEntry = {
+	kind:     'pulseOscillator';
+	toneNode: PulseOscillator;
+};
+
+export type PWMOscillatorAudioEntry = {
+	kind:     'pwmOscillator';
+	toneNode: PWMOscillator;
+};
+
+export type GrainPlayerAudioEntry = {
+	kind:     'grainPlayer';
+	toneNode: GrainPlayer;
+};
+
+export type MicInputAudioEntry = {
+	kind:     'micInput';
+	toneNode: UserMedia;
+};
+
 export type SceneInputAudioEntry = {
 	kind:        'sceneInput';
 	// workletNode is the standardized-audio-context AudioWorkletNode returned by
@@ -181,6 +311,14 @@ export type AudioNodeEntry =
 	| GainAudioEntry
 	| NoiseAudioEntry
 	| DCSignalAudioEntry
+	| LFOAudioEntry
+	| FMOscillatorAudioEntry
+	| AMOscillatorAudioEntry
+	| FatOscillatorAudioEntry
+	| PulseOscillatorAudioEntry
+	| PWMOscillatorAudioEntry
+	| GrainPlayerAudioEntry
+	| MicInputAudioEntry
 	| SceneInputAudioEntry;
 
 export type AudioNodeMap = Map<string, AudioNodeEntry>;

@@ -39,6 +39,14 @@ import {
 	Split,
 	Noise,
 	Signal,
+	LFO,
+	FMOscillator,
+	AMOscillator,
+	FatOscillator,
+	PulseOscillator,
+	PWMOscillator,
+	GrainPlayer,
+	UserMedia,
 	getTransport,
 	getContext,
 	start as toneStart,
@@ -47,15 +55,23 @@ import { DEFAULT_AUDIO_SETTINGS } from '../config';
 import { NODE_COLORS } from '../daw/nodes/nodeColors';
 
 const NODE_TYPE_EDGE_COLOR: Record<string, string> = {
-	masterOutput:   NODE_COLORS.output,
-	gain:           NODE_COLORS.processor,
-	player:         NODE_COLORS.source,
-	oscillator:     NODE_COLORS.source,
-	noiseGenerator: NODE_COLORS.source,
-	dcSignal:       NODE_COLORS.source,
-	sceneInput:     NODE_COLORS.scene,
-	debug:          NODE_COLORS.debug,
-	stub:           NODE_COLORS.processor,
+	masterOutput:    NODE_COLORS.output,
+	gain:            NODE_COLORS.processor,
+	player:          NODE_COLORS.source,
+	oscillator:      NODE_COLORS.source,
+	noiseGenerator:  NODE_COLORS.source,
+	dcSignal:        NODE_COLORS.source,
+	lfo:             NODE_COLORS.source,
+	fmOscillator:    NODE_COLORS.source,
+	amOscillator:    NODE_COLORS.source,
+	fatOscillator:   NODE_COLORS.source,
+	pulseOscillator: NODE_COLORS.source,
+	pwmOscillator:   NODE_COLORS.source,
+	grainPlayer:     NODE_COLORS.source,
+	micInput:        NODE_COLORS.source,
+	sceneInput:      NODE_COLORS.scene,
+	debug:           NODE_COLORS.debug,
+	stub:            NODE_COLORS.processor,
 };
 
 function edgeColorForSource(sourceId: string, nodes: AppNode[]): string {
@@ -66,12 +82,21 @@ import type {
 	AppNode,
 	AppEdge,
 	AudioNodeMap,
+	OscType,
 	PlayerAudioEntry,
 	MasterOutputAudioEntry,
 	OscillatorAudioEntry,
 	GainAudioEntry,
 	NoiseAudioEntry,
 	DCSignalAudioEntry,
+	LFOAudioEntry,
+	FMOscillatorAudioEntry,
+	AMOscillatorAudioEntry,
+	FatOscillatorAudioEntry,
+	PulseOscillatorAudioEntry,
+	PWMOscillatorAudioEntry,
+	GrainPlayerAudioEntry,
+	MicInputAudioEntry,
 	SceneInputAudioEntry,
 	StubKind,
 	PatchFile,
@@ -80,6 +105,13 @@ import type {
 	GainNodeData,
 	NoiseNodeData,
 	DCSignalNodeData,
+	LFONodeData,
+	FMOscillatorNodeData,
+	AMOscillatorNodeData,
+	FatOscillatorNodeData,
+	PulseOscillatorNodeData,
+	PWMOscillatorNodeData,
+	GrainPlayerNodeData,
 } from './dawTypes';
 
 const { nSamples } = DEFAULT_AUDIO_SETTINGS;
@@ -308,7 +340,12 @@ function connectAudioNodes(
 			// split.output is the underlying ChannelSplitterNode (std-audio-context);
 			// destNode.input is the underlying GainNode — both live in the same context.
 			src.split.output.connect(destNode.input, outputIndex, 0);
-		} else if (src.kind === 'oscillator' || src.kind === 'gain' || src.kind === 'noise' || src.kind === 'dcSignal') {
+		} else if (
+			src.kind === 'oscillator' || src.kind === 'gain' || src.kind === 'noise' || src.kind === 'dcSignal' ||
+			src.kind === 'lfo' || src.kind === 'fmOscillator' || src.kind === 'amOscillator' ||
+			src.kind === 'fatOscillator' || src.kind === 'pulseOscillator' || src.kind === 'pwmOscillator' ||
+			src.kind === 'grainPlayer' || src.kind === 'micInput'
+		) {
 			src.toneNode.connect(destNode);
 		}
 	} catch {
@@ -337,7 +374,12 @@ function disconnectAudioNodes(
 		} else if (src.kind === 'sceneInput') {
 			const outputIndex = parseInt(sourceHandle.replace('out-', ''), 10);
 			src.split.output.disconnect(destNode.input, outputIndex, 0);
-		} else if (src.kind === 'oscillator' || src.kind === 'gain' || src.kind === 'noise' || src.kind === 'dcSignal') {
+		} else if (
+			src.kind === 'oscillator' || src.kind === 'gain' || src.kind === 'noise' || src.kind === 'dcSignal' ||
+			src.kind === 'lfo' || src.kind === 'fmOscillator' || src.kind === 'amOscillator' ||
+			src.kind === 'fatOscillator' || src.kind === 'pulseOscillator' || src.kind === 'pwmOscillator' ||
+			src.kind === 'grainPlayer' || src.kind === 'micInput'
+		) {
 			src.toneNode.disconnect(destNode);
 		}
 	} catch {
@@ -408,10 +450,14 @@ export async function startOscillator(id: string): Promise<void> {
 
 	// Tone.Oscillator cannot be restarted after stop() — recreate if needed.
 	if (entry.toneNode.state === 'stopped') {
-		const freq = entry.toneNode.frequency.value as number;
-		const type = entry.toneNode.type;
+		const freq   = entry.toneNode.frequency.value as number;
+		const type   = entry.toneNode.type;
+		const detune = entry.toneNode.detune.value as number;
+		const phase  = entry.toneNode.phase;
 		entry.toneNode.dispose();
 		entry.toneNode = new Oscillator(freq, type);
+		entry.toneNode.detune.value = detune;
+		entry.toneNode.phase = phase;
 		_reconnectSourceEdges(id);
 	}
 
@@ -441,6 +487,18 @@ export function setOscillatorType(
 	const entry = _audioNodes.get(id);
 	if (!entry || entry.kind !== 'oscillator') return;
 	entry.toneNode.type = type;
+}
+
+export function setOscillatorDetune(id: string, cents: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'oscillator') return;
+	entry.toneNode.detune.value = cents;
+}
+
+export function setOscillatorPhase(id: string, degrees: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'oscillator') return;
+	entry.toneNode.phase = degrees;
 }
 
 // ─── Gain audio node lifecycle ────────────────────────────────────────────────
@@ -526,6 +584,527 @@ export function setDCSignalValue(id: string, value: number): void {
 	const entry = _audioNodes.get(id);
 	if (!entry || entry.kind !== 'dcSignal') return;
 	entry.toneNode.value = value;
+}
+
+// ─── LFO audio node lifecycle ─────────────────────────────────────────────────
+
+function createLFOEntry(id: string, data?: Partial<LFONodeData>): LFOAudioEntry {
+	const toneNode = new LFO({
+		frequency: data?.frequency ?? 1,
+		type:      data?.type      ?? 'sine',
+		min:       data?.min       ?? -1,
+		max:       data?.max       ?? 1,
+	});
+	const entry: LFOAudioEntry = { kind: 'lfo', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+
+export async function startLFO(id: string): Promise<void> {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'lfo') return;
+	await toneStart();
+	if (entry.toneNode.state === 'stopped') {
+		const { frequency, type, min, max, phase } = entry.toneNode;
+		entry.toneNode.dispose();
+		entry.toneNode = new LFO({ frequency: frequency.value as number, type, min, max, phase });
+		_reconnectSourceEdges(id);
+	}
+	if (entry.toneNode.state !== 'started') entry.toneNode.start();
+}
+
+export function stopLFO(id: string): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'lfo') return;
+	if (entry.toneNode.state === 'started') entry.toneNode.stop();
+}
+
+export function setLFOFrequency(id: string, freq: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'lfo') return;
+	entry.toneNode.frequency.value = freq;
+}
+
+export function setLFOType(id: string, type: OscType): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'lfo') return;
+	entry.toneNode.type = type;
+}
+
+export function setLFOMin(id: string, min: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'lfo') return;
+	if (min >= entry.toneNode.max) return;
+	entry.toneNode.min = min;
+}
+
+export function setLFOMax(id: string, max: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'lfo') return;
+	if (max <= entry.toneNode.min) return;
+	entry.toneNode.max = max;
+}
+
+export function setLFOPhase(id: string, degrees: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'lfo') return;
+	entry.toneNode.phase = degrees;
+}
+
+// ─── FMOscillator audio node lifecycle ───────────────────────────────────────
+
+function createFMOscillatorEntry(id: string, data?: Partial<FMOscillatorNodeData>): FMOscillatorAudioEntry {
+	const toneNode = new FMOscillator({
+		frequency:       data?.frequency       ?? 440,
+		type:            data?.type            ?? 'sine',
+		modulationType:  data?.modulationType  ?? 'square',
+		modulationIndex: data?.modulationIndex ?? 10,
+		harmonicity:     data?.harmonicity     ?? 3,
+		detune:          data?.detune          ?? 0,
+		phase:           data?.phase           ?? 0,
+	});
+	const entry: FMOscillatorAudioEntry = { kind: 'fmOscillator', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+
+export async function startFMOscillator(id: string): Promise<void> {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fmOscillator') return;
+	await toneStart();
+	if (entry.toneNode.state === 'stopped') {
+		const frequency       = entry.toneNode.frequency.value as number;
+		const type            = entry.toneNode.type as OscType;
+		const modulationType  = entry.toneNode.modulationType as OscType;
+		const modulationIndex = entry.toneNode.modulationIndex.value as number;
+		const harmonicity     = entry.toneNode.harmonicity.value as number;
+		const detune          = entry.toneNode.detune.value as number;
+		const phase           = entry.toneNode.phase;
+		entry.toneNode.dispose();
+		entry.toneNode = new FMOscillator({ frequency, type, modulationType, modulationIndex, harmonicity, detune, phase });
+		_reconnectSourceEdges(id);
+	}
+	if (entry.toneNode.state !== 'started') entry.toneNode.start();
+}
+
+export function stopFMOscillator(id: string): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fmOscillator') return;
+	if (entry.toneNode.state === 'started') entry.toneNode.stop();
+}
+
+export function setFMOscillatorFrequency(id: string, freq: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fmOscillator') return;
+	entry.toneNode.frequency.value = freq;
+}
+
+export function setFMOscillatorType(id: string, type: OscType): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fmOscillator') return;
+	entry.toneNode.type = type;
+}
+
+export function setFMOscillatorModulationType(id: string, type: OscType): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fmOscillator') return;
+	entry.toneNode.modulationType = type;
+}
+
+export function setFMOscillatorModulationIndex(id: string, value: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fmOscillator') return;
+	entry.toneNode.modulationIndex.value = value;
+}
+
+export function setFMOscillatorHarmonicity(id: string, value: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fmOscillator') return;
+	entry.toneNode.harmonicity.value = value;
+}
+
+export function setFMOscillatorDetune(id: string, cents: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fmOscillator') return;
+	entry.toneNode.detune.value = cents;
+}
+
+export function setFMOscillatorPhase(id: string, degrees: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fmOscillator') return;
+	entry.toneNode.phase = degrees;
+}
+
+// ─── AMOscillator audio node lifecycle ───────────────────────────────────────
+
+function createAMOscillatorEntry(id: string, data?: Partial<AMOscillatorNodeData>): AMOscillatorAudioEntry {
+	const toneNode = new AMOscillator({
+		frequency:      data?.frequency      ?? 440,
+		type:           data?.type           ?? 'sine',
+		modulationType: data?.modulationType ?? 'square',
+		harmonicity:    data?.harmonicity    ?? 3,
+		detune:         data?.detune         ?? 0,
+		phase:          data?.phase          ?? 0,
+	});
+	const entry: AMOscillatorAudioEntry = { kind: 'amOscillator', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+
+export async function startAMOscillator(id: string): Promise<void> {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'amOscillator') return;
+	await toneStart();
+	if (entry.toneNode.state === 'stopped') {
+		const frequency      = entry.toneNode.frequency.value as number;
+		const type           = entry.toneNode.type as OscType;
+		const modulationType = entry.toneNode.modulationType as OscType;
+		const harmonicity    = entry.toneNode.harmonicity.value as number;
+		const detune         = entry.toneNode.detune.value as number;
+		const phase          = entry.toneNode.phase;
+		entry.toneNode.dispose();
+		entry.toneNode = new AMOscillator({ frequency, type, modulationType, harmonicity, detune, phase });
+		_reconnectSourceEdges(id);
+	}
+	if (entry.toneNode.state !== 'started') entry.toneNode.start();
+}
+
+export function stopAMOscillator(id: string): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'amOscillator') return;
+	if (entry.toneNode.state === 'started') entry.toneNode.stop();
+}
+
+export function setAMOscillatorFrequency(id: string, freq: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'amOscillator') return;
+	entry.toneNode.frequency.value = freq;
+}
+
+export function setAMOscillatorType(id: string, type: OscType): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'amOscillator') return;
+	entry.toneNode.type = type;
+}
+
+export function setAMOscillatorModulationType(id: string, type: OscType): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'amOscillator') return;
+	entry.toneNode.modulationType = type;
+}
+
+export function setAMOscillatorHarmonicity(id: string, value: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'amOscillator') return;
+	entry.toneNode.harmonicity.value = value;
+}
+
+export function setAMOscillatorDetune(id: string, cents: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'amOscillator') return;
+	entry.toneNode.detune.value = cents;
+}
+
+export function setAMOscillatorPhase(id: string, degrees: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'amOscillator') return;
+	entry.toneNode.phase = degrees;
+}
+
+// ─── FatOscillator audio node lifecycle ──────────────────────────────────────
+
+function createFatOscillatorEntry(id: string, data?: Partial<FatOscillatorNodeData>): FatOscillatorAudioEntry {
+	const toneNode = new FatOscillator({
+		frequency: data?.frequency ?? 440,
+		type:      data?.type      ?? 'sawtooth',
+		count:     data?.count     ?? 3,
+		spread:    data?.spread    ?? 20,
+		detune:    data?.detune    ?? 0,
+		phase:     data?.phase     ?? 0,
+	});
+	const entry: FatOscillatorAudioEntry = { kind: 'fatOscillator', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+
+export async function startFatOscillator(id: string): Promise<void> {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fatOscillator') return;
+	await toneStart();
+	if (entry.toneNode.state === 'stopped') {
+		const frequency = entry.toneNode.frequency.value as number;
+		const type      = entry.toneNode.type as OscType;
+		const count     = entry.toneNode.count;
+		const spread    = entry.toneNode.spread;
+		const detune    = entry.toneNode.detune.value as number;
+		const phase     = entry.toneNode.phase;
+		entry.toneNode.dispose();
+		entry.toneNode = new FatOscillator({ frequency, type, count, spread, detune, phase });
+		_reconnectSourceEdges(id);
+	}
+	if (entry.toneNode.state !== 'started') entry.toneNode.start();
+}
+
+export function stopFatOscillator(id: string): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fatOscillator') return;
+	if (entry.toneNode.state === 'started') entry.toneNode.stop();
+}
+
+export function setFatOscillatorFrequency(id: string, freq: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fatOscillator') return;
+	entry.toneNode.frequency.value = freq;
+}
+
+export function setFatOscillatorType(id: string, type: OscType): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fatOscillator') return;
+	entry.toneNode.type = type;
+}
+
+export function setFatOscillatorCount(id: string, count: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fatOscillator') return;
+	entry.toneNode.count = Math.round(count);
+}
+
+export function setFatOscillatorSpread(id: string, spread: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fatOscillator') return;
+	entry.toneNode.spread = spread;
+}
+
+export function setFatOscillatorDetune(id: string, cents: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fatOscillator') return;
+	entry.toneNode.detune.value = cents;
+}
+
+export function setFatOscillatorPhase(id: string, degrees: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'fatOscillator') return;
+	entry.toneNode.phase = degrees;
+}
+
+// ─── PulseOscillator audio node lifecycle ────────────────────────────────────
+
+function createPulseOscillatorEntry(id: string, data?: Partial<PulseOscillatorNodeData>): PulseOscillatorAudioEntry {
+	const toneNode = new PulseOscillator({
+		frequency: data?.frequency ?? 440,
+		width:     data?.width     ?? 0.5,
+		detune:    data?.detune    ?? 0,
+		phase:     data?.phase     ?? 0,
+	});
+	const entry: PulseOscillatorAudioEntry = { kind: 'pulseOscillator', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+
+export async function startPulseOscillator(id: string): Promise<void> {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'pulseOscillator') return;
+	await toneStart();
+	if (entry.toneNode.state === 'stopped') {
+		const frequency = entry.toneNode.frequency.value as number;
+		const width     = entry.toneNode.width.value as number;
+		const detune    = entry.toneNode.detune.value as number;
+		const phase     = entry.toneNode.phase;
+		entry.toneNode.dispose();
+		entry.toneNode = new PulseOscillator({ frequency, width, detune, phase });
+		_reconnectSourceEdges(id);
+	}
+	if (entry.toneNode.state !== 'started') entry.toneNode.start();
+}
+
+export function stopPulseOscillator(id: string): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'pulseOscillator') return;
+	if (entry.toneNode.state === 'started') entry.toneNode.stop();
+}
+
+export function setPulseOscillatorFrequency(id: string, freq: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'pulseOscillator') return;
+	entry.toneNode.frequency.value = freq;
+}
+
+export function setPulseOscillatorWidth(id: string, width: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'pulseOscillator') return;
+	entry.toneNode.width.value = width;
+}
+
+export function setPulseOscillatorDetune(id: string, cents: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'pulseOscillator') return;
+	entry.toneNode.detune.value = cents;
+}
+
+export function setPulseOscillatorPhase(id: string, degrees: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'pulseOscillator') return;
+	entry.toneNode.phase = degrees;
+}
+
+// ─── PWMOscillator audio node lifecycle ──────────────────────────────────────
+
+function createPWMOscillatorEntry(id: string, data?: Partial<PWMOscillatorNodeData>): PWMOscillatorAudioEntry {
+	const toneNode = new PWMOscillator({
+		frequency:           data?.frequency           ?? 440,
+		modulationFrequency: data?.modulationFrequency ?? 0.4,
+		detune:              data?.detune              ?? 0,
+		phase:               data?.phase               ?? 0,
+	});
+	const entry: PWMOscillatorAudioEntry = { kind: 'pwmOscillator', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+
+export async function startPWMOscillator(id: string): Promise<void> {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'pwmOscillator') return;
+	await toneStart();
+	if (entry.toneNode.state === 'stopped') {
+		const frequency           = entry.toneNode.frequency.value as number;
+		const modulationFrequency = entry.toneNode.modulationFrequency.value as number;
+		const detune              = entry.toneNode.detune.value as number;
+		const phase               = entry.toneNode.phase;
+		entry.toneNode.dispose();
+		entry.toneNode = new PWMOscillator({ frequency, modulationFrequency, detune, phase });
+		_reconnectSourceEdges(id);
+	}
+	if (entry.toneNode.state !== 'started') entry.toneNode.start();
+}
+
+export function stopPWMOscillator(id: string): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'pwmOscillator') return;
+	if (entry.toneNode.state === 'started') entry.toneNode.stop();
+}
+
+export function setPWMOscillatorFrequency(id: string, freq: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'pwmOscillator') return;
+	entry.toneNode.frequency.value = freq;
+}
+
+export function setPWMOscillatorModulationFrequency(id: string, modFreq: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'pwmOscillator') return;
+	entry.toneNode.modulationFrequency.value = modFreq;
+}
+
+export function setPWMOscillatorDetune(id: string, cents: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'pwmOscillator') return;
+	entry.toneNode.detune.value = cents;
+}
+
+export function setPWMOscillatorPhase(id: string, degrees: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'pwmOscillator') return;
+	entry.toneNode.phase = degrees;
+}
+
+// ─── GrainPlayer audio node lifecycle ────────────────────────────────────────
+
+function createGrainPlayerEntry(id: string, data?: Partial<GrainPlayerNodeData>): GrainPlayerAudioEntry {
+	const toneNode = new GrainPlayer({
+		url:          data?.trackUrl     ?? '',
+		grainSize:    data?.grainSize    ?? 0.2,
+		overlap:      data?.overlap      ?? 0.1,
+		playbackRate: data?.playbackRate ?? 1,
+		detune:       data?.detune       ?? 0,
+		loop:         data?.loop         ?? true,
+	});
+	const entry: GrainPlayerAudioEntry = { kind: 'grainPlayer', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+
+export async function startGrainPlayer(id: string): Promise<void> {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'grainPlayer') return;
+	await toneStart();
+	if (entry.toneNode.state !== 'started') entry.toneNode.start();
+}
+
+export function stopGrainPlayer(id: string): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'grainPlayer') return;
+	if (entry.toneNode.state === 'started') entry.toneNode.stop();
+}
+
+export async function loadTrackForGrainPlayer(id: string, url: string): Promise<void> {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'grainPlayer') return;
+	if (entry.toneNode.state === 'started') entry.toneNode.stop();
+	await entry.toneNode.buffer.load(url);
+}
+
+export function setGrainPlayerGrainSize(id: string, seconds: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'grainPlayer') return;
+	entry.toneNode.grainSize = seconds;
+}
+
+export function setGrainPlayerOverlap(id: string, overlap: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'grainPlayer') return;
+	entry.toneNode.overlap = overlap;
+}
+
+export function setGrainPlayerPlaybackRate(id: string, rate: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'grainPlayer') return;
+	entry.toneNode.playbackRate = rate;
+}
+
+export function setGrainPlayerDetune(id: string, cents: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'grainPlayer') return;
+	entry.toneNode.detune = cents;
+}
+
+export function setGrainPlayerLoop(id: string, loop: boolean): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'grainPlayer') return;
+	entry.toneNode.loop = loop;
+}
+
+export function getGrainPlayerBufferDuration(id: string): number {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'grainPlayer') return 0;
+	return entry.toneNode.buffer.loaded ? entry.toneNode.buffer.duration : 0;
+}
+
+export function setGrainPlayerLoopStart(id: string, time: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'grainPlayer') return;
+	entry.toneNode.loopStart = time;
+}
+
+// ─── MicInput audio node lifecycle ───────────────────────────────────────────
+
+function createMicInputEntry(id: string): MicInputAudioEntry {
+	const toneNode = new UserMedia();
+	const entry: MicInputAudioEntry = { kind: 'micInput', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+
+export async function startMicInput(id: string): Promise<void> {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'micInput') return;
+	await toneStart();
+	await entry.toneNode.open();
+}
+
+export function stopMicInput(id: string): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'micInput') return;
+	entry.toneNode.close();
 }
 
 // ─── Scene Input audio node lifecycle ────────────────────────────────────────
@@ -685,6 +1264,16 @@ function disposeAudioNode(id: string): void {
 		entry.toneNode.dispose();
 	} else if (entry.kind === 'dcSignal') {
 		entry.toneNode.dispose();
+	} else if (entry.kind === 'lfo' || entry.kind === 'fmOscillator' || entry.kind === 'amOscillator' ||
+	           entry.kind === 'fatOscillator' || entry.kind === 'pulseOscillator' || entry.kind === 'pwmOscillator') {
+		if (entry.toneNode.state === 'started') entry.toneNode.stop();
+		entry.toneNode.dispose();
+	} else if (entry.kind === 'grainPlayer') {
+		if (entry.toneNode.state === 'started') entry.toneNode.stop();
+		entry.toneNode.dispose();
+	} else if (entry.kind === 'micInput') {
+		try { entry.toneNode.close(); } catch {}
+		entry.toneNode.dispose();
 	} else if (entry.kind === 'sceneInput') {
 		try { entry.workletNode.disconnect(); } catch {}
 		entry.split.dispose();
@@ -771,6 +1360,18 @@ export function setNodeRate(id: string, rate: number): void {
 export function setNodeMuted(id: string, muted: boolean): void {
 	const entry = _audioNodes.get(id);
 	if (!entry || entry.kind !== 'player') return;
+	entry.toneNode.mute = muted;
+}
+
+export function setNodeLoop(id: string, loop: boolean): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'player') return;
+	entry.toneNode.loop = loop;
+}
+
+export function setGrainPlayerMuted(id: string, muted: boolean): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'grainPlayer') return;
 	entry.toneNode.mute = muted;
 }
 
@@ -899,13 +1500,21 @@ type DawState = {
 	onEdgesChange:     OnEdgesChange<AppEdge>;
 	onConnect:         OnConnect;
 	onReconnect:       (oldEdge: AppEdge, newConnection: Connection) => void;
-	addPlayerNode:     (trackUrl: string, position: { x: number; y: number }) => string;
-	addOscillatorNode: (position: { x: number; y: number }) => string;
-	addGainNode:       (position: { x: number; y: number }) => string;
-	addNoiseNode:      (position: { x: number; y: number }) => string;
-	addDCSignalNode:   (position: { x: number; y: number }) => string;
-	addStubNode:       (kind: StubKind, position: { x: number; y: number }) => string;
-	addDebugNode:      (position: { x: number; y: number }) => string;
+	addPlayerNode:          (trackUrl: string, position: { x: number; y: number }) => string;
+	addOscillatorNode:      (position: { x: number; y: number }) => string;
+	addGainNode:            (position: { x: number; y: number }) => string;
+	addNoiseNode:           (position: { x: number; y: number }) => string;
+	addDCSignalNode:        (position: { x: number; y: number }) => string;
+	addLFONode:             (position: { x: number; y: number }) => string;
+	addFMOscillatorNode:    (position: { x: number; y: number }) => string;
+	addAMOscillatorNode:    (position: { x: number; y: number }) => string;
+	addFatOscillatorNode:   (position: { x: number; y: number }) => string;
+	addPulseOscillatorNode: (position: { x: number; y: number }) => string;
+	addPWMOscillatorNode:   (position: { x: number; y: number }) => string;
+	addGrainPlayerNode:     (position: { x: number; y: number }) => string;
+	addMicInputNode:        (position: { x: number; y: number }) => string;
+	addStubNode:            (kind: StubKind, position: { x: number; y: number }) => string;
+	addDebugNode:           (position: { x: number; y: number }) => string;
 	updateNodeData:      (id: string, data: Partial<Record<string, unknown>>) => void;
 	updateNodePositions: (updatedNodes: AppNode[]) => void;
 	setSelectedNodeId:   (id: string | null) => void;
@@ -1039,7 +1648,7 @@ export const useDawStore = create<DawState>((set, get) => ({
 			id,
 			type:     'oscillator',
 			position,
-			data:     { label: 'Oscillator', frequency: 440, type: 'sine' },
+			data:     { label: 'Oscillator', frequency: 440, type: 'sine', detune: 0, phase: 0 },
 		};
 		set({
 			nodes:        [...get().nodes, newNode],
@@ -1093,6 +1702,94 @@ export const useDawStore = create<DawState>((set, get) => ({
 			nodes:        [...get().nodes, newNode],
 			audioVersion: get().audioVersion + 1,
 		});
+		return id;
+	},
+
+	addLFONode: (position) => {
+		const id = `lfo-${Date.now()}`;
+		createLFOEntry(id);
+		const newNode: AppNode = {
+			id, type: 'lfo', position,
+			data: { label: 'LFO', frequency: 1, type: 'sine', min: -1, max: 1, phase: 0 },
+		};
+		set({ nodes: [...get().nodes, newNode], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addFMOscillatorNode: (position) => {
+		const id = `fmOscillator-${Date.now()}`;
+		createFMOscillatorEntry(id);
+		const newNode: AppNode = {
+			id, type: 'fmOscillator', position,
+			data: { label: 'FM Osc', frequency: 440, type: 'sine', modulationType: 'square', modulationIndex: 10, harmonicity: 3, detune: 0, phase: 0 },
+		};
+		set({ nodes: [...get().nodes, newNode], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addAMOscillatorNode: (position) => {
+		const id = `amOscillator-${Date.now()}`;
+		createAMOscillatorEntry(id);
+		const newNode: AppNode = {
+			id, type: 'amOscillator', position,
+			data: { label: 'AM Osc', frequency: 440, type: 'sine', modulationType: 'square', harmonicity: 3, detune: 0, phase: 0 },
+		};
+		set({ nodes: [...get().nodes, newNode], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addFatOscillatorNode: (position) => {
+		const id = `fatOscillator-${Date.now()}`;
+		createFatOscillatorEntry(id);
+		const newNode: AppNode = {
+			id, type: 'fatOscillator', position,
+			data: { label: 'Fat Osc', frequency: 440, type: 'sawtooth', count: 3, spread: 20, detune: 0, phase: 0 },
+		};
+		set({ nodes: [...get().nodes, newNode], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addPulseOscillatorNode: (position) => {
+		const id = `pulseOscillator-${Date.now()}`;
+		createPulseOscillatorEntry(id);
+		const newNode: AppNode = {
+			id, type: 'pulseOscillator', position,
+			data: { label: 'Pulse Osc', frequency: 440, width: 0.5, detune: 0, phase: 0 },
+		};
+		set({ nodes: [...get().nodes, newNode], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addPWMOscillatorNode: (position) => {
+		const id = `pwmOscillator-${Date.now()}`;
+		createPWMOscillatorEntry(id);
+		const newNode: AppNode = {
+			id, type: 'pwmOscillator', position,
+			data: { label: 'PWM Osc', frequency: 440, modulationFrequency: 0.4, detune: 0, phase: 0 },
+		};
+		set({ nodes: [...get().nodes, newNode], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addGrainPlayerNode: (position) => {
+		const id = `grainPlayer-${Date.now()}`;
+		createGrainPlayerEntry(id);
+		const newNode: AppNode = {
+			id, type: 'grainPlayer', position,
+			data: { label: 'Grain Player', trackUrl: '', grainSize: 0.2, overlap: 0.1, playbackRate: 1, detune: 0, loop: true },
+		};
+		set({ nodes: [...get().nodes, newNode], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addMicInputNode: (position) => {
+		const id = `micInput-${Date.now()}`;
+		createMicInputEntry(id);
+		const newNode: AppNode = {
+			id, type: 'micInput', position,
+			data: { label: 'Mic Input' },
+		};
+		set({ nodes: [...get().nodes, newNode], audioVersion: get().audioVersion + 1 });
 		return id;
 	},
 
@@ -1189,6 +1886,22 @@ export const useDawStore = create<DawState>((set, get) => ({
 			} else if (node.type === 'dcSignal') {
 				const d = node.data as DCSignalNodeData;
 				createDCSignalEntry(node.id, d.value);
+			} else if (node.type === 'lfo') {
+				createLFOEntry(node.id, node.data as LFONodeData);
+			} else if (node.type === 'fmOscillator') {
+				createFMOscillatorEntry(node.id, node.data as FMOscillatorNodeData);
+			} else if (node.type === 'amOscillator') {
+				createAMOscillatorEntry(node.id, node.data as AMOscillatorNodeData);
+			} else if (node.type === 'fatOscillator') {
+				createFatOscillatorEntry(node.id, node.data as FatOscillatorNodeData);
+			} else if (node.type === 'pulseOscillator') {
+				createPulseOscillatorEntry(node.id, node.data as PulseOscillatorNodeData);
+			} else if (node.type === 'pwmOscillator') {
+				createPWMOscillatorEntry(node.id, node.data as PWMOscillatorNodeData);
+			} else if (node.type === 'grainPlayer') {
+				createGrainPlayerEntry(node.id, node.data as GrainPlayerNodeData);
+			} else if (node.type === 'micInput') {
+				createMicInputEntry(node.id);
 			}
 			// debug, stub → no audio entry
 		}
@@ -1299,6 +2012,18 @@ window.addEventListener(
 				}
 				entry.toneNode.dispose();
 			} else if (entry.kind === 'dcSignal') {
+				entry.toneNode.dispose();
+			} else if (
+				entry.kind === 'lfo' || entry.kind === 'fmOscillator' || entry.kind === 'amOscillator' ||
+				entry.kind === 'fatOscillator' || entry.kind === 'pulseOscillator' || entry.kind === 'pwmOscillator'
+			) {
+				if (entry.toneNode.state === 'started') entry.toneNode.stop();
+				entry.toneNode.dispose();
+			} else if (entry.kind === 'grainPlayer') {
+				if (entry.toneNode.state === 'started') entry.toneNode.stop();
+				entry.toneNode.dispose();
+			} else if (entry.kind === 'micInput') {
+				try { entry.toneNode.close(); } catch {}
 				entry.toneNode.dispose();
 			} else if (entry.kind === 'masterOutput') {
 				entry.inputGainX.dispose();

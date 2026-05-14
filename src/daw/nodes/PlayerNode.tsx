@@ -1,24 +1,11 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import PauseIcon from '@mui/icons-material/Pause';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import VolumeOffIcon from '@mui/icons-material/VolumeOff';
-import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import {
-	playNode,
-	pauseNode,
-	seekNode,
-	loadTrackForNode,
-	setNodeRate,
-	setNodeMuted,
-	getNodePosition,
-	getNodeDuration,
-	onNodePlaybackEnd,
-	clearNodePlaybackEndCallback,
+	playNode, pauseNode, seekNode, loadTrackForNode,
+	setNodeRate, setNodeMuted, setNodeLoop,
+	getNodePosition, getNodeDuration,
+	onNodePlaybackEnd, clearNodePlaybackEndCallback,
 	useDawStore,
 } from '../../store/daw';
 import { NodeHeader } from './NodeHeader';
@@ -26,65 +13,49 @@ import { NODE_COLORS } from './nodeColors';
 import { GRID_UNIT } from './gridSystem';
 import { outputHandleStyle, outputLabel } from './handleStyles';
 import { METAL_BG } from './metalBackground';
-import { hwIconBtn, hwIconBtnLit } from './hwStyles';
-import { TrackSelector } from '../../components/TrackSelector';
-import { HwSliderField } from '../../components/HwSliderField';
+import { AudioFileLoader } from '../../components/AudioFileLoader';
+import { HwPlayerControls } from '../../components/HwPlayerControls';
 import { usePlayback } from '../../contexts/WoahscopeContext';
-import { BUILT_IN_TRACKS, ERROR_MESSAGES } from '../../config';
 import type { PlayerFlowNode } from '../../store/dawTypes';
 
-// visually hidden but readable by screen readers
+const color = NODE_COLORS.source;
+
 const srOnlySx = {
-	position: 'absolute',
-	width: 1,
-	height: 1,
-	clip: 'rect(0 0 0 0)',
-	clipPath: 'inset(50%)',
-	whiteSpace: 'nowrap',
+	position: 'absolute', width: 1, height: 1,
+	clip: 'rect(0 0 0 0)', clipPath: 'inset(50%)', whiteSpace: 'nowrap',
 } as const;
 
-function formatTime(seconds: number): string {
-	const m = Math.floor(seconds / 60);
-	const s = Math.floor(seconds % 60);
-	return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-const color = NODE_COLORS.source;
-const nodeSx = {
-	iconBtn:    hwIconBtn(color),
-	iconBtnLit: hwIconBtnLit(color),
-};
-
 export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeProps<PlayerFlowNode>) {
-	const rafRef          = useRef<number>(0);
-	const isScrubbingRef  = useRef<boolean>(false);
-	const durationRef     = useRef(0);
+	const rafRef           = useRef<number>(0);
+	const isScrubbingRef   = useRef<boolean>(false);
+	const durationRef      = useRef(0);
 	const progressInputRef = useRef<HTMLInputElement>(null);
-	const elapsedRef      = useRef<HTMLSpanElement>(null);
-	const remainingRef    = useRef<HTMLSpanElement>(null);
-	const mountedRef      = useRef(true);
+	const elapsedRef       = useRef<HTMLSpanElement>(null);
+	const remainingRef     = useRef<HTMLSpanElement>(null);
+	const mountedRef       = useRef(true);
 
 	const { setIsPlaying: setVizPlaying } = usePlayback();
-	const updateNodeData  = useDawStore(s => s.updateNodeData);
+	const updateNodeData = useDawStore(s => s.updateNodeData);
 
-	const [isPlaying, setIsPlaying]   = useState(false);
-	const [isMuted, setIsMuted]       = useState(false);
-	const [isLoaded, setIsLoaded]     = useState(false);
-	const [duration, setDuration]     = useState(0);
-	const [audioError, setAudioError] = useState<string | null>(null);
-	const [statusMessage, setStatusMessage] = useState('');
-	const [playbackRate, setPlaybackRate]   = useState(1);
+	const [isPlaying,    setIsPlaying]    = useState(false);
+	const [isMuted,      setIsMuted]      = useState(false);
+	const [isLooped,     setIsLooped]     = useState(false);
+	const [isLoaded,     setIsLoaded]     = useState(false);
+	const [duration,     setDuration]     = useState(0);
+	const [playbackRate, setPlaybackRate] = useState(1);
+	const [statusMsg,    setStatusMsg]    = useState('');
 
-	/**
-	 * Directly mutates DOM refs at ~60fps during playback.
-	 * Same pattern as TonePlayer — avoids React re-renders for time display.
-	 */
 	const syncProgressDOM = useCallback((pos: number) => {
 		if (progressInputRef.current) progressInputRef.current.value = String(pos);
-		if (elapsedRef.current) elapsedRef.current.textContent = formatTime(pos);
+		if (elapsedRef.current) {
+			const m = Math.floor(pos / 60);
+			elapsedRef.current.textContent = `${m}:${Math.floor(pos % 60).toString().padStart(2, '0')}`;
+		}
 		if (remainingRef.current) {
 			const d = durationRef.current;
-			remainingRef.current.textContent = d > 0 ? `-${formatTime(d - pos)}` : '-0:00';
+			const r = Math.max(0, d - pos);
+			const m = Math.floor(r / 60);
+			remainingRef.current.textContent = d > 0 ? `-${m}:${Math.floor(r % 60).toString().padStart(2, '0')}` : '-0:00';
 		}
 	}, []);
 
@@ -94,37 +65,23 @@ export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeP
 			if (!mountedRef.current) return;
 			setIsPlaying(false);
 			syncProgressDOM(0);
-			setStatusMessage('Playback ended');
+			setStatusMsg('Playback ended');
 		});
-		return () => {
-			mountedRef.current = false;
-			clearNodePlaybackEndCallback(id);
-		};
+		return () => { mountedRef.current = false; clearNodePlaybackEndCallback(id); };
 	}, [id, syncProgressDOM]);
 
-	// Keep the oscilloscope render loop in sync with this node's playback state
-	useEffect(() => {
-		setVizPlaying(isPlaying);
-	}, [isPlaying, setVizPlaying]);
+	useEffect(() => { setVizPlaying(isPlaying); }, [isPlaying, setVizPlaying]);
 
-	// RAF-based scrubber update during playback
 	useEffect(() => {
-		if (!isPlaying) {
-			cancelAnimationFrame(rafRef.current);
-			return;
-		}
+		if (!isPlaying) { cancelAnimationFrame(rafRef.current); return; }
 		const tick = () => {
-			if (!isScrubbingRef.current) {
-				const pos = getNodePosition(id);
-				syncProgressDOM(pos);
-			}
+			if (!isScrubbingRef.current) syncProgressDOM(getNodePosition(id));
 			rafRef.current = requestAnimationFrame(tick);
 		};
 		rafRef.current = requestAnimationFrame(tick);
 		return () => cancelAnimationFrame(rafRef.current);
 	}, [id, isPlaying, syncProgressDOM]);
 
-	// Load track when data.trackUrl changes
 	useEffect(() => {
 		if (!data.trackUrl) return;
 		setIsPlaying(false);
@@ -132,9 +89,7 @@ export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeP
 		durationRef.current = 0;
 		syncProgressDOM(0);
 		setDuration(0);
-		setAudioError(null);
-		setStatusMessage('Loading track…');
-
+		setStatusMsg('Loading…');
 		let cancelled = false;
 		loadTrackForNode(id, data.trackUrl)
 			.then(() => {
@@ -143,193 +98,78 @@ export const PlayerNode = memo(function PlayerNode({ id, data, selected }: NodeP
 					durationRef.current = d;
 					setDuration(d);
 					setIsLoaded(true);
-					setStatusMessage('Track ready');
+					setStatusMsg('Ready');
 				}
 			})
 			.catch((err: unknown) => {
-				if (!cancelled) {
-					const msg = err instanceof Error ? err.message : ERROR_MESSAGES.unknownError;
-					setAudioError(msg);
-					setStatusMessage(`Error: ${msg}`);
-				}
+				if (!cancelled) setStatusMsg(`Error: ${err instanceof Error ? err.message : 'Load failed'}`);
 			});
 		return () => { cancelled = true; };
 	}, [id, data.trackUrl, syncProgressDOM]);
 
+	const handleLoad = (url: string) => updateNodeData(id, { trackUrl: url });
+
 	const handlePlayPause = async () => {
 		if (!isLoaded) return;
-		if (isPlaying) {
-			pauseNode(id);
-			setIsPlaying(false);
-			setStatusMessage('Paused');
-		} else {
-			await playNode(id);
-			setIsPlaying(true);
-			setStatusMessage('Playing');
-		}
+		if (isPlaying) { pauseNode(id); setIsPlaying(false); }
+		else { await playNode(id); setIsPlaying(true); }
 	};
 
 	const handleMute = () => {
-		setNodeMuted(id, !isMuted);
-		setIsMuted(v => !v);
+		const next = !isMuted;
+		setNodeMuted(id, next);
+		setIsMuted(next);
 	};
 
-	const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		syncProgressDOM(Number(e.target.value));
+	const handleLoop = () => {
+		const next = !isLooped;
+		setNodeLoop(id, next);
+		setIsLooped(next);
 	};
-
-	const handleProgressPointerUp = (e: React.PointerEvent<HTMLInputElement>) => {
-		const newPos = Number((e.target as HTMLInputElement).value);
-		isScrubbingRef.current = false;
-		seekNode(id, newPos);
-		syncProgressDOM(newPos);
-	};
-
-	const handleSpeedChange = (v: number) => {
-		setNodeRate(id, v);
-		setPlaybackRate(v);
-	};
-
-	const handleTrackChange = (file: string) => {
-		updateNodeData(id, { trackUrl: file });
-	};
-
-	const credit = BUILT_IN_TRACKS.find(t => t.file === data.trackUrl)?.credit;
 
 	return (
-		<Box
-			sx={{
-				border:          '1px solid',
-				borderColor:     color,
-				borderRadius:    1,
-				backgroundImage: METAL_BG,
-				width:           3 * GRID_UNIT,
-				position:        'relative',
-				pb:              2,
-			}}
-		>
+		<Box sx={{
+			border: '1px solid', borderColor: color, borderRadius: 1,
+			backgroundImage: METAL_BG, width: 3 * GRID_UNIT,
+			position: 'relative', pb: 3,
+		}}>
 			<NodeHeader id={id} label='Player' selected={selected} accentColor={color} />
 
 			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
 
-			{/* Screen-reader status */}
-			<Box role='status' aria-live='polite' aria-atomic='true' sx={srOnlySx}>
-				{statusMessage}
-			</Box>
+				<Box role='status' aria-live='polite' aria-atomic='true' sx={srOnlySx}>{statusMsg}</Box>
 
-			{audioError && (
-				<Alert
-					severity='error'
-					onClose={() => setAudioError(null)}
-					className='nodrag'
-					sx={{ py: 0 }}
-				>
-					{audioError}
-				</Alert>
-			)}
+				<AudioFileLoader color={color} onLoad={handleLoad} />
 
-			{/* Track selector */}
-			<Box className='nodrag'>
-				<TrackSelector
-					tracks={BUILT_IN_TRACKS as unknown as { label: string; file: string }[]}
-					currentTrack={data.trackUrl}
-					onTrackChange={handleTrackChange}
+				<HwPlayerControls
 					color={color}
+					isPlaying={isPlaying}
+					isMuted={isMuted}
+					isLooped={isLooped}
+					isLoaded={isLoaded}
+					playbackRate={playbackRate}
+					duration={duration}
+					progressInputRef={progressInputRef}
+					elapsedRef={elapsedRef}
+					remainingRef={remainingRef}
+					onProgressPointerDown={() => { isScrubbingRef.current = true; }}
+					onProgressChange={(e) => syncProgressDOM(Number(e.target.value))}
+					onProgressPointerUp={(e) => {
+						const pos = Number((e.target as HTMLInputElement).value);
+						isScrubbingRef.current = false;
+						seekNode(id, pos);
+					}}
+					onPlayPause={handlePlayPause}
+					onMute={handleMute}
+					onLoop={handleLoop}
+					onSpeedChange={(v) => { setNodeRate(id, v); setPlaybackRate(v); }}
 				/>
-				{credit && (
-					<Typography variant='caption' color='text.secondary' sx={{ pl: 0.5, display: 'block', mt: 0.5 }}>
-						"{credit.title}" by {credit.artist}
-					</Typography>
-				)}
+
 			</Box>
 
-			{/* Transport controls + scrubber */}
-			<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-				<IconButton
-					aria-label={isPlaying ? 'Pause' : 'Play'}
-					onClick={handlePlayPause}
-					disabled={!isLoaded}
-					size='small'
-					className='nodrag'
-					sx={{ ...(isPlaying ? nodeSx.iconBtnLit : nodeSx.iconBtn), flexShrink: 0 }}
-				>
-					{isPlaying ? <PauseIcon sx={{ fontSize: 14 }} /> : <PlayArrowIcon sx={{ fontSize: 14 }} />}
-				</IconButton>
-
-				<Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0, minWidth: 0 }}>
-					<input
-						ref={progressInputRef}
-						type='range'
-						aria-label='Playback position'
-						min={0}
-						max={duration || 1}
-						step={0.1}
-						defaultValue={0}
-						disabled={!isLoaded}
-						onPointerDown={() => { isScrubbingRef.current = true; }}
-						onChange={handleProgressChange}
-						onPointerUp={handleProgressPointerUp}
-						className='nodrag nowheel'
-						style={{
-							width: '100%',
-							accentColor: color,
-							cursor: isLoaded ? 'pointer' : 'default',
-							margin: 0,
-						}}
-					/>
-					<Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-						<Typography variant='caption' color='text.secondary'>
-							<span ref={elapsedRef}>0:00</span>
-						</Typography>
-						<Typography variant='caption' color='text.secondary'>
-							<span ref={remainingRef}>-0:00</span>
-						</Typography>
-					</Box>
-				</Box>
-
-				<IconButton
-					aria-label={isMuted ? 'Unmute' : 'Mute'}
-					onClick={handleMute}
-					disabled={!isLoaded}
-					size='small'
-					className='nodrag'
-					sx={{ ...(isMuted ? nodeSx.iconBtnLit : nodeSx.iconBtn), flexShrink: 0 }}
-				>
-					{isMuted ? <VolumeOffIcon sx={{ fontSize: 14 }} /> : <VolumeUpIcon sx={{ fontSize: 14 }} />}
-				</IconButton>
-			</Box>
-
-			{/* Speed control */}
-			<Box className='nodrag nowheel'>
-				<HwSliderField
-					label='speed'
-					value={playbackRate}
-					min={0.25} max={2} step={0.01}
-					color={color}
-					onChange={handleSpeedChange}
-					format={v => v.toFixed(2)}
-					unit='×'
-					marks={[{ value: 0.5 }, { value: 0.75 }, { value: 1 }, { value: 1.5 }]}
-					allowValueEdit
-				/>
-			</Box>
-
-			</Box>{/* end body */}
-
-			{/* Stereo output handles */}
-			<Handle
-				type='source'
-				position={Position.Bottom}
-				id='out-0'
-				style={{ ...outputHandleStyle(color), left: '33%' }}
-			/>
+			<Handle type='source' position={Position.Bottom} id='out-0' style={{ ...outputHandleStyle(color), left: '33%' }} />
 			{outputLabel('L', color, '33%')}
-			<Handle
-				type='source'
-				position={Position.Bottom}
-				id='out-1'
-				style={{ ...outputHandleStyle(color), left: '67%' }}
-			/>
+			<Handle type='source' position={Position.Bottom} id='out-1' style={{ ...outputHandleStyle(color), left: '67%' }} />
 			{outputLabel('R', color, '67%')}
 		</Box>
 	);

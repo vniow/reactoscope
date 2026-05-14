@@ -29,16 +29,9 @@ const STUB_TOPOLOGY: Partial<Record<StubKind, { inputs: string[]; outputs: strin
 	noiseSynth:     { inputs: [], outputs: ['out-0'] },
 	pluckSynth:     { inputs: [], outputs: ['out-0'] },
 	sampler:        { inputs: [], outputs: ['out-0'] },
-	fmOscillator:   { inputs: [], outputs: ['out-0'] },
-	amOscillator:   { inputs: [], outputs: ['out-0'] },
-	fatOscillator:  { inputs: [], outputs: ['out-0'] },
-	pulseOscillator: { inputs: [], outputs: ['out-0'] },
-	pwmOscillator:  { inputs: [], outputs: ['out-0'] },
 	omniOscillator: { inputs: [], outputs: ['out-0'] },
 	players:        { inputs: [], outputs: ['out-0'] },
-	grainPlayer:    { inputs: [], outputs: ['out-0'] },
 	userMedia:      { inputs: [], outputs: ['out-0'] },
-	lfo:            { inputs: [], outputs: ['out-0'] },
 };
 
 const DEFAULT_TOPO = { inputs: ['in-0'], outputs: ['out-0'] };

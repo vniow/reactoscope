@@ -6,8 +6,10 @@ import Typography from '@mui/material/Typography';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import {
-	startOscillator, stopOscillator,
-	setOscillatorFrequency, setOscillatorType, setOscillatorDetune, setOscillatorPhase,
+	startFatOscillator, stopFatOscillator,
+	setFatOscillatorFrequency, setFatOscillatorType,
+	setFatOscillatorCount, setFatOscillatorSpread,
+	setFatOscillatorDetune, setFatOscillatorPhase,
 } from '../../store/daw';
 import { NodeHeader } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
@@ -17,36 +19,31 @@ import { METAL_BG } from './metalBackground';
 import { HW_RAISED, hwLit, hwBtn, hwBtnLit } from './hwStyles';
 import { HwSliderField } from '../../components/HwSliderField';
 import { WAVE_ICONS, OSC_TYPES } from './WaveformIcons';
-import type { OscillatorFlowNode, OscType } from '../../store/dawTypes';
+import type { FatOscillatorFlowNode, OscType } from '../../store/dawTypes';
 
 const color = NODE_COLORS.source;
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
-export const OscillatorNode = memo(function OscillatorNode({
+export const FatOscillatorNode = memo(function FatOscillatorNode({
 	id,
 	data,
 	selected,
-}: NodeProps<OscillatorFlowNode>) {
+}: NodeProps<FatOscillatorFlowNode>) {
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [frequency, setFreqState] = useState(data.frequency ?? 440);
-	const [oscType,   setOscType]   = useState<OscType>(data.type ?? 'sine');
+	const [oscType,   setOscType]   = useState<OscType>(data.type ?? 'sawtooth');
+	const [count,     setCountState] = useState(data.count  ?? 3);
+	const [spread,    setSpreadState] = useState(data.spread ?? 20);
 	const [detune,    setDetuneState] = useState(data.detune ?? 0);
-	const [phase,     setPhaseState]  = useState(data.phase ?? 0);
+	const [phase,     setPhaseState]  = useState(data.phase  ?? 0);
 
 	const handleToggle = async () => {
-		if (isPlaying) { stopOscillator(id); setIsPlaying(false); }
-		else           { await startOscillator(id); setIsPlaying(true); }
+		if (isPlaying) { stopFatOscillator(id); setIsPlaying(false); }
+		else           { await startFatOscillator(id); setIsPlaying(true); }
 	};
 
 	const handleTypeSelect = (t: OscType) => {
 		setOscType(t);
-		setOscillatorType(id, t);
-	};
-
-	const handleFreqChange = (v: number) => {
-		setFreqState(v);
-		setOscillatorFrequency(id, v);
+		setFatOscillatorType(id, t);
 	};
 
 	return (
@@ -59,11 +56,11 @@ export const OscillatorNode = memo(function OscillatorNode({
 			position:        'relative',
 			pb:              2,
 		}}>
-			<NodeHeader id={id} label='Oscillator' selected={selected} accentColor={color} />
+			<NodeHeader id={id} label='Fat Osc' selected={selected} accentColor={color} />
 
 			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
 
-				{/* Wave type toggle — 4 across */}
+				{/* Wave type toggle */}
 				<Box className='nodrag' sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
 					<Box sx={{ display: 'flex', gap: '1px' }}>
 						{OSC_TYPES.map((t, i) => {
@@ -99,68 +96,59 @@ export const OscillatorNode = memo(function OscillatorNode({
 					</Typography>
 				</Box>
 
-				{/* Play / stop — full width */}
 				<Button
 					onClick={handleToggle}
 					fullWidth
 					className='nodrag'
-					aria-label={isPlaying ? 'Stop oscillator' : 'Start oscillator'}
+					aria-label={isPlaying ? 'Stop fat oscillator' : 'Start fat oscillator'}
 					sx={isPlaying ? { ...hwBtnLit(color), py: 0.4 } : { ...hwBtn(color), py: 0.4 }}
 				>
-					{isPlaying
-						? <StopIcon      sx={{ fontSize: 13 }} />
-						: <PlayArrowIcon sx={{ fontSize: 13 }} />}
+					{isPlaying ? <StopIcon sx={{ fontSize: 13 }} /> : <PlayArrowIcon sx={{ fontSize: 13 }} />}
 				</Button>
 
-				{/* Frequency slider */}
 				<Box className='nodrag nowheel'>
 					<HwSliderField
-						label='freq'
-						value={frequency}
-						min={20} max={4000} step={1}
-						color={color}
-						onChange={handleFreqChange}
-						format={v => String(v)}
-						unit='Hz'
-						allowValueEdit
-						allowBoundsEdit
+						label='freq' value={frequency} min={20} max={4000} step={1}
+						color={color} onChange={(v) => { setFreqState(v); setFatOscillatorFrequency(id, v); }}
+						format={v => String(v)} unit='Hz' allowValueEdit allowBoundsEdit
 					/>
 				</Box>
 
 				<Box className='nodrag nowheel'>
 					<HwSliderField
-						label='detune'
-						value={detune}
-						min={-1200} max={1200} step={1}
-						color={color}
-						onChange={(v) => { setDetuneState(v); setOscillatorDetune(id, v); }}
-						format={v => String(v)}
-						unit='ct'
-						allowValueEdit
+						label='voices' value={count} min={1} max={5} step={1}
+						color={color} onChange={(v) => { setCountState(Math.round(v)); setFatOscillatorCount(id, v); }}
+						format={v => String(Math.round(v))} allowValueEdit
 					/>
 				</Box>
 
 				<Box className='nodrag nowheel'>
 					<HwSliderField
-						label='phase'
-						value={phase}
-						min={0} max={360} step={1}
-						color={color}
-						onChange={(v) => { setPhaseState(v); setOscillatorPhase(id, v); }}
-						format={v => String(v)}
-						unit='°'
-						allowValueEdit
+						label='spread' value={spread} min={0} max={100} step={1}
+						color={color} onChange={(v) => { setSpreadState(v); setFatOscillatorSpread(id, v); }}
+						format={v => String(v)} unit='¢' allowValueEdit
+					/>
+				</Box>
+
+				<Box className='nodrag nowheel'>
+					<HwSliderField
+						label='detune' value={detune} min={-1200} max={1200} step={1}
+						color={color} onChange={(v) => { setDetuneState(v); setFatOscillatorDetune(id, v); }}
+						format={v => String(v)} unit='ct' allowValueEdit
+					/>
+				</Box>
+
+				<Box className='nodrag nowheel'>
+					<HwSliderField
+						label='phase' value={phase} min={0} max={360} step={1}
+						color={color} onChange={(v) => { setPhaseState(v); setFatOscillatorPhase(id, v); }}
+						format={v => String(v)} unit='°' allowValueEdit
 					/>
 				</Box>
 
 			</Box>
 
-			<Handle
-				type='source'
-				position={Position.Bottom}
-				id='out-0'
-				style={outputHandleStyle(color)}
-			/>
+			<Handle type='source' position={Position.Bottom} id='out-0' style={outputHandleStyle(color)} />
 			{outputLabel('out', color)}
 		</Box>
 	);

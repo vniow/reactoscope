@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useClickOutside } from '../hooks/useClickOutside';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import InputBase from '@mui/material/InputBase';
@@ -172,6 +173,8 @@ export function PatchPanel({ columnsSwapped }: { columnsSwapped: boolean }) {
 	const containerRef  = useRef<HTMLDivElement>(null);
 	const fileInputRef  = useRef<HTMLInputElement>(null);
 	const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useClickOutside(containerRef, () => setOpen(false), open);
 
 	const flash = useCallback((msg: string) => {
 		setStatusMsg(msg);

@@ -6,8 +6,8 @@ import Typography from '@mui/material/Typography';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import {
-	startOscillator, stopOscillator,
-	setOscillatorFrequency, setOscillatorType, setOscillatorDetune, setOscillatorPhase,
+	startLFO, stopLFO,
+	setLFOFrequency, setLFOType, setLFOMin, setLFOMax, setLFOPhase,
 } from '../../store/daw';
 import { NodeHeader } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
@@ -17,36 +17,47 @@ import { METAL_BG } from './metalBackground';
 import { HW_RAISED, hwLit, hwBtn, hwBtnLit } from './hwStyles';
 import { HwSliderField } from '../../components/HwSliderField';
 import { WAVE_ICONS, OSC_TYPES } from './WaveformIcons';
-import type { OscillatorFlowNode, OscType } from '../../store/dawTypes';
+import type { LFOFlowNode, OscType } from '../../store/dawTypes';
 
 const color = NODE_COLORS.source;
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
-export const OscillatorNode = memo(function OscillatorNode({
+export const LFONode = memo(function LFONode({
 	id,
 	data,
 	selected,
-}: NodeProps<OscillatorFlowNode>) {
+}: NodeProps<LFOFlowNode>) {
 	const [isPlaying, setIsPlaying] = useState(false);
-	const [frequency, setFreqState] = useState(data.frequency ?? 440);
+	const [frequency, setFreqState] = useState(data.frequency ?? 1);
 	const [oscType,   setOscType]   = useState<OscType>(data.type ?? 'sine');
-	const [detune,    setDetuneState] = useState(data.detune ?? 0);
-	const [phase,     setPhaseState]  = useState(data.phase ?? 0);
+	const [min,       setMinState]  = useState(data.min ?? -1);
+	const [max,       setMaxState]  = useState(data.max ?? 1);
+	const [phase,     setPhaseState] = useState(data.phase ?? 0);
 
 	const handleToggle = async () => {
-		if (isPlaying) { stopOscillator(id); setIsPlaying(false); }
-		else           { await startOscillator(id); setIsPlaying(true); }
+		if (isPlaying) { stopLFO(id); setIsPlaying(false); }
+		else           { await startLFO(id); setIsPlaying(true); }
 	};
 
 	const handleTypeSelect = (t: OscType) => {
 		setOscType(t);
-		setOscillatorType(id, t);
+		setLFOType(id, t);
 	};
 
 	const handleFreqChange = (v: number) => {
 		setFreqState(v);
-		setOscillatorFrequency(id, v);
+		setLFOFrequency(id, v);
+	};
+
+	const handleMinChange = (v: number) => {
+		if (v >= max) return;
+		setMinState(v);
+		setLFOMin(id, v);
+	};
+
+	const handleMaxChange = (v: number) => {
+		if (v <= min) return;
+		setMaxState(v);
+		setLFOMax(id, v);
 	};
 
 	return (
@@ -59,7 +70,7 @@ export const OscillatorNode = memo(function OscillatorNode({
 			position:        'relative',
 			pb:              2,
 		}}>
-			<NodeHeader id={id} label='Oscillator' selected={selected} accentColor={color} />
+			<NodeHeader id={id} label='LFO' selected={selected} accentColor={color} />
 
 			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
 
@@ -99,12 +110,12 @@ export const OscillatorNode = memo(function OscillatorNode({
 					</Typography>
 				</Box>
 
-				{/* Play / stop — full width */}
+				{/* Play / stop */}
 				<Button
 					onClick={handleToggle}
 					fullWidth
 					className='nodrag'
-					aria-label={isPlaying ? 'Stop oscillator' : 'Start oscillator'}
+					aria-label={isPlaying ? 'Stop LFO' : 'Start LFO'}
 					sx={isPlaying ? { ...hwBtnLit(color), py: 0.4 } : { ...hwBtn(color), py: 0.4 }}
 				>
 					{isPlaying
@@ -117,25 +128,37 @@ export const OscillatorNode = memo(function OscillatorNode({
 					<HwSliderField
 						label='freq'
 						value={frequency}
-						min={20} max={4000} step={1}
+						min={0.1} max={20} step={0.01}
 						color={color}
 						onChange={handleFreqChange}
-						format={v => String(v)}
+						format={v => v.toFixed(2)}
 						unit='Hz'
 						allowValueEdit
-						allowBoundsEdit
 					/>
 				</Box>
 
+				{/* Min slider */}
 				<Box className='nodrag nowheel'>
 					<HwSliderField
-						label='detune'
-						value={detune}
-						min={-1200} max={1200} step={1}
+						label='min'
+						value={min}
+						min={-1} max={0} step={0.01}
 						color={color}
-						onChange={(v) => { setDetuneState(v); setOscillatorDetune(id, v); }}
-						format={v => String(v)}
-						unit='ct'
+						onChange={handleMinChange}
+						format={v => v.toFixed(2)}
+						allowValueEdit
+					/>
+				</Box>
+
+				{/* Max slider */}
+				<Box className='nodrag nowheel'>
+					<HwSliderField
+						label='max'
+						value={max}
+						min={0} max={1} step={0.01}
+						color={color}
+						onChange={handleMaxChange}
+						format={v => v.toFixed(2)}
 						allowValueEdit
 					/>
 				</Box>
@@ -146,7 +169,7 @@ export const OscillatorNode = memo(function OscillatorNode({
 						value={phase}
 						min={0} max={360} step={1}
 						color={color}
-						onChange={(v) => { setPhaseState(v); setOscillatorPhase(id, v); }}
+						onChange={(v) => { setPhaseState(v); setLFOPhase(id, v); }}
 						format={v => String(v)}
 						unit='°'
 						allowValueEdit

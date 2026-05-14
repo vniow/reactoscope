@@ -1,10 +1,10 @@
 import { useCallback, useRef, useState } from 'react';
+import { useClickOutside } from '../hooks/useClickOutside';
 import { useReactFlow } from '@xyflow/react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import InputBase from '@mui/material/InputBase';
-import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
@@ -17,9 +17,10 @@ import type { StubKind } from '../store/dawTypes';
 // ─── Catalogue data ───────────────────────────────────────────────────────────
 
 type CatalogueItem = {
-	label:  string;   // full Tone.js class name — shown in tooltip + used for filtering
+	label:  string;   // full Tone.js class name — shown + used for filtering
 	action: string;   // store dispatch key
-	abbr:   string;   // 3–5 char chip label
+	abbr:   string;   // shorthand — kept for filter compat, no longer rendered
+	desc?:  string;   // 1–3 word hint shown under the label
 };
 
 type CatalogueCategory = {
@@ -33,145 +34,143 @@ const CATALOGUE: CatalogueCategory[] = [
 		label: 'Source',
 		color: NODE_COLORS.source,
 		items: [
-			{ label: 'Oscillator',      action: 'oscillator',      abbr: 'OSC'  },
-			{ label: 'FMOscillator',    action: 'fmOscillator',    abbr: 'FMOC' },
-			{ label: 'AMOscillator',    action: 'amOscillator',    abbr: 'AMOC' },
-			{ label: 'FatOscillator',   action: 'fatOscillator',   abbr: 'FTOC' },
-			{ label: 'PulseOscillator', action: 'pulseOscillator', abbr: 'PUOC' },
-			{ label: 'PWMOscillator',   action: 'pwmOscillator',   abbr: 'PWMO' },
-			{ label: 'OmniOscillator',  action: 'omniOscillator',  abbr: 'OMNI' },
-			{ label: 'Noise',           action: 'noiseGenerator',  abbr: 'NOIS' },
-			{ label: 'Player',          action: 'player',          abbr: 'PLY'  },
-			{ label: 'Players',         action: 'players',         abbr: 'PLYS' },
-			{ label: 'GrainPlayer',     action: 'grainPlayer',     abbr: 'GRPD' },
-			{ label: 'UserMedia',       action: 'userMedia',       abbr: 'UMED' },
-			{ label: 'LFO',             action: 'lfo',             abbr: 'LFO'  },
-			{ label: 'DCSignal',        action: 'dcSignal',        abbr: 'DC'   },
+			{ label: 'Oscillator',      action: 'oscillator',      abbr: 'OSC',  desc: 'sine/square/tri/saw' },
+			{ label: 'FMOscillator',    action: 'fmOscillator',    abbr: 'FMOC', desc: 'FM synthesis'        },
+			{ label: 'AMOscillator',    action: 'amOscillator',    abbr: 'AMOC', desc: 'AM synthesis'        },
+			{ label: 'FatOscillator',   action: 'fatOscillator',   abbr: 'FTOC', desc: 'unison voices'       },
+			{ label: 'PulseOscillator', action: 'pulseOscillator', abbr: 'PUOC', desc: 'pulse width'         },
+			{ label: 'PWMOscillator',   action: 'pwmOscillator',   abbr: 'PWMO', desc: 'PWM sweep'           },
+			{ label: 'Noise',           action: 'noiseGenerator',  abbr: 'NOIS', desc: 'white/pink/brown'    },
+			{ label: 'Player',          action: 'player',          abbr: 'PLY',  desc: 'audio file'          },
+			{ label: 'GrainPlayer',     action: 'grainPlayer',     abbr: 'GRPD', desc: 'granular'            },
+			{ label: 'MicInput',        action: 'micInput',        abbr: 'MIC',  desc: 'microphone'          },
+			{ label: 'LFO',             action: 'lfo',             abbr: 'LFO',  desc: 'low-freq osc'        },
+			{ label: 'DCSignal',        action: 'dcSignal',        abbr: 'DC',   desc: 'constant value'      },
 		],
 	},
 	{
 		label: 'Instrument',
 		color: NODE_COLORS.source,
 		items: [
-			{ label: 'Synth',          action: 'synth',          abbr: 'SYN'  },
-			{ label: 'MonoSynth',      action: 'monoSynth',      abbr: 'MSYN' },
-			{ label: 'PolySynth',      action: 'polySynth',      abbr: 'PSYN' },
-			{ label: 'FMSynth',        action: 'fmSynth',        abbr: 'FMSY' },
-			{ label: 'AMSynth',        action: 'amSynth',        abbr: 'AMSY' },
-			{ label: 'DuoSynth',       action: 'duoSynth',       abbr: 'DUSY' },
-			{ label: 'MembraneSynth',  action: 'membraneSynth',  abbr: 'MBSY' },
-			{ label: 'MetalSynth',     action: 'metalSynth',     abbr: 'MTSY' },
-			{ label: 'NoiseSynth',     action: 'noiseSynth',     abbr: 'NZSY' },
-			{ label: 'PluckSynth',     action: 'pluckSynth',     abbr: 'PLSY' },
-			{ label: 'Sampler',        action: 'sampler',        abbr: 'SMPL' },
+			{ label: 'Synth',          action: 'synth',          abbr: 'SYN',  desc: 'basic synth'    },
+			{ label: 'MonoSynth',      action: 'monoSynth',      abbr: 'MSYN', desc: 'mono voice'     },
+			{ label: 'PolySynth',      action: 'polySynth',      abbr: 'PSYN', desc: 'polyphonic'     },
+			{ label: 'FMSynth',        action: 'fmSynth',        abbr: 'FMSY', desc: 'FM voice'       },
+			{ label: 'AMSynth',        action: 'amSynth',        abbr: 'AMSY', desc: 'AM voice'       },
+			{ label: 'DuoSynth',       action: 'duoSynth',       abbr: 'DUSY', desc: 'dual osc'       },
+			{ label: 'MembraneSynth',  action: 'membraneSynth',  abbr: 'MBSY', desc: 'drum membrane'  },
+			{ label: 'MetalSynth',     action: 'metalSynth',     abbr: 'MTSY', desc: 'metallic'       },
+			{ label: 'NoiseSynth',     action: 'noiseSynth',     abbr: 'NZSY', desc: 'noise synth'    },
+			{ label: 'PluckSynth',     action: 'pluckSynth',     abbr: 'PLSY', desc: 'plucked string' },
+			{ label: 'Sampler',        action: 'sampler',        abbr: 'SMPL', desc: 'sample map'     },
 		],
 	},
 	{
 		label: 'Effect',
 		color: NODE_COLORS.effects,
 		items: [
-			{ label: 'Reverb',            action: 'reverb',           abbr: 'REV'  },
-			{ label: 'JCReverb',          action: 'jcReverb',         abbr: 'JCRV' },
-			{ label: 'Freeverb',          action: 'freeverb',         abbr: 'FRV'  },
-			{ label: 'Delay',             action: 'delay',            abbr: 'DLY'  },
-			{ label: 'FeedbackDelay',     action: 'feedbackDelay',    abbr: 'FBDL' },
-			{ label: 'PingPongDelay',     action: 'pingPongDelay',    abbr: 'PPDL' },
-			{ label: 'Chorus',            action: 'chorus',           abbr: 'CHR'  },
-			{ label: 'Phaser',            action: 'phaser',           abbr: 'PHS'  },
-			{ label: 'Tremolo',           action: 'tremolo',          abbr: 'TRML' },
-			{ label: 'Vibrato',           action: 'vibrato',          abbr: 'VIB'  },
-			{ label: 'Distortion',        action: 'distortion',       abbr: 'DIST' },
-			{ label: 'Chebyshev',         action: 'chebyshev',        abbr: 'CHB'  },
-			{ label: 'BitCrusher',        action: 'bitCrusher',       abbr: 'BIT'  },
-			{ label: 'AutoFilter',        action: 'autoFilter',       abbr: 'AFLT' },
-			{ label: 'AutoPanner',        action: 'autoPanner',       abbr: 'APAN' },
-			{ label: 'AutoWah',           action: 'autoWah',          abbr: 'AWAH' },
-			{ label: 'FrequencyShifter',  action: 'frequencyShifter', abbr: 'FSHF' },
-			{ label: 'PitchShift',        action: 'pitchShift',       abbr: 'PTSH' },
-			{ label: 'StereoWidener',     action: 'stereoWidener',    abbr: 'SWDN' },
+			{ label: 'Reverb',           action: 'reverb',           abbr: 'REV',  desc: 'convolution'    },
+			{ label: 'JCReverb',         action: 'jcReverb',         abbr: 'JCRV', desc: 'Chowning reverb' },
+			{ label: 'Freeverb',         action: 'freeverb',         abbr: 'FRV',  desc: 'dense reverb'   },
+			{ label: 'Delay',            action: 'delay',            abbr: 'DLY',  desc: 'tape delay'     },
+			{ label: 'FeedbackDelay',    action: 'feedbackDelay',    abbr: 'FBDL', desc: 'feedback delay' },
+			{ label: 'PingPongDelay',    action: 'pingPongDelay',    abbr: 'PPDL', desc: 'ping pong'      },
+			{ label: 'Chorus',           action: 'chorus',           abbr: 'CHR',  desc: 'chorus mod'     },
+			{ label: 'Phaser',           action: 'phaser',           abbr: 'PHS',  desc: 'phase shift'    },
+			{ label: 'Tremolo',          action: 'tremolo',          abbr: 'TRML', desc: 'amplitude mod'  },
+			{ label: 'Vibrato',          action: 'vibrato',          abbr: 'VIB',  desc: 'pitch mod'      },
+			{ label: 'Distortion',       action: 'distortion',       abbr: 'DIST', desc: 'waveshaper'     },
+			{ label: 'Chebyshev',        action: 'chebyshev',        abbr: 'CHB',  desc: 'Chebyshev'      },
+			{ label: 'BitCrusher',       action: 'bitCrusher',       abbr: 'BIT',  desc: 'bit depth'      },
+			{ label: 'AutoFilter',       action: 'autoFilter',       abbr: 'AFLT', desc: 'auto filter'    },
+			{ label: 'AutoPanner',       action: 'autoPanner',       abbr: 'APAN', desc: 'auto pan'       },
+			{ label: 'AutoWah',          action: 'autoWah',          abbr: 'AWAH', desc: 'auto wah'       },
+			{ label: 'FrequencyShifter', action: 'frequencyShifter', abbr: 'FSHF', desc: 'freq shift'     },
+			{ label: 'PitchShift',       action: 'pitchShift',       abbr: 'PTSH', desc: 'pitch shift'    },
+			{ label: 'StereoWidener',    action: 'stereoWidener',    abbr: 'SWDN', desc: 'stereo width'   },
 		],
 	},
 	{
 		label: 'Dynamics',
 		color: NODE_COLORS.dynamics,
 		items: [
-			{ label: 'Compressor',           action: 'compressor',           abbr: 'COMP' },
-			{ label: 'Limiter',              action: 'limiter',              abbr: 'LIM'  },
-			{ label: 'Gate',                 action: 'gate',                 abbr: 'GATE' },
-			{ label: 'MidSideCompressor',    action: 'midSideCompressor',    abbr: 'MSCM' },
-			{ label: 'MultibandCompressor',  action: 'multibandCompressor',  abbr: 'MBCM' },
+			{ label: 'Compressor',          action: 'compressor',          abbr: 'COMP', desc: 'compression'  },
+			{ label: 'Limiter',             action: 'limiter',             abbr: 'LIM',  desc: 'peak limit'   },
+			{ label: 'Gate',                action: 'gate',                abbr: 'GATE', desc: 'noise gate'   },
+			{ label: 'MidSideCompressor',   action: 'midSideCompressor',   abbr: 'MSCM', desc: 'mid-side'     },
+			{ label: 'MultibandCompressor', action: 'multibandCompressor', abbr: 'MBCM', desc: 'multiband'    },
 		],
 	},
 	{
 		label: 'Processing',
 		color: NODE_COLORS.processor,
 		items: [
-			{ label: 'Gain',           action: 'gain',          abbr: 'GAIN' },
-			{ label: 'Filter',         action: 'filter',        abbr: 'FILT' },
-			{ label: 'BiquadFilter',   action: 'biquadFilter',  abbr: 'BQFL' },
-			{ label: 'EQ3',            action: 'eq3',           abbr: 'EQ3'  },
-			{ label: 'Channel',        action: 'channel',       abbr: 'CHNL' },
-			{ label: 'PanVol',         action: 'panVol',        abbr: 'PANV' },
-			{ label: 'Panner',         action: 'panner',        abbr: 'PAN'  },
-			{ label: 'Panner3D',       action: 'panner3d',      abbr: 'P3D'  },
-			{ label: 'CrossFade',      action: 'crossFade',     abbr: 'XFAD' },
-			{ label: 'Split',          action: 'split',         abbr: 'SPLT' },
-			{ label: 'Merge',          action: 'merge',         abbr: 'MERG' },
-			{ label: 'Mono',           action: 'mono',          abbr: 'MONO' },
-			{ label: 'MultibandSplit', action: 'multibandSplit', abbr: 'MBSP' },
-			{ label: 'Solo',           action: 'solo',          abbr: 'SOLO' },
-			{ label: 'Volume',         action: 'volume',        abbr: 'VOL'  },
-			{ label: 'Convolver',      action: 'convolver',     abbr: 'CNVL' },
+			{ label: 'Gain',           action: 'gain',           abbr: 'GAIN', desc: 'amplification'  },
+			{ label: 'Filter',         action: 'filter',         abbr: 'FILT', desc: 'tone filter'    },
+			{ label: 'BiquadFilter',   action: 'biquadFilter',   abbr: 'BQFL', desc: 'biquad'         },
+			{ label: 'EQ3',            action: 'eq3',            abbr: 'EQ3',  desc: '3-band EQ'      },
+			{ label: 'Channel',        action: 'channel',        abbr: 'CHNL', desc: 'strip'          },
+			{ label: 'PanVol',         action: 'panVol',         abbr: 'PANV', desc: 'pan + vol'      },
+			{ label: 'Panner',         action: 'panner',         abbr: 'PAN',  desc: 'stereo pan'     },
+			{ label: 'Panner3D',       action: 'panner3d',       abbr: 'P3D',  desc: '3D pan'         },
+			{ label: 'CrossFade',      action: 'crossFade',      abbr: 'XFAD', desc: 'crossfade'      },
+			{ label: 'Split',          action: 'split',          abbr: 'SPLT', desc: 'L/R split'      },
+			{ label: 'Merge',          action: 'merge',          abbr: 'MERG', desc: 'L/R merge'      },
+			{ label: 'Mono',           action: 'mono',           abbr: 'MONO', desc: 'sum to mono'    },
+			{ label: 'MultibandSplit', action: 'multibandSplit', abbr: 'MBSP', desc: '3-band split'   },
+			{ label: 'Solo',           action: 'solo',           abbr: 'SOLO', desc: 'solo toggle'    },
+			{ label: 'Volume',         action: 'volume',         abbr: 'VOL',  desc: 'vol fader'      },
+			{ label: 'Convolver',      action: 'convolver',      abbr: 'CNVL', desc: 'IR convolver'   },
 		],
 	},
 	{
 		label: 'Analysis',
 		color: NODE_COLORS.utility,
 		items: [
-			{ label: 'Analyser',             action: 'analyser',            abbr: 'ANLY' },
-			{ label: 'FFT',                  action: 'fft',                 abbr: 'FFT'  },
-			{ label: 'Meter',                action: 'meter',               abbr: 'MTER' },
-			{ label: 'DCMeter',              action: 'dcMeter',             abbr: 'DCMT' },
-			{ label: 'Waveform',             action: 'waveform',            abbr: 'WAVE' },
-			{ label: 'Follower',             action: 'follower',            abbr: 'FLWR' },
-			{ label: 'Recorder',             action: 'recorder',            abbr: 'REC'  },
-			{ label: 'AmplitudeEnvelope',    action: 'amplitudeEnvelope',   abbr: 'AENV' },
-			{ label: 'FrequencyEnvelope',    action: 'frequencyEnvelope',   abbr: 'FENV' },
+			{ label: 'Analyser',          action: 'analyser',          abbr: 'ANLY', desc: 'waveform'        },
+			{ label: 'FFT',               action: 'fft',               abbr: 'FFT',  desc: 'spectrum'        },
+			{ label: 'Meter',             action: 'meter',             abbr: 'MTER', desc: 'peak level'      },
+			{ label: 'DCMeter',           action: 'dcMeter',           abbr: 'DCMT', desc: 'DC level'        },
+			{ label: 'Waveform',          action: 'waveform',          abbr: 'WAVE', desc: 'waveform cap'    },
+			{ label: 'Follower',          action: 'follower',          abbr: 'FLWR', desc: 'envelope follow' },
+			{ label: 'Recorder',          action: 'recorder',          abbr: 'REC',  desc: 'audio capture'   },
+			{ label: 'AmplitudeEnvelope', action: 'amplitudeEnvelope', abbr: 'AENV', desc: 'amp env'         },
+			{ label: 'FrequencyEnvelope', action: 'frequencyEnvelope', abbr: 'FENV', desc: 'freq env'        },
 		],
 	},
 	{
 		label: 'Signal',
 		color: NODE_COLORS.utility,
 		items: [
-			{ label: 'Signal',       action: 'signal',       abbr: 'SIG'  },
-			{ label: 'WaveShaper',   action: 'waveShaper',   abbr: 'WSHP' },
-			{ label: 'Scale',        action: 'scale',        abbr: 'SCAL' },
-			{ label: 'ScaleExp',     action: 'scaleExp',     abbr: 'SCEX' },
-			{ label: 'Abs',          action: 'abs',          abbr: 'ABS'  },
-			{ label: 'Add',          action: 'add',          abbr: 'ADD'  },
-			{ label: 'Multiply',     action: 'multiply',     abbr: 'MULT' },
-			{ label: 'Negate',       action: 'negate',       abbr: 'NEG'  },
-			{ label: 'GreaterThan',  action: 'greaterThan',  abbr: 'GT'   },
-			{ label: 'AudioToGain',  action: 'audioToGain',  abbr: 'A2G'  },
-			{ label: 'GainToAudio',  action: 'gainToAudio',  abbr: 'G2A'  },
+			{ label: 'Signal',      action: 'signal',      abbr: 'SIG',  desc: 'constant signal' },
+			{ label: 'WaveShaper',  action: 'waveShaper',  abbr: 'WSHP', desc: 'curve map'       },
+			{ label: 'Scale',       action: 'scale',       abbr: 'SCAL', desc: 'linear scale'    },
+			{ label: 'ScaleExp',    action: 'scaleExp',    abbr: 'SCEX', desc: 'exp scale'       },
+			{ label: 'Abs',         action: 'abs',         abbr: 'ABS',  desc: 'absolute val'    },
+			{ label: 'Add',         action: 'add',         abbr: 'ADD',  desc: 'offset add'      },
+			{ label: 'Multiply',    action: 'multiply',    abbr: 'MULT', desc: 'multiply'        },
+			{ label: 'Negate',      action: 'negate',      abbr: 'NEG',  desc: 'negate'          },
+			{ label: 'GreaterThan', action: 'greaterThan', abbr: 'GT',   desc: 'threshold'       },
+			{ label: 'AudioToGain', action: 'audioToGain', abbr: 'A2G',  desc: 'audio→gain'      },
+			{ label: 'GainToAudio', action: 'gainToAudio', abbr: 'G2A',  desc: 'gain→audio'      },
 		],
 	},
 	{
 		label: 'Event',
 		color: NODE_COLORS.utility,
 		items: [
-			{ label: 'Loop',       action: 'loop',      abbr: 'LOOP' },
-			{ label: 'Sequence',   action: 'sequence',  abbr: 'SEQ'  },
-			{ label: 'Pattern',    action: 'pattern',   abbr: 'PTRN' },
-			{ label: 'Part',       action: 'part',      abbr: 'PART' },
-			{ label: 'ToneEvent',  action: 'toneEvent', abbr: 'EVT'  },
+			{ label: 'Loop',      action: 'loop',      abbr: 'LOOP', desc: 'looping'     },
+			{ label: 'Sequence',  action: 'sequence',  abbr: 'SEQ',  desc: 'step seq'    },
+			{ label: 'Pattern',   action: 'pattern',   abbr: 'PTRN', desc: 'pattern gen' },
+			{ label: 'Part',      action: 'part',      abbr: 'PART', desc: 'event part'  },
+			{ label: 'ToneEvent', action: 'toneEvent', abbr: 'EVT',  desc: 'single event' },
 		],
 	},
 	{
 		label: 'Utility',
 		color: NODE_COLORS.debug,
 		items: [
-			{ label: 'Debug', action: 'debug', abbr: 'DBG' },
+			{ label: 'Debug', action: 'debug', abbr: 'DBG', desc: 'inspect node' },
 		],
 	},
 ];
@@ -186,13 +185,23 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 	const { screenToFlowPosition } = useReactFlow();
 	const containerRef = useRef<HTMLDivElement>(null);
 
-	const addOscillatorNode = useDawStore(s => s.addOscillatorNode);
-	const addGainNode       = useDawStore(s => s.addGainNode);
-	const addNoiseNode      = useDawStore(s => s.addNoiseNode);
-	const addDCSignalNode   = useDawStore(s => s.addDCSignalNode);
-	const addPlayerNode     = useDawStore(s => s.addPlayerNode);
-	const addStubNode       = useDawStore(s => s.addStubNode);
-	const addDebugNode      = useDawStore(s => s.addDebugNode);
+	useClickOutside(containerRef, () => setOpenTracked(false), open);
+
+	const addOscillatorNode      = useDawStore(s => s.addOscillatorNode);
+	const addGainNode            = useDawStore(s => s.addGainNode);
+	const addNoiseNode           = useDawStore(s => s.addNoiseNode);
+	const addDCSignalNode        = useDawStore(s => s.addDCSignalNode);
+	const addPlayerNode          = useDawStore(s => s.addPlayerNode);
+	const addLFONode             = useDawStore(s => s.addLFONode);
+	const addFMOscillatorNode    = useDawStore(s => s.addFMOscillatorNode);
+	const addAMOscillatorNode    = useDawStore(s => s.addAMOscillatorNode);
+	const addFatOscillatorNode   = useDawStore(s => s.addFatOscillatorNode);
+	const addPulseOscillatorNode = useDawStore(s => s.addPulseOscillatorNode);
+	const addPWMOscillatorNode   = useDawStore(s => s.addPWMOscillatorNode);
+	const addGrainPlayerNode     = useDawStore(s => s.addGrainPlayerNode);
+	const addMicInputNode        = useDawStore(s => s.addMicInputNode);
+	const addStubNode            = useDawStore(s => s.addStubNode);
+	const addDebugNode           = useDawStore(s => s.addDebugNode);
 
 	const getDropPosition = useCallback((): { x: number; y: number } => {
 		const rfEl = document.querySelector<HTMLElement>('.react-flow');
@@ -209,19 +218,33 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 	const handleAdd = useCallback((action: string) => {
 		const pos = getDropPosition();
 		const REAL_HANDLERS: Record<string, () => void> = {
-			oscillator:    () => addOscillatorNode(pos),
-			gain:          () => addGainNode(pos),
-			noiseGenerator: () => addNoiseNode(pos),
-			dcSignal:      () => addDCSignalNode(pos),
-			player:        () => addPlayerNode('', pos),
-			debug:         () => addDebugNode(pos),
+			oscillator:      () => addOscillatorNode(pos),
+			gain:            () => addGainNode(pos),
+			noiseGenerator:  () => addNoiseNode(pos),
+			dcSignal:        () => addDCSignalNode(pos),
+			player:          () => addPlayerNode('', pos),
+			lfo:             () => addLFONode(pos),
+			fmOscillator:    () => addFMOscillatorNode(pos),
+			amOscillator:    () => addAMOscillatorNode(pos),
+			fatOscillator:   () => addFatOscillatorNode(pos),
+			pulseOscillator: () => addPulseOscillatorNode(pos),
+			pwmOscillator:   () => addPWMOscillatorNode(pos),
+			grainPlayer:     () => addGrainPlayerNode(pos),
+			micInput:        () => addMicInputNode(pos),
+			debug:           () => addDebugNode(pos),
 		};
 		const handler = REAL_HANDLERS[action];
 		if (handler) handler();
 		else addStubNode(action as StubKind, pos);
 		setOpenTracked(false);
 		setFilter('');
-	}, [getDropPosition, addOscillatorNode, addGainNode, addNoiseNode, addDCSignalNode, addPlayerNode, addStubNode, addDebugNode]);
+	}, [
+		getDropPosition,
+		addOscillatorNode, addGainNode, addNoiseNode, addDCSignalNode, addPlayerNode,
+		addLFONode, addFMOscillatorNode, addAMOscillatorNode, addFatOscillatorNode,
+		addPulseOscillatorNode, addPWMOscillatorNode, addGrainPlayerNode, addMicInputNode,
+		addStubNode, addDebugNode, setOpenTracked,
+	]);
 
 	const q = filter.trim().toLowerCase();
 	const filtered = q
@@ -230,17 +253,17 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 				.filter(cat => cat.items.length > 0)
 		: CATALOGUE;
 
-	const chipSx = (catColor: string) => ({
+	const itemBtnSx = (catColor: string) => ({
 		...hwBtn(catColor),
-		width:         '100%',
-		px:            0.75,
-		py:            1.25,
-		fontSize:      9,
-		fontFamily:    'monospace',
-		letterSpacing: 0.8,
-		minWidth:      0,
-		fontWeight:    600,
-		lineHeight:    1.4,
+		width:          '100%',
+		px:             1,
+		py:             0.75,
+		minWidth:       0,
+		textAlign:      'left'  as const,
+		justifyContent: 'flex-start',
+		display:        'flex',
+		flexDirection:  'column' as const,
+		alignItems:     'flex-start',
 	});
 
 	return (
@@ -271,7 +294,7 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 						borderRadius:    1,
 						p:               1.5,
 						width:           400,
-						maxHeight:       600,
+						maxHeight:       720,
 						overflowY:       'auto',
 						zIndex:          100,
 						boxShadow:       `0 4px 16px rgba(0,0,0,0.7), 0 0 0 1px ${color}18`,
@@ -290,24 +313,50 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 						/>
 					</Box>
 
-					{/* Category chip grids — two categories per row */}
-					<Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, alignItems: 'start' }}>
+					{/* Category sections — single vertical stack */}
+					<Box sx={{ display: 'flex', flexDirection: 'column' }}>
 						{filtered.map(cat => (
 							<Box key={cat.label}>
-								<Typography variant='caption' sx={{
-									fontSize: 9, letterSpacing: 0.8, textTransform: 'uppercase',
-									display: 'block', mb: 0.5, color: cat.color, opacity: 0.8,
+								{/* Category header with left-border accent */}
+								<Box sx={{
+									borderLeft:  `3px solid ${cat.color}`,
+									pl:          1,
+									py:          0.25,
+									mb:          0.5,
+									mt:          0.75,
+									background:  `${cat.color}08`,
+									'&:first-of-type': { mt: 0 },
 								}}>
-									{cat.label}
-								</Typography>
+									<Typography sx={{
+										fontSize:      9,
+										letterSpacing: 0.8,
+										textTransform: 'uppercase',
+										color:         cat.color,
+										fontWeight:    700,
+									}}>
+										{cat.label}
+									</Typography>
+								</Box>
+
+								{/* 2-column item grid */}
 								<Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 0.5 }}>
 									{cat.items.map(item => (
-										<Tooltip key={item.action} title={item.label} placement='top' arrow
-											slotProps={{ popper: { modifiers: [{ name: 'offset', options: { offset: [0, -4] } }] } }}>
-											<Button onClick={() => handleAdd(item.action)} sx={chipSx(cat.color)}>
-												{item.abbr}
-											</Button>
-										</Tooltip>
+										<Button
+											key={item.action}
+											onClick={() => handleAdd(item.action)}
+											sx={itemBtnSx(cat.color)}
+										>
+											<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.25, width: '100%' }}>
+												<Typography sx={{ fontSize: 10, fontWeight: 600, color: 'inherit', lineHeight: 1.2, textTransform: 'none' }}>
+													{item.label}
+												</Typography>
+												{item.desc && (
+													<Typography sx={{ fontSize: 8, color: 'text.disabled', lineHeight: 1, textTransform: 'none', fontWeight: 400 }}>
+														{item.desc}
+													</Typography>
+												)}
+											</Box>
+										</Button>
 									))}
 								</Box>
 							</Box>

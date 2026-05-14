@@ -49,15 +49,23 @@ interface LayoutControls {
 	onSweepToggle:   () => void;
 	onResizeStart:   (e: React.MouseEvent) => void;
 }
-import { PlayerNode }       from './nodes/PlayerNode';
-import { MasterOutputNode } from './nodes/MasterOutputNode';
-import { OscillatorNode }   from './nodes/OscillatorNode';
-import { GainNode }           from './nodes/GainNode';
-import { StubNode }           from './nodes/StubNode';
-import { NoiseGeneratorNode } from './nodes/NoiseGeneratorNode';
-import { DCSignalNode }       from './nodes/DCSignalNode';
-import { SceneInputNode }    from './nodes/SceneInputNode';
-import { DebugNode }         from './nodes/DebugNode';
+import { PlayerNode }          from './nodes/PlayerNode';
+import { MasterOutputNode }    from './nodes/MasterOutputNode';
+import { OscillatorNode }      from './nodes/OscillatorNode';
+import { GainNode }            from './nodes/GainNode';
+import { StubNode }            from './nodes/StubNode';
+import { NoiseGeneratorNode }  from './nodes/NoiseGeneratorNode';
+import { DCSignalNode }        from './nodes/DCSignalNode';
+import { SceneInputNode }      from './nodes/SceneInputNode';
+import { DebugNode }           from './nodes/DebugNode';
+import { LFONode }             from './nodes/LFONode';
+import { FMOscillatorNode }    from './nodes/FMOscillatorNode';
+import { AMOscillatorNode }    from './nodes/AMOscillatorNode';
+import { FatOscillatorNode }   from './nodes/FatOscillatorNode';
+import { PulseOscillatorNode } from './nodes/PulseOscillatorNode';
+import { PWMOscillatorNode }   from './nodes/PWMOscillatorNode';
+import { GrainPlayerNode }    from './nodes/GrainPlayerNode';
+import { MicInputNode }       from './nodes/MicInputNode';
 import { DeletableEdge }    from './edges/DeletableEdge';
 import { AddNodePanel }     from './AddNodePanel';
 import { PatchPanel }      from './PatchPanel';
@@ -75,6 +83,14 @@ const nodeTypes = {
 	dcSignal:        DCSignalNode,
 	sceneInput:      SceneInputNode,
 	debug:           DebugNode,
+	lfo:             LFONode,
+	fmOscillator:    FMOscillatorNode,
+	amOscillator:    AMOscillatorNode,
+	fatOscillator:   FatOscillatorNode,
+	pulseOscillator: PulseOscillatorNode,
+	pwmOscillator:   PWMOscillatorNode,
+	grainPlayer:     GrainPlayerNode,
+	micInput:        MicInputNode,
 };
 
 const edgeTypes = {
