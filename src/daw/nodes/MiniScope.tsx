@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { useAxis } from '../../contexts/WoahscopeContext';
-import { getWaveformData, getWaveformDataFromSAB, getWaveformWriteIndex } from '../../store/daw';
+import { getWaveformData, getWaveformDataFromSAB, getWaveformWriteIndex, isMasterMultichannel, useDawStore } from '../../store/daw';
 import { getColourFromHue } from '../../woahscope/utils';
 
 interface MiniScopeProps {
-	mode:   'stereo' | 'multichannel'
 	width:  number
 	height: number
 }
@@ -13,14 +12,15 @@ const STRIDE   = 1;
 const INTERVAL = 1000 / 60;
 const PT       = 2;
 
-export function MiniScope({ mode, width, height }: MiniScopeProps) {
+export function MiniScope({ width, height }: MiniScopeProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const { hue }   = useAxis();
+	const multichannel = useDawStore(s => isMasterMultichannel(s.edges));
 	const hueRef    = useRef(hue);
-	const modeRef   = useRef(mode);
+	const multiRef  = useRef(multichannel);
 
 	useEffect(() => { hueRef.current = hue; },  [hue]);
-	useEffect(() => { modeRef.current = mode; }, [mode]);
+	useEffect(() => { multiRef.current = multichannel; }, [multichannel]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -51,7 +51,7 @@ export function MiniScope({ mode, width, height }: MiniScopeProps) {
 			ctx.clearRect(0, 0, width, height);
 
 			const { x, y, r, g, b, a } = sabData ?? getWaveformData();
-			const multi = modeRef.current === 'multichannel';
+			const multi = multiRef.current;
 
 			let stereoR = 0, stereoG = 0, stereoB = 0;
 			if (!multi) {
@@ -59,16 +59,17 @@ export function MiniScope({ mode, width, height }: MiniScopeProps) {
 				stereoR = Math.round(hr * 255);
 				stereoG = Math.round(hg * 255);
 				stereoB = Math.round(hb * 255);
-				ctx.fillStyle = `rgb(${stereoR},${stereoG},${stereoB})`;
 			}
 
 			for (let i = 0; i < x.length; i += STRIDE) {
+				const ca = (0.5 + 0.5 * a[i]).toFixed(3);
 				if (multi) {
 					const cr = Math.round((0.5 + 0.5 * r[i]) * 255);
 					const cg = Math.round((0.5 + 0.5 * g[i]) * 255);
 					const cb = Math.round((0.5 + 0.5 * b[i]) * 255);
-					const ca = (0.5 + 0.5 * a[i]).toFixed(3);
 					ctx.fillStyle = `rgba(${cr},${cg},${cb},${ca})`;
+				} else {
+					ctx.fillStyle = `rgba(${stereoR},${stereoG},${stereoB},${ca})`;
 				}
 				const px = ( x[i] * 0.5 + 0.5) * width;
 				const py = (-y[i] * 0.5 + 0.5) * height;

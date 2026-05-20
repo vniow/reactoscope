@@ -2,11 +2,14 @@ import {
 	createContext,
 	useState,
 	useCallback,
+	useEffect,
 	type ReactNode,
 	useContext,
 	useMemo,
 } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { GALVO_PRESETS, DEFAULT_PRESET_ID, type GalvoPresetId } from '../laser/presets';
+import { setGalvoParams } from '../store/daw';
 
 
 export interface PlaybackContextType {
@@ -48,6 +51,19 @@ export interface EffectsContextType {
 	setNSamples: (value: number) => void;
 	coordBufferSize: number;
 	setCoordBufferSize: (value: number) => void;
+	// ── Laser-mode galvo / modulator emulator params ─────────────────────────
+	galvoPresetId: GalvoPresetId;
+	setGalvoPresetId: (id: GalvoPresetId) => void;
+	galvoBandwidthHz: number;
+	setGalvoBandwidthHz: (hz: number) => void;
+	galvoDampingRatio: number;
+	setGalvoDampingRatio: (zeta: number) => void;
+	galvoModulatorTauUs: number;
+	setGalvoModulatorTauUs: (us: number) => void;
+	galvoPps: number;
+	setGalvoPps: (pps: number) => void;
+	galvoAnchorAggressiveness: number;
+	setGalvoAnchorAggressiveness: (a: number) => void;
 }
 
 export type VizContextType = PlaybackContextType & AxisContextType & EffectsContextType;
@@ -77,6 +93,36 @@ export function WoscopeProvider({ children }: VizProviderProps) {
 	const [lanczosSteps,    setLanczosSteps]    = useLocalStorage('woscope.lanczosSteps',    6);
 	const [nSamples,        setNSamples]        = useLocalStorage('woscope.nSamples',        2048);
 	const [coordBufferSize, setCoordBufferSize] = useLocalStorage('woscope.coordBufferSize', 1024);
+
+	const _defaultPreset = GALVO_PRESETS[DEFAULT_PRESET_ID as Exclude<GalvoPresetId, 'custom'>];
+	const [galvoPresetId,             setGalvoPresetIdRaw]          = useLocalStorage<GalvoPresetId>('woscope.galvoPresetId',          DEFAULT_PRESET_ID);
+	const [galvoBandwidthHz,          setGalvoBandwidthHz]          = useLocalStorage('woscope.galvoBandwidthHz',          _defaultPreset.params.bandwidthHz);
+	const [galvoDampingRatio,         setGalvoDampingRatio]         = useLocalStorage('woscope.galvoDampingRatio',         _defaultPreset.params.dampingRatio);
+	const [galvoModulatorTauUs,       setGalvoModulatorTauUs]       = useLocalStorage('woscope.galvoModulatorTauUs',       _defaultPreset.params.modulatorTauUs);
+	const [galvoPps,                  setGalvoPps]                  = useLocalStorage('woscope.galvoPps',                  _defaultPreset.pps);
+	const [galvoAnchorAggressiveness, setGalvoAnchorAggressiveness] = useLocalStorage('woscope.galvoAnchorAggressiveness', _defaultPreset.anchorAggressiveness);
+
+	const setGalvoPresetId = useCallback((id: GalvoPresetId) => {
+		setGalvoPresetIdRaw(id);
+		if (id === 'custom') return;
+		const preset = GALVO_PRESETS[id];
+		setGalvoBandwidthHz         (preset.params.bandwidthHz);
+		setGalvoDampingRatio        (preset.params.dampingRatio);
+		setGalvoModulatorTauUs      (preset.params.modulatorTauUs);
+		setGalvoPps                 (preset.pps);
+		setGalvoAnchorAggressiveness(preset.anchorAggressiveness);
+	}, [setGalvoPresetIdRaw, setGalvoBandwidthHz, setGalvoDampingRatio, setGalvoModulatorTauUs, setGalvoPps, setGalvoAnchorAggressiveness]);
+
+	// Push current params to the worklet whenever they change. setGalvoParams
+	// is a no-op until the worklet has finished initialising; the effect runs
+	// again on every param change so the final value lands either way.
+	useEffect(() => {
+		setGalvoParams({
+			bandwidthHz:    galvoBandwidthHz,
+			dampingRatio:   galvoDampingRatio,
+			modulatorTauUs: galvoModulatorTauUs,
+		});
+	}, [galvoBandwidthHz, galvoDampingRatio, galvoModulatorTauUs]);
 
 	const OSCILLOSCOPE_PRESET = { crtEnabled: true,  persistence: 0.1, glowStrength: 0.1, scatterStrength: 0.1 };
 	const LASER_PRESET        = { crtEnabled: false, persistence: 0.0, glowStrength: 0.4, scatterStrength: 0.0 };
@@ -117,10 +163,17 @@ export function WoscopeProvider({ children }: VizProviderProps) {
 			lanczosSteps, setLanczosSteps,
 			nSamples, setNSamples,
 			coordBufferSize, setCoordBufferSize,
+			galvoPresetId, setGalvoPresetId,
+			galvoBandwidthHz, setGalvoBandwidthHz,
+			galvoDampingRatio, setGalvoDampingRatio,
+			galvoModulatorTauUs, setGalvoModulatorTauUs,
+			galvoPps, setGalvoPps,
+			galvoAnchorAggressiveness, setGalvoAnchorAggressiveness,
 		}),
 		// Setter functions are stable — only state values in deps.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[vizMode, crtEnabled, persistence, glowStrength, scatterStrength, lanczosEnabled, lanczosSteps, nSamples, coordBufferSize],
+		[vizMode, crtEnabled, persistence, glowStrength, scatterStrength, lanczosEnabled, lanczosSteps, nSamples, coordBufferSize,
+		 galvoPresetId, galvoBandwidthHz, galvoDampingRatio, galvoModulatorTauUs, galvoPps, galvoAnchorAggressiveness],
 	);
 
 	return (

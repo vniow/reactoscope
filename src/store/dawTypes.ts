@@ -18,7 +18,6 @@ export type PlayerNodeData = {
 
 export type MasterOutputNodeData = {
 	label:         string;
-	mode:          'stereo' | 'multichannel';
 	speakersMuted: boolean;
 };
 
@@ -159,6 +158,9 @@ export type GrainPlayerNodeData = {
 	playbackRate: number;   // 0.1–4, default 1
 	detune:       number;   // cents, default 0
 	loop:         boolean;  // default true
+	loopStart:    number;   // seconds into buffer, default 0
+	loopEnd:      number;   // seconds into buffer, 0 = buffer end, default 0
+	reverse:      boolean;  // play grains reversed, default false
 };
 export type GrainPlayerFlowNode = Node<GrainPlayerNodeData, 'grainPlayer'>;
 
@@ -173,6 +175,21 @@ export type SceneInputNodeData = {
 };
 
 export type SceneInputFlowNode = Node<SceneInputNodeData, 'sceneInput'>;
+
+export type IldaFrameNodeData = {
+	label:     string;
+	/** Blob URL or remote URL pointing at the loaded .ild file. Session-only when blob. */
+	ildUrl:    string;
+	/** Original filename for display after blob URL expires on reload. */
+	filename:  string;
+	/** Static = freeze on frame 0; animated = cycle frames at `fps`. */
+	mode:      'static' | 'animated';
+	/** Cycle rate when mode = 'animated'. */
+	fps:       number;
+	isPlaying: boolean;
+};
+
+export type IldaFrameFlowNode = Node<IldaFrameNodeData, 'ildaFrame'>;
 
 export type DebugNodeData = { label: string };
 export type DebugFlowNode = Node<DebugNodeData, 'debug'>;
@@ -195,7 +212,8 @@ export type AppNode =
 	| PulseOscillatorFlowNode
 	| PWMOscillatorFlowNode
 	| GrainPlayerFlowNode
-	| MicInputFlowNode;
+	| MicInputFlowNode
+	| IldaFrameFlowNode;
 
 export type AppEdge = Edge;
 
@@ -285,6 +303,7 @@ export type PWMOscillatorAudioEntry = {
 export type GrainPlayerAudioEntry = {
 	kind:     'grainPlayer';
 	toneNode: GrainPlayer;
+	split:    Split;
 };
 
 export type MicInputAudioEntry = {
@@ -300,6 +319,20 @@ export type SceneInputAudioEntry = {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	workletNode: any;
 	split:       Split;   // Tone.Split(6) — use split.output.connect(dest, ch, 0) per channel
+};
+
+export type IldaFrameAudioEntry = {
+	kind:        'ildaFrame';
+	/** Per-instance scene-input-processor worklet — same worklet class, fresh instance. */
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	workletNode: any;
+	split:       Split;   // Tone.Split(6) — six handle outputs
+	/** Pre-encoded coord buffers (one per ILDA frame), ready to post to the worklet. */
+	coordBufs:   { data: Float32Array; nPoints: number }[];
+	/** setInterval handle for animated playback; null when static or stopped. */
+	frameTimer:  ReturnType<typeof setInterval> | null;
+	/** Current animated-mode cursor into coordBufs. */
+	frameIdx:    number;
 };
 
 // Stubs are NOT in the audio registry — they have no Tone.js instances yet.
@@ -319,7 +352,8 @@ export type AudioNodeEntry =
 	| PWMOscillatorAudioEntry
 	| GrainPlayerAudioEntry
 	| MicInputAudioEntry
-	| SceneInputAudioEntry;
+	| SceneInputAudioEntry
+	| IldaFrameAudioEntry;
 
 export type AudioNodeMap = Map<string, AudioNodeEntry>;
 

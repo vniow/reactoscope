@@ -66,6 +66,7 @@ import { PulseOscillatorNode } from './nodes/PulseOscillatorNode';
 import { PWMOscillatorNode }   from './nodes/PWMOscillatorNode';
 import { GrainPlayerNode }    from './nodes/GrainPlayerNode';
 import { MicInputNode }       from './nodes/MicInputNode';
+import { IldaFrameNode }      from './nodes/IldaFrameNode';
 import { DeletableEdge }    from './edges/DeletableEdge';
 import { AddNodePanel }     from './AddNodePanel';
 import { PatchPanel }      from './PatchPanel';
@@ -91,6 +92,7 @@ const nodeTypes = {
 	pwmOscillator:   PWMOscillatorNode,
 	grainPlayer:     GrainPlayerNode,
 	micInput:        MicInputNode,
+	ildaFrame:       IldaFrameNode,
 };
 
 const edgeTypes = {
@@ -275,7 +277,7 @@ function CustomControls({
 					borderRadius:    '4px',
 					p:               0.5,
 					boxShadow:       `0 2px 8px rgba(0,0,0,0.5), 0 0 0 1px ${color}10`,
-					cursor:          'col-resize',
+			
 				}}>
 				<AddNodePanel columnsSwapped={columnsSwapped} onOpenChange={trackPanel} />
 				<Box sx={divSx} />

@@ -3,12 +3,9 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import ExpandLessIcon  from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon  from '@mui/icons-material/ExpandMore';
 import VolumeUpIcon    from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon   from '@mui/icons-material/VolumeOff';
-import SyncAltIcon     from '@mui/icons-material/SyncAlt';
-import GridViewIcon    from '@mui/icons-material/GridView';
+import ShowChartIcon   from '@mui/icons-material/ShowChart';
 import { useDawStore } from '../../store/daw';
 import { NodeHeader, NODE_HEADER_HEIGHT } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
@@ -21,21 +18,15 @@ import { MiniScope } from './MiniScope';
 
 const color = NODE_COLORS.output;
 
-// in-0 = X, in-1 = Y  →  left edge (stereo)
-// in-0 = X, in-1 = Y, in-5 = A  →  left edge (multi)
-const STEREO_LEFT = [
-	{ id: 'in-0', label: 'X' },
-	{ id: 'in-1', label: 'Y' },
-] as const;
-
-const MULTI_LEFT = [
+// in-0 = X, in-1 = Y, in-5 = A  →  left edge
+const LEFT_HANDLES = [
 	{ id: 'in-0', label: 'X' },
 	{ id: 'in-1', label: 'Y' },
 	{ id: 'in-5', label: 'A' },
 ] as const;
 
-// in-2 = R, in-3 = G, in-4 = B  →  bottom edge (multi only)
-const MULTI_BOTTOM = [
+// in-2 = R, in-3 = G, in-4 = B  →  bottom edge
+const BOTTOM_HANDLES = [
 	{ id: 'in-2', label: 'R', pct: '25%' },
 	{ id: 'in-3', label: 'G', pct: '50%' },
 	{ id: 'in-4', label: 'B', pct: '75%' },
@@ -48,18 +39,12 @@ function getHandleTop(index: number, total: number): string {
 
 export const MasterOutputNode = memo<NodeProps<MasterOutputFlowNode>>(
 	function MasterOutputNode({ data }) {
-		const setMasterMode    = useDawStore(s => s.setMasterMode);
 		const setSpeakersMuted = useDawStore(s => s.setSpeakersMuted);
-		const mode          = data.mode ?? 'stereo';
-		const isMulti       = mode === 'multichannel';
 		const speakersMuted = data.speakersMuted ?? true;
-		const leftHandles   = isMulti ? MULTI_LEFT : STEREO_LEFT;
 		const [expanded, setExpanded] = useState(false);
 
 		const canvasSize = 2 * GRID_UNIT;
-		const height = expanded
-			? (isMulti ? 4 : 2) * GRID_UNIT
-			: (isMulti ? 4 : 2) * GRID_UNIT;
+		const height = 4 * GRID_UNIT;
 
 		return (
 			<Box sx={{
@@ -80,57 +65,32 @@ export const MasterOutputNode = memo<NodeProps<MasterOutputFlowNode>>(
 						→ woahscope
 					</Typography>
 
-					{/* Speaker + mode icon buttons */}
-					<Box className='nodrag' sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-						{/* SPK */}
-						<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25 }}>
-							<Typography variant='caption' sx={{ fontSize: 9, color: 'text.disabled', lineHeight: 1, userSelect: 'none' }}>spk</Typography>
-							<IconButton size='small' onClick={() => setSpeakersMuted(!speakersMuted)}
-								sx={!speakersMuted ? { ...hwIconBtnLit(color), p: 0.5 } : { ...hwIconBtn(color), p: 0.5 }}>
-								{speakersMuted
-									? <VolumeOffIcon sx={{ fontSize: 12 }} />
-									: <VolumeUpIcon  sx={{ fontSize: 12 }} />
-								}
-							</IconButton>
-						</Box>
-						{/* STEREO */}
-						<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25 }}>
-							<Typography variant='caption' sx={{ fontSize: 9, color: 'text.disabled', lineHeight: 1, userSelect: 'none' }}>stereo</Typography>
-							<IconButton size='small' onClick={() => setMasterMode('stereo')}
-								sx={!isMulti ? { ...hwIconBtnLit(color), p: 0.5 } : { ...hwIconBtn(color), p: 0.5 }}>
-								<SyncAltIcon sx={{ fontSize: 12 }} />
-							</IconButton>
-						</Box>
-						{/* MULTI */}
-						<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25 }}>
-							<Typography variant='caption' sx={{ fontSize: 9, color: 'text.disabled', lineHeight: 1, userSelect: 'none' }}>multi</Typography>
-							<IconButton size='small' onClick={() => setMasterMode('multichannel')}
-								sx={isMulti ? { ...hwIconBtnLit(color), p: 0.5 } : { ...hwIconBtn(color), p: 0.5 }}>
-								<GridViewIcon sx={{ fontSize: 12 }} />
-							</IconButton>
-						</Box>
-					</Box>
-
-					{/* Scope expand toggle */}
-					<Box className='nodrag' sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25 }}>
-						<Typography variant='caption' sx={{ fontSize: 9, color: 'text.disabled', lineHeight: 1, userSelect: 'none' }}>scope</Typography>
+					{/* Speaker + mini-scope icon buttons */}
+					<Box className='nodrag' sx={{ display: 'flex', gap: 0.75, justifyContent: 'center' }}>
+						<IconButton size='small' onClick={() => setSpeakersMuted(!speakersMuted)}
+							sx={!speakersMuted ? { ...hwIconBtnLit(color), p: 0.75 } : { ...hwIconBtn(color), p: 0.75 }}>
+							{speakersMuted
+								? <VolumeOffIcon sx={{ fontSize: 16 }} />
+								: <VolumeUpIcon  sx={{ fontSize: 16 }} />
+							}
+						</IconButton>
 						<IconButton size='small' onClick={() => setExpanded(v => !v)}
-							sx={expanded ? { ...hwIconBtnLit(color), p: 0.5 } : { ...hwIconBtn(color), p: 0.5 }}>
-							{expanded ? <ExpandLessIcon sx={{ fontSize: 12 }} /> : <ExpandMoreIcon sx={{ fontSize: 12 }} />}
+							sx={expanded ? { ...hwIconBtnLit(color), p: 0.75 } : { ...hwIconBtn(color), p: 0.75 }}>
+							<ShowChartIcon sx={{ fontSize: 16 }} />
 						</IconButton>
 					</Box>
 
 					{/* Mini scope canvas */}
 					{expanded && (
 						<Box className='nodrag'>
-							<MiniScope mode={mode} width={canvasSize} height={canvasSize} />
+							<MiniScope width={canvasSize} height={canvasSize} />
 						</Box>
 					)}
 				</Box>
 
-				{/* Left-edge handles: X, Y (stereo) or X, Y, A (multi) */}
-				{leftHandles.map((h, i) => {
-					const top = getHandleTop(i, leftHandles.length);
+				{/* Left-edge handles: X, Y, A */}
+				{LEFT_HANDLES.map((h, i) => {
+					const top = getHandleTop(i, LEFT_HANDLES.length);
 					return (
 						<Fragment key={h.id}>
 							<Handle
@@ -144,8 +104,8 @@ export const MasterOutputNode = memo<NodeProps<MasterOutputFlowNode>>(
 					);
 				})}
 
-				{/* Bottom-edge handles: R, G, B (multi only) */}
-				{isMulti && MULTI_BOTTOM.map(h => (
+				{/* Bottom-edge handles: R, G, B */}
+				{BOTTOM_HANDLES.map(h => (
 					<Fragment key={h.id}>
 						<Handle
 							type='target'

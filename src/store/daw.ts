@@ -70,6 +70,7 @@ const NODE_TYPE_EDGE_COLOR: Record<string, string> = {
 	grainPlayer:     NODE_COLORS.source,
 	micInput:        NODE_COLORS.source,
 	sceneInput:      NODE_COLORS.scene,
+	ildaFrame:       NODE_COLORS.scene,
 	debug:           NODE_COLORS.debug,
 	stub:            NODE_COLORS.processor,
 };
@@ -112,6 +113,7 @@ import type {
 	PulseOscillatorNodeData,
 	PWMOscillatorNodeData,
 	GrainPlayerNodeData,
+	IldaFrameAudioEntry,
 } from './dawTypes';
 
 const { nSamples } = DEFAULT_AUDIO_SETTINGS;
@@ -290,6 +292,77 @@ export function setWaveformCaptureSize(newSize: number): void {
 			type: 'resize', buffer: _captureSAB!, nSamples: newSize,
 		});
 	}
+	// Galvo ring keeps a generous window independent of the scope analysis size
+	// so render-frame hitches don't lose beam samples. Re-allocate alongside.
+	_allocGalvoRing();
+	if (_galvoProjectorNode) {
+		_galvoProjectorNode.port.postMessage({
+			type: 'resize', buffer: _galvoSAB!, ringLen: _galvoRingLen,
+		});
+	}
+}
+
+// ─── Galvo-projector capture (continuous ring buffer) ─────────────────────────
+// The worklet writes every post-transducer sample into a circular buffer and
+// publishes a monotonic writeCount. In laser mode the visualiser reads the
+// samples scanned since its last frame and deposits only that arc with
+// wall-clock decay, so rendered brightness/flicker track the real PPS.
+//
+// SAB layout: [writeCount: Uint32(4B)] + [ch0..ch5: Float32[ringLen] each]
+
+let _galvoSAB:           SharedArrayBuffer | null = null;
+let _galvoCountView:     Uint32Array       | null = null;
+let _galvoChannels:      Float32Array[]           = [];
+let _galvoRingLen:       number                   = 0;
+let _galvoProjectorNode: AudioWorkletNode  | null = null;
+
+/** Ring length: ≥ half a second of audio, so even slow render frames recover the full arc. */
+function _galvoRingLenFor(): number {
+	const sr = (() => { try { return getSampleRate(); } catch { return 48000; } })();
+	return Math.max(_captureNSamples, Math.ceil(sr / 2));
+}
+
+function _allocGalvoRing(): void {
+	_galvoRingLen   = _galvoRingLenFor();
+	_galvoSAB       = new SharedArrayBuffer(4 + CAPTURE_CH * _galvoRingLen * 4);
+	_galvoCountView = new Uint32Array(_galvoSAB, 0, 1);
+	_galvoChannels  = [];
+	for (let ch = 0; ch < CAPTURE_CH; ch++) {
+		_galvoChannels.push(new Float32Array(_galvoSAB, 4 + ch * _galvoRingLen * 4, _galvoRingLen));
+	}
+}
+
+/** Total samples the galvo worklet has written so far (monotonic, wraps at 2^32). */
+export function getGalvoWriteCount(): number {
+	if (!_galvoCountView) return 0;
+	return Atomics.load(_galvoCountView, 0);
+}
+
+/** The post-galvo ring: six channel views + the ring length. Null until init. */
+export function getGalvoRing(): {
+	x: Float32Array; y: Float32Array;
+	r: Float32Array; g: Float32Array; b: Float32Array; a: Float32Array;
+	ringLen: number;
+} | null {
+	if (_galvoChannels.length < 6) return null;
+	return {
+		x: _galvoChannels[0],
+		y: _galvoChannels[1],
+		r: _galvoChannels[2],
+		g: _galvoChannels[3],
+		b: _galvoChannels[4],
+		a: _galvoChannels[5],
+		ringLen: _galvoRingLen,
+	};
+}
+
+export function setGalvoParams(p: {
+	bandwidthHz?:    number;
+	dampingRatio?:   number;
+	modulatorTauUs?: number;
+}): void {
+	if (!_galvoProjectorNode) return;
+	_galvoProjectorNode.port.postMessage({ type: 'params', ...p });
 }
 
 // ─── Audio routing helpers ────────────────────────────────────────────────────
@@ -332,10 +405,10 @@ function connectAudioNodes(
 	if (!destNode) return;
 
 	try {
-		if (src.kind === 'player') {
+		if (src.kind === 'player' || src.kind === 'grainPlayer') {
 			const outputIndex = sourceHandle === 'out-1' ? 1 : 0;
 			src.split.connect(destNode, outputIndex, 0);
-		} else if (src.kind === 'sceneInput') {
+		} else if (src.kind === 'sceneInput' || src.kind === 'ildaFrame') {
 			const outputIndex = parseInt(sourceHandle.replace('out-', ''), 10);
 			// split.output is the underlying ChannelSplitterNode (std-audio-context);
 			// destNode.input is the underlying GainNode — both live in the same context.
@@ -344,7 +417,7 @@ function connectAudioNodes(
 			src.kind === 'oscillator' || src.kind === 'gain' || src.kind === 'noise' || src.kind === 'dcSignal' ||
 			src.kind === 'lfo' || src.kind === 'fmOscillator' || src.kind === 'amOscillator' ||
 			src.kind === 'fatOscillator' || src.kind === 'pulseOscillator' || src.kind === 'pwmOscillator' ||
-			src.kind === 'grainPlayer' || src.kind === 'micInput'
+			src.kind === 'micInput'
 		) {
 			src.toneNode.connect(destNode);
 		}
@@ -368,17 +441,17 @@ function disconnectAudioNodes(
 	if (!destNode) return;
 
 	try {
-		if (src.kind === 'player') {
+		if (src.kind === 'player' || src.kind === 'grainPlayer') {
 			const outputIndex = sourceHandle === 'out-1' ? 1 : 0;
 			src.split.disconnect(destNode, outputIndex);
-		} else if (src.kind === 'sceneInput') {
+		} else if (src.kind === 'sceneInput' || src.kind === 'ildaFrame') {
 			const outputIndex = parseInt(sourceHandle.replace('out-', ''), 10);
 			src.split.output.disconnect(destNode.input, outputIndex, 0);
 		} else if (
 			src.kind === 'oscillator' || src.kind === 'gain' || src.kind === 'noise' || src.kind === 'dcSignal' ||
 			src.kind === 'lfo' || src.kind === 'fmOscillator' || src.kind === 'amOscillator' ||
 			src.kind === 'fatOscillator' || src.kind === 'pulseOscillator' || src.kind === 'pwmOscillator' ||
-			src.kind === 'grainPlayer' || src.kind === 'micInput'
+			src.kind === 'micInput'
 		) {
 			src.toneNode.disconnect(destNode);
 		}
@@ -1017,8 +1090,13 @@ function createGrainPlayerEntry(id: string, data?: Partial<GrainPlayerNodeData>)
 		playbackRate: data?.playbackRate ?? 1,
 		detune:       data?.detune       ?? 0,
 		loop:         data?.loop         ?? true,
+		loopStart:    data?.loopStart    ?? 0,
+		loopEnd:      data?.loopEnd      ?? 0,
+		reverse:      data?.reverse      ?? false,
 	});
-	const entry: GrainPlayerAudioEntry = { kind: 'grainPlayer', toneNode };
+	const split = new Split(2);
+	toneNode.connect(split);
+	const entry: GrainPlayerAudioEntry = { kind: 'grainPlayer', toneNode, split };
 	_audioNodes.set(id, entry);
 	return entry;
 }
@@ -1083,6 +1161,18 @@ export function setGrainPlayerLoopStart(id: string, time: number): void {
 	const entry = _audioNodes.get(id);
 	if (!entry || entry.kind !== 'grainPlayer') return;
 	entry.toneNode.loopStart = time;
+}
+
+export function setGrainPlayerLoopEnd(id: string, time: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'grainPlayer') return;
+	entry.toneNode.loopEnd = time;
+}
+
+export function setGrainPlayerReverse(id: string, reverse: boolean): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'grainPlayer') return;
+	entry.toneNode.reverse = reverse;
 }
 
 // ─── MicInput audio node lifecycle ───────────────────────────────────────────
@@ -1159,6 +1249,127 @@ async function initSceneInput(): Promise<void> {
 	);
 }
 
+// ─── IldaFrame audio node lifecycle ──────────────────────────────────────────
+//
+// Each IldaFrameNode owns a fresh `scene-input-processor` worklet instance —
+// the same processor class the singleton SceneInput uses, but with its own
+// coord buffer. Multiple ILDA files can coexist as independent sources.
+// `audioWorklet.addModule(...)` was already called during initSceneInput()
+// and is idempotent, so we can synchronously instantiate further worklets.
+
+function createIldaFrameEntry(id: string): IldaFrameAudioEntry {
+	const toneCtx = getContext();
+	const workletNode = toneCtx.createAudioWorkletNode('scene-input-processor', {
+		numberOfOutputs:    1,
+		outputChannelCount: [6],
+		processorOptions:   {},
+	});
+	const split = new Split(6);
+	workletNode.connect(split.input);
+
+	const entry: IldaFrameAudioEntry = {
+		kind:        'ildaFrame',
+		workletNode,
+		split,
+		coordBufs:   [],
+		frameTimer:  null,
+		frameIdx:    0,
+	};
+	_audioNodes.set(id, entry);
+	return entry;
+}
+
+/**
+ * Fetch an .ild file, decode it, and load every frame into the node's audio
+ * entry as a precomputed coord buffer. Posts frame[0] to the worklet so the
+ * sound starts immediately; the UI layer (IldaFrameNode) is responsible for
+ * deciding when to start the animated cycle.
+ *
+ * Imports the codec lazily so the path doesn't pull it into the main bundle.
+ */
+export async function loadIldaForNode(id: string, url: string): Promise<{ nFrames: number; nPoints: number }> {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'ildaFrame') throw new Error(`Node ${id} is not an ildaFrame entry`);
+
+	const [{ decodeIldaFile, ildaFrameToCoordBuffer }] = await Promise.all([
+		import('../laser/ildaCodec'),
+	]);
+	const res     = await fetch(url);
+	const arrBuf  = await res.arrayBuffer();
+	const frames  = decodeIldaFile(arrBuf);
+	if (frames.length === 0) throw new Error('ILDA file contained no frames');
+
+	const coordBufs = frames.map(f => ildaFrameToCoordBuffer(f));
+
+	// Stop any running animated cursor before swapping the buffer set.
+	if (entry.frameTimer !== null) {
+		clearInterval(entry.frameTimer);
+		entry.frameTimer = null;
+	}
+	entry.coordBufs = coordBufs;
+	entry.frameIdx  = 0;
+
+	_postIldaCoordBufferToWorklet(entry, 0);
+
+	return { nFrames: frames.length, nPoints: coordBufs[0].nPoints };
+}
+
+function _postIldaCoordBufferToWorklet(entry: IldaFrameAudioEntry, idx: number): void {
+	const cb = entry.coordBufs[idx];
+	if (!cb) return;
+	// Caller keeps `entry.coordBufs[idx]` alive; transfer a fresh copy so the
+	// worklet owns its own buffer and we can re-post on the next animated tick.
+	const copy = cb.data.slice();
+	(entry.workletNode as AudioWorkletNode).port.postMessage(
+		{ type: 'path', data: copy.buffer, nPoints: cb.nPoints },
+		[copy.buffer],
+	);
+}
+
+export function startIldaPlayback(id: string, mode: 'static' | 'animated', fps: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'ildaFrame') return;
+	if (entry.coordBufs.length === 0) return;
+
+	if (entry.frameTimer !== null) {
+		clearInterval(entry.frameTimer);
+		entry.frameTimer = null;
+	}
+
+	// Always (re-)seed the worklet with the current frame so silence resumes
+	// turn into sound on the next process() call.
+	_postIldaCoordBufferToWorklet(entry, entry.frameIdx);
+
+	if (mode === 'animated' && entry.coordBufs.length > 1) {
+		const intervalMs = 1000 / Math.max(1, fps);
+		entry.frameTimer = setInterval(() => {
+			entry.frameIdx = (entry.frameIdx + 1) % entry.coordBufs.length;
+			_postIldaCoordBufferToWorklet(entry, entry.frameIdx);
+		}, intervalMs);
+	}
+}
+
+export function stopIldaPlayback(id: string): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'ildaFrame') return;
+	if (entry.frameTimer !== null) {
+		clearInterval(entry.frameTimer);
+		entry.frameTimer = null;
+	}
+	(entry.workletNode as AudioWorkletNode).port.postMessage({ type: 'clear' });
+}
+
+export function getIldaFrameInfo(id: string): { nFrames: number; nPoints: number; frameIdx: number } | null {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'ildaFrame') return null;
+	if (entry.coordBufs.length === 0) return null;
+	return {
+		nFrames:  entry.coordBufs.length,
+		nPoints:  entry.coordBufs[entry.frameIdx]?.nPoints ?? 0,
+		frameIdx: entry.frameIdx,
+	};
+}
+
 async function initWaveformCapture(): Promise<void> {
 	console.log(..._DAW_INFO, 'initWaveformCapture() — loading AudioWorklet module…');
 	const toneCtx = getContext();
@@ -1203,6 +1414,46 @@ async function initWaveformCapture(): Promise<void> {
 	console.log(..._DAW_OK, 'initWaveformCapture() complete');
 }
 
+async function initGalvoProjector(): Promise<void> {
+	console.log(..._DAW_INFO, 'initGalvoProjector() — loading AudioWorklet module…');
+	const toneCtx = getContext();
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	await (toneCtx.rawContext as any).audioWorklet.addModule('/galvoProjectorProcessor.worklet.js');
+	console.log(..._DAW_INFO, 'galvoProjector module loaded — creating node…');
+
+	_allocGalvoRing();
+	const workletNode = toneCtx.createAudioWorkletNode('galvo-projector', {
+		numberOfInputs:   1,
+		numberOfOutputs:  0,
+		channelCount:     6,
+		channelCountMode: 'explicit' as ChannelCountMode,
+		processorOptions: { ringLen: _galvoRingLen },
+	});
+	_galvoProjectorNode = workletNode as unknown as AudioWorkletNode;
+
+	// Tap the same 6-channel master bus the waveform capture taps. The galvo
+	// physics applies in the worklet, so this stream gets read by the visualizer
+	// in laser vizMode while the unfiltered waveform SAB drives scope mode.
+	const master      = getMasterEntry();
+	const galvoMerge  = new Merge(6);
+	master.inputGainX.connect(galvoMerge, 0, 0);
+	master.inputGainY.connect(galvoMerge, 0, 1);
+	master.inputGainR.connect(galvoMerge, 0, 2);
+	master.inputGainG.connect(galvoMerge, 0, 3);
+	master.inputGainB.connect(galvoMerge, 0, 4);
+	master.inputGainA.connect(galvoMerge, 0, 5);
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	(galvoMerge as any).output.connect(workletNode as any, 0, 0);
+
+	(workletNode as unknown as AudioWorkletNode).port.postMessage({
+		type: 'sabBuffer', buffer: _galvoSAB!, ringLen: _galvoRingLen,
+	});
+
+	console.log(..._DAW_OK, 'initGalvoProjector() complete');
+}
+
 let _sceneRunning = false;
 
 export async function startSceneInput(): Promise<void> {
@@ -1231,6 +1482,23 @@ export function getSceneInputWorkletNode(): AudioWorkletNode | null {
 	const entry = _audioNodes.get(SCENE_INPUT_ID);
 	if (!entry || entry.kind !== 'sceneInput') return null;
 	return entry.workletNode as AudioWorkletNode;
+}
+
+// ─── Last-coord-buffer cache ─────────────────────────────────────────────────
+// Stores whichever coord buffer the path worker emitted most recently so the
+// "Export ILDA" action can read it without recomputing or waiting for the
+// next frame.
+
+let _lastCoordBuffer: { data: Float32Array; nPoints: number } | null = null;
+
+/** Called by the scene-to-audio pipeline after forwarding a fresh frame to the worklet. */
+export function setLastCoordBuffer(data: Float32Array, nPoints: number): void {
+	_lastCoordBuffer = { data, nPoints };
+}
+
+/** Returns the most recent coord buffer produced by the path worker, or null. */
+export function getLastCoordBuffer(): { data: Float32Array; nPoints: number } | null {
+	return _lastCoordBuffer;
 }
 
 export function getSceneRunning(): boolean {
@@ -1271,10 +1539,18 @@ function disposeAudioNode(id: string): void {
 	} else if (entry.kind === 'grainPlayer') {
 		if (entry.toneNode.state === 'started') entry.toneNode.stop();
 		entry.toneNode.dispose();
+		entry.split.dispose();
 	} else if (entry.kind === 'micInput') {
 		try { entry.toneNode.close(); } catch {}
 		entry.toneNode.dispose();
 	} else if (entry.kind === 'sceneInput') {
+		try { entry.workletNode.disconnect(); } catch {}
+		entry.split.dispose();
+	} else if (entry.kind === 'ildaFrame') {
+		if (entry.frameTimer !== null) {
+			clearInterval(entry.frameTimer);
+			entry.frameTimer = null;
+		}
 		try { entry.workletNode.disconnect(); } catch {}
 		entry.split.dispose();
 	}
@@ -1460,7 +1736,7 @@ const initialNodes: AppNode[] = [
 		id:        MASTER_NODE_ID,
 		type:      'masterOutput',
 		position:  { x: 288, y: 240 },
-		data:      { label: 'Master Output', mode: 'multichannel' as const, speakersMuted: true },
+		data:      { label: 'Master Output', speakersMuted: true },
 		deletable: false,
 	},
 	{
@@ -1513,12 +1789,12 @@ type DawState = {
 	addPWMOscillatorNode:   (position: { x: number; y: number }) => string;
 	addGrainPlayerNode:     (position: { x: number; y: number }) => string;
 	addMicInputNode:        (position: { x: number; y: number }) => string;
+	addIldaFrameNode:       (position: { x: number; y: number }) => string;
 	addStubNode:            (kind: StubKind, position: { x: number; y: number }) => string;
 	addDebugNode:           (position: { x: number; y: number }) => string;
 	updateNodeData:      (id: string, data: Partial<Record<string, unknown>>) => void;
 	updateNodePositions: (updatedNodes: AppNode[]) => void;
 	setSelectedNodeId:   (id: string | null) => void;
-	setMasterMode:       (mode: 'stereo' | 'multichannel') => void;
 	setSpeakersMuted:    (muted: boolean) => void;
 	edgePathType:        'bezier' | 'straight' | 'step' | 'smoothstep';
 	setEdgePathType:     (type: 'bezier' | 'straight' | 'step' | 'smoothstep') => void;
@@ -1776,7 +2052,7 @@ export const useDawStore = create<DawState>((set, get) => ({
 		createGrainPlayerEntry(id);
 		const newNode: AppNode = {
 			id, type: 'grainPlayer', position,
-			data: { label: 'Grain Player', trackUrl: '', grainSize: 0.2, overlap: 0.1, playbackRate: 1, detune: 0, loop: true },
+			data: { label: 'Grain Player', trackUrl: '', grainSize: 0.2, overlap: 0.1, playbackRate: 1, detune: 0, loop: true, loopStart: 0, loopEnd: 0, reverse: false },
 		};
 		set({ nodes: [...get().nodes, newNode], audioVersion: get().audioVersion + 1 });
 		return id;
@@ -1787,7 +2063,27 @@ export const useDawStore = create<DawState>((set, get) => ({
 		createMicInputEntry(id);
 		const newNode: AppNode = {
 			id, type: 'micInput', position,
-			data: { label: 'Mic Input' },
+			data: { label: 'Mic' },
+		};
+		set({ nodes: [...get().nodes, newNode], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addIldaFrameNode: (position) => {
+		const id = `ildaFrame-${Date.now()}`;
+		createIldaFrameEntry(id);
+		const newNode: AppNode = {
+			id,
+			type:     'ildaFrame',
+			position,
+			data:     {
+				label:     'ILDA',
+				ildUrl:    '',
+				filename:  '',
+				mode:      'static',
+				fps:       30,
+				isPlaying: false,
+			},
 		};
 		set({ nodes: [...get().nodes, newNode], audioVersion: get().audioVersion + 1 });
 		return id;
@@ -1902,6 +2198,11 @@ export const useDawStore = create<DawState>((set, get) => ({
 				createGrainPlayerEntry(node.id, node.data as GrainPlayerNodeData);
 			} else if (node.type === 'micInput') {
 				createMicInputEntry(node.id);
+			} else if (node.type === 'ildaFrame') {
+				createIldaFrameEntry(node.id);
+				// File contents live behind a blob URL that does not survive a
+				// reload — the user re-uploads via the node UI to repopulate
+				// coordBufs. Persisted `filename` is shown until they do.
 			}
 			// debug, stub → no audio entry
 		}
@@ -1930,30 +2231,19 @@ export const useDawStore = create<DawState>((set, get) => ({
 		});
 	},
 
-	setMasterMode: (mode) => {
-		const validHandles = mode === 'stereo'
-			? new Set(['in-0', 'in-1'])
-			: new Set(['in-0', 'in-1', 'in-2', 'in-3', 'in-4', 'in-5']);
-
-		const currentEdges = get().edges;
-		const staleEdges = currentEdges.filter(
-			e => e.target === MASTER_NODE_ID && !validHandles.has(e.targetHandle ?? ''),
-		);
-		for (const e of staleEdges) {
-			disconnectAudioNodes(e.source, e.sourceHandle!, e.target, e.targetHandle!);
-		}
-		const staleIds = new Set(staleEdges.map(e => e.id));
-
-		set({
-			nodes: get().nodes.map(n =>
-				n.id === MASTER_NODE_ID
-					? ({ ...n, data: { ...n.data, mode } } as AppNode)
-					: n,
-			),
-			edges: currentEdges.filter(e => !staleIds.has(e.id)),
-		});
-	},
 }));
+
+/**
+ * Returns true if any of the master output's R/G/B handles (in-2, in-3, in-4)
+ * has an inbound edge. Used by the visualiser to decide between per-sample
+ * R/G/B colouring and the phosphor hue fallback.
+ */
+export function isMasterMultichannel(edges: AppEdge[]): boolean {
+	return edges.some(e =>
+		e.target === MASTER_NODE_ID &&
+		(e.targetHandle === 'in-2' || e.targetHandle === 'in-3' || e.targetHandle === 'in-4'),
+	);
+}
 
 // ─── Patch export helpers ─────────────────────────────────────────────────────
 
@@ -1983,8 +2273,18 @@ export const dawInitPromise = initSceneInput().then(() => {
 	connectAudioNodes(SCENE_INPUT_ID, 'out-3', MASTER_NODE_ID, 'in-3');
 	connectAudioNodes(SCENE_INPUT_ID, 'out-4', MASTER_NODE_ID, 'in-4');
 	connectAudioNodes(SCENE_INPUT_ID, 'out-5', MASTER_NODE_ID, 'in-5');
-	return initWaveformCapture();
+	return initWaveformCapture().then(initGalvoProjector);
 }).catch(console.error);
+
+// ─── Dev-only hook: expose store + audio map for memory-leak debugging ────────
+if (import.meta.env.DEV) {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	(window as any).__daw = {
+		useDawStore,
+		audioNodes: _audioNodes,
+		loadTrackForGrainPlayer,
+	};
+}
 
 // ─── Cleanup on page unload ───────────────────────────────────────────────────
 
@@ -2022,6 +2322,7 @@ window.addEventListener(
 			} else if (entry.kind === 'grainPlayer') {
 				if (entry.toneNode.state === 'started') entry.toneNode.stop();
 				entry.toneNode.dispose();
+				entry.split.dispose();
 			} else if (entry.kind === 'micInput') {
 				try { entry.toneNode.close(); } catch {}
 				entry.toneNode.dispose();

@@ -44,6 +44,7 @@ const CATALOGUE: CatalogueCategory[] = [
 			{ label: 'Player',          action: 'player',          abbr: 'PLY',  desc: 'audio file'          },
 			{ label: 'GrainPlayer',     action: 'grainPlayer',     abbr: 'GRPD', desc: 'granular'            },
 			{ label: 'MicInput',        action: 'micInput',        abbr: 'MIC',  desc: 'microphone'          },
+		{ label: 'IldaFrame',       action: 'ildaFrame',       abbr: 'ILDA', desc: 'ILDA laser show file' },
 			{ label: 'LFO',             action: 'lfo',             abbr: 'LFO',  desc: 'low-freq osc'        },
 			{ label: 'DCSignal',        action: 'dcSignal',        abbr: 'DC',   desc: 'constant value'      },
 		],
@@ -200,6 +201,7 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 	const addPWMOscillatorNode   = useDawStore(s => s.addPWMOscillatorNode);
 	const addGrainPlayerNode     = useDawStore(s => s.addGrainPlayerNode);
 	const addMicInputNode        = useDawStore(s => s.addMicInputNode);
+	const addIldaFrameNode       = useDawStore(s => s.addIldaFrameNode);
 	const addStubNode            = useDawStore(s => s.addStubNode);
 	const addDebugNode           = useDawStore(s => s.addDebugNode);
 
@@ -231,6 +233,7 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 			pwmOscillator:   () => addPWMOscillatorNode(pos),
 			grainPlayer:     () => addGrainPlayerNode(pos),
 			micInput:        () => addMicInputNode(pos),
+			ildaFrame:       () => addIldaFrameNode(pos),
 			debug:           () => addDebugNode(pos),
 		};
 		const handler = REAL_HANDLERS[action];
@@ -243,13 +246,13 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 		addOscillatorNode, addGainNode, addNoiseNode, addDCSignalNode, addPlayerNode,
 		addLFONode, addFMOscillatorNode, addAMOscillatorNode, addFatOscillatorNode,
 		addPulseOscillatorNode, addPWMOscillatorNode, addGrainPlayerNode, addMicInputNode,
-		addStubNode, addDebugNode, setOpenTracked,
+		addIldaFrameNode, addStubNode, addDebugNode, setOpenTracked,
 	]);
 
 	const q = filter.trim().toLowerCase();
 	const filtered = q
 		? CATALOGUE
-				.map(cat => ({ ...cat, items: cat.items.filter(i => i.label.toLowerCase().includes(q) || i.abbr.toLowerCase().includes(q)) }))
+				.map(cat => ({ ...cat, items: cat.items.filter(i => i.label.toLowerCase().includes(q) || i.abbr.toLowerCase().includes(q) || i.desc?.toLowerCase().includes(q)) }))
 				.filter(cat => cat.items.length > 0)
 		: CATALOGUE;
 
