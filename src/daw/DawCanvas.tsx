@@ -64,8 +64,27 @@ import { AMOscillatorNode }    from './nodes/AMOscillatorNode';
 import { FatOscillatorNode }   from './nodes/FatOscillatorNode';
 import { PulseOscillatorNode } from './nodes/PulseOscillatorNode';
 import { PWMOscillatorNode }   from './nodes/PWMOscillatorNode';
-import { GrainPlayerNode }    from './nodes/GrainPlayerNode';
-import { MicInputNode }       from './nodes/MicInputNode';
+import { GrainPlayerNode }        from './nodes/GrainPlayerNode';
+import { MicInputNode }           from './nodes/MicInputNode';
+import { ReverbNode }             from './nodes/ReverbNode';
+import { JCReverbNode }           from './nodes/JCReverbNode';
+import { FreeverbNode }           from './nodes/FreeverbNode';
+import { DelayNode }              from './nodes/DelayNode';
+import { FeedbackDelayNode }      from './nodes/FeedbackDelayNode';
+import { PingPongDelayNode }      from './nodes/PingPongDelayNode';
+import { DistortionNode }         from './nodes/DistortionNode';
+import { ChebyshevNode }          from './nodes/ChebyshevNode';
+import { BitCrusherNode }         from './nodes/BitCrusherNode';
+import { FrequencyShifterNode }   from './nodes/FrequencyShifterNode';
+import { PitchShiftNode }         from './nodes/PitchShiftNode';
+import { StereoWidenerNode }      from './nodes/StereoWidenerNode';
+import { ChorusNode }             from './nodes/ChorusNode';
+import { PhaserNode }             from './nodes/PhaserNode';
+import { TremoloNode }            from './nodes/TremoloNode';
+import { VibratoNode }            from './nodes/VibratoNode';
+import { AutoFilterNode }         from './nodes/AutoFilterNode';
+import { AutoPannerNode }         from './nodes/AutoPannerNode';
+import { AutoWahNode }            from './nodes/AutoWahNode';
 import { DeletableEdge }    from './edges/DeletableEdge';
 import { AddNodePanel }     from './AddNodePanel';
 import { PatchPanel }      from './PatchPanel';
@@ -89,8 +108,27 @@ const nodeTypes = {
 	fatOscillator:   FatOscillatorNode,
 	pulseOscillator: PulseOscillatorNode,
 	pwmOscillator:   PWMOscillatorNode,
-	grainPlayer:     GrainPlayerNode,
-	micInput:        MicInputNode,
+	grainPlayer:      GrainPlayerNode,
+	micInput:         MicInputNode,
+	reverb:           ReverbNode,
+	jcReverb:         JCReverbNode,
+	freeverb:         FreeverbNode,
+	delay:            DelayNode,
+	feedbackDelay:    FeedbackDelayNode,
+	pingPongDelay:    PingPongDelayNode,
+	distortion:       DistortionNode,
+	chebyshev:        ChebyshevNode,
+	bitCrusher:       BitCrusherNode,
+	frequencyShifter: FrequencyShifterNode,
+	pitchShift:       PitchShiftNode,
+	stereoWidener:    StereoWidenerNode,
+	chorus:           ChorusNode,
+	phaser:           PhaserNode,
+	tremolo:          TremoloNode,
+	vibrato:          VibratoNode,
+	autoFilter:       AutoFilterNode,
+	autoPanner:       AutoPannerNode,
+	autoWah:          AutoWahNode,
 };
 
 const edgeTypes = {

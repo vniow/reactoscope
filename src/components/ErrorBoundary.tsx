@@ -4,6 +4,8 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import * as Sentry from '@sentry/react';
 import { ERROR_MESSAGES } from '../config';
+import { hwBtn } from '../daw/nodes/hwStyles';
+import { NODE_COLORS } from '../daw/nodes/nodeColors';
 
 interface Props {
 	children: ReactNode;
@@ -62,7 +64,7 @@ export class ErrorBoundary extends Component<Props, State> {
 					>
 						{this.state.message}
 					</Typography>
-					<Button variant='outlined' color='primary' onClick={this.handleReset}>
+					<Button onClick={this.handleReset} sx={hwBtn(NODE_COLORS.scene)}>
 						Try again
 					</Button>
 				</Box>

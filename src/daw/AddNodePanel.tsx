@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { useReactFlow } from '@xyflow/react';
 import Box from '@mui/material/Box';
@@ -175,6 +175,18 @@ const CATALOGUE: CatalogueCategory[] = [
 	},
 ];
 
+// Actions backed by a real audio implementation. Anything not listed here is a
+// stub (handled by addStubNode) and gets an asterisk on its title in the panel.
+// Keep in sync with REAL_HANDLERS in handleAdd.
+const REAL_ACTIONS = new Set<string>([
+	'oscillator', 'gain', 'noiseGenerator', 'dcSignal', 'player', 'lfo',
+	'fmOscillator', 'amOscillator', 'fatOscillator', 'pulseOscillator',
+	'pwmOscillator', 'grainPlayer', 'micInput', 'debug',
+	'reverb', 'jcReverb', 'freeverb', 'delay', 'feedbackDelay', 'pingPongDelay',
+	'distortion', 'chebyshev', 'bitCrusher', 'frequencyShifter', 'pitchShift', 'stereoWidener',
+	'chorus', 'phaser', 'tremolo', 'vibrato', 'autoFilter', 'autoPanner', 'autoWah',
+]);
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped: boolean; onOpenChange?: (open: boolean) => void }) {
@@ -186,6 +198,21 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	useClickOutside(containerRef, () => setOpenTracked(false), open);
+
+	// The toolbar is vertically centred, so the flyout's top (anchored to the
+	// button) sits mid-screen. Measure that top and cap the height so the panel
+	// runs from the toolbar top down to just above the window bottom.
+	const [maxHeight, setMaxHeight] = useState<number | undefined>(undefined);
+	useEffect(() => {
+		if (!open) return;
+		const measure = () => {
+			const top = containerRef.current?.getBoundingClientRect().top ?? 0;
+			setMaxHeight(window.innerHeight - top - 8);
+		};
+		measure();
+		window.addEventListener('resize', measure);
+		return () => window.removeEventListener('resize', measure);
+	}, [open]);
 
 	const addOscillatorNode      = useDawStore(s => s.addOscillatorNode);
 	const addGainNode            = useDawStore(s => s.addGainNode);
@@ -202,6 +229,25 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 	const addMicInputNode        = useDawStore(s => s.addMicInputNode);
 	const addStubNode            = useDawStore(s => s.addStubNode);
 	const addDebugNode           = useDawStore(s => s.addDebugNode);
+	const addReverbNode          = useDawStore(s => s.addReverbNode);
+	const addJCReverbNode        = useDawStore(s => s.addJCReverbNode);
+	const addFreeverbNode        = useDawStore(s => s.addFreeverbNode);
+	const addDelayNode           = useDawStore(s => s.addDelayNode);
+	const addFeedbackDelayNode   = useDawStore(s => s.addFeedbackDelayNode);
+	const addPingPongDelayNode   = useDawStore(s => s.addPingPongDelayNode);
+	const addDistortionNode      = useDawStore(s => s.addDistortionNode);
+	const addChebyshevNode       = useDawStore(s => s.addChebyshevNode);
+	const addBitCrusherNode      = useDawStore(s => s.addBitCrusherNode);
+	const addFrequencyShifterNode = useDawStore(s => s.addFrequencyShifterNode);
+	const addPitchShiftNode      = useDawStore(s => s.addPitchShiftNode);
+	const addStereoWidenerNode   = useDawStore(s => s.addStereoWidenerNode);
+	const addChorusNode          = useDawStore(s => s.addChorusNode);
+	const addPhaserNode          = useDawStore(s => s.addPhaserNode);
+	const addTremoloNode         = useDawStore(s => s.addTremoloNode);
+	const addVibratoNode         = useDawStore(s => s.addVibratoNode);
+	const addAutoFilterNode      = useDawStore(s => s.addAutoFilterNode);
+	const addAutoPannerNode      = useDawStore(s => s.addAutoPannerNode);
+	const addAutoWahNode         = useDawStore(s => s.addAutoWahNode);
 
 	const getDropPosition = useCallback((): { x: number; y: number } => {
 		const rfEl = document.querySelector<HTMLElement>('.react-flow');
@@ -230,8 +276,27 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 			pulseOscillator: () => addPulseOscillatorNode(pos),
 			pwmOscillator:   () => addPWMOscillatorNode(pos),
 			grainPlayer:     () => addGrainPlayerNode(pos),
-			micInput:        () => addMicInputNode(pos),
-			debug:           () => addDebugNode(pos),
+			micInput:          () => addMicInputNode(pos),
+			debug:             () => addDebugNode(pos),
+			reverb:            () => addReverbNode(pos),
+			jcReverb:          () => addJCReverbNode(pos),
+			freeverb:          () => addFreeverbNode(pos),
+			delay:             () => addDelayNode(pos),
+			feedbackDelay:     () => addFeedbackDelayNode(pos),
+			pingPongDelay:     () => addPingPongDelayNode(pos),
+			distortion:        () => addDistortionNode(pos),
+			chebyshev:         () => addChebyshevNode(pos),
+			bitCrusher:        () => addBitCrusherNode(pos),
+			frequencyShifter:  () => addFrequencyShifterNode(pos),
+			pitchShift:        () => addPitchShiftNode(pos),
+			stereoWidener:     () => addStereoWidenerNode(pos),
+			chorus:            () => addChorusNode(pos),
+			phaser:            () => addPhaserNode(pos),
+			tremolo:           () => addTremoloNode(pos),
+			vibrato:           () => addVibratoNode(pos),
+			autoFilter:        () => addAutoFilterNode(pos),
+			autoPanner:        () => addAutoPannerNode(pos),
+			autoWah:           () => addAutoWahNode(pos),
 		};
 		const handler = REAL_HANDLERS[action];
 		if (handler) handler();
@@ -244,12 +309,17 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 		addLFONode, addFMOscillatorNode, addAMOscillatorNode, addFatOscillatorNode,
 		addPulseOscillatorNode, addPWMOscillatorNode, addGrainPlayerNode, addMicInputNode,
 		addStubNode, addDebugNode, setOpenTracked,
+		addReverbNode, addJCReverbNode, addFreeverbNode, addDelayNode, addFeedbackDelayNode,
+		addPingPongDelayNode, addDistortionNode, addChebyshevNode, addBitCrusherNode,
+		addFrequencyShifterNode, addPitchShiftNode, addStereoWidenerNode,
+		addChorusNode, addPhaserNode, addTremoloNode, addVibratoNode,
+		addAutoFilterNode, addAutoPannerNode, addAutoWahNode,
 	]);
 
 	const q = filter.trim().toLowerCase();
 	const filtered = q
 		? CATALOGUE
-				.map(cat => ({ ...cat, items: cat.items.filter(i => i.label.toLowerCase().includes(q) || i.abbr.toLowerCase().includes(q)) }))
+				.map(cat => ({ ...cat, items: cat.items.filter(i => i.label.toLowerCase().includes(q) || i.abbr.toLowerCase().includes(q) || i.desc?.toLowerCase().includes(q)) }))
 				.filter(cat => cat.items.length > 0)
 		: CATALOGUE;
 
@@ -257,7 +327,7 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 		...hwBtn(catColor),
 		width:          '100%',
 		px:             1,
-		py:             0.75,
+		py:             1,
 		minWidth:       0,
 		textAlign:      'left'  as const,
 		justifyContent: 'flex-start',
@@ -284,6 +354,9 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 					onMouseDown={e => e.stopPropagation()}
 					sx={{
 						position:        'absolute',
+						// Align the flyout top with the toolbar/button top and extend
+						// down to just above the window bottom (height measured above,
+						// since the toolbar is vertically centred).
 						top:             0,
 						...(columnsSwapped
 							? { right: 'calc(100% + 4px)' }
@@ -294,7 +367,7 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 						borderRadius:    1,
 						p:               1.5,
 						width:           400,
-						maxHeight:       720,
+						maxHeight:       maxHeight ?? 'calc(100vh - 32px)',
 						overflowY:       'auto',
 						zIndex:          100,
 						boxShadow:       `0 4px 16px rgba(0,0,0,0.7), 0 0 0 1px ${color}18`,
@@ -323,9 +396,9 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 									pl:          1,
 									py:          0.25,
 									mb:          0.5,
-									mt:          0.75,
+									mt:          2.5,
 									background:  `${cat.color}08`,
-									'&:first-of-type': { mt: 0 },
+									'&:first-of-type': { mt: 1 },
 								}}>
 									<Typography sx={{
 										fontSize:      9,
@@ -348,7 +421,7 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 										>
 											<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.25, width: '100%' }}>
 												<Typography sx={{ fontSize: 10, fontWeight: 600, color: 'inherit', lineHeight: 1.2, textTransform: 'none' }}>
-													{item.label}
+													{item.label}{!REAL_ACTIONS.has(item.action) && ' *'}
 												</Typography>
 												{item.desc && (
 													<Typography sx={{ fontSize: 8, color: 'text.disabled', lineHeight: 1, textTransform: 'none', fontWeight: 400 }}>

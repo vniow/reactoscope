@@ -11,7 +11,7 @@ import type { VizMode } from '../contexts/WoahscopeContext';
 import { EffectsControl }        from '../components/GainControl';
 import { PhosphorControl }       from '../components/PhosphorControl';
 import { VisualizationControls } from '../components/VisualizationControls';
-import { useDawStore }           from '../store/daw';
+import { useDawStore, isMasterMultichannel } from '../store/daw';
 import { NODE_COLORS } from './nodes/nodeColors';
 import { METAL_BG }    from './nodes/metalBackground';
 import { hwIconBtn, hwIconBtnLit, hwToggleSx } from './nodes/hwStyles';
@@ -37,10 +37,7 @@ export function VizSettingsOverlay({ onOpenChange }: { onOpenChange?: (open: boo
 
 	const { vizMode, setVizMode } = useEffects();
 
-	const masterMode = useDawStore(
-		s => (s.nodes.find(n => n.type === 'masterOutput')?.data as { mode?: string } | undefined)?.mode ?? 'stereo'
-	);
-	const isMultichannel = masterMode === 'multichannel';
+	const isMultichannel = useDawStore(s => isMasterMultichannel(s.edges));
 
 	return (
 		<>

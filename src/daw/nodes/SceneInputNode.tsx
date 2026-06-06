@@ -64,7 +64,7 @@ export const SceneInputNode = memo(function SceneInputNode({
 			{/* Play / Stop — size M: iconSize 16, p 1 */}
 			<Box className='nodrag' sx={{ display: 'flex', justifyContent: 'center', py: 0.5 }}>
 				<IconButton
-					size='small'
+					size='medium'
 					onClick={() => sceneRunning ? stopScene() : startScene()}
 					aria-label={sceneRunning ? 'Stop' : 'Start'}
 					sx={sceneRunning

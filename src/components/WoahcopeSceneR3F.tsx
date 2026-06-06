@@ -4,9 +4,8 @@ import * as THREE from 'three';
 import { useAxis, useEffects } from '../contexts/WoahscopeContext';
 import { updateGeometryArrays, getColourFromHue } from '../woahscope/utils';
 import { DEFAULT_AUDIO_SETTINGS } from '../config';
-import { getWaveformData, setAnalyserSize, getWaveformDataFromSAB, getWaveformWriteIndex, setWaveformCaptureSize } from '../store/daw';
-import { useDawStore, MASTER_NODE_ID } from '../store/daw';
-import type { MasterOutputNodeData } from '../store/dawTypes';
+import { getWaveformData, setAnalyserSize, getWaveformDataFromSAB, getWaveformWriteIndex, setWaveformCaptureSize, isMasterMultichannel } from '../store/daw';
+import { useDawStore } from '../store/daw';
 import type { DebugSnapshot } from '../debug/types';
 import { EMPTY_SNAPSHOT } from '../debug/types';
 import {
@@ -55,11 +54,9 @@ export function WoscopeSceneR3F() {
 	const { crtEnabled, persistence, glowStrength, scatterStrength, lanczosEnabled, lanczosSteps, nSamples } = useEffects();
 	const { camera, size, invalidate } = useThree();
 
-	// Track multichannel mode via a ref so useFrame always sees the latest value
-	const isMultichannel = useDawStore(s => {
-		const master = s.nodes.find(n => n.id === MASTER_NODE_ID);
-		return (master?.data as MasterOutputNodeData | undefined)?.mode === 'multichannel';
-	});
+	// Track multichannel rendering via a ref so useFrame always sees the latest value.
+	// Multichannel is enabled when any R/G/B handle on master output has a wired edge.
+	const isMultichannel = useDawStore(s => isMasterMultichannel(s.edges));
 	const isMultichannelRef = useRef(isMultichannel);
 	useEffect(() => { isMultichannelRef.current = isMultichannel; }, [isMultichannel]);
 
@@ -163,7 +160,7 @@ export function WoscopeSceneR3F() {
 			const cr = multi ? 0.5 + 0.5 * rBuf[i] : hr;
 			const cg = multi ? 0.5 + 0.5 * gBuf[i] : hg;
 			const cb = multi ? 0.5 + 0.5 * bBuf[i] : hb;
-			const ca = multi ? 0.5 + 0.5 * aBuf[i] : 1.0;
+			const ca = 0.5 + 0.5 * aBuf[i];
 			const base = i * 4 * 4; // 4 verts × 4 floats
 			for (let v = 0; v < 4; v++) {
 				const off = base + v * 4;

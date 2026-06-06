@@ -49,6 +49,7 @@ export const GainNode = memo(function GainNode({
 					format={v => v.toFixed(2)}
 					marks={[{ value: 1 }]}
 					allowValueEdit
+					allowBoundsEdit
 				/>
 			</Box>
 

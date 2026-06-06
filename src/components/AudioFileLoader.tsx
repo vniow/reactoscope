@@ -6,15 +6,19 @@ import AudioFileIcon from '@mui/icons-material/AudioFile';
 import { HW_INSET } from '../daw/nodes/hwStyles';
 
 interface AudioFileLoaderProps {
-	color:  string;
-	onLoad: (url: string) => void;
+	color:       string;
+	onLoad:      (url: string, filename: string) => void;
+	/** File picker filter (e.g. 'audio/*' or '.ild,.ILD'). Defaults to audio. */
+	accept?:     string;
+	/** Placeholder shown when nothing is loaded. */
+	placeholder?: string;
 }
 
 function truncate(s: string, max = 22): string {
 	return s.length > max ? s.slice(0, max - 1) + '…' : s;
 }
 
-export function AudioFileLoader({ color, onLoad }: AudioFileLoaderProps) {
+export function AudioFileLoader({ color, onLoad, accept = 'audio/*', placeholder = 'drop file or click' }: AudioFileLoaderProps) {
 	const inputRef              = useRef<HTMLInputElement>(null);
 	const [dragOver, setDragOver]         = useState(false);
 	const [urlMode,  setUrlMode]          = useState(false);
@@ -23,7 +27,7 @@ export function AudioFileLoader({ color, onLoad }: AudioFileLoaderProps) {
 
 	const commit = (url: string, name: string) => {
 		setDisplayName(name);
-		onLoad(url);
+		onLoad(url, name);
 	};
 
 	const handleFile = (file: File) => {
@@ -110,7 +114,7 @@ export function AudioFileLoader({ color, onLoad }: AudioFileLoaderProps) {
 				color: loaded ? 'text.secondary' : 'text.disabled',
 				overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
 			}}>
-				{loaded ? truncate(displayName) : 'drop file or click'}
+				{loaded ? truncate(displayName) : placeholder}
 			</Typography>
 			<Box
 				component='span'
@@ -119,7 +123,7 @@ export function AudioFileLoader({ color, onLoad }: AudioFileLoaderProps) {
 			>
 				url
 			</Box>
-			<input ref={inputRef} type='file' accept='audio/*' onChange={handleFileInput} style={{ display: 'none' }} />
+			<input ref={inputRef} type='file' accept={accept} onChange={handleFileInput} style={{ display: 'none' }} />
 		</Box>
 	);
 }

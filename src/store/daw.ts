@@ -47,6 +47,25 @@ import {
 	PWMOscillator,
 	GrainPlayer,
 	UserMedia,
+	Reverb,
+	JCReverb,
+	Freeverb,
+	Delay,
+	FeedbackDelay,
+	PingPongDelay,
+	Distortion,
+	Chebyshev,
+	BitCrusher,
+	FrequencyShifter,
+	PitchShift,
+	StereoWidener,
+	Chorus,
+	Phaser,
+	Tremolo,
+	Vibrato,
+	AutoFilter,
+	AutoPanner,
+	AutoWah,
 	getTransport,
 	getContext,
 	start as toneStart,
@@ -69,9 +88,28 @@ const NODE_TYPE_EDGE_COLOR: Record<string, string> = {
 	pwmOscillator:   NODE_COLORS.source,
 	grainPlayer:     NODE_COLORS.source,
 	micInput:        NODE_COLORS.source,
-	sceneInput:      NODE_COLORS.scene,
-	debug:           NODE_COLORS.debug,
-	stub:            NODE_COLORS.processor,
+	sceneInput:        NODE_COLORS.scene,
+	debug:             NODE_COLORS.debug,
+	stub:              NODE_COLORS.processor,
+	reverb:            NODE_COLORS.effects,
+	jcReverb:          NODE_COLORS.effects,
+	freeverb:          NODE_COLORS.effects,
+	delay:             NODE_COLORS.effects,
+	feedbackDelay:     NODE_COLORS.effects,
+	pingPongDelay:     NODE_COLORS.effects,
+	distortion:        NODE_COLORS.effects,
+	chebyshev:         NODE_COLORS.effects,
+	bitCrusher:        NODE_COLORS.effects,
+	frequencyShifter:  NODE_COLORS.effects,
+	pitchShift:        NODE_COLORS.effects,
+	stereoWidener:     NODE_COLORS.effects,
+	chorus:            NODE_COLORS.effects,
+	phaser:            NODE_COLORS.effects,
+	tremolo:           NODE_COLORS.effects,
+	vibrato:           NODE_COLORS.effects,
+	autoFilter:        NODE_COLORS.effects,
+	autoPanner:        NODE_COLORS.effects,
+	autoWah:           NODE_COLORS.effects,
 };
 
 function edgeColorForSource(sourceId: string, nodes: AppNode[]): string {
@@ -98,6 +136,25 @@ import type {
 	GrainPlayerAudioEntry,
 	MicInputAudioEntry,
 	SceneInputAudioEntry,
+	ReverbAudioEntry,
+	JCReverbAudioEntry,
+	FreeverbAudioEntry,
+	DelayAudioEntry,
+	FeedbackDelayAudioEntry,
+	PingPongDelayAudioEntry,
+	DistortionAudioEntry,
+	ChebyshevAudioEntry,
+	BitCrusherAudioEntry,
+	FrequencyShifterAudioEntry,
+	PitchShiftAudioEntry,
+	StereoWidenerAudioEntry,
+	ChorusAudioEntry,
+	PhaserAudioEntry,
+	TremoloAudioEntry,
+	VibratoAudioEntry,
+	AutoFilterAudioEntry,
+	AutoPannerAudioEntry,
+	AutoWahAudioEntry,
 	StubKind,
 	PatchFile,
 	MasterOutputNodeData,
@@ -112,6 +169,25 @@ import type {
 	PulseOscillatorNodeData,
 	PWMOscillatorNodeData,
 	GrainPlayerNodeData,
+	ReverbNodeData,
+	JCReverbNodeData,
+	FreeverbNodeData,
+	DelayNodeData,
+	FeedbackDelayNodeData,
+	PingPongDelayNodeData,
+	DistortionNodeData,
+	ChebyshevNodeData,
+	BitCrusherNodeData,
+	FrequencyShifterNodeData,
+	PitchShiftNodeData,
+	StereoWidenerNodeData,
+	ChorusNodeData,
+	PhaserNodeData,
+	TremoloNodeData,
+	VibratoNodeData,
+	AutoFilterNodeData,
+	AutoPannerNodeData,
+	AutoWahNodeData,
 } from './dawTypes';
 
 const { nSamples } = DEFAULT_AUDIO_SETTINGS;
@@ -311,9 +387,27 @@ function _getTargetToneNode(
 		if (targetHandle === 'in-5') return tgt.inputGainA;
 		return null;
 	}
-	if (tgt.kind === 'gain') return tgt.toneNode;
-	if (tgt.kind === 'noise') return tgt.toneNode;
+	if ('toneNode' in tgt) return (tgt as { toneNode: ToneInputNode }).toneNode;
 	return null;
+}
+
+// Follow the Tone.js .input chain to the underlying raw AudioNode that accepts signal.
+// Raw Web Audio API nodes don't carry a Tone.js .input property, so the loop terminates there.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function _resolveInput(node: ToneInputNode): any {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	let n: any = node;
+	for (let i = 0; i < 16 && n?.input !== undefined; i++) n = n.input;
+	return n;
+}
+
+// Follow the Tone.js .output chain to the underlying raw AudioNode that produces signal.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function _resolveOutput(node: ToneInputNode): any {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	let n: any = node;
+	for (let i = 0; i < 16 && n?.output !== undefined; i++) n = n.output;
+	return n;
 }
 
 function connectAudioNodes(
@@ -331,25 +425,30 @@ function connectAudioNodes(
 	const destNode = _getTargetToneNode(tgt, targetHandle);
 	if (!destNode) return;
 
+	const outputIndex = sourceHandle === 'out-1' ? 1 : 0;
+
+	// Pre-resolve destination to the raw AudioNode that accepts signal.
+	// This works for any ToneAudioNode destination (Gain, Effect, masterOutput gains, etc.)
+	// and avoids relying on Tone.js instanceof checks inside its connect() standalone fn.
+	const destAudio = _resolveInput(destNode);
+
 	try {
-		if (src.kind === 'player') {
-			const outputIndex = sourceHandle === 'out-1' ? 1 : 0;
-			src.split.connect(destNode, outputIndex, 0);
+		if (src.kind === 'player' || src.kind === 'grainPlayer') {
+			// split.output is the raw ChannelSplitterNode; connect its channel to destAudio.
+			_resolveOutput(src.split as unknown as ToneInputNode).connect(destAudio, outputIndex, 0);
 		} else if (src.kind === 'sceneInput') {
-			const outputIndex = parseInt(sourceHandle.replace('out-', ''), 10);
-			// split.output is the underlying ChannelSplitterNode (std-audio-context);
-			// destNode.input is the underlying GainNode — both live in the same context.
-			src.split.output.connect(destNode.input, outputIndex, 0);
-		} else if (
-			src.kind === 'oscillator' || src.kind === 'gain' || src.kind === 'noise' || src.kind === 'dcSignal' ||
-			src.kind === 'lfo' || src.kind === 'fmOscillator' || src.kind === 'amOscillator' ||
-			src.kind === 'fatOscillator' || src.kind === 'pulseOscillator' || src.kind === 'pwmOscillator' ||
-			src.kind === 'grainPlayer' || src.kind === 'micInput'
-		) {
-			src.toneNode.connect(destNode);
+			const chanIndex = parseInt(sourceHandle.replace('out-', ''), 10);
+			// split.output is the underlying ChannelSplitterNode (std-audio-context).
+			src.split.output.connect(destAudio, chanIndex, 0);
+		} else if ('toneNode' in src) {
+			// Resolve source to its raw output AudioNode and connect directly.
+			// Explicit raw-node-to-raw-node connection works for all Tone.js node types.
+			_resolveOutput((src as { toneNode: ToneInputNode }).toneNode).connect(destAudio, outputIndex, 0);
 		}
-	} catch {
-		// Already connected — ignore
+	} catch (e) {
+		if ((e as Error)?.message?.includes('already connected') ||
+			(e as Error)?.message?.includes('InvalidStateError')) return;
+		console.error('[audio] connectAudioNodes error', { sourceId, targetId, srcKind: src.kind, error: e });
 	}
 }
 
@@ -367,20 +466,19 @@ function disconnectAudioNodes(
 	const destNode = _getTargetToneNode(tgt, targetHandle);
 	if (!destNode) return;
 
+	const outputIndex = sourceHandle === 'out-1' ? 1 : 0;
+	const destAudio   = _resolveInput(destNode);
+
 	try {
-		if (src.kind === 'player') {
-			const outputIndex = sourceHandle === 'out-1' ? 1 : 0;
-			src.split.disconnect(destNode, outputIndex);
+		if (src.kind === 'player' || src.kind === 'grainPlayer') {
+			_resolveOutput(src.split as unknown as ToneInputNode).disconnect(destAudio, outputIndex);
 		} else if (src.kind === 'sceneInput') {
-			const outputIndex = parseInt(sourceHandle.replace('out-', ''), 10);
-			src.split.output.disconnect(destNode.input, outputIndex, 0);
-		} else if (
-			src.kind === 'oscillator' || src.kind === 'gain' || src.kind === 'noise' || src.kind === 'dcSignal' ||
-			src.kind === 'lfo' || src.kind === 'fmOscillator' || src.kind === 'amOscillator' ||
-			src.kind === 'fatOscillator' || src.kind === 'pulseOscillator' || src.kind === 'pwmOscillator' ||
-			src.kind === 'grainPlayer' || src.kind === 'micInput'
-		) {
-			src.toneNode.disconnect(destNode);
+			const chanIndex = parseInt(sourceHandle.replace('out-', ''), 10);
+			src.split.output.disconnect(destAudio, chanIndex, 0);
+		} else if ('toneNode' in src) {
+			// Use exact same resolution as connectAudioNodes so disconnect is targeted —
+			// prevents Tone.js disconnect-all fallback from severing unrelated connections.
+			_resolveOutput((src as { toneNode: ToneInputNode }).toneNode).disconnect(destAudio, outputIndex);
 		}
 	} catch {
 		// Not connected — ignore
@@ -1017,8 +1115,13 @@ function createGrainPlayerEntry(id: string, data?: Partial<GrainPlayerNodeData>)
 		playbackRate: data?.playbackRate ?? 1,
 		detune:       data?.detune       ?? 0,
 		loop:         data?.loop         ?? true,
+		loopStart:    data?.loopStart    ?? 0,
+		loopEnd:      data?.loopEnd      ?? 0,
+		reverse:      data?.reverse      ?? false,
 	});
-	const entry: GrainPlayerAudioEntry = { kind: 'grainPlayer', toneNode };
+	const split = new Split(2);
+	toneNode.connect(split);
+	const entry: GrainPlayerAudioEntry = { kind: 'grainPlayer', toneNode, split };
 	_audioNodes.set(id, entry);
 	return entry;
 }
@@ -1083,6 +1186,18 @@ export function setGrainPlayerLoopStart(id: string, time: number): void {
 	const entry = _audioNodes.get(id);
 	if (!entry || entry.kind !== 'grainPlayer') return;
 	entry.toneNode.loopStart = time;
+}
+
+export function setGrainPlayerLoopEnd(id: string, time: number): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'grainPlayer') return;
+	entry.toneNode.loopEnd = time;
+}
+
+export function setGrainPlayerReverse(id: string, reverse: boolean): void {
+	const entry = _audioNodes.get(id);
+	if (!entry || entry.kind !== 'grainPlayer') return;
+	entry.toneNode.reverse = reverse;
 }
 
 // ─── MicInput audio node lifecycle ───────────────────────────────────────────
@@ -1237,6 +1352,401 @@ export function getSceneRunning(): boolean {
 	return _sceneRunning;
 }
 
+// ─── Effect audio node lifecycle ─────────────────────────────────────────────
+
+function createReverbEntry(id: string, d: ReverbNodeData): ReverbAudioEntry {
+	// Reverb.generate() is called automatically by the Tone.js v15 constructor — don't call it again.
+	const toneNode = new Reverb({ decay: d.decay, preDelay: d.preDelay, wet: d.wet });
+	const entry: ReverbAudioEntry = { kind: 'reverb', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export function setReverbDecay(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'reverb') return;
+	e.toneNode.decay = v;
+}
+export function setReverbPreDelay(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'reverb') return;
+	e.toneNode.preDelay = v;
+}
+export function setReverbWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'reverb') return;
+	e.toneNode.wet.value = v;
+}
+
+function createJCReverbEntry(id: string, d: JCReverbNodeData): JCReverbAudioEntry {
+	const toneNode = new JCReverb({ roomSize: d.roomSize, wet: d.wet });
+	const entry: JCReverbAudioEntry = { kind: 'jcReverb', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export function setJCReverbRoomSize(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'jcReverb') return;
+	e.toneNode.roomSize.value = v;
+}
+export function setJCReverbWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'jcReverb') return;
+	e.toneNode.wet.value = v;
+}
+
+function createFreeverbEntry(id: string, d: FreeverbNodeData): FreeverbAudioEntry {
+	const toneNode = new Freeverb({ roomSize: d.roomSize, dampening: d.dampening, wet: d.wet });
+	const entry: FreeverbAudioEntry = { kind: 'freeverb', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export function setFreeverbRoomSize(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'freeverb') return;
+	e.toneNode.roomSize.value = v;
+}
+export function setFreeverbDampening(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'freeverb') return;
+	e.toneNode.dampening.value = v;
+}
+export function setFreeverbWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'freeverb') return;
+	e.toneNode.wet.value = v;
+}
+
+function createDelayEntry(id: string, d: DelayNodeData): DelayAudioEntry {
+	const toneNode = new Delay(d.delayTime);
+	const entry: DelayAudioEntry = { kind: 'delay', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export function setDelayTime(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'delay') return;
+	e.toneNode.delayTime.value = v;
+}
+
+function createFeedbackDelayEntry(id: string, d: FeedbackDelayNodeData): FeedbackDelayAudioEntry {
+	const toneNode = new FeedbackDelay({ delayTime: d.delayTime, feedback: d.feedback, wet: d.wet });
+	const entry: FeedbackDelayAudioEntry = { kind: 'feedbackDelay', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export function setFeedbackDelayTime(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'feedbackDelay') return;
+	e.toneNode.delayTime.value = v;
+}
+export function setFeedbackDelayFeedback(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'feedbackDelay') return;
+	e.toneNode.feedback.value = v;
+}
+export function setFeedbackDelayWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'feedbackDelay') return;
+	e.toneNode.wet.value = v;
+}
+
+function createPingPongDelayEntry(id: string, d: PingPongDelayNodeData): PingPongDelayAudioEntry {
+	const toneNode = new PingPongDelay({ delayTime: d.delayTime, feedback: d.feedback, wet: d.wet });
+	const entry: PingPongDelayAudioEntry = { kind: 'pingPongDelay', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export function setPingPongDelayTime(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'pingPongDelay') return;
+	e.toneNode.delayTime.value = v;
+}
+export function setPingPongDelayFeedback(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'pingPongDelay') return;
+	e.toneNode.feedback.value = v;
+}
+export function setPingPongDelayWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'pingPongDelay') return;
+	e.toneNode.wet.value = v;
+}
+
+function createDistortionEntry(id: string, d: DistortionNodeData): DistortionAudioEntry {
+	const toneNode = new Distortion({ distortion: d.distortion, oversample: d.oversample, wet: d.wet });
+	const entry: DistortionAudioEntry = { kind: 'distortion', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export function setDistortionAmount(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'distortion') return;
+	e.toneNode.distortion = v;
+}
+export function setDistortionOversample(id: string, v: 'none' | '2x' | '4x'): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'distortion') return;
+	e.toneNode.oversample = v;
+}
+export function setDistortionWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'distortion') return;
+	e.toneNode.wet.value = v;
+}
+
+function createChebyshevEntry(id: string, d: ChebyshevNodeData): ChebyshevAudioEntry {
+	const toneNode = new Chebyshev({ order: d.order, wet: d.wet });
+	const entry: ChebyshevAudioEntry = { kind: 'chebyshev', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export function setChebyshevOrder(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'chebyshev') return;
+	e.toneNode.order = Math.round(v);
+}
+export function setChebyshevWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'chebyshev') return;
+	e.toneNode.wet.value = v;
+}
+
+function createBitCrusherEntry(id: string, d: BitCrusherNodeData): BitCrusherAudioEntry {
+	const toneNode = new BitCrusher({ bits: d.bits, wet: d.wet });
+	const entry: BitCrusherAudioEntry = { kind: 'bitCrusher', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export function setBitCrusherBits(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'bitCrusher') return;
+	e.toneNode.bits.value = Math.round(v);
+}
+export function setBitCrusherWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'bitCrusher') return;
+	e.toneNode.wet.value = v;
+}
+
+function createFrequencyShifterEntry(id: string, d: FrequencyShifterNodeData): FrequencyShifterAudioEntry {
+	const toneNode = new FrequencyShifter({ frequency: d.frequency, wet: d.wet });
+	const entry: FrequencyShifterAudioEntry = { kind: 'frequencyShifter', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export function setFrequencyShifterFrequency(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'frequencyShifter') return;
+	e.toneNode.frequency.value = v;
+}
+export function setFrequencyShifterWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'frequencyShifter') return;
+	e.toneNode.wet.value = v;
+}
+
+function createPitchShiftEntry(id: string, d: PitchShiftNodeData): PitchShiftAudioEntry {
+	const toneNode = new PitchShift({ pitch: d.pitch, windowSize: d.windowSize, feedback: d.feedback, wet: d.wet });
+	const entry: PitchShiftAudioEntry = { kind: 'pitchShift', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export function setPitchShiftPitch(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'pitchShift') return;
+	e.toneNode.pitch = v;
+}
+export function setPitchShiftWindowSize(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'pitchShift') return;
+	e.toneNode.windowSize = v;
+}
+export function setPitchShiftFeedback(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'pitchShift') return;
+	e.toneNode.feedback.value = v;
+}
+export function setPitchShiftWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'pitchShift') return;
+	e.toneNode.wet.value = v;
+}
+
+function createStereoWidenerEntry(id: string, d: StereoWidenerNodeData): StereoWidenerAudioEntry {
+	const toneNode = new StereoWidener({ width: d.width, wet: d.wet });
+	const entry: StereoWidenerAudioEntry = { kind: 'stereoWidener', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export function setStereoWidenerWidth(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'stereoWidener') return;
+	e.toneNode.width.value = v;
+}
+export function setStereoWidenerWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'stereoWidener') return;
+	e.toneNode.wet.value = v;
+}
+
+// ─── LFO-driven effect lifecycle ─────────────────────────────────────────────
+
+function createChorusEntry(id: string, d: ChorusNodeData): ChorusAudioEntry {
+	const toneNode = new Chorus({ frequency: d.frequency, delayTime: d.delayTime, depth: d.depth, wet: d.wet });
+	const entry: ChorusAudioEntry = { kind: 'chorus', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export async function startChorus(id: string): Promise<void> {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'chorus') return;
+	await toneStart(); e.toneNode.start();
+}
+export function stopChorus(id: string): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'chorus') return;
+	if (e.toneNode.state === 'started') e.toneNode.stop();
+}
+export function setChorusFrequency(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'chorus') return;
+	e.toneNode.frequency.value = v;
+}
+export function setChorusDelayTime(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'chorus') return;
+	e.toneNode.delayTime = v;
+}
+export function setChorusDepth(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'chorus') return;
+	e.toneNode.depth = v;
+}
+export function setChorusWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'chorus') return;
+	e.toneNode.wet.value = v;
+}
+
+function createPhaserEntry(id: string, d: PhaserNodeData): PhaserAudioEntry {
+	// Phaser starts its internal LFOs automatically in the constructor — no start() needed.
+	const toneNode = new Phaser({ frequency: d.frequency, octaves: d.octaves, baseFrequency: d.baseFrequency, wet: d.wet });
+	const entry: PhaserAudioEntry = { kind: 'phaser', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export function setPhaserFrequency(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'phaser') return;
+	e.toneNode.frequency.value = v;
+}
+export function setPhaserOctaves(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'phaser') return;
+	e.toneNode.octaves = v;
+}
+export function setPhaserBaseFrequency(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'phaser') return;
+	e.toneNode.baseFrequency = v;
+}
+export function setPhaserWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'phaser') return;
+	e.toneNode.wet.value = v;
+}
+
+function createTremoloEntry(id: string, d: TremoloNodeData): TremoloAudioEntry {
+	const toneNode = new Tremolo({ frequency: d.frequency, depth: d.depth, wet: d.wet });
+	const entry: TremoloAudioEntry = { kind: 'tremolo', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export async function startTremolo(id: string): Promise<void> {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'tremolo') return;
+	await toneStart(); e.toneNode.start();
+}
+export function stopTremolo(id: string): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'tremolo') return;
+	if (e.toneNode.state === 'started') e.toneNode.stop();
+}
+export function setTremoloFrequency(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'tremolo') return;
+	e.toneNode.frequency.value = v;
+}
+export function setTremoloDepth(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'tremolo') return;
+	e.toneNode.depth.value = v;
+}
+export function setTremoloWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'tremolo') return;
+	e.toneNode.wet.value = v;
+}
+
+function createVibratoEntry(id: string, d: VibratoNodeData): VibratoAudioEntry {
+	const toneNode = new Vibrato({ frequency: d.frequency, depth: d.depth, wet: d.wet });
+	const entry: VibratoAudioEntry = { kind: 'vibrato', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export async function startVibrato(id: string): Promise<void> {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'vibrato') return;
+	await toneStart(); e.toneNode.start();
+}
+export function stopVibrato(id: string): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'vibrato') return;
+	if (e.toneNode.state === 'started') e.toneNode.stop();
+}
+export function setVibratoFrequency(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'vibrato') return;
+	e.toneNode.frequency.value = v;
+}
+export function setVibratoDepth(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'vibrato') return;
+	e.toneNode.depth.value = v;
+}
+export function setVibratoWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'vibrato') return;
+	e.toneNode.wet.value = v;
+}
+
+function createAutoFilterEntry(id: string, d: AutoFilterNodeData): AutoFilterAudioEntry {
+	const toneNode = new AutoFilter({ frequency: d.frequency, baseFrequency: d.baseFrequency, octaves: d.octaves, wet: d.wet });
+	const entry: AutoFilterAudioEntry = { kind: 'autoFilter', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export async function startAutoFilter(id: string): Promise<void> {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoFilter') return;
+	await toneStart(); e.toneNode.start();
+}
+export function stopAutoFilter(id: string): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoFilter') return;
+	if (e.toneNode.state === 'started') e.toneNode.stop();
+}
+export function setAutoFilterFrequency(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoFilter') return;
+	e.toneNode.frequency.value = v;
+}
+export function setAutoFilterBaseFrequency(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoFilter') return;
+	e.toneNode.baseFrequency = v;
+}
+export function setAutoFilterOctaves(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoFilter') return;
+	e.toneNode.octaves = v;
+}
+export function setAutoFilterWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoFilter') return;
+	e.toneNode.wet.value = v;
+}
+
+function createAutoPannerEntry(id: string, d: AutoPannerNodeData): AutoPannerAudioEntry {
+	const toneNode = new AutoPanner({ frequency: d.frequency, wet: d.wet });
+	const entry: AutoPannerAudioEntry = { kind: 'autoPanner', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export async function startAutoPanner(id: string): Promise<void> {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoPanner') return;
+	await toneStart(); e.toneNode.start();
+}
+export function stopAutoPanner(id: string): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoPanner') return;
+	if (e.toneNode.state === 'started') e.toneNode.stop();
+}
+export function setAutoPannerFrequency(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoPanner') return;
+	e.toneNode.frequency.value = v;
+}
+export function setAutoPannerWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoPanner') return;
+	e.toneNode.wet.value = v;
+}
+
+function createAutoWahEntry(id: string, d: AutoWahNodeData): AutoWahAudioEntry {
+	const toneNode = new AutoWah({ baseFrequency: d.baseFrequency, octaves: d.octaves, sensitivity: d.sensitivity, wet: d.wet });
+	const entry: AutoWahAudioEntry = { kind: 'autoWah', toneNode };
+	_audioNodes.set(id, entry);
+	return entry;
+}
+export function setAutoWahBaseFrequency(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoWah') return;
+	e.toneNode.baseFrequency = v;
+}
+export function setAutoWahOctaves(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoWah') return;
+	e.toneNode.octaves = v;
+}
+export function setAutoWahSensitivity(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoWah') return;
+	e.toneNode.sensitivity = v;
+}
+export function setAutoWahWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoWah') return;
+	e.toneNode.wet.value = v;
+}
+
 // ─── Generic node disposal ────────────────────────────────────────────────────
 
 function disposeAudioNode(id: string): void {
@@ -1271,12 +1781,27 @@ function disposeAudioNode(id: string): void {
 	} else if (entry.kind === 'grainPlayer') {
 		if (entry.toneNode.state === 'started') entry.toneNode.stop();
 		entry.toneNode.dispose();
+		entry.split.dispose();
 	} else if (entry.kind === 'micInput') {
 		try { entry.toneNode.close(); } catch {}
 		entry.toneNode.dispose();
 	} else if (entry.kind === 'sceneInput') {
 		try { entry.workletNode.disconnect(); } catch {}
 		entry.split.dispose();
+	} else if (
+		entry.kind === 'reverb'    || entry.kind === 'jcReverb'        || entry.kind === 'freeverb'     ||
+		entry.kind === 'delay'     || entry.kind === 'feedbackDelay'   || entry.kind === 'pingPongDelay' ||
+		entry.kind === 'distortion'|| entry.kind === 'chebyshev'       || entry.kind === 'bitCrusher'   ||
+		entry.kind === 'frequencyShifter' || entry.kind === 'pitchShift' || entry.kind === 'stereoWidener' ||
+		entry.kind === 'phaser'    || entry.kind === 'autoWah'
+	) {
+		entry.toneNode.dispose();
+	} else if (
+		entry.kind === 'chorus' || entry.kind === 'tremolo' ||
+		entry.kind === 'vibrato'|| entry.kind === 'autoFilter' || entry.kind === 'autoPanner'
+	) {
+		if (entry.toneNode.state === 'started') entry.toneNode.stop();
+		entry.toneNode.dispose();
 	}
 
 	_audioNodes.delete(id);
@@ -1460,7 +1985,7 @@ const initialNodes: AppNode[] = [
 		id:        MASTER_NODE_ID,
 		type:      'masterOutput',
 		position:  { x: 288, y: 240 },
-		data:      { label: 'Master Output', mode: 'multichannel' as const, speakersMuted: true },
+		data:      { label: 'Master Output', speakersMuted: true },
 		deletable: false,
 	},
 	{
@@ -1515,10 +2040,28 @@ type DawState = {
 	addMicInputNode:        (position: { x: number; y: number }) => string;
 	addStubNode:            (kind: StubKind, position: { x: number; y: number }) => string;
 	addDebugNode:           (position: { x: number; y: number }) => string;
+	addReverbNode:          (position: { x: number; y: number }) => string;
+	addJCReverbNode:        (position: { x: number; y: number }) => string;
+	addFreeverbNode:        (position: { x: number; y: number }) => string;
+	addDelayNode:           (position: { x: number; y: number }) => string;
+	addFeedbackDelayNode:   (position: { x: number; y: number }) => string;
+	addPingPongDelayNode:   (position: { x: number; y: number }) => string;
+	addDistortionNode:      (position: { x: number; y: number }) => string;
+	addChebyshevNode:       (position: { x: number; y: number }) => string;
+	addBitCrusherNode:      (position: { x: number; y: number }) => string;
+	addFrequencyShifterNode:(position: { x: number; y: number }) => string;
+	addPitchShiftNode:      (position: { x: number; y: number }) => string;
+	addStereoWidenerNode:   (position: { x: number; y: number }) => string;
+	addChorusNode:          (position: { x: number; y: number }) => string;
+	addPhaserNode:          (position: { x: number; y: number }) => string;
+	addTremoloNode:         (position: { x: number; y: number }) => string;
+	addVibratoNode:         (position: { x: number; y: number }) => string;
+	addAutoFilterNode:      (position: { x: number; y: number }) => string;
+	addAutoPannerNode:      (position: { x: number; y: number }) => string;
+	addAutoWahNode:         (position: { x: number; y: number }) => string;
 	updateNodeData:      (id: string, data: Partial<Record<string, unknown>>) => void;
 	updateNodePositions: (updatedNodes: AppNode[]) => void;
 	setSelectedNodeId:   (id: string | null) => void;
-	setMasterMode:       (mode: 'stereo' | 'multichannel') => void;
 	setSpeakersMuted:    (muted: boolean) => void;
 	edgePathType:        'bezier' | 'straight' | 'step' | 'smoothstep';
 	setEdgePathType:     (type: 'bezier' | 'straight' | 'step' | 'smoothstep') => void;
@@ -1818,6 +2361,158 @@ export const useDawStore = create<DawState>((set, get) => ({
 		return id;
 	},
 
+	addReverbNode: (position) => {
+		const id = `reverb-${Date.now()}`;
+		const data: ReverbNodeData = { label: 'Reverb', decay: 1.5, preDelay: 0.01, wet: 0.5 };
+		createReverbEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'reverb', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addJCReverbNode: (position) => {
+		const id = `jcReverb-${Date.now()}`;
+		const data: JCReverbNodeData = { label: 'JCReverb', roomSize: 0.5, wet: 0.5 };
+		createJCReverbEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'jcReverb', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addFreeverbNode: (position) => {
+		const id = `freeverb-${Date.now()}`;
+		const data: FreeverbNodeData = { label: 'Freeverb', roomSize: 0.7, dampening: 3000, wet: 0.5 };
+		createFreeverbEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'freeverb', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addDelayNode: (position) => {
+		const id = `delay-${Date.now()}`;
+		const data: DelayNodeData = { label: 'Delay', delayTime: 0.25 };
+		createDelayEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'delay', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addFeedbackDelayNode: (position) => {
+		const id = `feedbackDelay-${Date.now()}`;
+		const data: FeedbackDelayNodeData = { label: 'FeedbackDelay', delayTime: 0.25, feedback: 0.5, wet: 0.5 };
+		createFeedbackDelayEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'feedbackDelay', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addPingPongDelayNode: (position) => {
+		const id = `pingPongDelay-${Date.now()}`;
+		const data: PingPongDelayNodeData = { label: 'PingPongDelay', delayTime: 0.25, feedback: 0.5, wet: 0.5 };
+		createPingPongDelayEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'pingPongDelay', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addDistortionNode: (position) => {
+		const id = `distortion-${Date.now()}`;
+		const data: DistortionNodeData = { label: 'Distortion', distortion: 0.4, oversample: 'none', wet: 1 };
+		createDistortionEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'distortion', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addChebyshevNode: (position) => {
+		const id = `chebyshev-${Date.now()}`;
+		const data: ChebyshevNodeData = { label: 'Chebyshev', order: 50, wet: 1 };
+		createChebyshevEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'chebyshev', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addBitCrusherNode: (position) => {
+		const id = `bitCrusher-${Date.now()}`;
+		const data: BitCrusherNodeData = { label: 'BitCrusher', bits: 4, wet: 1 };
+		createBitCrusherEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'bitCrusher', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addFrequencyShifterNode: (position) => {
+		const id = `frequencyShifter-${Date.now()}`;
+		const data: FrequencyShifterNodeData = { label: 'FreqShifter', frequency: 0, wet: 1 };
+		createFrequencyShifterEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'frequencyShifter', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addPitchShiftNode: (position) => {
+		const id = `pitchShift-${Date.now()}`;
+		const data: PitchShiftNodeData = { label: 'PitchShift', pitch: 0, windowSize: 0.1, feedback: 0, wet: 1 };
+		createPitchShiftEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'pitchShift', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addStereoWidenerNode: (position) => {
+		const id = `stereoWidener-${Date.now()}`;
+		const data: StereoWidenerNodeData = { label: 'StereoWidener', width: 0.5, wet: 1 };
+		createStereoWidenerEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'stereoWidener', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addChorusNode: (position) => {
+		const id = `chorus-${Date.now()}`;
+		const data: ChorusNodeData = { label: 'Chorus', frequency: 1.5, delayTime: 3.5, depth: 0.7, wet: 0.5 };
+		createChorusEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'chorus', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addPhaserNode: (position) => {
+		const id = `phaser-${Date.now()}`;
+		const data: PhaserNodeData = { label: 'Phaser', frequency: 0.5, octaves: 3, baseFrequency: 350, wet: 0.5 };
+		createPhaserEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'phaser', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addTremoloNode: (position) => {
+		const id = `tremolo-${Date.now()}`;
+		const data: TremoloNodeData = { label: 'Tremolo', frequency: 10, depth: 0.5, wet: 0.5 };
+		createTremoloEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'tremolo', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addVibratoNode: (position) => {
+		const id = `vibrato-${Date.now()}`;
+		const data: VibratoNodeData = { label: 'Vibrato', frequency: 5, depth: 0.1, wet: 0.5 };
+		createVibratoEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'vibrato', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addAutoFilterNode: (position) => {
+		const id = `autoFilter-${Date.now()}`;
+		const data: AutoFilterNodeData = { label: 'AutoFilter', frequency: 1, baseFrequency: 200, octaves: 2.6, wet: 1 };
+		createAutoFilterEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'autoFilter', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addAutoPannerNode: (position) => {
+		const id = `autoPanner-${Date.now()}`;
+		const data: AutoPannerNodeData = { label: 'AutoPanner', frequency: 1, wet: 1 };
+		createAutoPannerEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'autoPanner', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
+	addAutoWahNode: (position) => {
+		const id = `autoWah-${Date.now()}`;
+		const data: AutoWahNodeData = { label: 'AutoWah', baseFrequency: 100, octaves: 6, sensitivity: 0, wet: 1 };
+		createAutoWahEntry(id, data);
+		set({ nodes: [...get().nodes, { id, type: 'autoWah', position, data }], audioVersion: get().audioVersion + 1 });
+		return id;
+	},
+
 	updateNodeData: (id, data) => {
 		set({
 			nodes: get().nodes.map(n =>
@@ -1902,6 +2597,44 @@ export const useDawStore = create<DawState>((set, get) => ({
 				createGrainPlayerEntry(node.id, node.data as GrainPlayerNodeData);
 			} else if (node.type === 'micInput') {
 				createMicInputEntry(node.id);
+			} else if (node.type === 'reverb') {
+				createReverbEntry(node.id, node.data as ReverbNodeData);
+			} else if (node.type === 'jcReverb') {
+				createJCReverbEntry(node.id, node.data as JCReverbNodeData);
+			} else if (node.type === 'freeverb') {
+				createFreeverbEntry(node.id, node.data as FreeverbNodeData);
+			} else if (node.type === 'delay') {
+				createDelayEntry(node.id, node.data as DelayNodeData);
+			} else if (node.type === 'feedbackDelay') {
+				createFeedbackDelayEntry(node.id, node.data as FeedbackDelayNodeData);
+			} else if (node.type === 'pingPongDelay') {
+				createPingPongDelayEntry(node.id, node.data as PingPongDelayNodeData);
+			} else if (node.type === 'distortion') {
+				createDistortionEntry(node.id, node.data as DistortionNodeData);
+			} else if (node.type === 'chebyshev') {
+				createChebyshevEntry(node.id, node.data as ChebyshevNodeData);
+			} else if (node.type === 'bitCrusher') {
+				createBitCrusherEntry(node.id, node.data as BitCrusherNodeData);
+			} else if (node.type === 'frequencyShifter') {
+				createFrequencyShifterEntry(node.id, node.data as FrequencyShifterNodeData);
+			} else if (node.type === 'pitchShift') {
+				createPitchShiftEntry(node.id, node.data as PitchShiftNodeData);
+			} else if (node.type === 'stereoWidener') {
+				createStereoWidenerEntry(node.id, node.data as StereoWidenerNodeData);
+			} else if (node.type === 'chorus') {
+				createChorusEntry(node.id, node.data as ChorusNodeData);
+			} else if (node.type === 'phaser') {
+				createPhaserEntry(node.id, node.data as PhaserNodeData);
+			} else if (node.type === 'tremolo') {
+				createTremoloEntry(node.id, node.data as TremoloNodeData);
+			} else if (node.type === 'vibrato') {
+				createVibratoEntry(node.id, node.data as VibratoNodeData);
+			} else if (node.type === 'autoFilter') {
+				createAutoFilterEntry(node.id, node.data as AutoFilterNodeData);
+			} else if (node.type === 'autoPanner') {
+				createAutoPannerEntry(node.id, node.data as AutoPannerNodeData);
+			} else if (node.type === 'autoWah') {
+				createAutoWahEntry(node.id, node.data as AutoWahNodeData);
 			}
 			// debug, stub → no audio entry
 		}
@@ -1930,30 +2663,19 @@ export const useDawStore = create<DawState>((set, get) => ({
 		});
 	},
 
-	setMasterMode: (mode) => {
-		const validHandles = mode === 'stereo'
-			? new Set(['in-0', 'in-1'])
-			: new Set(['in-0', 'in-1', 'in-2', 'in-3', 'in-4', 'in-5']);
-
-		const currentEdges = get().edges;
-		const staleEdges = currentEdges.filter(
-			e => e.target === MASTER_NODE_ID && !validHandles.has(e.targetHandle ?? ''),
-		);
-		for (const e of staleEdges) {
-			disconnectAudioNodes(e.source, e.sourceHandle!, e.target, e.targetHandle!);
-		}
-		const staleIds = new Set(staleEdges.map(e => e.id));
-
-		set({
-			nodes: get().nodes.map(n =>
-				n.id === MASTER_NODE_ID
-					? ({ ...n, data: { ...n.data, mode } } as AppNode)
-					: n,
-			),
-			edges: currentEdges.filter(e => !staleIds.has(e.id)),
-		});
-	},
 }));
+
+/**
+ * Returns true if any of the master output's R/G/B handles (in-2, in-3, in-4)
+ * has an inbound edge. Used by the visualiser to decide between per-sample
+ * R/G/B colouring and the phosphor hue fallback.
+ */
+export function isMasterMultichannel(edges: AppEdge[]): boolean {
+	return edges.some(e =>
+		e.target === MASTER_NODE_ID &&
+		(e.targetHandle === 'in-2' || e.targetHandle === 'in-3' || e.targetHandle === 'in-4'),
+	);
+}
 
 // ─── Patch export helpers ─────────────────────────────────────────────────────
 
