@@ -4,12 +4,14 @@ import * as THREE from 'three';
 import { useAxis, useEffects } from '../contexts/WoahscopeContext';
 import { updateGeometryArrays, getColourFromHue } from '../woahscope/utils';
 import { DEFAULT_AUDIO_SETTINGS } from '../config';
-import { getWaveformData, setAnalyserSize, getWaveformDataFromSAB, getWaveformWriteIndex, setWaveformCaptureSize, isMasterMultichannel } from '../store/daw';
-import { useDawStore } from '../store/daw';
+import { getWaveformData, setAnalyserSize, getWaveformDataFromSAB, getWaveformWriteIndex, setWaveformCaptureSize } from '../store/daw';
+import { useDawStore, MASTER_NODE_ID } from '../store/daw';
+import type { MasterOutputNodeData } from '../store/dawTypes';
 import type { DebugSnapshot } from '../debug/types';
 import { EMPTY_SNAPSHOT } from '../debug/types';
 import {
 	N_SAMPLES,
+	MAX_POINTS,
 	FADE_AMOUNT,
 	useRenderTargets,
 	useFadePass,
@@ -18,6 +20,11 @@ import {
 	usePassPipeline,
 	useLanczos,
 } from '../woahscope/sceneHooks';
+
+// Laser persistence-of-vision tuning. Base τ ≈ human eye persistence (~45 ms);
+// the persistence control extends it for longer phosphor-like trails.
+const LASER_EYE_TAU_S        = 0.045;
+const LASER_TAU_PERSIST_GAIN = 4;
 
 export const debugRef = { current: { ...EMPTY_SNAPSHOT } as DebugSnapshot };
 
@@ -51,7 +58,9 @@ function readCenter(
 
 export function WoscopeSceneR3F() {
 	const { swapXY, invertXY, intensity, hue } = useAxis();
-	const { crtEnabled, persistence, glowStrength, scatterStrength, lanczosEnabled, lanczosSteps, nSamples } = useEffects();
+	const { vizMode, crtEnabled, persistence, glowStrength, scatterStrength, lanczosEnabled, lanczosSteps, nSamples } = useEffects();
+	const vizModeRef = useRef(vizMode);
+	useEffect(() => { vizModeRef.current = vizMode; }, [vizMode]);
 	const { camera, size, invalidate } = useThree();
 
 	// Track multichannel rendering via a ref so useFrame always sees the latest value.
@@ -114,44 +123,119 @@ export function WoscopeSceneR3F() {
 	}, [hue]);
 
 	const lastWriteIndexRef = useRef(0);
+	const lastWriteSrcRef   = useRef<'scope' | 'laser'>('scope');
+	const lastReadCountRef  = useRef(0); // galvo ring writeCount consumed last laser frame
 	const prevNPointsRef    = useRef(-1);
+
+	// Scratch buffers for the laser arc (the beam samples scanned this frame).
+	const arcX = useRef(new Float32Array(MAX_POINTS));
+	const arcY = useRef(new Float32Array(MAX_POINTS));
+	const arcR = useRef(new Float32Array(MAX_POINTS));
+	const arcG = useRef(new Float32Array(MAX_POINTS));
+	const arcB = useRef(new Float32Array(MAX_POINTS));
+	const arcA = useRef(new Float32Array(MAX_POINTS));
 	const frameCountRef     = useRef(0);
 
-	useFrame(({ gl, camera: cam, invalidate: inv }) => {
-		// SAB push model: only render when the worklet has written a new frame.
-		// Falls back to Analyser reads until the capture worklet is initialised.
-		const sabData = getWaveformDataFromSAB();
-		if (sabData !== null) {
-			const writeIdx = getWaveformWriteIndex();
-			if (writeIdx === lastWriteIndexRef.current) { inv(); return; }
-			lastWriteIndexRef.current = writeIdx;
-		}
-		const waveform = sabData ?? getWaveformData();
-		let xBuf: Float32Array = swapXY ? waveform.y : waveform.x;
-		let yBuf: Float32Array = swapXY ? waveform.x : waveform.y;
-		let rBuf: Float32Array = waveform.r;
-		let gBuf: Float32Array = waveform.g;
-		let bBuf: Float32Array = waveform.b;
-		let aBuf: Float32Array = waveform.a;
+	useFrame(({ gl, camera: cam, invalidate: inv }, delta) => {
+		const useLaserSrc = vizModeRef.current === 'laser';
 
-		let nPoints: number = N_SAMPLES;
-		if (lanczosEnabled) {
-			upsamplerRef.current.apply(xBuf, smoothedX.current);
-			upsamplerRef.current.apply(yBuf, smoothedY.current);
-			upsamplerRef.current.apply(rBuf, smoothedR.current);
-			upsamplerRef.current.apply(gBuf, smoothedG.current);
-			upsamplerRef.current.apply(bBuf, smoothedB.current);
-			upsamplerRef.current.apply(aBuf, smoothedA.current);
-			nPoints = upsamplerRef.current.outputLength;
-			xBuf = smoothedX.current;
-			yBuf = smoothedY.current;
-			rBuf = smoothedR.current;
-			gBuf = smoothedG.current;
-			bBuf = smoothedB.current;
-			aBuf = smoothedA.current;
-		}
+		let xBuf: Float32Array;
+		let yBuf: Float32Array;
+		let rBuf: Float32Array;
+		let gBuf: Float32Array;
+		let bBuf: Float32Array;
+		let aBuf: Float32Array;
+		let nPoints: number;
+		let fadeAlpha: number;
 
-		updateGeometryArrays(nPoints, aIdxArray, startArray, endArray, xBuf, yBuf);
+		if (useLaserSrc) {
+			// ── Laser: persistence-of-vision rendering ──────────────────────────────
+			// Deposit only the beam samples scanned since the last frame (from the
+			// continuous galvo ring), and decay the accumulation buffer by wall-clock
+			// time. Low PPS → small arc per frame on top of a fading trail → the dot
+			// visibly crawls, flickers, and dims; high PPS → the whole shape is
+			// stamped every frame → steady and bright. Renders every frame for a
+			// steady decay clock, so no SAB-writeIndex gating here.
+			const ring = getGalvoRing();
+			if (!ring) { inv(); return; }
+			const writeCount = getGalvoWriteCount();
+
+			// On entering laser mode, start fresh — don't dump a backlog of samples.
+			if (lastWriteSrcRef.current !== 'laser') {
+				lastReadCountRef.current = writeCount;
+				lastWriteSrcRef.current  = 'laser';
+			}
+
+			// Clamp the lookback so a long render hitch can't exceed the geometry buffer.
+			const cap = MAX_POINTS;
+			let last  = lastReadCountRef.current;
+			if (writeCount - last > cap) last = writeCount - cap;
+			const span = resolveRingSpan(last, writeCount, ring.ringLen);
+			lastReadCountRef.current = writeCount;
+
+			// Assemble the (chronologically ordered) arc into contiguous scratch.
+			const sx = arcX.current, sy = arcY.current, sr = arcR.current,
+			      sg = arcG.current, sb = arcB.current, sa = arcA.current;
+			let w = 0;
+			for (const run of span.runs) {
+				for (let i = 0; i < run.length; i++) {
+					const idx = run.start + i;
+					const rx = ring.x[idx], ry = ring.y[idx];
+					sx[w] = swapXY ? ry : rx;
+					sy[w] = swapXY ? rx : ry;
+					sr[w] = ring.r[idx];
+					sg[w] = ring.g[idx];
+					sb[w] = ring.b[idx];
+					sa[w] = ring.a[idx];
+					w++;
+				}
+			}
+			nPoints = w;
+			xBuf = sx; yBuf = sy; rBuf = sr; gBuf = sg; bBuf = sb; aBuf = sa;
+
+			// Wall-clock decay: lineRT *= exp(-dt/τ) ⇒ fade alpha = 1 − that.
+			const tau = LASER_EYE_TAU_S * (1 + persistence * LASER_TAU_PERSIST_GAIN);
+			fadeAlpha = 1 - decayFactor(delta, tau);
+
+			updateGeometryArrays(Math.max(1, nPoints), aIdxArray, startArray, endArray, xBuf, yBuf);
+		} else {
+			// ── Scope: full-window redraw with frame-based phosphor (unchanged) ─────
+			const sabData = getWaveformDataFromSAB();
+			if (sabData !== null) {
+				const writeIdx = getWaveformWriteIndex();
+				const sameSrc  = lastWriteSrcRef.current === 'scope';
+				if (sameSrc && writeIdx === lastWriteIndexRef.current) { inv(); return; }
+				lastWriteIndexRef.current = writeIdx;
+				lastWriteSrcRef.current   = 'scope';
+			}
+			const waveform = sabData ?? getWaveformData();
+			xBuf = swapXY ? waveform.y : waveform.x;
+			yBuf = swapXY ? waveform.x : waveform.y;
+			rBuf = waveform.r;
+			gBuf = waveform.g;
+			bBuf = waveform.b;
+			aBuf = waveform.a;
+
+			nPoints = N_SAMPLES;
+			if (lanczosEnabled) {
+				upsamplerRef.current.apply(xBuf, smoothedX.current);
+				upsamplerRef.current.apply(yBuf, smoothedY.current);
+				upsamplerRef.current.apply(rBuf, smoothedR.current);
+				upsamplerRef.current.apply(gBuf, smoothedG.current);
+				upsamplerRef.current.apply(bBuf, smoothedB.current);
+				upsamplerRef.current.apply(aBuf, smoothedA.current);
+				nPoints = upsamplerRef.current.outputLength;
+				xBuf = smoothedX.current;
+				yBuf = smoothedY.current;
+				rBuf = smoothedR.current;
+				gBuf = smoothedG.current;
+				bBuf = smoothedB.current;
+				aBuf = smoothedA.current;
+			}
+
+			fadeAlpha = persistPowRef.current * FADE_AMOUNT;
+			updateGeometryArrays(nPoints, aIdxArray, startArray, endArray, xBuf, yBuf);
+		}
 
 		// Fill per-point colour buffer
 		const [hr, hg, hb] = hueColourRef.current;
@@ -175,7 +259,7 @@ export function WoscopeSceneR3F() {
 		(geometry.getAttribute('aEnd')   as THREE.BufferAttribute).needsUpdate = true;
 		(geometry.getAttribute('aIdx')   as THREE.BufferAttribute).needsUpdate = true;
 		(geometry.getAttribute('aColor') as THREE.BufferAttribute).needsUpdate = true;
-		geometry.setDrawRange(0, (nPoints - 1) * 2 * 3);
+		geometry.setDrawRange(0, Math.max(0, (nPoints - 1) * 2 * 3));
 		nPointsRef.current = nPoints;
 
 		if (isDebugMode) {
@@ -221,7 +305,7 @@ export function WoscopeSceneR3F() {
 		lm.uniforms.uIntensity.value  = intensityPowRef.current;
 
 		gl.autoClear = false;
-		fadeMat.uniforms.uAlpha.value = persistPowRef.current * FADE_AMOUNT;
+		fadeMat.uniforms.uAlpha.value = fadeAlpha;
 		gl.setRenderTarget(lineRT);
 		gl.render(fadeScene, cam);
 

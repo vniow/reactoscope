@@ -313,7 +313,7 @@ function CustomControls({
 					borderRadius:    '4px',
 					p:               0.5,
 					boxShadow:       `0 2px 8px rgba(0,0,0,0.5), 0 0 0 1px ${color}10`,
-					cursor:          'col-resize',
+			
 				}}>
 				<AddNodePanel columnsSwapped={columnsSwapped} onOpenChange={trackPanel} />
 				<Box sx={divSx} />

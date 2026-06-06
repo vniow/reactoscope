@@ -39,8 +39,8 @@ export type OrderedPath = {
 // ─── Tuning constants ─────────────────────────────────────────────────────────
 
 const VISIBLE_FRACTION  = 0.85; // fraction of sample budget for geometry vs blanking
-/** Maximum dwell samples emitted at a segment start after a direction change. */
-const CORNER_DWELL_MAX  = 4;
+/** Default dwell-count ceiling used when callers don't pass an explicit value. */
+const CORNER_DWELL_MAX_DEFAULT = 4;
 
 // ─── Reusable scratch objects (avoids GC pressure in useFrame) ────────────────
 
@@ -229,25 +229,29 @@ export function orderSegments(
 /**
  * Number of duplicate samples to emit at a segment start.
  * Proportional to the direction-change angle so straight-through travel costs
- * 0 samples while a 180° reversal costs CORNER_DWELL_MAX.
+ * 0 samples while a 180° reversal costs `dwellMax`.
  *
- * @param arrX/Y  Where the beam arrived from (before the blank hop or prior segment end)
- * @param pivX/Y  The pivot point — start of the new segment
- * @param depX/Y  The departure point — next vertex in the segment
+ * @param arrX/Y   Where the beam arrived from (before the blank hop or prior segment end)
+ * @param pivX/Y   The pivot point — start of the new segment
+ * @param depX/Y   The departure point — next vertex in the segment
+ * @param dwellMax Ceiling on dwell-sample count at a 180° reversal. Configurable so
+ *                 PPS-rated galvo presets can pick more aggressive anchoring on
+ *                 slow rigs (20K) and lighter anchoring on fast rigs (60K).
  */
 function cornerDwellCount(
 	arrX: number, arrY: number,
 	pivX: number, pivY: number,
 	depX: number, depY: number,
+	dwellMax: number,
 ): number {
 	const inLen  = Math.hypot(pivX - arrX, pivY - arrY);
 	const outLen = Math.hypot(depX - pivX, depY - pivY);
-	if (inLen < 1e-6 || outLen < 1e-6) return CORNER_DWELL_MAX; // degenerate → max dwell
+	if (inLen < 1e-6 || outLen < 1e-6) return dwellMax; // degenerate → max dwell
 	const inX = (pivX - arrX) / inLen, inY = (pivY - arrY) / inLen;
 	const outX = (depX - pivX) / outLen, outY = (depY - pivY) / outLen;
 	const cosA = Math.max(-1, Math.min(1, inX * outX + inY * outY));
 	// cosA = 1 → straight (0 dwell); cosA = -1 → 180° (max dwell)
-	return Math.round(CORNER_DWELL_MAX * (1 - cosA) / 2);
+	return Math.round(dwellMax * (1 - cosA) / 2);
 }
 
 // ─── Stage 3: buildSamples ────────────────────────────────────────────────────
@@ -326,7 +330,7 @@ export function buildSamples(
 		// Count is proportional to direction change — 0 for straight travel, max for 180°.
 		const depX  = pts.length > 1 ? pts[1][0] : pts[0][0];
 		const depY  = pts.length > 1 ? pts[1][1] : pts[0][1];
-		const dwell = cornerDwellCount(arrX, arrY, pts[0][0], pts[0][1], depX, depY);
+		const dwell = cornerDwellCount(arrX, arrY, pts[0][0], pts[0][1], depX, depY, CORNER_DWELL_MAX_DEFAULT);
 		for (let d = 0; d < dwell; d++) {
 			emit(pts[0][0], pts[0][1], 2 * clrs[0][0] - 1, 2 * clrs[0][1] - 1, 2 * clrs[0][2] - 1, 2 * pts[0][2] - 1);
 		}
@@ -410,9 +414,10 @@ export const COORD_STRIDE = 7;
  * Corner dwell is encoded as repeated identical points.
  */
 export function buildCoordBuffer(
-	path:    OrderedPath,
-	nPoints: number,
-	prevEnd: { x: number; y: number },
+	path:     OrderedPath,
+	nPoints:  number,
+	prevEnd:  { x: number; y: number },
+	dwellMax: number = CORNER_DWELL_MAX_DEFAULT,
 ): { data: Float32Array; nPoints: number; endPos: { x: number; y: number } } {
 	const data = new Float32Array(nPoints * COORD_STRIDE);
 	let   wp   = 0;
@@ -469,7 +474,7 @@ export function buildCoordBuffer(
 		// ── Corner dwell ──────────────────────────────────────────────────────────
 		const depX = pts.length > 1 ? pts[1][0] : pts[0][0];
 		const depY = pts.length > 1 ? pts[1][1] : pts[0][1];
-		const dwell = cornerDwellCount(arrX, arrY, pts[0][0], pts[0][1], depX, depY);
+		const dwell = cornerDwellCount(arrX, arrY, pts[0][0], pts[0][1], depX, depY, dwellMax);
 		for (let d = 0; d < dwell; d++) {
 			emit(pts[0][0], pts[0][1],
 				2 * clrs[0][0] - 1, 2 * clrs[0][1] - 1, 2 * clrs[0][2] - 1, 2 * pts[0][2] - 1, 0);

@@ -157,6 +157,9 @@ export type GrainPlayerNodeData = {
 	loopStart:    number;   // seconds into buffer, default 0
 	loopEnd:      number;   // seconds into buffer, 0 = buffer end, default 0
 	reverse:      boolean;  // play grains reversed, default false
+	loopStart:    number;   // seconds into buffer, default 0
+	loopEnd:      number;   // seconds into buffer, 0 = buffer end, default 0
+	reverse:      boolean;  // play grains reversed, default false
 };
 export type GrainPlayerFlowNode = Node<GrainPlayerNodeData, 'grainPlayer'>;
 
@@ -171,6 +174,21 @@ export type SceneInputNodeData = {
 };
 
 export type SceneInputFlowNode = Node<SceneInputNodeData, 'sceneInput'>;
+
+export type IldaFrameNodeData = {
+	label:     string;
+	/** Blob URL or remote URL pointing at the loaded .ild file. Session-only when blob. */
+	ildUrl:    string;
+	/** Original filename for display after blob URL expires on reload. */
+	filename:  string;
+	/** Static = freeze on frame 0; animated = cycle frames at `fps`. */
+	mode:      'static' | 'animated';
+	/** Cycle rate when mode = 'animated'. */
+	fps:       number;
+	isPlaying: boolean;
+};
+
+export type IldaFrameFlowNode = Node<IldaFrameNodeData, 'ildaFrame'>;
 
 export type DebugNodeData = { label: string };
 export type DebugFlowNode = Node<DebugNodeData, 'debug'>;
@@ -453,6 +471,7 @@ export type PWMOscillatorAudioEntry = {
 export type GrainPlayerAudioEntry = {
 	kind:     'grainPlayer';
 	toneNode: GrainPlayer;
+	split:    Split;
 	split:    Split;
 };
 

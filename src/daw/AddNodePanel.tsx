@@ -44,6 +44,7 @@ const CATALOGUE: CatalogueCategory[] = [
 			{ label: 'Player',          action: 'player',          abbr: 'PLY',  desc: 'audio file'          },
 			{ label: 'GrainPlayer',     action: 'grainPlayer',     abbr: 'GRPD', desc: 'granular'            },
 			{ label: 'MicInput',        action: 'micInput',        abbr: 'MIC',  desc: 'microphone'          },
+		{ label: 'IldaFrame',       action: 'ildaFrame',       abbr: 'ILDA', desc: 'ILDA laser show file' },
 			{ label: 'LFO',             action: 'lfo',             abbr: 'LFO',  desc: 'low-freq osc'        },
 			{ label: 'DCSignal',        action: 'dcSignal',        abbr: 'DC',   desc: 'constant value'      },
 		],
@@ -227,6 +228,7 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 	const addPWMOscillatorNode   = useDawStore(s => s.addPWMOscillatorNode);
 	const addGrainPlayerNode     = useDawStore(s => s.addGrainPlayerNode);
 	const addMicInputNode        = useDawStore(s => s.addMicInputNode);
+	const addIldaFrameNode       = useDawStore(s => s.addIldaFrameNode);
 	const addStubNode            = useDawStore(s => s.addStubNode);
 	const addDebugNode           = useDawStore(s => s.addDebugNode);
 	const addReverbNode          = useDawStore(s => s.addReverbNode);
@@ -276,27 +278,8 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 			pulseOscillator: () => addPulseOscillatorNode(pos),
 			pwmOscillator:   () => addPWMOscillatorNode(pos),
 			grainPlayer:     () => addGrainPlayerNode(pos),
-			micInput:          () => addMicInputNode(pos),
-			debug:             () => addDebugNode(pos),
-			reverb:            () => addReverbNode(pos),
-			jcReverb:          () => addJCReverbNode(pos),
-			freeverb:          () => addFreeverbNode(pos),
-			delay:             () => addDelayNode(pos),
-			feedbackDelay:     () => addFeedbackDelayNode(pos),
-			pingPongDelay:     () => addPingPongDelayNode(pos),
-			distortion:        () => addDistortionNode(pos),
-			chebyshev:         () => addChebyshevNode(pos),
-			bitCrusher:        () => addBitCrusherNode(pos),
-			frequencyShifter:  () => addFrequencyShifterNode(pos),
-			pitchShift:        () => addPitchShiftNode(pos),
-			stereoWidener:     () => addStereoWidenerNode(pos),
-			chorus:            () => addChorusNode(pos),
-			phaser:            () => addPhaserNode(pos),
-			tremolo:           () => addTremoloNode(pos),
-			vibrato:           () => addVibratoNode(pos),
-			autoFilter:        () => addAutoFilterNode(pos),
-			autoPanner:        () => addAutoPannerNode(pos),
-			autoWah:           () => addAutoWahNode(pos),
+			micInput:        () => addMicInputNode(pos),
+			debug:           () => addDebugNode(pos),
 		};
 		const handler = REAL_HANDLERS[action];
 		if (handler) handler();
@@ -309,11 +292,6 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 		addLFONode, addFMOscillatorNode, addAMOscillatorNode, addFatOscillatorNode,
 		addPulseOscillatorNode, addPWMOscillatorNode, addGrainPlayerNode, addMicInputNode,
 		addStubNode, addDebugNode, setOpenTracked,
-		addReverbNode, addJCReverbNode, addFreeverbNode, addDelayNode, addFeedbackDelayNode,
-		addPingPongDelayNode, addDistortionNode, addChebyshevNode, addBitCrusherNode,
-		addFrequencyShifterNode, addPitchShiftNode, addStereoWidenerNode,
-		addChorusNode, addPhaserNode, addTremoloNode, addVibratoNode,
-		addAutoFilterNode, addAutoPannerNode, addAutoWahNode,
 	]);
 
 	const q = filter.trim().toLowerCase();
