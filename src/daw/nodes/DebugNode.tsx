@@ -122,6 +122,17 @@ function SizeRow({ pos, children }: { pos: LabelPos; children: (pos: LabelPos, s
 	);
 }
 
+function SizeHeader() {
+	return (
+		<Fragment>
+			<Box />
+			{SIZES.map(sz => (
+				<Typography key={sz.label} variant='caption' sx={SZ_HEADER_SX}>{sz.label}</Typography>
+			))}
+		</Fragment>
+	);
+}
+
 function SizingExplorer({ color }: { color: string }) {
 	const toggle     = useMemo(() => hwToggleSx(color),       [color]);
 	const slider     = useMemo(() => hwSliderSx(color),       [color]);
@@ -133,15 +144,6 @@ function SizingExplorer({ color }: { color: string }) {
 	const [selectVal, setSelectVal] = useState('sine');
 	const [ledOn,     setLedOn]     = useState(true);
 	const [swOn,      setSwOn]      = useState(true);
-
-	const SizeHeader = () => (
-		<Fragment>
-			<Box />
-			{SIZES.map(sz => (
-				<Typography key={sz.label} variant='caption' sx={SZ_HEADER_SX}>{sz.label}</Typography>
-			))}
-		</Fragment>
-	);
 
 	return (
 		<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>

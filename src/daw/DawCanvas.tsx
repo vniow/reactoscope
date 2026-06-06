@@ -179,6 +179,7 @@ function SampleRateControl({ color, onOpenChange }: { color: string; onOpenChang
 				sx={(open || needsReload) ? { ...hwIconBtnLit(color), p: 0.5 } : { ...hwIconBtn(color), p: 0.5 }}>
 				<SpeedIcon sx={{ fontSize: 12 }} />
 			</IconButton>
+			{/* eslint-disable-next-line react-hooks/refs */}
 			<Popover open={open} anchorEl={anchorRef.current} onClose={() => setOpenTracked(false)}
 				anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
 				transformOrigin={{ vertical: 'center', horizontal: 'left' }}
@@ -250,6 +251,7 @@ function ScanFreqControl({ color, onOpenChange }: { color: string; onOpenChange?
 				sx={open ? { ...hwIconBtnLit(color), p: 0.5 } : { ...hwIconBtn(color), p: 0.5 }}>
 				<TuneIcon sx={{ fontSize: 12 }} />
 			</IconButton>
+			{/* eslint-disable-next-line react-hooks/refs */}
 			<Popover open={open} anchorEl={anchorRef.current} onClose={() => setOpenTracked(false)}
 				anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
 				transformOrigin={{ vertical: 'center', horizontal: 'left' }}

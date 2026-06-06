@@ -4,9 +4,9 @@ import * as THREE from 'three';
 import { useAxis, useEffects } from '../contexts/WoahscopeContext';
 import { updateGeometryArrays, getColourFromHue } from '../woahscope/utils';
 import { DEFAULT_AUDIO_SETTINGS } from '../config';
-import { getWaveformData, setAnalyserSize, getWaveformDataFromSAB, getWaveformWriteIndex, setWaveformCaptureSize } from '../store/daw';
-import { useDawStore, MASTER_NODE_ID } from '../store/daw';
-import type { MasterOutputNodeData } from '../store/dawTypes';
+import { getWaveformData, setAnalyserSize, getWaveformDataFromSAB, getWaveformWriteIndex, setWaveformCaptureSize, getGalvoRing, getGalvoWriteCount, isMasterMultichannel } from '../store/daw';
+import { useDawStore } from '../store/daw';
+import { resolveRingSpan, decayFactor } from '../laser/povRender';
 import type { DebugSnapshot } from '../debug/types';
 import { EMPTY_SNAPSHOT } from '../debug/types';
 import {
@@ -35,7 +35,6 @@ let _debugGetToneContext: (() => { state: string }) | null = null;
 if (isDebugMode) {
 	try {
 		// eslint-disable-next-line @typescript-eslint/no-require-imports
-		// @ts-ignore — require is available at runtime in Vite dev mode
 		const { getContext } = require('tone') as typeof import('tone');
 		_debugGetToneContext = getContext;
 	} catch {

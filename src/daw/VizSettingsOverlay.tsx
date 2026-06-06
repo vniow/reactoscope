@@ -37,7 +37,7 @@ export function VizSettingsOverlay({ onOpenChange }: { onOpenChange?: (open: boo
 
 	const { vizMode, setVizMode } = useEffects();
 
-	const isMultichannel = useDawStore(s => isMasterMultichannel(s.edges));
+	
 	const isMultichannel = useDawStore(s => isMasterMultichannel(s.edges));
 
 	return (
@@ -52,10 +52,8 @@ export function VizSettingsOverlay({ onOpenChange }: { onOpenChange?: (open: boo
 				<SettingsIcon sx={{ fontSize: 12 }} />
 			</IconButton>
 
-			<Popover
-				open={open}
-				anchorEl={anchorRef.current}
-				onClose={() => setOpenTracked(false)}
+			{/* eslint-disable-next-line react-hooks/refs */}
+			<Popover open={open} anchorEl={anchorRef.current} onClose={() => setOpenTracked(false)}
 				anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
 				transformOrigin={{ vertical: 'center', horizontal: 'left' }}
 				slotProps={{
@@ -97,17 +95,7 @@ export function VizSettingsOverlay({ onOpenChange }: { onOpenChange?: (open: boo
 						<VisualizationControls hideCrt={vizMode === 'laser'} />
 					</Sect>
 
-					{vizMode === 'laser' && (
-						<Sect label='galvo'>
-							<GalvoControl />
-						</Sect>
-					)}
-
-					{vizMode === 'laser' && (
-						<Sect label='ilda'>
-							<IldaIOControl />
-						</Sect>
-					)}
+					
 
 					<Sect label='effects'>
 						<EffectsControl />

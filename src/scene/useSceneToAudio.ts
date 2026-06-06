@@ -133,6 +133,7 @@ export function useSceneToAudio(): void {
 			worker.terminate();
 			workerRef.current = null;
 		};
+	// eslint-disable-next-line react-hooks/exhaustive-deps -- worker created once; coordBufferSize sync is handled by the effect below
 	}, []);
 
 	useEffect(() => {

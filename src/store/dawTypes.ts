@@ -157,9 +157,6 @@ export type GrainPlayerNodeData = {
 	loopStart:    number;   // seconds into buffer, default 0
 	loopEnd:      number;   // seconds into buffer, 0 = buffer end, default 0
 	reverse:      boolean;  // play grains reversed, default false
-	loopStart:    number;   // seconds into buffer, default 0
-	loopEnd:      number;   // seconds into buffer, 0 = buffer end, default 0
-	reverse:      boolean;  // play grains reversed, default false
 };
 export type GrainPlayerFlowNode = Node<GrainPlayerNodeData, 'grainPlayer'>;
 
@@ -363,6 +360,7 @@ export type AppNode =
 	| PWMOscillatorFlowNode
 	| GrainPlayerFlowNode
 	| MicInputFlowNode
+	| IldaFrameFlowNode
 	| ReverbFlowNode
 	| JCReverbFlowNode
 	| FreeverbFlowNode
@@ -472,12 +470,20 @@ export type GrainPlayerAudioEntry = {
 	kind:     'grainPlayer';
 	toneNode: GrainPlayer;
 	split:    Split;
-	split:    Split;
 };
 
 export type MicInputAudioEntry = {
 	kind:     'micInput';
 	toneNode: UserMedia;
+};
+
+export type IldaFrameAudioEntry = {
+	kind:        'ildaFrame';
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	workletNode: any;
+	coordBufs:   { data: Float32Array; nPoints: number }[];
+	frameIdx:    number;
+	frameTimer:  ReturnType<typeof setInterval> | null;
 };
 
 export type SceneInputAudioEntry = {
@@ -529,6 +535,7 @@ export type AudioNodeEntry =
 	| PWMOscillatorAudioEntry
 	| GrainPlayerAudioEntry
 	| MicInputAudioEntry
+	| IldaFrameAudioEntry
 	| SceneInputAudioEntry
 	| ReverbAudioEntry
 	| JCReverbAudioEntry

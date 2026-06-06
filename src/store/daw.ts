@@ -135,6 +135,7 @@ import type {
 	PWMOscillatorAudioEntry,
 	GrainPlayerAudioEntry,
 	MicInputAudioEntry,
+	IldaFrameAudioEntry,
 	SceneInputAudioEntry,
 	ReverbAudioEntry,
 	JCReverbAudioEntry,
@@ -1189,13 +1190,7 @@ function createGrainPlayerEntry(id: string, data?: Partial<GrainPlayerNodeData>)
 		loopStart:    data?.loopStart    ?? 0,
 		loopEnd:      data?.loopEnd      ?? 0,
 		reverse:      data?.reverse      ?? false,
-		loopStart:    data?.loopStart    ?? 0,
-		loopEnd:      data?.loopEnd      ?? 0,
-		reverse:      data?.reverse      ?? false,
 	});
-	const split = new Split(2);
-	toneNode.connect(split);
-	const entry: GrainPlayerAudioEntry = { kind: 'grainPlayer', toneNode, split };
 	const split = new Split(2);
 	toneNode.connect(split);
 	const entry: GrainPlayerAudioEntry = { kind: 'grainPlayer', toneNode, split };
@@ -1265,17 +1260,7 @@ export function setGrainPlayerLoopStart(id: string, time: number): void {
 	entry.toneNode.loopStart = time;
 }
 
-export function setGrainPlayerLoopEnd(id: string, time: number): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'grainPlayer') return;
-	entry.toneNode.loopEnd = time;
-}
 
-export function setGrainPlayerReverse(id: string, reverse: boolean): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'grainPlayer') return;
-	entry.toneNode.reverse = reverse;
-}
 
 export function setGrainPlayerLoopEnd(id: string, time: number): void {
 	const entry = _audioNodes.get(id);
@@ -1309,6 +1294,21 @@ export function stopMicInput(id: string): void {
 	const entry = _audioNodes.get(id);
 	if (!entry || entry.kind !== 'micInput') return;
 	entry.toneNode.close();
+}
+
+// ─── IldaFrame audio node lifecycle ──────────────────────────────────────────
+
+function createIldaFrameEntry(id: string): IldaFrameAudioEntry {
+	const sceneEntry = _audioNodes.get(SCENE_INPUT_ID);
+	const entry: IldaFrameAudioEntry = {
+		kind:        'ildaFrame',
+		workletNode: sceneEntry ? (sceneEntry as { workletNode: unknown }).workletNode : null,
+		coordBufs:   [],
+		frameIdx:    0,
+		frameTimer:  null,
+	};
+	_audioNodes.set(id, entry);
+	return entry;
 }
 
 // ─── Scene Input audio node lifecycle ────────────────────────────────────────
@@ -1363,35 +1363,6 @@ async function initSceneInput(): Promise<void> {
 	);
 }
 
-// ─── IldaFrame audio node lifecycle ──────────────────────────────────────────
-//
-// Each IldaFrameNode owns a fresh `scene-input-processor` worklet instance —
-// the same processor class the singleton SceneInput uses, but with its own
-// coord buffer. Multiple ILDA files can coexist as independent sources.
-// `audioWorklet.addModule(...)` was already called during initSceneInput()
-// and is idempotent, so we can synchronously instantiate further worklets.
-
-function createIldaFrameEntry(id: string): IldaFrameAudioEntry {
-	const toneCtx = getContext();
-	const workletNode = toneCtx.createAudioWorkletNode('scene-input-processor', {
-		numberOfOutputs:    1,
-		outputChannelCount: [6],
-		processorOptions:   {},
-	});
-	const split = new Split(6);
-	workletNode.connect(split.input);
-
-	const entry: IldaFrameAudioEntry = {
-		kind:        'ildaFrame',
-		workletNode,
-		split,
-		coordBufs:   [],
-		frameTimer:  null,
-		frameIdx:    0,
-	};
-	_audioNodes.set(id, entry);
-	return entry;
-}
 
 /**
  * Fetch an .ild file, decode it, and load every frame into the node's audio
@@ -1668,7 +1639,7 @@ export function setFreeverbRoomSize(id: string, v: number): void {
 }
 export function setFreeverbDampening(id: string, v: number): void {
 	const e = _audioNodes.get(id); if (!e || e.kind !== 'freeverb') return;
-	e.toneNode.dampening.value = v;
+	e.toneNode.dampening = v;
 }
 export function setFreeverbWet(id: string, v: number): void {
 	const e = _audioNodes.get(id); if (!e || e.kind !== 'freeverb') return;
@@ -1759,7 +1730,8 @@ export function setChebyshevWet(id: string, v: number): void {
 }
 
 function createBitCrusherEntry(id: string, d: BitCrusherNodeData): BitCrusherAudioEntry {
-	const toneNode = new BitCrusher({ bits: d.bits, wet: d.wet });
+	const toneNode = new BitCrusher(d.bits);
+	toneNode.wet.value = d.wet;
 	const entry: BitCrusherAudioEntry = { kind: 'bitCrusher', toneNode };
 	_audioNodes.set(id, entry);
 	return entry;
@@ -1840,7 +1812,7 @@ export async function startChorus(id: string): Promise<void> {
 }
 export function stopChorus(id: string): void {
 	const e = _audioNodes.get(id); if (!e || e.kind !== 'chorus') return;
-	if (e.toneNode.state === 'started') e.toneNode.stop();
+	e.toneNode.stop();
 }
 export function setChorusFrequency(id: string, v: number): void {
 	const e = _audioNodes.get(id); if (!e || e.kind !== 'chorus') return;
@@ -1895,7 +1867,7 @@ export async function startTremolo(id: string): Promise<void> {
 }
 export function stopTremolo(id: string): void {
 	const e = _audioNodes.get(id); if (!e || e.kind !== 'tremolo') return;
-	if (e.toneNode.state === 'started') e.toneNode.stop();
+	e.toneNode.stop();
 }
 export function setTremoloFrequency(id: string, v: number): void {
 	const e = _audioNodes.get(id); if (!e || e.kind !== 'tremolo') return;
@@ -1917,12 +1889,14 @@ function createVibratoEntry(id: string, d: VibratoNodeData): VibratoAudioEntry {
 	return entry;
 }
 export async function startVibrato(id: string): Promise<void> {
-	const e = _audioNodes.get(id); if (!e || e.kind !== 'vibrato') return;
-	await toneStart(); e.toneNode.start();
+	const e = _audioNodes.get(id);
+	if (!e || e.kind !== 'vibrato') return;
+	await toneStart();
 }
 export function stopVibrato(id: string): void {
-	const e = _audioNodes.get(id); if (!e || e.kind !== 'vibrato') return;
-	if (e.toneNode.state === 'started') e.toneNode.stop();
+	const e = _audioNodes.get(id);
+	if (!e || e.kind !== 'vibrato') return;
+	// Vibrato has no start/stop — its internal LFO runs continuously
 }
 export function setVibratoFrequency(id: string, v: number): void {
 	const e = _audioNodes.get(id); if (!e || e.kind !== 'vibrato') return;
@@ -1949,7 +1923,7 @@ export async function startAutoFilter(id: string): Promise<void> {
 }
 export function stopAutoFilter(id: string): void {
 	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoFilter') return;
-	if (e.toneNode.state === 'started') e.toneNode.stop();
+	e.toneNode.stop();
 }
 export function setAutoFilterFrequency(id: string, v: number): void {
 	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoFilter') return;
@@ -1980,7 +1954,7 @@ export async function startAutoPanner(id: string): Promise<void> {
 }
 export function stopAutoPanner(id: string): void {
 	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoPanner') return;
-	if (e.toneNode.state === 'started') e.toneNode.stop();
+	e.toneNode.stop();
 }
 export function setAutoPannerFrequency(id: string, v: number): void {
 	const e = _audioNodes.get(id); if (!e || e.kind !== 'autoPanner') return;
@@ -2066,9 +2040,12 @@ function disposeAudioNode(id: string): void {
 		entry.toneNode.dispose();
 	} else if (
 		entry.kind === 'chorus' || entry.kind === 'tremolo' ||
-		entry.kind === 'vibrato'|| entry.kind === 'autoFilter' || entry.kind === 'autoPanner'
+		entry.kind === 'autoFilter' || entry.kind === 'autoPanner'
 	) {
-		if (entry.toneNode.state === 'started') entry.toneNode.stop();
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		try { (entry.toneNode as any).stop(); } catch {}
+		entry.toneNode.dispose();
+	} else if (entry.kind === 'vibrato') {
 		entry.toneNode.dispose();
 	}
 
@@ -2210,34 +2187,23 @@ export function clearNodePlaybackEndCallback(id: string): void {
 // Only entries that need a display name different from their action key.
 // Everything else falls back to capitalising the action string.
 const STUB_LABELS: Partial<Record<StubKind, string>> = {
-	noiseGenerator: 'Noise',
-	jcReverb:       'JCReverb',
-	freeverb:       'Freeverb',
-	feedbackDelay:  'FeedbackDelay',
-	pingPongDelay:  'PingPongDelay',
-	bitCrusher:     'BitCrusher',
-	autoFilter:     'AutoFilter',
-	autoPanner:     'AutoPanner',
-	autoWah:        'AutoWah',
-	frequencyShifter: 'FrequencyShifter',
-	pitchShift:     'PitchShift',
-	stereoWidener:  'StereoWidener',
+	noiseGenerator:      'Noise',
 	midSideCompressor:   'MidSideCompressor',
 	multibandCompressor: 'MultibandCompressor',
-	biquadFilter:   'BiquadFilter',
-	panVol:         'PanVol',
-	panner3d:       'Panner3D',
-	crossFade:      'CrossFade',
-	multibandSplit: 'MultibandSplit',
-	dcMeter:        'DCMeter',
-	amplitudeEnvelope:  'AmplitudeEnvelope',
-	frequencyEnvelope:  'FrequencyEnvelope',
-	waveShaper:     'WaveShaper',
-	scaleExp:       'ScaleExp',
-	greaterThan:    'GreaterThan',
-	audioToGain:    'AudioToGain',
-	gainToAudio:    'GainToAudio',
-	toneEvent:      'ToneEvent',
+	biquadFilter:        'BiquadFilter',
+	panVol:              'PanVol',
+	panner3d:            'Panner3D',
+	crossFade:           'CrossFade',
+	multibandSplit:      'MultibandSplit',
+	dcMeter:             'DCMeter',
+	amplitudeEnvelope:   'AmplitudeEnvelope',
+	frequencyEnvelope:   'FrequencyEnvelope',
+	waveShaper:          'WaveShaper',
+	scaleExp:            'ScaleExp',
+	greaterThan:         'GreaterThan',
+	audioToGain:         'AudioToGain',
+	gainToAudio:         'GainToAudio',
+	toneEvent:           'ToneEvent',
 };
 
 function stubLabel(kind: StubKind): string {
@@ -2253,7 +2219,6 @@ const initialNodes: AppNode[] = [
 		id:        MASTER_NODE_ID,
 		type:      'masterOutput',
 		position:  { x: 288, y: 240 },
-		data:      { label: 'Master Output', speakersMuted: true },
 		data:      { label: 'Master Output', speakersMuted: true },
 		deletable: false,
 	},
@@ -2953,19 +2918,6 @@ export const useDawStore = create<DawState>((set, get) => ({
 		});
 	},
 
-}));
-
-/**
- * Returns true if any of the master output's R/G/B handles (in-2, in-3, in-4)
- * has an inbound edge. Used by the visualiser to decide between per-sample
- * R/G/B colouring and the phosphor hue fallback.
- */
-export function isMasterMultichannel(edges: AppEdge[]): boolean {
-	return edges.some(e =>
-		e.target === MASTER_NODE_ID &&
-		(e.targetHandle === 'in-2' || e.targetHandle === 'in-3' || e.targetHandle === 'in-4'),
-	);
-}
 }));
 
 /**

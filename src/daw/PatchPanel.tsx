@@ -82,6 +82,7 @@ function PatchRow({ saved, isDefault, onLoad, onUpdate, onDuplicate, onDownload,
 				<Box sx={{ flex: 1, minWidth: 0 }}>
 					{renaming ? (
 						<InputBase
+							// eslint-disable-next-line jsx-a11y/no-autofocus
 							autoFocus
 							value={renameVal}
 							onChange={e => setRenameVal(e.target.value)}

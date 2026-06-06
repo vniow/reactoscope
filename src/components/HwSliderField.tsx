@@ -35,6 +35,7 @@ function EditInput({
 	return (
 		<Box sx={{ ...HW_INSET, px: 0.5, display: 'inline-flex', alignItems: 'center' }}>
 			<InputBase
+				// eslint-disable-next-line jsx-a11y/no-autofocus
 				autoFocus
 				value={raw}
 				onChange={e => setRaw(e.target.value)}

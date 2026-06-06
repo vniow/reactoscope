@@ -43,8 +43,9 @@ export const DistortionNode = memo(function DistortionNode({ id, data, selected 
 							return (
 								<Box key={opt} onClick={() => handleOversample(opt)} sx={{
 									flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-									py: 0.5, cursor: 'pointer', borderRadius: radius,
+									py: 0.5, cursor: 'pointer',
 									...(active ? hwLit(color) : HW_RAISED),
+									borderRadius: radius,
 									color: active ? color : 'text.disabled',
 									fontSize: 9,
 								}}>

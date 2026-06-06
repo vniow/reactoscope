@@ -65,6 +65,7 @@ export function AudioFileLoader({ color, onLoad, accept = 'audio/*', placeholder
 		return (
 			<Box sx={{ display: 'flex', gap: 0.5 }} className='nodrag'>
 				<InputBase
+					// eslint-disable-next-line jsx-a11y/no-autofocus
 					autoFocus
 					placeholder='Paste audio URL…'
 					value={urlInput}

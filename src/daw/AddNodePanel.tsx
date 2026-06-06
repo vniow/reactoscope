@@ -266,20 +266,40 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 	const handleAdd = useCallback((action: string) => {
 		const pos = getDropPosition();
 		const REAL_HANDLERS: Record<string, () => void> = {
-			oscillator:      () => addOscillatorNode(pos),
-			gain:            () => addGainNode(pos),
-			noiseGenerator:  () => addNoiseNode(pos),
-			dcSignal:        () => addDCSignalNode(pos),
-			player:          () => addPlayerNode('', pos),
-			lfo:             () => addLFONode(pos),
-			fmOscillator:    () => addFMOscillatorNode(pos),
-			amOscillator:    () => addAMOscillatorNode(pos),
-			fatOscillator:   () => addFatOscillatorNode(pos),
-			pulseOscillator: () => addPulseOscillatorNode(pos),
-			pwmOscillator:   () => addPWMOscillatorNode(pos),
-			grainPlayer:     () => addGrainPlayerNode(pos),
-			micInput:        () => addMicInputNode(pos),
-			debug:           () => addDebugNode(pos),
+			oscillator:       () => addOscillatorNode(pos),
+			gain:             () => addGainNode(pos),
+			noiseGenerator:   () => addNoiseNode(pos),
+			dcSignal:         () => addDCSignalNode(pos),
+			player:           () => addPlayerNode('', pos),
+			lfo:              () => addLFONode(pos),
+			fmOscillator:     () => addFMOscillatorNode(pos),
+			amOscillator:     () => addAMOscillatorNode(pos),
+			fatOscillator:    () => addFatOscillatorNode(pos),
+			pulseOscillator:  () => addPulseOscillatorNode(pos),
+			pwmOscillator:    () => addPWMOscillatorNode(pos),
+			grainPlayer:      () => addGrainPlayerNode(pos),
+			micInput:         () => addMicInputNode(pos),
+			ildaFrame:        () => addIldaFrameNode(pos),
+			debug:            () => addDebugNode(pos),
+			reverb:           () => addReverbNode(pos),
+			jcReverb:         () => addJCReverbNode(pos),
+			freeverb:         () => addFreeverbNode(pos),
+			delay:            () => addDelayNode(pos),
+			feedbackDelay:    () => addFeedbackDelayNode(pos),
+			pingPongDelay:    () => addPingPongDelayNode(pos),
+			distortion:       () => addDistortionNode(pos),
+			chebyshev:        () => addChebyshevNode(pos),
+			bitCrusher:       () => addBitCrusherNode(pos),
+			frequencyShifter: () => addFrequencyShifterNode(pos),
+			pitchShift:       () => addPitchShiftNode(pos),
+			stereoWidener:    () => addStereoWidenerNode(pos),
+			chorus:           () => addChorusNode(pos),
+			phaser:           () => addPhaserNode(pos),
+			tremolo:          () => addTremoloNode(pos),
+			vibrato:          () => addVibratoNode(pos),
+			autoFilter:       () => addAutoFilterNode(pos),
+			autoPanner:       () => addAutoPannerNode(pos),
+			autoWah:          () => addAutoWahNode(pos),
 		};
 		const handler = REAL_HANDLERS[action];
 		if (handler) handler();
@@ -291,7 +311,14 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 		addOscillatorNode, addGainNode, addNoiseNode, addDCSignalNode, addPlayerNode,
 		addLFONode, addFMOscillatorNode, addAMOscillatorNode, addFatOscillatorNode,
 		addPulseOscillatorNode, addPWMOscillatorNode, addGrainPlayerNode, addMicInputNode,
-		addStubNode, addDebugNode, setOpenTracked,
+		addIldaFrameNode, addStubNode, addDebugNode,
+		addReverbNode, addJCReverbNode, addFreeverbNode,
+		addDelayNode, addFeedbackDelayNode, addPingPongDelayNode,
+		addDistortionNode, addChebyshevNode, addBitCrusherNode,
+		addFrequencyShifterNode, addPitchShiftNode, addStereoWidenerNode,
+		addChorusNode, addPhaserNode, addTremoloNode, addVibratoNode,
+		addAutoFilterNode, addAutoPannerNode, addAutoWahNode,
+		setOpenTracked,
 	]);
 
 	const q = filter.trim().toLowerCase();
@@ -358,6 +385,7 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 							value={filter}
 							onChange={e => setFilter(e.target.value)}
 							placeholder='filter...'
+							// eslint-disable-next-line jsx-a11y/no-autofocus
 							autoFocus
 							sx={{ fontSize: 9, color: 'text.secondary', flex: 1,
 							      '& .MuiInputBase-input': { p: 0 } }}

@@ -91,7 +91,7 @@ export function App() {
 
 	// Load the default patch once the DAW audio graph has finished initialising.
 	useEffect(() => {
-		dawInitPromise.then(() => {
+		void dawInitPromise.then(() => {
 			const { defaultPatchId, patches } = usePatchStore.getState();
 			if (!defaultPatchId) return;
 			const saved = patches.find(p => p.id === defaultPatchId);
