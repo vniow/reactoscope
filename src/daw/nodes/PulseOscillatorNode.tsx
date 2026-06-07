@@ -72,7 +72,7 @@ export const PulseOscillatorNode = memo(function PulseOscillatorNode({
 					<HwSliderField
 						label='width' value={width} min={0} max={1} step={0.01}
 						color={color} onChange={(v) => { setWidthState(v); setPulseOscillatorWidth(id, v); }}
-						format={v => v.toFixed(2)} allowValueEdit
+						format={v => v.toFixed(2)} allowValueEdit allowBoundsEdit
 					/>
 				</Box>
 
@@ -80,7 +80,7 @@ export const PulseOscillatorNode = memo(function PulseOscillatorNode({
 					<HwSliderField
 						label='detune' value={detune} min={-1200} max={1200} step={1}
 						color={color} onChange={(v) => { setDetuneState(v); setPulseOscillatorDetune(id, v); }}
-						format={v => String(v)} unit='ct' allowValueEdit
+						format={v => String(v)} unit='ct' allowValueEdit allowBoundsEdit
 					/>
 				</Box>
 

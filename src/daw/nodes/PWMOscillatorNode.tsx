@@ -72,7 +72,7 @@ export const PWMOscillatorNode = memo(function PWMOscillatorNode({
 					<HwSliderField
 						label='mod freq' value={modulationFrequency} min={0.1} max={20} step={0.01}
 						color={color} onChange={(v) => { setModFreqState(v); setPWMOscillatorModulationFrequency(id, v); }}
-						format={v => v.toFixed(2)} unit='Hz' allowValueEdit
+						format={v => v.toFixed(2)} unit='Hz' allowValueEdit allowBoundsEdit
 					/>
 				</Box>
 
@@ -80,7 +80,7 @@ export const PWMOscillatorNode = memo(function PWMOscillatorNode({
 					<HwSliderField
 						label='detune' value={detune} min={-1200} max={1200} step={1}
 						color={color} onChange={(v) => { setDetuneState(v); setPWMOscillatorDetune(id, v); }}
-						format={v => String(v)} unit='ct' allowValueEdit
+						format={v => String(v)} unit='ct' allowValueEdit allowBoundsEdit
 					/>
 				</Box>
 

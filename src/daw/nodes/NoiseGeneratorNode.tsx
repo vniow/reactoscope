@@ -101,6 +101,7 @@ export const NoiseGeneratorNode = memo(function NoiseGeneratorNode({
 						format={v => String(v)}
 						unit='dB'
 						allowValueEdit
+						allowBoundsEdit
 					/>
 				</Box>
 

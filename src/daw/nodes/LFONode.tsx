@@ -134,6 +134,7 @@ export const LFONode = memo(function LFONode({
 						format={v => v.toFixed(2)}
 						unit='Hz'
 						allowValueEdit
+						allowBoundsEdit
 					/>
 				</Box>
 
@@ -147,6 +148,7 @@ export const LFONode = memo(function LFONode({
 						onChange={handleMinChange}
 						format={v => v.toFixed(2)}
 						allowValueEdit
+						allowBoundsEdit
 					/>
 				</Box>
 
@@ -160,6 +162,7 @@ export const LFONode = memo(function LFONode({
 						onChange={handleMaxChange}
 						format={v => v.toFixed(2)}
 						allowValueEdit
+						allowBoundsEdit
 					/>
 				</Box>
 

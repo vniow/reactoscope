@@ -45,6 +45,7 @@ export const DCSignalNode = memo(function DCSignalNode({
 					onChange={handleChange}
 					format={v => v.toFixed(2)}
 					allowValueEdit
+					allowBoundsEdit
 				/>
 			</Box>
 

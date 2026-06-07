@@ -121,7 +121,7 @@ export const AMOscillatorNode = memo(function AMOscillatorNode({
 					<HwSliderField
 						label='harmonicity' value={harmonicity} min={0} max={20} step={0.1}
 						color={color} onChange={(v) => { setHarmonicityState(v); setAMOscillatorHarmonicity(id, v); }}
-						format={v => v.toFixed(1)} allowValueEdit
+						format={v => v.toFixed(1)} allowValueEdit allowBoundsEdit
 					/>
 				</Box>
 
@@ -129,7 +129,7 @@ export const AMOscillatorNode = memo(function AMOscillatorNode({
 					<HwSliderField
 						label='detune' value={detune} min={-1200} max={1200} step={1}
 						color={color} onChange={(v) => { setDetuneState(v); setAMOscillatorDetune(id, v); }}
-						format={v => String(v)} unit='ct' allowValueEdit
+						format={v => String(v)} unit='ct' allowValueEdit allowBoundsEdit
 					/>
 				</Box>
 

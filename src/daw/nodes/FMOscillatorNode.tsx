@@ -123,7 +123,7 @@ export const FMOscillatorNode = memo(function FMOscillatorNode({
 					<HwSliderField
 						label='mod idx' value={modulationIndex} min={0} max={50} step={0.1}
 						color={color} onChange={(v) => { setModIndexState(v); setFMOscillatorModulationIndex(id, v); }}
-						format={v => v.toFixed(1)} allowValueEdit
+						format={v => v.toFixed(1)} allowValueEdit allowBoundsEdit
 					/>
 				</Box>
 
@@ -131,7 +131,7 @@ export const FMOscillatorNode = memo(function FMOscillatorNode({
 					<HwSliderField
 						label='harmonicity' value={harmonicity} min={0} max={20} step={0.1}
 						color={color} onChange={(v) => { setHarmonicityState(v); setFMOscillatorHarmonicity(id, v); }}
-						format={v => v.toFixed(1)} allowValueEdit
+						format={v => v.toFixed(1)} allowValueEdit allowBoundsEdit
 					/>
 				</Box>
 
@@ -139,7 +139,7 @@ export const FMOscillatorNode = memo(function FMOscillatorNode({
 					<HwSliderField
 						label='detune' value={detune} min={-1200} max={1200} step={1}
 						color={color} onChange={(v) => { setDetuneState(v); setFMOscillatorDetune(id, v); }}
-						format={v => String(v)} unit='ct' allowValueEdit
+						format={v => String(v)} unit='ct' allowValueEdit allowBoundsEdit
 					/>
 				</Box>
 
