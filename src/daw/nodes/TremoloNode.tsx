@@ -5,7 +5,7 @@ import Button from '@mui/material/Button';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import { startTremolo, stopTremolo, setTremoloFrequency, setTremoloDepth, setTremoloWet } from '../../store/daw';
-import { NodeHeader } from './NodeHeader';
+import { NodeHeader, BELOW_HEADER_HANDLE_TOP } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
 import { GRID_UNIT } from './gridSystem';
 import { inputHandleStyle, outputHandleStyle, inputLabel, rightLabel } from './handleStyles';
@@ -15,7 +15,7 @@ import { HwSliderField } from '../../components/HwSliderField';
 import type { TremoloFlowNode } from '../../store/dawTypes';
 
 const color = NODE_COLORS.effects;
-const HANDLE_TOP = '50%';
+const HANDLE_TOP = BELOW_HEADER_HANDLE_TOP;
 
 export const TremoloNode = memo(function TremoloNode({ id, data, selected }: NodeProps<TremoloFlowNode>) {
 	const [isRunning, setIsRunning] = useState(false);
@@ -32,13 +32,13 @@ export const TremoloNode = memo(function TremoloNode({ id, data, selected }: Nod
 		<Box sx={{ border: '1px solid', borderColor: color, borderRadius: 1, backgroundImage: METAL_BG, width: 2 * GRID_UNIT, position: 'relative' }}>
 			<NodeHeader id={id} label='Tremolo' selected={selected} accentColor={color} />
 
-			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }} className='nodrag nowheel'>
+			<Box sx={{ px: 1, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }} className='nodrag nowheel'>
 				<Button onClick={handleToggle} fullWidth className='nodrag' aria-label={isRunning ? 'Stop' : 'Start'}
 					sx={isRunning ? { ...hwBtnLit(color), py: 0.4 } : { ...hwBtn(color), py: 0.4 }}>
 					{isRunning ? <StopIcon sx={{ fontSize: 13 }} /> : <PlayArrowIcon sx={{ fontSize: 13 }} />}
 				</Button>
 				<HwSliderField label='freq'  value={frequency} min={0.1} max={20} step={0.1}  color={color} onChange={v => { setFreq(v);  setTremoloFrequency(id, v); }} format={v => v.toFixed(1)} unit='Hz' allowValueEdit allowBoundsEdit />
-				<HwSliderField label='depth' value={depth}     min={0}   max={1}  step={0.01} color={color} onChange={v => { setDepth(v); setTremoloDepth(id, v);     }} format={v => v.toFixed(2)}            allowValueEdit />
+				<HwSliderField label='depth' value={depth}     min={0}   max={1}  step={0.01} color={color} onChange={v => { setDepth(v); setTremoloDepth(id, v);     }} format={v => v.toFixed(2)}            allowValueEdit allowBoundsEdit />
 				<HwSliderField label='wet'   value={wet}       min={0}   max={1}  step={0.01} color={color} onChange={v => { setWet(v);   setTremoloWet(id, v);       }} format={v => v.toFixed(2)}            allowValueEdit />
 			</Box>
 

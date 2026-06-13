@@ -89,7 +89,7 @@ export const AMOscillatorNode = memo(function AMOscillatorNode({
 		}}>
 			<NodeHeader id={id} label='AM Osc' selected={selected} accentColor={color} />
 
-			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+			<Box sx={{ px: 1, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
 
 				<Box className='nodrag'>
 					<WaveRow value={oscType} label='carrier' onChange={(t) => { setOscType(t); setAMOscillatorType(id, t); }} />

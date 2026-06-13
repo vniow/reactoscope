@@ -2,7 +2,7 @@ import { memo, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
 import { setGainValue } from '../../store/daw';
-import { NodeHeader, NODE_HEADER_HEIGHT } from './NodeHeader';
+import { NodeHeader, BELOW_HEADER_HANDLE_TOP } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
 import { GRID_UNIT } from './gridSystem';
 import { inputHandleStyle, outputHandleStyle, inputLabel, rightLabel } from './handleStyles';
@@ -12,8 +12,7 @@ import type { GainFlowNode } from '../../store/dawTypes';
 
 const color = NODE_COLORS.processor;
 
-// Both handles sit at 75% of the body height — well below the slider content.
-const HANDLE_TOP = `calc(${NODE_HEADER_HEIGHT}px + 0.75 * (100% - ${NODE_HEADER_HEIGHT}px))`;
+const HANDLE_TOP = BELOW_HEADER_HANDLE_TOP;
 
 export const GainNode = memo(function GainNode({
 	id,
@@ -34,12 +33,11 @@ export const GainNode = memo(function GainNode({
 			borderRadius:    1,
 			backgroundImage: METAL_BG,
 			width:           2 * GRID_UNIT,
-			height:          1.5 * GRID_UNIT,
 			position:        'relative',
 		}}>
 			<NodeHeader id={id} label='Gain' selected={selected} accentColor={color} />
 
-			<Box sx={{ px: 1, py: 0.75 }} className='nodrag nowheel'>
+			<Box sx={{ px: 1, pt: 2, pb: 0.75 }} className='nodrag nowheel'>
 				<HwSliderField
 					label='gain'
 					value={gain}

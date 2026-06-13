@@ -116,7 +116,7 @@ export const IldaFrameNode = memo(function IldaFrameNode({ id, data, selected }:
 		}}>
 			<NodeHeader id={id} label={data.label || 'ILDA'} selected={selected} accentColor={color} />
 
-			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+			<Box sx={{ px: 1, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
 				<AudioFileLoader
 					color={color}
 					accept='.ild,.ILD'

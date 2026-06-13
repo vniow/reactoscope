@@ -48,7 +48,7 @@ export const PulseOscillatorNode = memo(function PulseOscillatorNode({
 		}}>
 			<NodeHeader id={id} label='Pulse Osc' selected={selected} accentColor={color} />
 
-			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+			<Box sx={{ px: 1, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
 
 				<Button
 					onClick={handleToggle}

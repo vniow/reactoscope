@@ -60,7 +60,7 @@ export const MasterOutputNode = memo<NodeProps<MasterOutputFlowNode>>(
 			}}>
 				<NodeHeader label='Master Output' accentColor={color} />
 
-				<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+				<Box sx={{ px: 1, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
 					<Typography variant='caption' color='text.secondary' sx={{ fontSize: 10 }}>
 						→ woahscope
 					</Typography>

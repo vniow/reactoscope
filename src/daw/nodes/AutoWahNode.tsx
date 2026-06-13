@@ -2,7 +2,7 @@ import { memo, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
 import { setAutoWahBaseFrequency, setAutoWahOctaves, setAutoWahSensitivity, setAutoWahWet } from '../../store/daw';
-import { NodeHeader } from './NodeHeader';
+import { NodeHeader, BELOW_HEADER_HANDLE_TOP } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
 import { GRID_UNIT } from './gridSystem';
 import { inputHandleStyle, outputHandleStyle, inputLabel, rightLabel } from './handleStyles';
@@ -11,7 +11,7 @@ import { HwSliderField } from '../../components/HwSliderField';
 import type { AutoWahFlowNode } from '../../store/dawTypes';
 
 const color = NODE_COLORS.effects;
-const HANDLE_TOP = '50%';
+const HANDLE_TOP = BELOW_HEADER_HANDLE_TOP;
 
 export const AutoWahNode = memo(function AutoWahNode({ id, data, selected }: NodeProps<AutoWahFlowNode>) {
 	const [baseFrequency, setBaseFrequency] = useState(data.baseFrequency ?? 100);
@@ -23,7 +23,7 @@ export const AutoWahNode = memo(function AutoWahNode({ id, data, selected }: Nod
 		<Box sx={{ border: '1px solid', borderColor: color, borderRadius: 1, backgroundImage: METAL_BG, width: 2 * GRID_UNIT, position: 'relative' }}>
 			<NodeHeader id={id} label='AutoWah' selected={selected} accentColor={color} />
 
-			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }} className='nodrag nowheel'>
+			<Box sx={{ px: 1, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }} className='nodrag nowheel'>
 				<HwSliderField label='base'    value={baseFrequency} min={50}  max={500} step={5}    color={color} onChange={v => { setBaseFrequency(v); setAutoWahBaseFrequency(id, v); }} format={v => String(v)}    unit='Hz' allowValueEdit allowBoundsEdit />
 				<HwSliderField label='octaves' value={octaves}       min={1}   max={8}   step={0.1}  color={color} onChange={v => { setOctaves(v);       setAutoWahOctaves(id, v);       }} format={v => v.toFixed(1)}            allowValueEdit allowBoundsEdit />
 				<HwSliderField label='sens'    value={sensitivity}   min={-40} max={0}   step={1}    color={color} onChange={v => { setSensitivity(v);   setAutoWahSensitivity(id, v);   }} format={v => String(v)}    unit='dB' allowValueEdit allowBoundsEdit />

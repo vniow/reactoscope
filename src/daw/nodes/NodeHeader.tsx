@@ -10,6 +10,9 @@ import { hwDeleteIconBtn } from './hwStyles';
 /** Exported for handle-position calc expressions in node components. */
 export const NODE_HEADER_HEIGHT = HEADER_HEIGHT;
 
+/** Standard handle top for nodes whose handles sit just below the header. */
+export const BELOW_HEADER_HANDLE_TOP = `${HEADER_HEIGHT + 10}px`;
+
 interface NodeHeaderProps {
 	label:        string;
 	/** Omit for non-deletable nodes. */

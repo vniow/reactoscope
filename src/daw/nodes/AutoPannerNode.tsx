@@ -5,7 +5,7 @@ import Button from '@mui/material/Button';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import { startAutoPanner, stopAutoPanner, setAutoPannerFrequency, setAutoPannerWet } from '../../store/daw';
-import { NodeHeader } from './NodeHeader';
+import { NodeHeader, BELOW_HEADER_HANDLE_TOP } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
 import { GRID_UNIT } from './gridSystem';
 import { inputHandleStyle, outputHandleStyle, inputLabel, rightLabel } from './handleStyles';
@@ -15,7 +15,7 @@ import { HwSliderField } from '../../components/HwSliderField';
 import type { AutoPannerFlowNode } from '../../store/dawTypes';
 
 const color = NODE_COLORS.effects;
-const HANDLE_TOP = '50%';
+const HANDLE_TOP = BELOW_HEADER_HANDLE_TOP;
 
 export const AutoPannerNode = memo(function AutoPannerNode({ id, data, selected }: NodeProps<AutoPannerFlowNode>) {
 	const [isRunning, setIsRunning] = useState(false);
@@ -31,7 +31,7 @@ export const AutoPannerNode = memo(function AutoPannerNode({ id, data, selected 
 		<Box sx={{ border: '1px solid', borderColor: color, borderRadius: 1, backgroundImage: METAL_BG, width: 2 * GRID_UNIT, position: 'relative' }}>
 			<NodeHeader id={id} label='AutoPanner' selected={selected} accentColor={color} />
 
-			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }} className='nodrag nowheel'>
+			<Box sx={{ px: 1, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }} className='nodrag nowheel'>
 				<Button onClick={handleToggle} fullWidth className='nodrag' aria-label={isRunning ? 'Stop' : 'Start'}
 					sx={isRunning ? { ...hwBtnLit(color), py: 0.4 } : { ...hwBtn(color), py: 0.4 }}>
 					{isRunning ? <StopIcon sx={{ fontSize: 13 }} /> : <PlayArrowIcon sx={{ fontSize: 13 }} />}

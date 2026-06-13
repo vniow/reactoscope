@@ -5,7 +5,7 @@ import Button from '@mui/material/Button';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import { startVibrato, stopVibrato, setVibratoFrequency, setVibratoDepth, setVibratoWet } from '../../store/daw';
-import { NodeHeader } from './NodeHeader';
+import { NodeHeader, BELOW_HEADER_HANDLE_TOP } from './NodeHeader';
 import { NODE_COLORS } from './nodeColors';
 import { GRID_UNIT } from './gridSystem';
 import { inputHandleStyle, outputHandleStyle, inputLabel, rightLabel } from './handleStyles';
@@ -15,7 +15,7 @@ import { HwSliderField } from '../../components/HwSliderField';
 import type { VibratoFlowNode } from '../../store/dawTypes';
 
 const color = NODE_COLORS.effects;
-const HANDLE_TOP = '50%';
+const HANDLE_TOP = BELOW_HEADER_HANDLE_TOP;
 
 export const VibratoNode = memo(function VibratoNode({ id, data, selected }: NodeProps<VibratoFlowNode>) {
 	const [isRunning, setIsRunning] = useState(false);
@@ -32,13 +32,13 @@ export const VibratoNode = memo(function VibratoNode({ id, data, selected }: Nod
 		<Box sx={{ border: '1px solid', borderColor: color, borderRadius: 1, backgroundImage: METAL_BG, width: 2 * GRID_UNIT, position: 'relative' }}>
 			<NodeHeader id={id} label='Vibrato' selected={selected} accentColor={color} />
 
-			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }} className='nodrag nowheel'>
+			<Box sx={{ px: 1, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }} className='nodrag nowheel'>
 				<Button onClick={handleToggle} fullWidth className='nodrag' aria-label={isRunning ? 'Stop' : 'Start'}
 					sx={isRunning ? { ...hwBtnLit(color), py: 0.4 } : { ...hwBtn(color), py: 0.4 }}>
 					{isRunning ? <StopIcon sx={{ fontSize: 13 }} /> : <PlayArrowIcon sx={{ fontSize: 13 }} />}
 				</Button>
 				<HwSliderField label='freq'  value={frequency} min={0.1} max={20} step={0.1}  color={color} onChange={v => { setFreq(v);  setVibratoFrequency(id, v); }} format={v => v.toFixed(1)} unit='Hz' allowValueEdit allowBoundsEdit />
-				<HwSliderField label='depth' value={depth}     min={0}   max={1}  step={0.01} color={color} onChange={v => { setDepth(v); setVibratoDepth(id, v);     }} format={v => v.toFixed(2)}            allowValueEdit />
+				<HwSliderField label='depth' value={depth}     min={0}   max={1}  step={0.01} color={color} onChange={v => { setDepth(v); setVibratoDepth(id, v);     }} format={v => v.toFixed(2)}            allowValueEdit allowBoundsEdit />
 				<HwSliderField label='wet'   value={wet}       min={0}   max={1}  step={0.01} color={color} onChange={v => { setWet(v);   setVibratoWet(id, v);       }} format={v => v.toFixed(2)}            allowValueEdit />
 			</Box>
 

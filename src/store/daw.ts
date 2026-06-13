@@ -1333,7 +1333,10 @@ async function initSceneInput(): Promise<void> {
 	const toneCtx    = getContext();
 	const sampleRate = toneCtx.rawContext.sampleRate;
 
-	await toneCtx.addAudioWorkletModule('/sceneInputProcessor.worklet.js');
+	// Use rawContext.audioWorklet.addModule() directly — toneCtx.addAudioWorkletModule()
+	// caches a single _workletPromise, so the first caller blocks Tone.js's own
+	// internal worklets (FeedbackCombFilter, BitCrusher, etc.) from ever registering.
+	await (toneCtx.rawContext as AudioContext).audioWorklet.addModule('/sceneInputProcessor.worklet.js');
 	console.log(..._DAW_INFO, 'AudioWorklet module loaded — creating node…');
 
 	const workletNode = toneCtx.createAudioWorkletNode('scene-input-processor', {

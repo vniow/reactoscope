@@ -55,7 +55,7 @@ export const SceneInputNode = memo(function SceneInputNode({
 		}}>
 			<NodeHeader label={data.label} accentColor={color} />
 
-			<Box sx={{ px: 1, py: 0.75 }}>
+			<Box sx={{ px: 1, pt: 2, pb: 0.75 }}>
 				<Typography variant='caption' color='text.disabled' sx={{ fontSize: 9 }}>
 					Scene geometry → audio
 				</Typography>

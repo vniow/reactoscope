@@ -36,7 +36,7 @@ export const DCSignalNode = memo(function DCSignalNode({
 		}}>
 			<NodeHeader id={id} label='DC Signal' selected={selected} accentColor={color} />
 
-			<Box sx={{ px: 1, py: 0.75 }} className='nodrag nowheel'>
+			<Box sx={{ px: 1, pt: 2, pb: 0.75 }} className='nodrag nowheel'>
 				<HwSliderField
 					label='value'
 					value={value}

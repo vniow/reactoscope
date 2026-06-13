@@ -86,7 +86,7 @@ export const GrainPlayerNode = memo(function GrainPlayerNode({
 		}}>
 			<NodeHeader id={id} label='Grain Player' selected={selected} accentColor={color} />
 
-			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+			<Box sx={{ px: 1, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
 
 				<AudioFileLoader color={color} onLoad={handleLoad} />
 

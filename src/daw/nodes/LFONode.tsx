@@ -72,7 +72,7 @@ export const LFONode = memo(function LFONode({
 		}}>
 			<NodeHeader id={id} label='LFO' selected={selected} accentColor={color} />
 
-			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+			<Box sx={{ px: 1, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
 
 				{/* Wave type toggle — 4 across */}
 				<Box className='nodrag' sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>

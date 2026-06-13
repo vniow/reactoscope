@@ -25,6 +25,7 @@ import {
 	hwBtn, hwBtnLit, hwToggleSx, hwSelectSx, hwSelectMenuProps, hwSliderSx, hwIconBtn, hwIconBtnLit,
 } from './hwStyles';
 import { HwSwitch, HwLed, HwLevelMeter } from './hwComponents';
+import { HwArcSlider } from '../../components/HwArcSlider';
 import type { DebugFlowNode } from '../../store/dawTypes';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -317,6 +318,11 @@ export const DebugNode = memo(function DebugNode({
 	const [litBtn,   setLitBtn]   = useState(false);
 	const [input,    setInput]    = useState('440');
 
+	const [arcGain, setArcGain] = useState(0.75);
+	const [arcFreq, setArcFreq] = useState(440);
+	const [arcTime, setArcTime] = useState(0.35);
+	const [arcWet,  setArcWet]  = useState(0.0);
+
 	const [sizingMode, setSizingMode] = useState(false);
 
 	const edgePathType    = useDawStore(s => s.edgePathType);
@@ -346,11 +352,11 @@ export const DebugNode = memo(function DebugNode({
 			backgroundImage: METAL_BG,
 			width:           4 * GRID_UNIT,
 			position:        'relative',
-			pb:              2,
+			pb:              3.5,
 		}}>
 			<NodeHeader id={id} label={data.label} selected={selected} accentColor={color} />
 
-			<Box sx={{ px: 1, py: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75, overflow: 'hidden' }}
+			<Box sx={{ pl: 4.5, pr: 1, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75, overflow: 'hidden' }}
 				className='nodrag nowheel'>
 
 				{/* Node type — full width */}
@@ -513,6 +519,16 @@ export const DebugNode = memo(function DebugNode({
 
 				</Box>
 
+				{/* Arc sliders */}
+				<Sect label='arc'>
+					<Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'space-between' }} className='nodrag nowheel'>
+						<HwArcSlider label='gain' value={arcGain} min={0}  max={1}    step={0.01} color={color} onChange={setArcGain} format={v => v.toFixed(2)} allowValueEdit allowBoundsEdit size={60} />
+						<HwArcSlider label='freq' value={arcFreq} min={20} max={2000} step={1}    color={color} onChange={setArcFreq} format={v => `${v}`}       allowValueEdit allowBoundsEdit size={60} />
+						<HwArcSlider label='time' value={arcTime} min={0}  max={2}    step={0.01} color={color} onChange={setArcTime} format={v => v.toFixed(2)} allowValueEdit size={60} />
+						<HwArcSlider label='wet'  value={arcWet}  min={0}  max={1}    step={0.01} color={color} onChange={setArcWet}  format={v => v.toFixed(2)} size={60} />
+					</Box>
+				</Sect>
+
 				{/* Full-width bottom */}
 				<Alert severity='error' sx={{ py: 0.25, fontSize: 11 }}>sample error</Alert>
 
@@ -527,6 +543,42 @@ export const DebugNode = memo(function DebugNode({
 				</>}
 
 			</Box>
+
+			{/* Left port surround */}
+			<Box sx={{
+				position:     'absolute',
+				left:         0,
+				top:          `calc(${NODE_HEADER_HEIGHT}px + (100% - ${NODE_HEADER_HEIGHT}px) / 2)`,
+				transform:    'translateY(-50%)',
+				width:        18,
+				height:       36,
+				borderRadius: '0 18px 18px 0',
+				background:   'linear-gradient(to right, #0e0e10 0%, #1c1c22 100%)',
+				borderTop:    '1px solid #0d0d0f',
+				borderRight:  '1px solid #0d0d0f',
+				borderBottom: '1px solid #0d0d0f',
+				boxShadow:    `4px 0 12px rgba(0,0,0,0.6), inset 2px 0 6px rgba(0,0,0,0.5), inset 0 0 0 1px ${color}18`,
+				pointerEvents: 'none',
+				zIndex:        1,
+			}} />
+
+			{/* Bottom port surround */}
+			<Box sx={{
+				position:     'absolute',
+				bottom:       0,
+				left:         '50%',
+				transform:    'translateX(-50%)',
+				width:        36,
+				height:       18,
+				borderRadius: '18px 18px 0 0',
+				background:   'linear-gradient(to bottom, #1c1c22 0%, #0e0e10 100%)',
+				borderTop:    '1px solid #0d0d0f',
+				borderLeft:   '1px solid #0d0d0f',
+				borderRight:  '1px solid #0d0d0f',
+				boxShadow:    `0 -4px 12px rgba(0,0,0,0.6), inset 0 -2px 6px rgba(0,0,0,0.5), inset 0 0 0 1px ${color}18`,
+				pointerEvents: 'none',
+				zIndex:        1,
+			}} />
 
 			<Handle
 				type='target'
