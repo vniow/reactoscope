@@ -1,8 +1,7 @@
 import { useCallback, useId, useState } from 'react';
 import Box from '@mui/material/Box';
-import InputBase from '@mui/material/InputBase';
 import Typography from '@mui/material/Typography';
-import { HW_INSET } from '../daw/nodes/hwStyles';
+import { EditInput, useBoundsEdit } from './hwSliderShared';
 
 // ─── Geometry ─────────────────────────────────────────────────────────────────
 
@@ -30,39 +29,6 @@ const ARC_START = 135;
 const ARC_SWEEP = 270;
 const STROKE    = 5;
 
-// ─── Inline edit input ────────────────────────────────────────────────────────
-
-function EditInput({ defaultValue, onCommit, onCancel, compact = false }: {
-	defaultValue: string;
-	onCommit:     (v: string) => void;
-	onCancel:     () => void;
-	compact?:     boolean;
-}) {
-	const [raw, setRaw] = useState(defaultValue);
-	return (
-		<Box sx={{ ...HW_INSET, px: 0.5, display: 'inline-flex', alignItems: 'center' }}>
-			<InputBase
-				// eslint-disable-next-line jsx-a11y/no-autofocus
-				autoFocus
-				value={raw}
-				onChange={e => setRaw(e.target.value)}
-				onFocus={e => e.target.select()}
-				onBlur={() => onCommit(raw)}
-				onKeyDown={e => {
-					if (e.key === 'Enter')  { e.preventDefault(); onCommit(raw); }
-					if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
-				}}
-				sx={{
-					fontSize: compact ? 8 : 10,
-					color:    'text.primary',
-					width:    compact ? 36 : 52,
-					'& .MuiInputBase-input': { p: 0, textAlign: 'right' },
-				}}
-			/>
-		</Box>
-	);
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export interface HwArcSliderProps {
@@ -87,10 +53,12 @@ export function HwArcSlider({
 	const uid = useId();
 
 	const [editingValue, setEditingValue] = useState(false);
-	const [editingMin,   setEditingMin]   = useState(false);
-	const [editingMax,   setEditingMax]   = useState(false);
-	const [localMin,     setLocalMin]     = useState(min);
-	const [localMax,     setLocalMax]     = useState(max);
+	const {
+		editingMin, setEditingMin,
+		editingMax, setEditingMax,
+		localMin, localMax,
+		commitMin, commitMax,
+	} = useBoundsEdit(min, max, value, onChange);
 
 	const decimals     = (step.toString().split('.')[1] ?? '').length;
 	const norm         = Math.max(0, Math.min(1, (value - localMin) / (localMax - localMin)));
@@ -140,26 +108,8 @@ export function HwArcSlider({
 	const commitValue = useCallback((raw: string) => {
 		setEditingValue(false);
 		const parsed = parseFloat(raw);
-		if (!isNaN(parsed)) applyValue(parsed);
-	}, [applyValue]);
-
-	const commitMin = useCallback((raw: string) => {
-		setEditingMin(false);
-		const parsed = parseFloat(raw);
-		if (!isNaN(parsed) && parsed < localMax) {
-			setLocalMin(parsed);
-			if (value < parsed) onChange(parsed);
-		}
-	}, [localMax, value, onChange]);
-
-	const commitMax = useCallback((raw: string) => {
-		setEditingMax(false);
-		const parsed = parseFloat(raw);
-		if (!isNaN(parsed) && parsed > localMin) {
-			setLocalMax(parsed);
-			if (value > parsed) onChange(parsed);
-		}
-	}, [localMin, value, onChange]);
+		if (!isNaN(parsed)) onChange(Math.min(localMax, Math.max(localMin, parsed)));
+	}, [onChange, localMin, localMax]);
 
 	const thumbAngle = ARC_START + norm * ARC_SWEEP;
 	const [tx, ty]   = polar(cx, cy, r, thumbAngle);
@@ -168,16 +118,21 @@ export function HwArcSlider({
 		<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 0.25, width: size }}>
 
 			{/* Label + value row */}
-			<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-				<Typography variant='caption' color='text.secondary' sx={{ fontSize: 9, lineHeight: 1 }}>
+			<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 0.5 }}>
+				<Typography variant='caption' color='text.secondary' sx={{ fontSize: 10 }}>
 					{label}
 				</Typography>
 				{allowValueEdit && editingValue ? (
-					<EditInput defaultValue={displayValue} onCommit={commitValue} onCancel={() => setEditingValue(false)} />
+					<EditInput
+						defaultValue={displayValue}
+						onCommit={commitValue}
+						onCancel={() => setEditingValue(false)}
+						fontSize={10} width={36}
+					/>
 				) : (
 					<Typography
 						variant='caption' color='text.disabled'
-						sx={{ fontSize: 9, lineHeight: 1, cursor: allowValueEdit ? 'text' : 'default', userSelect: 'none' }}
+						sx={{ fontSize: 10, cursor: allowValueEdit ? 'text' : 'default', userSelect: 'none' }}
 						onClick={allowValueEdit ? () => setEditingValue(true) : undefined}
 					>
 						{displayValue}
@@ -237,24 +192,34 @@ export function HwArcSlider({
 
 			{/* Bounds row */}
 			{allowBoundsEdit && (
-				<Box sx={{ display: 'flex', justifyContent: 'space-between', mt: -0.5 }}>
+				<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
 					{editingMin ? (
-						<EditInput defaultValue={String(localMin)} onCommit={commitMin} onCancel={() => setEditingMin(false)} compact />
+						<EditInput
+							defaultValue={String(localMin)}
+							onCommit={commitMin}
+							onCancel={() => setEditingMin(false)}
+							compact width={24}
+						/>
 					) : (
 						<Typography
 							variant='caption'
-							sx={{ fontSize: 8, color: 'text.disabled', cursor: 'text', userSelect: 'none', lineHeight: 1 }}
+							sx={{ fontSize: 8, color: 'text.disabled', cursor: 'text', userSelect: 'none' }}
 							onClick={() => setEditingMin(true)}
 						>
 							{localMin}
 						</Typography>
 					)}
 					{editingMax ? (
-						<EditInput defaultValue={String(localMax)} onCommit={commitMax} onCancel={() => setEditingMax(false)} compact />
+						<EditInput
+							defaultValue={String(localMax)}
+							onCommit={commitMax}
+							onCancel={() => setEditingMax(false)}
+							compact width={24}
+						/>
 					) : (
 						<Typography
 							variant='caption'
-							sx={{ fontSize: 8, color: 'text.disabled', cursor: 'text', userSelect: 'none', lineHeight: 1 }}
+							sx={{ fontSize: 8, color: 'text.disabled', cursor: 'text', userSelect: 'none' }}
 							onClick={() => setEditingMax(true)}
 						>
 							{localMax}

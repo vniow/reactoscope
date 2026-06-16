@@ -1,5 +1,37 @@
+import React from 'react';
 import Box from '@mui/material/Box';
-import { HW_INSET, HW_RAISED, hwLit } from './hwStyles';
+import Button from '@mui/material/Button';
+import type { ButtonProps } from '@mui/material/Button';
+import MuiToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import type { ToggleButtonGroupProps } from '@mui/material/ToggleButtonGroup';
+import { HW_INSET, HW_RAISED, hwBtn, hwBtnLit, hwGridToggleSx, hwToggleSx, hwLit } from './hwStyles';
+
+type HwToggleButtonGroupProps = {
+	color: string;
+	/** Number of equal-width columns. Omit for a horizontal strip layout. */
+	cols?: number;
+} & Omit<ToggleButtonGroupProps, 'sx'>;
+
+export function HwToggleButtonGroup({ color, cols, children, ...props }: HwToggleButtonGroupProps) {
+	const sx = cols ? hwGridToggleSx(color, cols) : hwToggleSx(color);
+	const buttons = React.Children.map(children, child =>
+		React.isValidElement(child)
+			? React.cloneElement(child as React.ReactElement<{ disableRipple?: boolean }>, { disableRipple: false })
+			: child
+	);
+	return <MuiToggleButtonGroup sx={sx} {...props}>{buttons}</MuiToggleButtonGroup>;
+}
+
+type HwButtonProps = { color: string; lit?: boolean } & Omit<ButtonProps, 'color'>;
+
+export function HwButton({ color, lit = false, sx: sxProp, children, ...props }: HwButtonProps) {
+	const base = lit ? hwBtnLit(color) : hwBtn(color);
+	return (
+		<Button sx={sxProp ? [base, sxProp] : base} {...props}>
+			{children}
+		</Button>
+	);
+}
 
 export function HwSwitch({ checked, color, onChange }: { checked: boolean; color: string; onChange: () => void }) {
 	const lit = hwLit(color);

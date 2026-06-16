@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 import Box from '@mui/material/Box';
-import InputBase from '@mui/material/InputBase';
 import Slider from '@mui/material/Slider';
 import Typography from '@mui/material/Typography';
-import { HW_INSET, hwSliderSx } from '../daw/nodes/hwStyles';
+import { hwSliderSx } from '../daw/nodes/hwStyles';
+import { EditInput, useBoundsEdit } from './hwSliderShared';
 
 export interface HwSliderFieldProps {
 	label:            string;
@@ -20,51 +20,17 @@ export interface HwSliderFieldProps {
 	marks?:           Array<{ value: number }>;
 }
 
-function EditInput({
-	defaultValue,
-	onCommit,
-	onCancel,
-	compact = false,
-}: {
-	defaultValue: string;
-	onCommit: (raw: string) => void;
-	onCancel: () => void;
-	compact?: boolean;
-}) {
-	const [raw, setRaw] = useState(defaultValue);
-	return (
-		<Box sx={{ ...HW_INSET, px: 0.5, display: 'inline-flex', alignItems: 'center' }}>
-			<InputBase
-				// eslint-disable-next-line jsx-a11y/no-autofocus
-				autoFocus
-				value={raw}
-				onChange={e => setRaw(e.target.value)}
-				onFocus={e => e.target.select()}
-				onBlur={() => onCommit(raw)}
-				onKeyDown={e => {
-					if (e.key === 'Enter')  { e.preventDefault(); onCommit(raw); }
-					if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
-				}}
-				sx={{
-					fontSize: compact ? 8 : 10,
-					color: 'text.primary',
-					width: compact ? 38 : 54,
-					'& .MuiInputBase-input': { p: 0, textAlign: 'right' },
-				}}
-			/>
-		</Box>
-	);
-}
-
 export function HwSliderField({
 	label, value, min, max, step, color, onChange,
 	format, unit, allowValueEdit, allowBoundsEdit, marks,
 }: HwSliderFieldProps) {
 	const [editingValue, setEditingValue] = useState(false);
-	const [editingMin,   setEditingMin]   = useState(false);
-	const [editingMax,   setEditingMax]   = useState(false);
-	const [localMin, setLocalMin] = useState(min);
-	const [localMax, setLocalMax] = useState(max);
+	const {
+		editingMin, setEditingMin,
+		editingMax, setEditingMax,
+		localMin, localMax,
+		commitMin, commitMax,
+	} = useBoundsEdit(min, max, value, onChange);
 
 	const displayValue = format ? format(value) : String(value);
 	const displayLabel = unit ? `${displayValue} ${unit}` : displayValue;
@@ -74,24 +40,6 @@ export function HwSliderField({
 		const parsed = parseFloat(raw);
 		if (!isNaN(parsed)) onChange(Math.min(localMax, Math.max(localMin, parsed)));
 	}, [onChange, localMin, localMax]);
-
-	const commitMin = useCallback((raw: string) => {
-		setEditingMin(false);
-		const parsed = parseFloat(raw);
-		if (!isNaN(parsed) && parsed < localMax) {
-			setLocalMin(parsed);
-			if (value < parsed) onChange(parsed);
-		}
-	}, [localMax, value, onChange]);
-
-	const commitMax = useCallback((raw: string) => {
-		setEditingMax(false);
-		const parsed = parseFloat(raw);
-		if (!isNaN(parsed) && parsed > localMin) {
-			setLocalMax(parsed);
-			if (value > parsed) onChange(parsed);
-		}
-	}, [localMin, value, onChange]);
 
 	return (
 		<Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
@@ -121,7 +69,7 @@ export function HwSliderField({
 			/>
 
 			{allowBoundsEdit && (
-				<Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.25 }}>
+				<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.25 }}>
 					{editingMin ? (
 						<EditInput defaultValue={String(localMin)} onCommit={commitMin} onCancel={() => setEditingMin(false)} compact />
 					) : (

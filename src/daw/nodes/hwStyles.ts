@@ -100,11 +100,45 @@ export function hwToggleSx(color: string) {
 	};
 }
 
-export function hwSelectSx(color: string) {
+/** Grid-layout toggle group — each cell is an independent raised button (no strip connection).
+ *  `cols` sets the number of equal-width columns. Size is medium (fontSize 11). */
+export function hwGridToggleSx(color: string, cols: number) {
+	const lit = hwLit(color);
+	const cell = { borderRadius: '3px' };
+	const cellSel = {
+		'&:first-of-type':                          cell,
+		'&:last-of-type':                           cell,
+		'&:not(:first-of-type):not(:last-of-type)': cell,
+	};
+	return {
+		display:             'grid',
+		gridTemplateColumns: `repeat(${cols}, 1fr)`,
+		gap:                 '1px',
+		'& .MuiToggleButton-root': {
+			...HW_RAISED, ...cellSel,
+			borderTopColor:  '#0d0d0f',
+			borderLeftColor: '#0d0d0f',
+			px: 1.25, py: 0.55, fontSize: 11, lineHeight: 1,
+			color: 'text.secondary', textTransform: 'none',
+			'&:not(:first-of-type)': { marginLeft: 0 },
+			'&:hover': { background: 'linear-gradient(to bottom, #40404a 0%, #2e2e34 100%)', color: 'text.primary' },
+			'&:active': HW_PRESSED,
+		},
+		'& .MuiToggleButton-root.Mui-selected': {
+			...lit, ...cellSel, color,
+			'&:not(:first-of-type)': { marginLeft: 0 },
+			'&:hover': { ...lit, filter: 'brightness(1.1)', color },
+			'&:active': HW_PRESSED,
+		},
+	};
+}
+
+export function hwSelectSx(color: string, size: 'small' | 'medium' = 'small') {
+	const py = size === 'medium' ? '7px' : '5px';
 	return {
 		...HW_RAISED,
 		fontSize: 11, color: 'text.secondary',
-		'& .MuiSelect-select':               { py: '5px', px: '10px' },
+		'& .MuiSelect-select':               { py, px: '10px' },
 		'& .MuiOutlinedInput-notchedOutline': { border: 'none' },
 		'&:hover': {
 			background:                           'linear-gradient(to bottom, #40404a 0%, #2e2e34 100%)',
@@ -118,6 +152,17 @@ export function hwSelectSx(color: string) {
 	};
 }
 
+export function hwMenuItemSx(color: string) {
+	return {
+		fontSize: 11, color: 'text.secondary',
+		'&:hover':        { background: `${color}14`, color: 'text.primary' },
+		'&.Mui-selected': {
+			background: `${color}22`, color,
+			'&:hover':  { background: `${color}30` },
+		},
+	};
+}
+
 export function hwSelectMenuProps(color: string) {
 	return {
 		PaperProps: {
@@ -126,14 +171,7 @@ export function hwSelectMenuProps(color: string) {
 				border:       '1px solid #0d0d0f',
 				borderColor:  `${color}40`,
 				boxShadow:    `0 4px 12px rgba(0,0,0,0.7), 0 0 0 1px ${color}20`,
-				'& .MuiMenuItem-root': {
-					fontSize: 12, color: 'text.secondary',
-					'&:hover':       { background: `${color}14`, color: 'text.primary' },
-					'&.Mui-selected': {
-						background: `${color}22`, color,
-						'&:hover':  { background: `${color}30` },
-					},
-				},
+				'& .MuiMenuItem-root': hwMenuItemSx(color),
 			},
 		},
 	};
@@ -188,6 +226,25 @@ export function hwIconBtnLit(color: string) {
 		...hwIconBtn(color), ...lit, color,
 		'&:hover': { ...lit, filter: 'brightness(1.15)', color },
 		'&:active': HW_PRESSED,
+	};
+}
+
+const ALERT_COLORS = {
+	error:   '#e05555',
+	warning: '#cc8833',
+	info:    '#4488ee',
+	success: '#44aa77',
+} as const;
+
+/** Status alert panel — inset surface with severity-coloured icon and text. */
+export function hwAlertSx(severity: keyof typeof ALERT_COLORS) {
+	const c = ALERT_COLORS[severity];
+	return {
+		...HW_INSET,
+		color:    c,
+		fontSize: 11,
+		'& .MuiAlert-icon':    { color: c, fontSize: 14, mr: 0.75, py: 0, alignSelf: 'center' },
+		'& .MuiAlert-message': { py: 0 },
 	};
 }
 
