@@ -4,8 +4,8 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import * as Sentry from '@sentry/react';
 import { ERROR_MESSAGES } from '../config';
-import { hwBtn } from '../daw/nodes/hwStyles';
-import { NODE_COLORS } from '../daw/nodes/nodeColors';
+import { hwBtn } from '../daw/nodes/shared/hwStyles';
+import { NODE_COLORS } from '../daw/nodes/shared/nodeColors';
 
 interface Props {
 	children: ReactNode;

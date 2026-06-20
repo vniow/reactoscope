@@ -71,7 +71,7 @@ import {
 	start as toneStart,
 } from 'tone';
 import { DEFAULT_AUDIO_SETTINGS } from '../config';
-import { NODE_COLORS } from '../daw/nodes/nodeColors';
+import { NODE_COLORS } from '../daw/nodes/shared/nodeColors';
 
 const NODE_TYPE_EDGE_COLOR: Record<string, string> = {
 	masterOutput:    NODE_COLORS.output,
@@ -1650,14 +1650,29 @@ export function setFreeverbWet(id: string, v: number): void {
 }
 
 function createDelayEntry(id: string, d: DelayNodeData): DelayAudioEntry {
-	const toneNode = new Delay(d.delayTime);
-	const entry: DelayAudioEntry = { kind: 'delay', toneNode };
+	const wet      = d.wet ?? 1;
+	const _delay   = new Delay(d.delayTime);
+	const _dryGain = new Gain(1 - wet);
+	const _wetGain = new Gain(wet);
+	const input    = new Gain(1);
+	const output   = new Gain(1);
+	input.connect(_dryGain);
+	input.connect(_delay);
+	_delay.connect(_wetGain);
+	_dryGain.connect(output);
+	_wetGain.connect(output);
+	const entry: DelayAudioEntry = { kind: 'delay', toneNode: { input, output }, _delay, _dryGain, _wetGain };
 	_audioNodes.set(id, entry);
 	return entry;
 }
 export function setDelayTime(id: string, v: number): void {
 	const e = _audioNodes.get(id); if (!e || e.kind !== 'delay') return;
-	e.toneNode.delayTime.value = v;
+	e._delay.delayTime.value = v;
+}
+export function setDelayWet(id: string, v: number): void {
+	const e = _audioNodes.get(id); if (!e || e.kind !== 'delay') return;
+	e._wetGain.gain.value = v;
+	e._dryGain.gain.value = 1 - v;
 }
 
 function createFeedbackDelayEntry(id: string, d: FeedbackDelayNodeData): FeedbackDelayAudioEntry {
@@ -2645,7 +2660,7 @@ export const useDawStore = create<DawState>((set, get) => ({
 
 	addDelayNode: (position) => {
 		const id = `delay-${Date.now()}`;
-		const data: DelayNodeData = { label: 'Delay', delayTime: 0.25 };
+		const data: DelayNodeData = { label: 'Delay', delayTime: 0.25, wet: 1 };
 		createDelayEntry(id, data);
 		set({ nodes: [...get().nodes, { id, type: 'delay', position, data }], audioVersion: get().audioVersion + 1 });
 		return id;

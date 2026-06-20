@@ -10,8 +10,8 @@ import {
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import { useDawStore } from '../../store/daw';
-import { hwDeleteIconBtn } from '../nodes/hwStyles';
-import { NODE_COLORS } from '../nodes/nodeColors';
+import { hwDeleteIconBtn } from '../nodes/shared/hwStyles';
+import { NODE_COLORS } from '../nodes/shared/nodeColors';
 
 const TYPE_COLOR: Record<string, string> = {
 	oscillator:     NODE_COLORS.source,

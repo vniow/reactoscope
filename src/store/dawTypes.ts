@@ -218,6 +218,7 @@ export type FreeverbFlowNode = Node<FreeverbNodeData, 'freeverb'>;
 export type DelayNodeData = {
 	label:     string;
 	delayTime: number;   // seconds, 0–1, default 0.25
+	wet:       number;   // 0–1, default 1
 };
 export type DelayFlowNode = Node<DelayNodeData, 'delay'>;
 
@@ -501,7 +502,7 @@ export type SceneInputAudioEntry = {
 export type ReverbAudioEntry          = { kind: 'reverb';           toneNode: Reverb };
 export type JCReverbAudioEntry        = { kind: 'jcReverb';         toneNode: JCReverb };
 export type FreeverbAudioEntry        = { kind: 'freeverb';         toneNode: Freeverb };
-export type DelayAudioEntry           = { kind: 'delay';            toneNode: Delay };
+export type DelayAudioEntry           = { kind: 'delay'; toneNode: { input: Gain; output: Gain }; _delay: Delay; _dryGain: Gain; _wetGain: Gain };
 export type FeedbackDelayAudioEntry   = { kind: 'feedbackDelay';    toneNode: FeedbackDelay };
 export type PingPongDelayAudioEntry   = { kind: 'pingPongDelay';    toneNode: PingPongDelay };
 export type DistortionAudioEntry      = { kind: 'distortion';       toneNode: Distortion };

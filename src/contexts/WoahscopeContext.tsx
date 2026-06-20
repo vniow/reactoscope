@@ -113,6 +113,7 @@ export function WoscopeProvider({ children }: VizProviderProps) {
 		setGalvoAnchorAggressiveness(preset.anchorAggressiveness);
 	}, [setGalvoPresetIdRaw, setGalvoBandwidthHz, setGalvoDampingRatio, setGalvoModulatorTauUs, setGalvoPps, setGalvoAnchorAggressiveness]);
 
+
 	// Push current params to the worklet whenever they change. setGalvoParams
 	// is a no-op until the worklet has finished initialising; the effect runs
 	// again on every param change so the final value lands either way.

@@ -1,0 +1,102 @@
+import Box from '@mui/material/Box';
+import Slider from '@mui/material/Slider';
+import Typography from '@mui/material/Typography';
+import { useAxis, useEffects } from '../../contexts/WoahscopeContext';
+import { NODE_COLORS } from '../../daw/nodes/shared/nodeColors';
+import { hwSliderSx } from '../../daw/nodes/shared/hwStyles';
+
+const color = NODE_COLORS.scene;
+
+function SliderRow({
+	label,
+	value,
+	min,
+	max,
+	step,
+	onChange,
+	formatValue,
+}: {
+	label: string;
+	value: number;
+	min: number;
+	max: number;
+	step: number;
+	onChange: (v: number) => void;
+	formatValue?: (v: number) => string;
+}) {
+	const displayValue = formatValue
+		? formatValue(value)
+		: `${value > 0 ? '+' : ''}${value.toFixed(1)}`;
+	return (
+		<Box>
+			<Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
+				<Typography variant='caption' color='text.disabled' sx={{ fontSize: 9, letterSpacing: 0.5 }}>
+					{label}
+				</Typography>
+				<Typography variant='caption' color='text.disabled' sx={{ fontSize: 9 }}>
+					{displayValue}
+				</Typography>
+			</Box>
+			<Slider
+				aria-label={label}
+				min={min}
+				max={max}
+				step={step}
+				value={value}
+				onChange={(_e, v) => onChange(v as number)}
+				size='small'
+				sx={hwSliderSx(color)}
+			/>
+		</Box>
+	);
+}
+
+export function EffectsControl() {
+	const { intensity, setIntensity } = useAxis();
+	const {
+		persistence, setPersistence,
+		glowStrength, setGlowStrength,
+		scatterStrength, setScatterStrength,
+		lanczosEnabled, lanczosSteps, setLanczosSteps,
+		nSamples, setNSamples,
+		coordBufferSize, setCoordBufferSize,
+	} = useEffects();
+
+	return (
+		<Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 2 }}>
+			<SliderRow label='intensity'   value={intensity}       min={-2} max={4} step={0.1}  onChange={setIntensity} />
+			<SliderRow label='persistence' value={persistence}     min={0}  max={4} step={0.1}  onChange={setPersistence} />
+			<SliderRow label='glow'        value={glowStrength}    min={0}  max={4} step={0.05} onChange={setGlowStrength} />
+			<SliderRow label='scatter'     value={scatterStrength} min={0}  max={2} step={0.05} onChange={setScatterStrength} />
+			{lanczosEnabled && (
+				<SliderRow
+					label='smooth steps'
+					value={lanczosSteps}
+					min={1}
+					max={8}
+					step={1}
+					onChange={setLanczosSteps}
+					formatValue={(v) => String(Math.round(v))}
+				/>
+			)}
+			<SliderRow
+				label='samples'
+				value={Math.log2(nSamples)}
+				min={8}
+				max={11}
+				step={1}
+				onChange={(v) => setNSamples(1 << v)}
+				formatValue={(v) => String(1 << v)}
+			/>
+			<SliderRow
+				label='coord buf'
+				value={Math.log2(coordBufferSize)}
+				min={8}
+				max={12}
+				step={1}
+				onChange={(v) => setCoordBufferSize(1 << v)}
+				formatValue={(v) => String(1 << v)}
+			/>
+		</Box>
+	);
+}

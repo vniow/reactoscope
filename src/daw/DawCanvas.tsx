@@ -1,7 +1,7 @@
 import '@xyflow/react/dist/style.css';
 import { useState, useEffect, useCallback, useRef, startTransition } from 'react';
-import { debugRef } from '../components/WoahcopeSceneR3F';
-import { GRID_SUBUNIT } from './nodes/gridSystem';
+import { debugRef } from '../components/scope/WoahcopeSceneR3F';
+import { GRID_SUBUNIT } from './nodes/shared/gridSystem';
 import {
 	ReactFlow,
 	Background,
@@ -30,15 +30,15 @@ import StopIcon         from '@mui/icons-material/Stop';
 import SpeedIcon        from '@mui/icons-material/Speed';
 import TuneIcon         from '@mui/icons-material/Tune';
 import { useDawStore, getSceneInputWorkletNode, SCENE_INPUT_ID } from '../store/daw';
-import { NODE_COLORS }                                          from './nodes/nodeColors';
-import { METAL_BG }                                             from './nodes/metalBackground';
-import { hwIconBtn, hwIconBtnLit, hwToggleSx }     from './nodes/hwStyles';
-import { HwSliderField } from '../components/HwSliderField';
+import { NODE_COLORS }                                          from './nodes/shared/nodeColors';
+import { METAL_BG }                                             from './nodes/shared/metalBackground';
+import { hwIconBtn, hwIconBtnLit, hwToggleSx }     from './nodes/shared/hwStyles';
+import { HwSliderField } from '../components/hw/HwSliderField';
 import {
 	SAMPLE_RATE_OPTIONS, getStoredSampleRate, setStoredSampleRate, type SampleRate,
 } from '../scene/audioSetup';
 import type { SceneInputNodeData } from '../store/dawTypes';
-import { VizSettingsOverlay } from './VizSettingsOverlay';
+import { VizSettingsOverlay } from './panels/VizSettingsOverlay';
 
 interface LayoutControls {
 	columnsSwapped:  boolean;
@@ -49,45 +49,45 @@ interface LayoutControls {
 	onSweepToggle:   () => void;
 	onResizeStart:   (e: React.MouseEvent) => void;
 }
-import { PlayerNode }          from './nodes/PlayerNode';
-import { MasterOutputNode }    from './nodes/MasterOutputNode';
-import { OscillatorNode }      from './nodes/OscillatorNode';
-import { GainNode }            from './nodes/GainNode';
-import { StubNode }            from './nodes/StubNode';
-import { NoiseGeneratorNode }  from './nodes/NoiseGeneratorNode';
-import { DCSignalNode }        from './nodes/DCSignalNode';
-import { SceneInputNode }      from './nodes/SceneInputNode';
-import { DebugNode }           from './nodes/DebugNode';
-import { LFONode }             from './nodes/LFONode';
-import { FMOscillatorNode }    from './nodes/FMOscillatorNode';
-import { AMOscillatorNode }    from './nodes/AMOscillatorNode';
-import { FatOscillatorNode }   from './nodes/FatOscillatorNode';
-import { PulseOscillatorNode } from './nodes/PulseOscillatorNode';
-import { PWMOscillatorNode }   from './nodes/PWMOscillatorNode';
-import { GrainPlayerNode }        from './nodes/GrainPlayerNode';
-import { MicInputNode }           from './nodes/MicInputNode';
-import { ReverbNode }             from './nodes/ReverbNode';
-import { JCReverbNode }           from './nodes/JCReverbNode';
-import { FreeverbNode }           from './nodes/FreeverbNode';
-import { DelayNode }              from './nodes/DelayNode';
-import { FeedbackDelayNode }      from './nodes/FeedbackDelayNode';
-import { PingPongDelayNode }      from './nodes/PingPongDelayNode';
-import { DistortionNode }         from './nodes/DistortionNode';
-import { ChebyshevNode }          from './nodes/ChebyshevNode';
-import { BitCrusherNode }         from './nodes/BitCrusherNode';
-import { FrequencyShifterNode }   from './nodes/FrequencyShifterNode';
-import { PitchShiftNode }         from './nodes/PitchShiftNode';
-import { StereoWidenerNode }      from './nodes/StereoWidenerNode';
-import { ChorusNode }             from './nodes/ChorusNode';
-import { PhaserNode }             from './nodes/PhaserNode';
-import { TremoloNode }            from './nodes/TremoloNode';
-import { VibratoNode }            from './nodes/VibratoNode';
-import { AutoFilterNode }         from './nodes/AutoFilterNode';
-import { AutoPannerNode }         from './nodes/AutoPannerNode';
-import { AutoWahNode }            from './nodes/AutoWahNode';
+import { PlayerNode }          from './nodes/source/PlayerNode';
+import { MasterOutputNode }    from './nodes/special/MasterOutputNode';
+import { OscillatorNode }      from './nodes/source/OscillatorNode';
+import { GainNode }            from './nodes/processing/GainNode';
+import { StubNode }            from './nodes/shared/StubNode';
+import { NoiseGeneratorNode }  from './nodes/source/NoiseGeneratorNode';
+import { DCSignalNode }        from './nodes/source/DCSignalNode';
+import { SceneInputNode }      from './nodes/special/SceneInputNode';
+import { DebugNode }           from './nodes/utility/DebugNode';
+import { LFONode }             from './nodes/source/LFONode';
+import { FMOscillatorNode }    from './nodes/source/FMOscillatorNode';
+import { AMOscillatorNode }    from './nodes/source/AMOscillatorNode';
+import { FatOscillatorNode }   from './nodes/source/FatOscillatorNode';
+import { PulseOscillatorNode } from './nodes/source/PulseOscillatorNode';
+import { PWMOscillatorNode }   from './nodes/source/PWMOscillatorNode';
+import { GrainPlayerNode }        from './nodes/source/GrainPlayerNode';
+import { MicInputNode }           from './nodes/source/MicInputNode';
+import { ReverbNode }             from './nodes/effects/ReverbNode';
+import { JCReverbNode }           from './nodes/effects/JCReverbNode';
+import { FreeverbNode }           from './nodes/effects/FreeverbNode';
+import { DelayNode }              from './nodes/effects/DelayNode';
+import { FeedbackDelayNode }      from './nodes/effects/FeedbackDelayNode';
+import { PingPongDelayNode }      from './nodes/effects/PingPongDelayNode';
+import { DistortionNode }         from './nodes/effects/DistortionNode';
+import { ChebyshevNode }          from './nodes/effects/ChebyshevNode';
+import { BitCrusherNode }         from './nodes/effects/BitCrusherNode';
+import { FrequencyShifterNode }   from './nodes/effects/FrequencyShifterNode';
+import { PitchShiftNode }         from './nodes/effects/PitchShiftNode';
+import { StereoWidenerNode }      from './nodes/effects/StereoWidenerNode';
+import { ChorusNode }             from './nodes/effects/ChorusNode';
+import { PhaserNode }             from './nodes/effects/PhaserNode';
+import { TremoloNode }            from './nodes/effects/TremoloNode';
+import { VibratoNode }            from './nodes/effects/VibratoNode';
+import { AutoFilterNode }         from './nodes/effects/AutoFilterNode';
+import { AutoPannerNode }         from './nodes/effects/AutoPannerNode';
+import { AutoWahNode }            from './nodes/effects/AutoWahNode';
 import { DeletableEdge }    from './edges/DeletableEdge';
-import { AddNodePanel }     from './AddNodePanel';
-import { PatchPanel }      from './PatchPanel';
+import { AddNodePanel }     from './panels/AddNodePanel';
+import { PatchPanel }      from './panels/PatchPanel';
 import type { AppNode, AppEdge } from '../store/dawTypes';
 
 // nodeTypes and edgeTypes MUST be defined outside the component so React Flow

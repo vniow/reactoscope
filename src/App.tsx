@@ -5,11 +5,11 @@ import { dawInitPromise, useDawStore } from './store/daw';
 import { usePatchStore } from './store/patchStore';
 import { WoscopeProvider } from './contexts/WoahscopeContext';
 import { ErrorBoundary }   from './components';
-import { WoahscopePanel }    from './daw/WoahscopePanel';
-import { SceneInputPanel } from './daw/InputPanel';
+import { WoahscopePanel }    from './daw/panels/WoahscopePanel';
+import { SceneInputPanel } from './daw/panels/InputPanel';
 import { DawCanvas }         from './daw/DawCanvas';
-import { SweepPanel }        from './daw/SweepPanel';
-import { debugRef } from './components/WoahcopeSceneR3F';
+import { SweepPanel }        from './daw/panels/SweepPanel';
+import { debugRef } from './components/scope/WoahcopeSceneR3F';
 
 const DEV_DEBUG = import.meta.env.DEV &&
 	new URLSearchParams(window.location.search).has('debug');
