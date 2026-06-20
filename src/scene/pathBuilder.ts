@@ -47,6 +47,8 @@ const CORNER_DWELL_MAX_DEFAULT = 4;
 const _vpMatrix = new THREE.Matrix4();
 const _mvpCache = new WeakMap<THREE.Object3D, THREE.Matrix4>();
 const _v4       = new THREE.Vector4();
+// Shared arc-length accumulator — reset and reused each segment to avoid per-call allocation.
+const _cumLen: number[] = [];
 
 // ─── Stage 1: collectSegments ─────────────────────────────────────────────────
 
@@ -301,9 +303,10 @@ export function buildSamples(
 		const rev     = reversed[t];
 		const bDist   = blankDists[t];
 		const sLen    = segArcLen(seg);
-		// Respect traversal direction for both position and per-vertex attributes.
-		const pts  = rev ? [...seg.points].reverse() : seg.points;
-		const clrs = rev ? [...seg.colors].reverse() : seg.colors;
+		const nPts    = seg.points.length;
+		// Access points/colors in traversal direction without copying the array.
+		const ptAt    = rev ? (i: number) => seg.points[nPts - 1 - i] : (i: number) => seg.points[i];
+		const clrAt   = rev ? (i: number) => seg.colors[nPts - 1 - i] : (i: number) => seg.colors[i];
 
 		// Sample allocation proportional to arc length
 		const segSamples = totalGeomLen > 0
@@ -317,8 +320,8 @@ export function buildSamples(
 		// Emit -1 for R/G/B/Z so the visualizer maps them to 0 (invisible).
 		// XY still moves linearly to avoid beam discontinuity.
 		const arrX    = lastX, arrY = lastY; // capture pre-blank arrival position for dwell
-		const targetX = pts[0][0];
-		const targetY = pts[0][1];
+		const targetX = ptAt(0)[0];
+		const targetY = ptAt(0)[1];
 		for (let i = 0; i < blkSamples; i++) {
 			const f = blkSamples > 1 ? i / (blkSamples - 1) : 0;
 			emit(lastX + (targetX - lastX) * f, lastY + (targetY - lastY) * f, -1, -1, -1, -1);
@@ -328,29 +331,32 @@ export function buildSamples(
 		// ── Corner dwell ─────────────────────────────────────────────
 		// Duplicate samples at the segment start so galvo mirrors can settle.
 		// Count is proportional to direction change — 0 for straight travel, max for 180°.
-		const depX  = pts.length > 1 ? pts[1][0] : pts[0][0];
-		const depY  = pts.length > 1 ? pts[1][1] : pts[0][1];
-		const dwell = cornerDwellCount(arrX, arrY, pts[0][0], pts[0][1], depX, depY, CORNER_DWELL_MAX_DEFAULT);
+		const p0    = ptAt(0);
+		const depX  = nPts > 1 ? ptAt(1)[0] : p0[0];
+		const depY  = nPts > 1 ? ptAt(1)[1] : p0[1];
+		const dwell = cornerDwellCount(arrX, arrY, p0[0], p0[1], depX, depY, CORNER_DWELL_MAX_DEFAULT);
+		const c0    = clrAt(0);
 		for (let d = 0; d < dwell; d++) {
-			emit(pts[0][0], pts[0][1], 2 * clrs[0][0] - 1, 2 * clrs[0][1] - 1, 2 * clrs[0][2] - 1, 2 * pts[0][2] - 1);
+			emit(p0[0], p0[1], 2 * c0[0] - 1, 2 * c0[1] - 1, 2 * c0[2] - 1, 2 * p0[2] - 1);
 		}
 
 		// ── Visible segment (arc-length parameterised) ───────────────
-		// Build cumulative arc-length table
-		const cumLen: number[] = [0];
-		for (let i = 0; i < pts.length - 1; i++) {
-			cumLen.push(cumLen[i] + dist(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]));
+		// Build cumulative arc-length table (reuse module-level array to avoid per-call allocation).
+		_cumLen.length = 1; _cumLen[0] = 0;
+		for (let i = 0; i < nPts - 1; i++) {
+			const pa = ptAt(i); const pb = ptAt(i + 1);
+			_cumLen.push(_cumLen[i] + dist(pa[0], pa[1], pb[0], pb[1]));
 		}
-		const totalLen = cumLen[cumLen.length - 1];
+		const totalLen = _cumLen[_cumLen.length - 1];
 
 		for (let i = 0; i < segSamples; i++) {
 			const tArc = totalLen > 0 ? (i / Math.max(1, segSamples - 1)) * totalLen : 0;
 
-			// Binary-search into cumLen for the spanning sub-segment
-			let lo = 0, hi = cumLen.length - 2;
+			// Binary-search into _cumLen for the spanning sub-segment
+			let lo = 0, hi = _cumLen.length - 2;
 			while (lo < hi) {
 				const mid = (lo + hi) >> 1;
-				if (cumLen[mid + 1] < tArc) lo = mid + 1; else hi = mid;
+				if (_cumLen[mid + 1] < tArc) lo = mid + 1; else hi = mid;
 			}
 
 			let px: number, py: number;
@@ -358,19 +364,21 @@ export function buildSamples(
 
 			if (totalLen === 0) {
 				// Zero-length segment (dwell point) — use first vertex values.
-				px = pts[0][0];   py = pts[0][1];
-				pr = clrs[0][0];  pg = clrs[0][1];  pb = clrs[0][2];
-				pz = pts[0][2];
+				px = p0[0];   py = p0[1];
+				pr = c0[0];   pg = c0[1];  pb = c0[2];
+				pz = p0[2];
 			} else {
-				const span = cumLen[lo + 1] - cumLen[lo];
-				const frac = span > 0 ? (tArc - cumLen[lo]) / span : 0;
-				px = pts[lo][0] + (pts[lo + 1][0] - pts[lo][0]) * frac;
-				py = pts[lo][1] + (pts[lo + 1][1] - pts[lo][1]) * frac;
+				const span = _cumLen[lo + 1] - _cumLen[lo];
+				const frac = span > 0 ? (tArc - _cumLen[lo]) / span : 0;
+				const pa   = ptAt(lo); const pb2 = ptAt(lo + 1);
+				const ca   = clrAt(lo); const cb2 = clrAt(lo + 1);
+				px = pa[0] + (pb2[0] - pa[0]) * frac;
+				py = pa[1] + (pb2[1] - pa[1]) * frac;
 				// Interpolate per-vertex color and intensity along the sub-segment.
-				pr = clrs[lo][0] + (clrs[lo + 1][0] - clrs[lo][0]) * frac;
-				pg = clrs[lo][1] + (clrs[lo + 1][1] - clrs[lo][1]) * frac;
-				pb = clrs[lo][2] + (clrs[lo + 1][2] - clrs[lo][2]) * frac;
-				pz = pts[lo][2]  + (pts[lo + 1][2]  - pts[lo][2])  * frac;
+				pr = ca[0] + (cb2[0] - ca[0]) * frac;
+				pg = ca[1] + (cb2[1] - ca[1]) * frac;
+				pb = ca[2] + (cb2[2] - ca[2]) * frac;
+				pz = pa[2] + (pb2[2] - pa[2]) * frac;
 			}
 
 			// Remap [0, 1] → [−1, +1] for audio range.
@@ -379,8 +387,8 @@ export function buildSamples(
 			endX = px; endY = py;
 		}
 
-		lastX = pts[pts.length - 1][0];
-		lastY = pts[pts.length - 1][1];
+		lastX = ptAt(nPts - 1)[0];
+		lastY = ptAt(nPts - 1)[1];
 	}
 
 	// Pad any remaining budget at last position with blank
@@ -450,8 +458,10 @@ export function buildCoordBuffer(
 		const rev    = reversed[t];
 		const bDist  = blankDists[t];
 		const sLen   = segArcLen(seg);
-		const pts    = rev ? [...seg.points].reverse() : seg.points;
-		const clrs   = rev ? [...seg.colors].reverse() : seg.colors;
+		const nPts   = seg.points.length;
+		// Access points/colors in traversal direction without copying the array.
+		const ptAt   = rev ? (i: number) => seg.points[nPts - 1 - i] : (i: number) => seg.points[i];
+		const clrAt  = rev ? (i: number) => seg.colors[nPts - 1 - i] : (i: number) => seg.colors[i];
 
 		// Points allocated proportional to arc length
 		const segPts = totalGeomLen > 0
@@ -463,8 +473,8 @@ export function buildCoordBuffer(
 
 		// ── Blank travel ─────────────────────────────────────────────────────────
 		const arrX    = lastX, arrY = lastY;
-		const targetX = pts[0][0];
-		const targetY = pts[0][1];
+		const targetX = ptAt(0)[0];
+		const targetY = ptAt(0)[1];
 		for (let i = 0; i < blkPts; i++) {
 			const f = blkPts > 1 ? i / (blkPts - 1) : 0;
 			emit(lastX + (targetX - lastX) * f, lastY + (targetY - lastY) * f, -1, -1, -1, -1, 1);
@@ -472,52 +482,57 @@ export function buildCoordBuffer(
 		lastX = targetX; lastY = targetY;
 
 		// ── Corner dwell ──────────────────────────────────────────────────────────
-		const depX = pts.length > 1 ? pts[1][0] : pts[0][0];
-		const depY = pts.length > 1 ? pts[1][1] : pts[0][1];
-		const dwell = cornerDwellCount(arrX, arrY, pts[0][0], pts[0][1], depX, depY, dwellMax);
+		const p0    = ptAt(0);
+		const depX  = nPts > 1 ? ptAt(1)[0] : p0[0];
+		const depY  = nPts > 1 ? ptAt(1)[1] : p0[1];
+		const dwell = cornerDwellCount(arrX, arrY, p0[0], p0[1], depX, depY, dwellMax);
+		const c0    = clrAt(0);
 		for (let d = 0; d < dwell; d++) {
-			emit(pts[0][0], pts[0][1],
-				2 * clrs[0][0] - 1, 2 * clrs[0][1] - 1, 2 * clrs[0][2] - 1, 2 * pts[0][2] - 1, 0);
+			emit(p0[0], p0[1], 2 * c0[0] - 1, 2 * c0[1] - 1, 2 * c0[2] - 1, 2 * p0[2] - 1, 0);
 		}
 
 		// ── Visible segment (arc-length parameterised) ────────────────────────────
-		const cumLen: number[] = [0];
-		for (let i = 0; i < pts.length - 1; i++) {
-			cumLen.push(cumLen[i] + dist(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]));
+		// Reuse module-level _cumLen array to avoid per-segment allocation.
+		_cumLen.length = 1; _cumLen[0] = 0;
+		for (let i = 0; i < nPts - 1; i++) {
+			const pa = ptAt(i); const pb = ptAt(i + 1);
+			_cumLen.push(_cumLen[i] + dist(pa[0], pa[1], pb[0], pb[1]));
 		}
-		const totalLen = cumLen[cumLen.length - 1];
+		const totalLen = _cumLen[_cumLen.length - 1];
 
 		for (let i = 0; i < segPts; i++) {
 			const tArc = totalLen > 0 ? (i / Math.max(1, segPts - 1)) * totalLen : 0;
 
-			let lo = 0, hi = cumLen.length - 2;
+			let lo = 0, hi = _cumLen.length - 2;
 			while (lo < hi) {
 				const mid = (lo + hi) >> 1;
-				if (cumLen[mid + 1] < tArc) lo = mid + 1; else hi = mid;
+				if (_cumLen[mid + 1] < tArc) lo = mid + 1; else hi = mid;
 			}
 
 			let px: number, py: number, pr: number, pg: number, pb: number, pz: number;
 
 			if (totalLen === 0) {
-				px = pts[0][0]; py = pts[0][1];
-				pr = clrs[0][0]; pg = clrs[0][1]; pb = clrs[0][2]; pz = pts[0][2];
+				px = p0[0]; py = p0[1];
+				pr = c0[0]; pg = c0[1]; pb = c0[2]; pz = p0[2];
 			} else {
-				const span = cumLen[lo + 1] - cumLen[lo];
-				const frac = span > 0 ? (tArc - cumLen[lo]) / span : 0;
-				px = pts[lo][0] + (pts[lo + 1][0] - pts[lo][0]) * frac;
-				py = pts[lo][1] + (pts[lo + 1][1] - pts[lo][1]) * frac;
-				pr = clrs[lo][0] + (clrs[lo + 1][0] - clrs[lo][0]) * frac;
-				pg = clrs[lo][1] + (clrs[lo + 1][1] - clrs[lo][1]) * frac;
-				pb = clrs[lo][2] + (clrs[lo + 1][2] - clrs[lo][2]) * frac;
-				pz = pts[lo][2]  + (pts[lo + 1][2]  - pts[lo][2])  * frac;
+				const span = _cumLen[lo + 1] - _cumLen[lo];
+				const frac = span > 0 ? (tArc - _cumLen[lo]) / span : 0;
+				const pa   = ptAt(lo); const pb2 = ptAt(lo + 1);
+				const ca   = clrAt(lo); const cb2 = clrAt(lo + 1);
+				px = pa[0] + (pb2[0] - pa[0]) * frac;
+				py = pa[1] + (pb2[1] - pa[1]) * frac;
+				pr = ca[0] + (cb2[0] - ca[0]) * frac;
+				pg = ca[1] + (cb2[1] - ca[1]) * frac;
+				pb = ca[2] + (cb2[2] - ca[2]) * frac;
+				pz = pa[2] + (pb2[2] - pa[2]) * frac;
 			}
 
 			emit(px, py, 2 * pr - 1, 2 * pg - 1, 2 * pb - 1, 2 * pz - 1, 0);
 			endX = px; endY = py;
 		}
 
-		lastX = pts[pts.length - 1][0];
-		lastY = pts[pts.length - 1][1];
+		lastX = ptAt(nPts - 1)[0];
+		lastY = ptAt(nPts - 1)[1];
 	}
 
 	// Pad remainder at last position as blank

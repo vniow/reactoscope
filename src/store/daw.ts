@@ -2041,16 +2041,21 @@ function disposeAudioNode(id: string): void {
 		if (entry.toneNode.state === 'started') entry.toneNode.stop();
 		entry.toneNode.dispose();
 		entry.split.dispose();
-		entry.split.dispose();
 	} else if (entry.kind === 'micInput') {
 		try { entry.toneNode.close(); } catch {}
 		entry.toneNode.dispose();
 	} else if (entry.kind === 'sceneInput') {
 		try { entry.workletNode.disconnect(); } catch {}
 		entry.split.dispose();
+	} else if (entry.kind === 'delay') {
+		entry.toneNode.input.dispose();
+		entry.toneNode.output.dispose();
+		entry._delay.dispose();
+		entry._dryGain.dispose();
+		entry._wetGain.dispose();
 	} else if (
 		entry.kind === 'reverb'    || entry.kind === 'jcReverb'        || entry.kind === 'freeverb'     ||
-		entry.kind === 'delay'     || entry.kind === 'feedbackDelay'   || entry.kind === 'pingPongDelay' ||
+		entry.kind === 'feedbackDelay'   || entry.kind === 'pingPongDelay' ||
 		entry.kind === 'distortion'|| entry.kind === 'chebyshev'       || entry.kind === 'bitCrusher'   ||
 		entry.kind === 'frequencyShifter' || entry.kind === 'pitchShift' || entry.kind === 'stereoWidener' ||
 		entry.kind === 'phaser'    || entry.kind === 'autoWah'
@@ -2065,6 +2070,13 @@ function disposeAudioNode(id: string): void {
 		entry.toneNode.dispose();
 	} else if (entry.kind === 'vibrato') {
 		entry.toneNode.dispose();
+	} else if (entry.kind === 'ildaFrame') {
+		if (entry.frameTimer !== null) {
+			clearInterval(entry.frameTimer);
+			entry.frameTimer = null;
+		}
+		try { entry.workletNode.disconnect(); } catch {}
+		entry.coordBufs = [];
 	}
 
 	_audioNodes.delete(id);
