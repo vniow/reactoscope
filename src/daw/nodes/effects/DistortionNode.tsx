@@ -1,8 +1,8 @@
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
 import ToggleButton from '@mui/material/ToggleButton';
-import { setDistortionAmount, setDistortionOversample, setDistortionWet } from '../../../store/daw';
+import { useDawStore } from '../../../store/daw';
 import { NodeHeader } from '../shared/NodeHeader';
 import { NODE_COLORS } from '../shared/nodeColors';
 import { GRID_UNIT } from '../shared/gridSystem';
@@ -16,14 +16,7 @@ const color = NODE_COLORS.effects;
 const OVERSAMPLE_OPTIONS = ['none', '2x', '4x'] as const;
 
 export const DistortionNode = memo(function DistortionNode({ id, data, selected }: NodeProps<DistortionFlowNode>) {
-	const [distortion, setDist]       = useState(data.distortion ?? 0.4);
-	const [oversample, setOversample] = useState(data.oversample ?? 'none');
-	const [wet,        setWet]        = useState(data.wet        ?? 1);
-
-	const handleOversample = (v: 'none' | '2x' | '4x') => {
-		setOversample(v);
-		setDistortionOversample(id, v);
-	};
+	const setNodeParam = useDawStore(s => s.setNodeParam);
 
 	return (
 		<Box sx={{ borderRadius: 1, backgroundImage: METAL_BG, width: 2 * GRID_UNIT, position: 'relative', boxShadow: selected ? `0px 4px 15px ${color}4d` : '0px 4px 15px rgba(0,0,0,0.30)' }}>
@@ -31,11 +24,11 @@ export const DistortionNode = memo(function DistortionNode({ id, data, selected 
 
 			<Box sx={{ px: 1.75, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }} className='nodrag nowheel'>
 				<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-					<HwArcSlider labelBelow label='drive' value={distortion} min={0} max={1} step={0.01} color={color} onChange={v => { setDist(v); setDistortionAmount(id, v); }} format={v => v.toFixed(2)} allowValueEdit allowBoundsEdit />
-					<HwArcSlider labelBelow label='wet'   value={wet}        min={0} max={1} step={0.01} color={color} onChange={v => { setWet(v);  setDistortionWet(id, v);    }} format={v => v.toFixed(2)} allowValueEdit />
+					<HwArcSlider labelBelow label='drive' value={data.distortion} min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { distortion: v })} format={v => v.toFixed(2)} allowValueEdit allowBoundsEdit />
+					<HwArcSlider labelBelow label='wet'   value={data.wet}        min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}        format={v => v.toFixed(2)} allowValueEdit />
 				</Box>
-				<HwToggleButtonGroup color={color} value={oversample} exclusive
-					onChange={(_, v) => v && handleOversample(v)} className='nodrag'>
+				<HwToggleButtonGroup color={color} value={data.oversample} exclusive
+					onChange={(_, v) => v && setNodeParam(id, { oversample: v })} className='nodrag'>
 					{OVERSAMPLE_OPTIONS.map(opt => (
 						<ToggleButton key={opt} value={opt}>{opt}</ToggleButton>
 					))}

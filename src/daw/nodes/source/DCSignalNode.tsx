@@ -1,7 +1,7 @@
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
-import { setDCSignalValue } from '../../../store/daw';
+import { useDawStore } from '../../../store/daw';
 import { NodeHeader } from '../shared/NodeHeader';
 import { NODE_COLORS } from '../shared/nodeColors';
 import { GRID_UNIT } from '../shared/gridSystem';
@@ -17,12 +17,7 @@ export const DCSignalNode = memo(function DCSignalNode({
 	data,
 	selected,
 }: NodeProps<DCSignalFlowNode>) {
-	const [value, setValue] = useState(data.value ?? 1);
-
-	const handleChange = (v: number) => {
-		setValue(v);
-		setDCSignalValue(id, v);
-	};
+	const setNodeParam = useDawStore(s => s.setNodeParam);
 
 	return (
 		<Box sx={{
@@ -38,10 +33,10 @@ export const DCSignalNode = memo(function DCSignalNode({
 			<Box sx={{ px: 1.75, pt: 2, pb: 0.75 }} className='nodrag nowheel'>
 				<HwSliderField
 					label='value'
-					value={value}
+					value={data.value}
 					min={-1} max={1} step={0.01}
 					color={color}
-					onChange={handleChange}
+					onChange={v => setNodeParam(id, { value: v })}
 					format={v => v.toFixed(2)}
 					allowValueEdit
 					allowBoundsEdit

@@ -1,9 +1,9 @@
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
-import { startAutoFilter, stopAutoFilter, setAutoFilterFrequency, setAutoFilterBaseFrequency, setAutoFilterOctaves, setAutoFilterWet } from '../../../store/daw';
+import { useDawStore } from '../../../store/daw';
 import { NodeHeader } from '../shared/NodeHeader';
 import { NODE_COLORS } from '../shared/nodeColors';
 import { GRID_UNIT } from '../shared/gridSystem';
@@ -16,15 +16,14 @@ import type { AutoFilterFlowNode } from '../../../store/dawTypes';
 const color = NODE_COLORS.effects;
 
 export const AutoFilterNode = memo(function AutoFilterNode({ id, data, selected }: NodeProps<AutoFilterFlowNode>) {
-	const [isRunning,     setIsRunning]     = useState(false);
-	const [frequency,     setFreq]          = useState(data.frequency     ?? 1);
-	const [baseFrequency, setBaseFrequency] = useState(data.baseFrequency ?? 200);
-	const [octaves,       setOctaves]       = useState(data.octaves       ?? 2.6);
-	const [wet,           setWet]           = useState(data.wet           ?? 1);
+	const setNodeParam  = useDawStore(s => s.setNodeParam);
+	const startNode     = useDawStore(s => s.startNode);
+	const stopNode      = useDawStore(s => s.stopNode);
+	const isRunning     = useDawStore(s => s.playingNodes.has(id));
 
 	const handleToggle = async () => {
-		if (isRunning) { stopAutoFilter(id); setIsRunning(false); }
-		else           { await startAutoFilter(id); setIsRunning(true); }
+		if (isRunning) stopNode(id);
+		else           await startNode(id);
 	};
 
 	return (
@@ -36,10 +35,10 @@ export const AutoFilterNode = memo(function AutoFilterNode({ id, data, selected 
 					{isRunning ? <StopIcon sx={{ fontSize: 13 }} /> : <PlayArrowIcon sx={{ fontSize: 13 }} />}
 				</HwButton>
 				<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-					<HwArcSlider labelBelow label='freq'    value={frequency}     min={0.1} max={10}   step={0.1}  color={color} onChange={v => { setFreq(v);          setAutoFilterFrequency(id, v);     }} format={v => v.toFixed(1)} unit='Hz' allowValueEdit allowBoundsEdit />
-					<HwArcSlider labelBelow label='base'    value={baseFrequency} min={20}  max={2000} step={10}   color={color} onChange={v => { setBaseFrequency(v); setAutoFilterBaseFrequency(id, v); }} format={v => String(v)}    unit='Hz' allowValueEdit allowBoundsEdit />
-					<HwArcSlider labelBelow label='octaves' value={octaves}       min={1}   max={8}    step={0.1}  color={color} onChange={v => { setOctaves(v);       setAutoFilterOctaves(id, v);       }} format={v => v.toFixed(1)}            allowValueEdit allowBoundsEdit />
-					<HwArcSlider labelBelow label='wet'     value={wet}           min={0}   max={1}    step={0.01} color={color} onChange={v => { setWet(v);           setAutoFilterWet(id, v);           }} format={v => v.toFixed(2)}            allowValueEdit />
+					<HwArcSlider labelBelow label='freq'    value={data.frequency}     min={0.1} max={10}   step={0.1}  color={color} onChange={v => setNodeParam(id, { frequency: v })}     format={v => v.toFixed(1)} unit='Hz' allowValueEdit allowBoundsEdit />
+					<HwArcSlider labelBelow label='base'    value={data.baseFrequency} min={20}  max={2000} step={10}   color={color} onChange={v => setNodeParam(id, { baseFrequency: v })} format={v => String(v)}    unit='Hz' allowValueEdit allowBoundsEdit />
+					<HwArcSlider labelBelow label='octaves' value={data.octaves}       min={1}   max={8}    step={0.1}  color={color} onChange={v => setNodeParam(id, { octaves: v })}       format={v => v.toFixed(1)}            allowValueEdit allowBoundsEdit />
+					<HwArcSlider labelBelow label='wet'     value={data.wet}           min={0}   max={1}    step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}           format={v => v.toFixed(2)}            allowValueEdit />
 				</Box>
 			</Box>
 

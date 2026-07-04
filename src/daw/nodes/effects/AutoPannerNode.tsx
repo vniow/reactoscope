@@ -1,9 +1,9 @@
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
-import { startAutoPanner, stopAutoPanner, setAutoPannerFrequency, setAutoPannerWet } from '../../../store/daw';
+import { useDawStore } from '../../../store/daw';
 import { NodeHeader } from '../shared/NodeHeader';
 import { NODE_COLORS } from '../shared/nodeColors';
 import { GRID_UNIT } from '../shared/gridSystem';
@@ -16,13 +16,14 @@ import type { AutoPannerFlowNode } from '../../../store/dawTypes';
 const color = NODE_COLORS.effects;
 
 export const AutoPannerNode = memo(function AutoPannerNode({ id, data, selected }: NodeProps<AutoPannerFlowNode>) {
-	const [isRunning, setIsRunning] = useState(false);
-	const [frequency, setFreq]      = useState(data.frequency ?? 1);
-	const [wet,       setWet]       = useState(data.wet       ?? 1);
+	const setNodeParam  = useDawStore(s => s.setNodeParam);
+	const startNode     = useDawStore(s => s.startNode);
+	const stopNode      = useDawStore(s => s.stopNode);
+	const isRunning     = useDawStore(s => s.playingNodes.has(id));
 
 	const handleToggle = async () => {
-		if (isRunning) { stopAutoPanner(id); setIsRunning(false); }
-		else           { await startAutoPanner(id); setIsRunning(true); }
+		if (isRunning) stopNode(id);
+		else           await startNode(id);
 	};
 
 	return (
@@ -34,8 +35,8 @@ export const AutoPannerNode = memo(function AutoPannerNode({ id, data, selected 
 					{isRunning ? <StopIcon sx={{ fontSize: 13 }} /> : <PlayArrowIcon sx={{ fontSize: 13 }} />}
 				</HwButton>
 				<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-					<HwArcSlider labelBelow label='freq' value={frequency} min={0.1} max={10} step={0.1}  color={color} onChange={v => { setFreq(v); setAutoPannerFrequency(id, v); }} format={v => v.toFixed(1)} unit='Hz' allowValueEdit allowBoundsEdit />
-					<HwArcSlider labelBelow label='wet'  value={wet}       min={0}   max={1}  step={0.01} color={color} onChange={v => { setWet(v);  setAutoPannerWet(id, v);       }} format={v => v.toFixed(2)}            allowValueEdit />
+					<HwArcSlider labelBelow label='freq' value={data.frequency} min={0.1} max={10} step={0.1}  color={color} onChange={v => setNodeParam(id, { frequency: v })} format={v => v.toFixed(1)} unit='Hz' allowValueEdit allowBoundsEdit />
+					<HwArcSlider labelBelow label='wet'  value={data.wet}       min={0}   max={1}  step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}       format={v => v.toFixed(2)}            allowValueEdit />
 				</Box>
 			</Box>
 

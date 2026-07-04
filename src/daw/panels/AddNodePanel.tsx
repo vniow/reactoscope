@@ -18,7 +18,7 @@ import type { StubKind } from '../../store/dawTypes';
 
 type CatalogueItem = {
 	label:  string;   // full Tone.js class name — shown + used for filtering
-	action: string;   // store dispatch key
+	action: string;   // store dispatch key (must match nodeRegistry key for real nodes)
 	abbr:   string;   // shorthand — kept for filter compat, no longer rendered
 	desc?:  string;   // 1–3 word hint shown under the label
 };
@@ -176,13 +176,11 @@ const CATALOGUE: CatalogueCategory[] = [
 	},
 ];
 
-// Actions backed by a real audio implementation. Anything not listed here is a
-// stub (handled by addStubNode) and gets an asterisk on its title in the panel.
-// Keep in sync with REAL_HANDLERS in handleAdd.
+// Actions backed by a real nodeRegistry handler — everything else gets addStubNode.
 const REAL_ACTIONS = new Set<string>([
 	'oscillator', 'gain', 'noiseGenerator', 'dcSignal', 'player', 'lfo',
 	'fmOscillator', 'amOscillator', 'fatOscillator', 'pulseOscillator',
-	'pwmOscillator', 'grainPlayer', 'micInput', 'debug',
+	'pwmOscillator', 'grainPlayer', 'micInput', 'ildaFrame', 'debug',
 	'reverb', 'jcReverb', 'freeverb', 'delay', 'feedbackDelay', 'pingPongDelay',
 	'distortion', 'chebyshev', 'bitCrusher', 'frequencyShifter', 'pitchShift', 'stereoWidener',
 	'chorus', 'phaser', 'tremolo', 'vibrato', 'autoFilter', 'autoPanner', 'autoWah',
@@ -215,41 +213,8 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 		return () => window.removeEventListener('resize', measure);
 	}, [open]);
 
-	const addOscillatorNode      = useDawStore(s => s.addOscillatorNode);
-	const addGainNode            = useDawStore(s => s.addGainNode);
-	const addNoiseNode           = useDawStore(s => s.addNoiseNode);
-	const addDCSignalNode        = useDawStore(s => s.addDCSignalNode);
-	const addPlayerNode          = useDawStore(s => s.addPlayerNode);
-	const addLFONode             = useDawStore(s => s.addLFONode);
-	const addFMOscillatorNode    = useDawStore(s => s.addFMOscillatorNode);
-	const addAMOscillatorNode    = useDawStore(s => s.addAMOscillatorNode);
-	const addFatOscillatorNode   = useDawStore(s => s.addFatOscillatorNode);
-	const addPulseOscillatorNode = useDawStore(s => s.addPulseOscillatorNode);
-	const addPWMOscillatorNode   = useDawStore(s => s.addPWMOscillatorNode);
-	const addGrainPlayerNode     = useDawStore(s => s.addGrainPlayerNode);
-	const addMicInputNode        = useDawStore(s => s.addMicInputNode);
-	const addIldaFrameNode       = useDawStore(s => s.addIldaFrameNode);
-	const addStubNode            = useDawStore(s => s.addStubNode);
-	const addDebugNode           = useDawStore(s => s.addDebugNode);
-	const addReverbNode          = useDawStore(s => s.addReverbNode);
-	const addJCReverbNode        = useDawStore(s => s.addJCReverbNode);
-	const addFreeverbNode        = useDawStore(s => s.addFreeverbNode);
-	const addDelayNode           = useDawStore(s => s.addDelayNode);
-	const addFeedbackDelayNode   = useDawStore(s => s.addFeedbackDelayNode);
-	const addPingPongDelayNode   = useDawStore(s => s.addPingPongDelayNode);
-	const addDistortionNode      = useDawStore(s => s.addDistortionNode);
-	const addChebyshevNode       = useDawStore(s => s.addChebyshevNode);
-	const addBitCrusherNode      = useDawStore(s => s.addBitCrusherNode);
-	const addFrequencyShifterNode = useDawStore(s => s.addFrequencyShifterNode);
-	const addPitchShiftNode      = useDawStore(s => s.addPitchShiftNode);
-	const addStereoWidenerNode   = useDawStore(s => s.addStereoWidenerNode);
-	const addChorusNode          = useDawStore(s => s.addChorusNode);
-	const addPhaserNode          = useDawStore(s => s.addPhaserNode);
-	const addTremoloNode         = useDawStore(s => s.addTremoloNode);
-	const addVibratoNode         = useDawStore(s => s.addVibratoNode);
-	const addAutoFilterNode      = useDawStore(s => s.addAutoFilterNode);
-	const addAutoPannerNode      = useDawStore(s => s.addAutoPannerNode);
-	const addAutoWahNode         = useDawStore(s => s.addAutoWahNode);
+	const addNode     = useDawStore(s => s.addNode);
+	const addStubNode = useDawStore(s => s.addStubNode);
 
 	const getDropPosition = useCallback((): { x: number; y: number } => {
 		const rfEl = document.querySelector<HTMLElement>('.react-flow');
@@ -265,61 +230,11 @@ export function AddNodePanel({ columnsSwapped, onOpenChange }: { columnsSwapped:
 
 	const handleAdd = useCallback((action: string) => {
 		const pos = getDropPosition();
-		const REAL_HANDLERS: Record<string, () => void> = {
-			oscillator:       () => addOscillatorNode(pos),
-			gain:             () => addGainNode(pos),
-			noiseGenerator:   () => addNoiseNode(pos),
-			dcSignal:         () => addDCSignalNode(pos),
-			player:           () => addPlayerNode('', pos),
-			lfo:              () => addLFONode(pos),
-			fmOscillator:     () => addFMOscillatorNode(pos),
-			amOscillator:     () => addAMOscillatorNode(pos),
-			fatOscillator:    () => addFatOscillatorNode(pos),
-			pulseOscillator:  () => addPulseOscillatorNode(pos),
-			pwmOscillator:    () => addPWMOscillatorNode(pos),
-			grainPlayer:      () => addGrainPlayerNode(pos),
-			micInput:         () => addMicInputNode(pos),
-			ildaFrame:        () => addIldaFrameNode(pos),
-			debug:            () => addDebugNode(pos),
-			reverb:           () => addReverbNode(pos),
-			jcReverb:         () => addJCReverbNode(pos),
-			freeverb:         () => addFreeverbNode(pos),
-			delay:            () => addDelayNode(pos),
-			feedbackDelay:    () => addFeedbackDelayNode(pos),
-			pingPongDelay:    () => addPingPongDelayNode(pos),
-			distortion:       () => addDistortionNode(pos),
-			chebyshev:        () => addChebyshevNode(pos),
-			bitCrusher:       () => addBitCrusherNode(pos),
-			frequencyShifter: () => addFrequencyShifterNode(pos),
-			pitchShift:       () => addPitchShiftNode(pos),
-			stereoWidener:    () => addStereoWidenerNode(pos),
-			chorus:           () => addChorusNode(pos),
-			phaser:           () => addPhaserNode(pos),
-			tremolo:          () => addTremoloNode(pos),
-			vibrato:          () => addVibratoNode(pos),
-			autoFilter:       () => addAutoFilterNode(pos),
-			autoPanner:       () => addAutoPannerNode(pos),
-			autoWah:          () => addAutoWahNode(pos),
-		};
-		const handler = REAL_HANDLERS[action];
-		if (handler) handler();
+		if (REAL_ACTIONS.has(action)) addNode(action, pos);
 		else addStubNode(action as StubKind, pos);
 		setOpenTracked(false);
 		setFilter('');
-	}, [
-		getDropPosition,
-		addOscillatorNode, addGainNode, addNoiseNode, addDCSignalNode, addPlayerNode,
-		addLFONode, addFMOscillatorNode, addAMOscillatorNode, addFatOscillatorNode,
-		addPulseOscillatorNode, addPWMOscillatorNode, addGrainPlayerNode, addMicInputNode,
-		addIldaFrameNode, addStubNode, addDebugNode,
-		addReverbNode, addJCReverbNode, addFreeverbNode,
-		addDelayNode, addFeedbackDelayNode, addPingPongDelayNode,
-		addDistortionNode, addChebyshevNode, addBitCrusherNode,
-		addFrequencyShifterNode, addPitchShiftNode, addStereoWidenerNode,
-		addChorusNode, addPhaserNode, addTremoloNode, addVibratoNode,
-		addAutoFilterNode, addAutoPannerNode, addAutoWahNode,
-		setOpenTracked,
-	]);
+	}, [getDropPosition, addNode, addStubNode, setOpenTracked]);
 
 	const q = filter.trim().toLowerCase();
 	const filtered = q

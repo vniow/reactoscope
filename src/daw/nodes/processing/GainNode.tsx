@@ -1,7 +1,7 @@
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import Box from '@mui/material/Box';
-import { setGainValue } from '../../../store/daw';
+import { useDawStore } from '../../../store/daw';
 import { NodeHeader, NODE_HEADER_HEIGHT } from '../shared/NodeHeader';
 import { NODE_COLORS } from '../shared/nodeColors';
 import { GRID_UNIT } from '../shared/gridSystem';
@@ -19,12 +19,7 @@ export const GainNode = memo(function GainNode({
 	data,
 	selected,
 }: NodeProps<GainFlowNode>) {
-	const [gain, setGain] = useState(data.gain ?? 1.0);
-
-	const handleGainChange = (v: number) => {
-		setGain(v);
-		setGainValue(id, v);
-	};
+	const setNodeParam = useDawStore(s => s.setNodeParam);
 
 	return (
 		<Box sx={{
@@ -39,10 +34,10 @@ export const GainNode = memo(function GainNode({
 			<Box sx={{ px: 1.75, pt: 2, pb: 2, display: 'flex', justifyContent: 'center' }} className='nodrag nowheel'>
 				<HwArcSlider
 					label=''
-					value={gain}
+					value={data.gain}
 					min={0} max={2} step={0.01}
 					color={color}
-					onChange={handleGainChange}
+					onChange={v => setNodeParam(id, { gain: v })}
 					format={v => v.toFixed(2)}
 					allowValueEdit
 					allowBoundsEdit
