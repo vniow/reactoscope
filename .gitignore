@@ -42,3 +42,6 @@ vitest.config.ts
 # Internal docs and reference files
 PROGRESS.md
 oscilloscope/
+
+# Memory-leak harness output
+scripts/memory-leak-harness/results/
