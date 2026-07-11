@@ -30,25 +30,41 @@ import { autoPannerHandler }       from './nodes/autoPanner';
 import { autoWahHandler }          from './nodes/autoWah';
 import { debugHandler }            from './nodes/debug';
 import { stubHandler }             from './nodes/stub';
+import { playerHandler }           from './nodes/player';
+import { grainPlayerHandler }      from './nodes/grainPlayer';
+import { micInputHandler }         from './nodes/micInput';
+import { ildaFrameHandler }        from './nodes/ildaFrame';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const _registry = new Map<string, NodeTypeHandler<any>>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const _byKind   = new Map<string, NodeTypeHandler<any>>();
 
 export const nodeRegistry = {
+	/**
+	 * `kind` is the audio-entry discriminant the handler stores in _audioNodes.
+	 * It equals the React Flow node type for every handler except
+	 * noiseGenerator, whose entries use kind 'noise'.
+	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	register(type: string, handler: NodeTypeHandler<any>): void {
+	register(type: string, handler: NodeTypeHandler<any>, kind: string = type): void {
 		_registry.set(type, handler);
+		_byKind.set(kind, handler);
 	},
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	get(type: string): NodeTypeHandler<any> | undefined {
 		return _registry.get(type);
+	},
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	getByKind(kind: string): NodeTypeHandler<any> | undefined {
+		return _byKind.get(kind);
 	},
 };
 
 nodeRegistry.register('gain',             gainHandler);
 nodeRegistry.register('dcSignal',         dcSignalHandler);
 nodeRegistry.register('oscillator',       oscillatorHandler);
-nodeRegistry.register('noiseGenerator',   noiseHandler);
+nodeRegistry.register('noiseGenerator',   noiseHandler, 'noise');
 nodeRegistry.register('lfo',              lfoHandler);
 nodeRegistry.register('fmOscillator',     fmOscillatorHandler);
 nodeRegistry.register('amOscillator',     amOscillatorHandler);
@@ -76,3 +92,7 @@ nodeRegistry.register('autoPanner',       autoPannerHandler);
 nodeRegistry.register('autoWah',          autoWahHandler);
 nodeRegistry.register('debug',            debugHandler);
 nodeRegistry.register('stub',             stubHandler);
+nodeRegistry.register('player',           playerHandler);
+nodeRegistry.register('grainPlayer',      grainPlayerHandler);
+nodeRegistry.register('micInput',         micInputHandler);
+nodeRegistry.register('ildaFrame',        ildaFrameHandler);

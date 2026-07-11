@@ -8,6 +8,13 @@ import type { AudioNodeMap, AppEdge } from './dawTypes';
 
 export const _audioNodes: AudioNodeMap = new Map();
 
+// ─── Well-known node ids ──────────────────────────────────────────────────────
+// Defined here (not in daw.ts) so node handlers can reference them without
+// importing the Zustand store.
+
+export const MASTER_NODE_ID = 'master-output';
+export const SCENE_INPUT_ID = 'scene-input';
+
 // ─── Tone.js graph traversal helpers ────────────────────────────────────────���
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

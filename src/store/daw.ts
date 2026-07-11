@@ -31,14 +31,10 @@ import {
 	type Connection,
 } from '@xyflow/react';
 import {
-	Player,
 	Gain,
 	Merge,
 	Analyser,
 	Split,
-	GrainPlayer,
-	UserMedia,
-	getTransport,
 	getContext,
 	start as toneStart,
 } from 'tone';
@@ -88,29 +84,45 @@ function edgeColorForSource(sourceId: string, nodes: AppNode[]): string {
 	const node = nodes.find(n => n.id === sourceId);
 	return NODE_TYPE_EDGE_COLOR[node?.type ?? ''] ?? NODE_COLORS.output;
 }
-import { _audioNodes, connectAudioNodes, disconnectAudioNodes, reconnectSourceEdges } from './audioCore';
+import {
+	_audioNodes, connectAudioNodes, disconnectAudioNodes, reconnectSourceEdges,
+	MASTER_NODE_ID, SCENE_INPUT_ID,
+} from './audioCore';
 import { nodeRegistry } from './nodeRegistry';
+import { loadTrackForGrainPlayer } from './nodes/grainPlayer';
 import type {
 	AppNode,
 	AppEdge,
-	PlayerAudioEntry,
 	MasterOutputAudioEntry,
-	GrainPlayerAudioEntry,
-	MicInputAudioEntry,
-	IldaFrameAudioEntry,
 	SceneInputAudioEntry,
 	StubKind,
 	PatchFile,
 	MasterOutputNodeData,
-	GrainPlayerNodeData,
 } from './dawTypes';
 
 const { nSamples } = DEFAULT_AUDIO_SETTINGS;
 
-export const MASTER_NODE_ID    = 'master-output';
+export { MASTER_NODE_ID, SCENE_INPUT_ID };
 export const DEFAULT_PLAYER_ID = 'player-default';
-export const SCENE_INPUT_ID    = 'scene-input';
 export const DEBUG_NODE_ID     = 'debug-default';
+
+// ─── Node-type operations re-exported from their handler modules ─────────────
+
+export {
+	playNode, pauseNode, seekNode, loadTrackForNode,
+	setNodeRate, setNodeMuted, setNodeLoop,
+	getNodePosition, getNodeDuration, getNodeIsLoaded, getNodeIsPlaying,
+	onNodePlaybackEnd, clearNodePlaybackEndCallback,
+} from './nodes/player';
+export {
+	startGrainPlayer, stopGrainPlayer, loadTrackForGrainPlayer,
+	setGrainPlayerGrainSize, setGrainPlayerOverlap, setGrainPlayerPlaybackRate,
+	setGrainPlayerDetune, setGrainPlayerLoop, setGrainPlayerLoopStart,
+	setGrainPlayerLoopEnd, setGrainPlayerReverse, setGrainPlayerMuted,
+	getGrainPlayerBufferDuration,
+} from './nodes/grainPlayer';
+export { startMicInput, stopMicInput } from './nodes/micInput';
+export { loadIldaForNode, startIldaPlayback, stopIldaPlayback, getIldaFrameInfo } from './nodes/ildaFrame';
 
 // ─── Master output chain (lazy init) ─────────────────────────────────────────
 
@@ -350,175 +362,6 @@ export function setGalvoParams(p: {
 	_galvoProjectorNode.port.postMessage({ type: 'params', ...p });
 }
 
-// ─── Player audio node lifecycle ─────────────────────────────────────────────
-
-function createPlayerEntry(id: string): PlayerAudioEntry {
-	const toneNode = new Player();
-	const split    = new Split(2);
-	toneNode.connect(split);
-	const entry: PlayerAudioEntry = {
-		kind:           'player',
-		toneNode,
-		split,
-		startOffset:    0,
-		currentRate:    1,
-		isExplicitStop: false,
-		isPlaying:      false,
-		playbackEndCb:  null,
-	};
-
-	toneNode.onstop = () => {
-		if (entry.isExplicitStop) {
-			entry.isExplicitStop = false;
-			return;
-		}
-		// Natural end of track
-		getTransport().stop();
-		entry.startOffset = 0;
-		entry.isPlaying   = false;
-		entry.playbackEndCb?.();
-	};
-
-	_audioNodes.set(id, entry);
-	return entry;
-}
-
-// ─── Oscillator audio node lifecycle ─────────────────────────────────────────
-
-// ─── GrainPlayer audio node lifecycle ────────────────────────────────────────
-
-function createGrainPlayerEntry(id: string, data?: Partial<GrainPlayerNodeData>): GrainPlayerAudioEntry {
-	const toneNode = new GrainPlayer({
-		url:          data?.trackUrl     ?? '',
-		grainSize:    data?.grainSize    ?? 0.2,
-		overlap:      data?.overlap      ?? 0.1,
-		playbackRate: data?.playbackRate ?? 1,
-		detune:       data?.detune       ?? 0,
-		loop:         data?.loop         ?? true,
-		loopStart:    data?.loopStart    ?? 0,
-		loopEnd:      data?.loopEnd      ?? 0,
-		reverse:      data?.reverse      ?? false,
-	});
-	const split = new Split(2);
-	toneNode.connect(split);
-	const entry: GrainPlayerAudioEntry = { kind: 'grainPlayer', toneNode, split };
-	_audioNodes.set(id, entry);
-	return entry;
-}
-
-export async function startGrainPlayer(id: string): Promise<void> {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'grainPlayer') return;
-	await toneStart();
-	if (entry.toneNode.state !== 'started') entry.toneNode.start();
-}
-
-export function stopGrainPlayer(id: string): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'grainPlayer') return;
-	if (entry.toneNode.state === 'started') entry.toneNode.stop();
-}
-
-export async function loadTrackForGrainPlayer(id: string, url: string): Promise<void> {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'grainPlayer') return;
-	if (entry.toneNode.state === 'started') entry.toneNode.stop();
-	await entry.toneNode.buffer.load(url);
-}
-
-export function setGrainPlayerGrainSize(id: string, seconds: number): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'grainPlayer') return;
-	entry.toneNode.grainSize = seconds;
-}
-
-export function setGrainPlayerOverlap(id: string, overlap: number): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'grainPlayer') return;
-	entry.toneNode.overlap = overlap;
-}
-
-export function setGrainPlayerPlaybackRate(id: string, rate: number): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'grainPlayer') return;
-	entry.toneNode.playbackRate = rate;
-}
-
-export function setGrainPlayerDetune(id: string, cents: number): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'grainPlayer') return;
-	entry.toneNode.detune = cents;
-}
-
-export function setGrainPlayerLoop(id: string, loop: boolean): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'grainPlayer') return;
-	entry.toneNode.loop = loop;
-}
-
-export function getGrainPlayerBufferDuration(id: string): number {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'grainPlayer') return 0;
-	return entry.toneNode.buffer.loaded ? entry.toneNode.buffer.duration : 0;
-}
-
-export function setGrainPlayerLoopStart(id: string, time: number): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'grainPlayer') return;
-	entry.toneNode.loopStart = time;
-}
-
-
-
-export function setGrainPlayerLoopEnd(id: string, time: number): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'grainPlayer') return;
-	entry.toneNode.loopEnd = time;
-}
-
-export function setGrainPlayerReverse(id: string, reverse: boolean): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'grainPlayer') return;
-	entry.toneNode.reverse = reverse;
-}
-
-// ─── MicInput audio node lifecycle ───────────────────────────────────────────
-
-function createMicInputEntry(id: string): MicInputAudioEntry {
-	const toneNode = new UserMedia();
-	const entry: MicInputAudioEntry = { kind: 'micInput', toneNode };
-	_audioNodes.set(id, entry);
-	return entry;
-}
-
-export async function startMicInput(id: string): Promise<void> {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'micInput') return;
-	await toneStart();
-	await entry.toneNode.open();
-}
-
-export function stopMicInput(id: string): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'micInput') return;
-	entry.toneNode.close();
-}
-
-// ─── IldaFrame audio node lifecycle ──────────────────────────────────────────
-
-function createIldaFrameEntry(id: string): IldaFrameAudioEntry {
-	const sceneEntry = _audioNodes.get(SCENE_INPUT_ID);
-	const entry: IldaFrameAudioEntry = {
-		kind:        'ildaFrame',
-		workletNode: sceneEntry ? (sceneEntry as { workletNode: unknown }).workletNode : null,
-		coordBufs:   [],
-		frameIdx:    0,
-		frameTimer:  null,
-	};
-	_audioNodes.set(id, entry);
-	return entry;
-}
-
 // ─── Scene Input audio node lifecycle ────────────────────────────────────────
 
 // Console styling for SceneInput store lifecycle events.
@@ -574,97 +417,6 @@ async function initSceneInput(): Promise<void> {
 	);
 }
 
-
-/**
- * Fetch an .ild file, decode it, and load every frame into the node's audio
- * entry as a precomputed coord buffer. Posts frame[0] to the worklet so the
- * sound starts immediately; the UI layer (IldaFrameNode) is responsible for
- * deciding when to start the animated cycle.
- *
- * Imports the codec lazily so the path doesn't pull it into the main bundle.
- */
-export async function loadIldaForNode(id: string, url: string): Promise<{ nFrames: number; nPoints: number }> {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'ildaFrame') throw new Error(`Node ${id} is not an ildaFrame entry`);
-
-	const [{ decodeIldaFile, ildaFrameToCoordBuffer }] = await Promise.all([
-		import('../laser/ildaCodec'),
-	]);
-	const res     = await fetch(url);
-	const arrBuf  = await res.arrayBuffer();
-	const frames  = decodeIldaFile(arrBuf);
-	if (frames.length === 0) throw new Error('ILDA file contained no frames');
-
-	const coordBufs = frames.map(f => ildaFrameToCoordBuffer(f));
-
-	// Stop any running animated cursor before swapping the buffer set.
-	if (entry.frameTimer !== null) {
-		clearInterval(entry.frameTimer);
-		entry.frameTimer = null;
-	}
-	entry.coordBufs = coordBufs;
-	entry.frameIdx  = 0;
-
-	_postIldaCoordBufferToWorklet(entry, 0);
-
-	return { nFrames: frames.length, nPoints: coordBufs[0].nPoints };
-}
-
-function _postIldaCoordBufferToWorklet(entry: IldaFrameAudioEntry, idx: number): void {
-	const cb = entry.coordBufs[idx];
-	if (!cb) return;
-	// Caller keeps `entry.coordBufs[idx]` alive; transfer a fresh copy so the
-	// worklet owns its own buffer and we can re-post on the next animated tick.
-	const copy = cb.data.slice();
-	(entry.workletNode as AudioWorkletNode).port.postMessage(
-		{ type: 'path', data: copy.buffer, nPoints: cb.nPoints },
-		[copy.buffer],
-	);
-}
-
-export function startIldaPlayback(id: string, mode: 'static' | 'animated', fps: number): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'ildaFrame') return;
-	if (entry.coordBufs.length === 0) return;
-
-	if (entry.frameTimer !== null) {
-		clearInterval(entry.frameTimer);
-		entry.frameTimer = null;
-	}
-
-	// Always (re-)seed the worklet with the current frame so silence resumes
-	// turn into sound on the next process() call.
-	_postIldaCoordBufferToWorklet(entry, entry.frameIdx);
-
-	if (mode === 'animated' && entry.coordBufs.length > 1) {
-		const intervalMs = 1000 / Math.max(1, fps);
-		entry.frameTimer = setInterval(() => {
-			entry.frameIdx = (entry.frameIdx + 1) % entry.coordBufs.length;
-			_postIldaCoordBufferToWorklet(entry, entry.frameIdx);
-		}, intervalMs);
-	}
-}
-
-export function stopIldaPlayback(id: string): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'ildaFrame') return;
-	if (entry.frameTimer !== null) {
-		clearInterval(entry.frameTimer);
-		entry.frameTimer = null;
-	}
-	(entry.workletNode as AudioWorkletNode).port.postMessage({ type: 'clear' });
-}
-
-export function getIldaFrameInfo(id: string): { nFrames: number; nPoints: number; frameIdx: number } | null {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'ildaFrame') return null;
-	if (entry.coordBufs.length === 0) return null;
-	return {
-		nFrames:  entry.coordBufs.length,
-		nPoints:  entry.coordBufs[entry.frameIdx]?.nPoints ?? 0,
-		frameIdx: entry.frameIdx,
-	};
-}
 
 async function initWaveformCapture(): Promise<void> {
 	console.log(..._DAW_INFO, 'initWaveformCapture() — loading AudioWorklet module…');
@@ -803,208 +555,13 @@ export function getSceneRunning(): boolean {
 
 // ─── Generic node disposal ────────────────────────────────────────────────────
 
+// Dispatches to the owning handler via the entry's kind. The master output and
+// scene input are engine infrastructure, never disposed with graph nodes —
+// their teardown happens only in the beforeunload cleanup below.
 function disposeAudioNode(id: string): void {
 	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind === 'masterOutput') return;
-
-	if (entry.kind === 'player') {
-		if (entry.toneNode.state === 'started') {
-			entry.isExplicitStop = true;
-			entry.toneNode.stop();
-		}
-		entry.toneNode.dispose();
-		entry.split.dispose();
-	} else if (entry.kind === 'oscillator') {
-		if (entry.toneNode.state === 'started') {
-			entry.toneNode.stop();
-		}
-		entry.toneNode.dispose();
-	} else if (entry.kind === 'gain') {
-		entry.toneNode.dispose();
-	} else if (entry.kind === 'noise') {
-		if (entry.toneNode.state === 'started') {
-			entry.toneNode.stop();
-		}
-		entry.toneNode.dispose();
-	} else if (entry.kind === 'dcSignal') {
-		entry.toneNode.dispose();
-	} else if (entry.kind === 'lfo' || entry.kind === 'fmOscillator' || entry.kind === 'amOscillator' ||
-	           entry.kind === 'fatOscillator' || entry.kind === 'pulseOscillator' || entry.kind === 'pwmOscillator') {
-		if (entry.toneNode.state === 'started') entry.toneNode.stop();
-		entry.toneNode.dispose();
-	} else if (entry.kind === 'grainPlayer') {
-		if (entry.toneNode.state === 'started') entry.toneNode.stop();
-		entry.toneNode.dispose();
-		entry.split.dispose();
-	} else if (entry.kind === 'micInput') {
-		try { entry.toneNode.close(); } catch {}
-		entry.toneNode.dispose();
-	} else if (entry.kind === 'sceneInput') {
-		try { entry.workletNode.disconnect(); } catch {}
-		entry.split.dispose();
-	} else if (entry.kind === 'delay') {
-		entry.toneNode.input.dispose();
-		entry.toneNode.output.dispose();
-		entry._delay.dispose();
-		entry._dryGain.dispose();
-		entry._wetGain.dispose();
-	} else if (
-		entry.kind === 'reverb'    || entry.kind === 'jcReverb'        || entry.kind === 'freeverb'     ||
-		entry.kind === 'feedbackDelay'   || entry.kind === 'pingPongDelay' ||
-		entry.kind === 'distortion'|| entry.kind === 'chebyshev'       || entry.kind === 'bitCrusher'   ||
-		entry.kind === 'frequencyShifter' || entry.kind === 'pitchShift' || entry.kind === 'stereoWidener' ||
-		entry.kind === 'phaser'    || entry.kind === 'autoWah'
-	) {
-		entry.toneNode.dispose();
-	} else if (
-		entry.kind === 'chorus' || entry.kind === 'tremolo' ||
-		entry.kind === 'autoFilter' || entry.kind === 'autoPanner'
-	) {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		try { (entry.toneNode as any).stop(); } catch {}
-		entry.toneNode.dispose();
-	} else if (entry.kind === 'vibrato') {
-		entry.toneNode.dispose();
-	} else if (entry.kind === 'ildaFrame') {
-		if (entry.frameTimer !== null) {
-			clearInterval(entry.frameTimer);
-			entry.frameTimer = null;
-		}
-		try { entry.workletNode.disconnect(); } catch {}
-		entry.coordBufs = [];
-	}
-
-	_audioNodes.delete(id);
-}
-
-// ─── Per-player playback helpers (public API) ─────────────────────────────────
-
-export async function playNode(id: string): Promise<void> {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'player') return;
-
-	const transport = getTransport();
-	await toneStart();
-	transport.stop();
-	transport.seconds = 0;
-	entry.toneNode.start('+0.01', entry.startOffset);
-	transport.start('+0.01');
-	entry.isPlaying = true;
-}
-
-export function pauseNode(id: string): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'player') return;
-
-	const transport = getTransport();
-	entry.startOffset    = getNodePosition(id);
-	entry.isExplicitStop = true;
-	entry.toneNode.stop();
-	transport.stop();
-	entry.isPlaying = false;
-}
-
-export function seekNode(id: string, seconds: number): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'player') return;
-
-	const transport  = getTransport();
-	const wasPlaying = entry.toneNode.state === 'started';
-	entry.startOffset = seconds;
-	if (wasPlaying) {
-		entry.isExplicitStop = true;
-		entry.toneNode.stop();
-		transport.stop();
-		transport.seconds = 0;
-		entry.toneNode.start('+0.01', entry.startOffset);
-		transport.start('+0.01');
-	}
-}
-
-export async function loadTrackForNode(id: string, url: string): Promise<void> {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'player') return;
-
-	const transport = getTransport();
-	if (entry.toneNode.state === 'started') {
-		entry.isExplicitStop = true;
-		entry.toneNode.stop();
-		transport.stop();
-	}
-	transport.seconds    = 0;
-	entry.startOffset    = 0;
-	entry.isPlaying      = false;
-	await entry.toneNode.load(url);
-}
-
-export function setNodeRate(id: string, rate: number): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'player') return;
-
-	const transport = getTransport();
-	if (entry.toneNode.state === 'started') {
-		entry.startOffset = getNodePosition(id);
-		transport.stop();
-		transport.seconds = 0;
-		transport.start('+0.01');
-	}
-	entry.currentRate          = rate;
-	entry.toneNode.playbackRate = rate;
-}
-
-export function setNodeMuted(id: string, muted: boolean): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'player') return;
-	entry.toneNode.mute = muted;
-}
-
-export function setNodeLoop(id: string, loop: boolean): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'player') return;
-	entry.toneNode.loop = loop;
-}
-
-export function setGrainPlayerMuted(id: string, muted: boolean): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'grainPlayer') return;
-	entry.toneNode.mute = muted;
-}
-
-export function getNodePosition(id: string): number {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'player') return 0;
-	if (!entry.isPlaying) return entry.startOffset;
-	return entry.startOffset + getTransport().seconds * entry.currentRate;
-}
-
-export function getNodeDuration(id: string): number {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'player') return 0;
-	return entry.toneNode.loaded ? entry.toneNode.buffer.duration : 0;
-}
-
-export function getNodeIsLoaded(id: string): boolean {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'player') return false;
-	return entry.toneNode.loaded;
-}
-
-export function getNodeIsPlaying(id: string): boolean {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'player') return false;
-	return entry.isPlaying;
-}
-
-export function onNodePlaybackEnd(id: string, cb: () => void): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'player') return;
-	entry.playbackEndCb = cb;
-}
-
-export function clearNodePlaybackEndCallback(id: string): void {
-	const entry = _audioNodes.get(id);
-	if (!entry || entry.kind !== 'player') return;
-	entry.playbackEndCb = null;
+	if (!entry || entry.kind === 'masterOutput' || entry.kind === 'sceneInput') return;
+	nodeRegistry.getByKind(entry.kind)?.dispose(id);
 }
 
 // ─── Stub labels ──────────────────────────────────────────────────────────────
@@ -1229,31 +786,6 @@ export const useDawStore = create<DawState>((set, get) => ({
 
 	addNode: (type, position, extraData) => {
 		const id = `${type}-${Date.now()}`;
-		// Special types not backed by the registry
-		if (type === 'player') {
-			createPlayerEntry(id);
-			const data = { trackUrl: (extraData?.trackUrl as string) ?? '', label: 'Player', ...extraData };
-			set({ nodes: [...get().nodes, { id, type: 'player', position, data } as AppNode], audioVersion: get().audioVersion + 1 });
-			return id;
-		}
-		if (type === 'grainPlayer') {
-			createGrainPlayerEntry(id);
-			const data = { label: 'Grain Player', trackUrl: '', grainSize: 0.2, overlap: 0.1, playbackRate: 1, detune: 0, loop: true, loopStart: 0, loopEnd: 0, reverse: false, ...extraData };
-			set({ nodes: [...get().nodes, { id, type: 'grainPlayer', position, data } as AppNode], audioVersion: get().audioVersion + 1 });
-			return id;
-		}
-		if (type === 'micInput') {
-			createMicInputEntry(id);
-			const data = { label: 'Mic', ...extraData };
-			set({ nodes: [...get().nodes, { id, type: 'micInput', position, data } as AppNode], audioVersion: get().audioVersion + 1 });
-			return id;
-		}
-		if (type === 'ildaFrame') {
-			createIldaFrameEntry(id);
-			const data = { label: 'ILDA', ildUrl: '', filename: '', mode: 'static', fps: 30, isPlaying: false, ...extraData };
-			set({ nodes: [...get().nodes, { id, type: 'ildaFrame', position, data } as AppNode], audioVersion: get().audioVersion + 1 });
-			return id;
-		}
 		const handler = nodeRegistry.get(type);
 		if (!handler) {
 			console.warn(`[addNode] no handler registered for type "${type}"`);
@@ -1351,18 +883,8 @@ export const useDawStore = create<DawState>((set, get) => ({
 		// Reconstruct audio entries from patch node data
 		for (const node of patch.nodes) {
 			if (node.id === MASTER_NODE_ID || node.id === SCENE_INPUT_ID) continue;
-			if (node.type === 'player') {
-				createPlayerEntry(node.id);
-			} else if (node.type === 'ildaFrame') {
-				createIldaFrameEntry(node.id);
-			} else if (node.type === 'grainPlayer') {
-				createGrainPlayerEntry(node.id, node.data as GrainPlayerNodeData);
-			} else if (node.type === 'micInput') {
-				createMicInputEntry(node.id);
-			} else {
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				nodeRegistry.get(node.type ?? '')?.create(node.id, node.data as any);
-			}
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			nodeRegistry.get(node.type ?? '')?.create(node.id, node.data as any);
 		}
 
 		// Wire edges per patch
@@ -1450,59 +972,23 @@ if (import.meta.env.DEV) {
 window.addEventListener(
 	'beforeunload',
 	() => {
-		for (const [, entry] of _audioNodes) {
-			if (entry.kind === 'player') {
-				if (entry.toneNode.state === 'started') {
-					entry.isExplicitStop = true;
-					entry.toneNode.stop();
-				}
-				entry.toneNode.dispose();
-				entry.split.dispose();
-			} else if (entry.kind === 'oscillator') {
-				if (entry.toneNode.state === 'started') {
-					entry.toneNode.stop();
-				}
-				entry.toneNode.dispose();
-			} else if (entry.kind === 'gain') {
-				entry.toneNode.dispose();
-			} else if (entry.kind === 'noise') {
-				if (entry.toneNode.state === 'started') {
-					entry.toneNode.stop();
-				}
-				entry.toneNode.dispose();
-			} else if (entry.kind === 'dcSignal') {
-				entry.toneNode.dispose();
-			} else if (
-				entry.kind === 'lfo' || entry.kind === 'fmOscillator' || entry.kind === 'amOscillator' ||
-				entry.kind === 'fatOscillator' || entry.kind === 'pulseOscillator' || entry.kind === 'pwmOscillator'
-			) {
-				if (entry.toneNode.state === 'started') entry.toneNode.stop();
-				entry.toneNode.dispose();
-			} else if (entry.kind === 'grainPlayer') {
-				if (entry.toneNode.state === 'started') entry.toneNode.stop();
-				entry.toneNode.dispose();
-				entry.split.dispose();
-			} else if (entry.kind === 'micInput') {
-				try { entry.toneNode.close(); } catch {}
-				entry.toneNode.dispose();
-			} else if (entry.kind === 'masterOutput') {
-				entry.inputGainX.dispose();
-				entry.inputGainY.dispose();
-				entry.inputGainR.dispose();
-				entry.inputGainG.dispose();
-				entry.inputGainB.dispose();
-				entry.inputGainA.dispose();
-				entry.merge.dispose();
-				entry.xAnalyser.dispose();
-				entry.yAnalyser.dispose();
-				entry.rAnalyser.dispose();
-				entry.gAnalyser.dispose();
-				entry.bAnalyser.dispose();
-				entry.aAnalyser.dispose();
-			} else if (entry.kind === 'sceneInput') {
-				try { entry.workletNode.disconnect(); } catch {}
-				entry.split.dispose();
-			}
+		// Graph nodes dispose through their handlers; master output and scene
+		// input are engine infrastructure and are torn down explicitly.
+		for (const id of [..._audioNodes.keys()]) {
+			disposeAudioNode(id);
+		}
+		const scene = _audioNodes.get(SCENE_INPUT_ID);
+		if (scene?.kind === 'sceneInput') {
+			try { scene.workletNode.disconnect(); } catch { /* already disconnected */ }
+			scene.split.dispose();
+		}
+		if (_masterEntry) {
+			const m = _masterEntry;
+			[
+				m.inputGainX, m.inputGainY, m.inputGainR, m.inputGainG, m.inputGainB, m.inputGainA,
+				m.merge, m.speakerGain,
+				m.xAnalyser, m.yAnalyser, m.rAnalyser, m.gAnalyser, m.bAnalyser, m.aAnalyser,
+			].forEach(n => n.dispose());
 		}
 		_audioNodes.clear();
 	},
