@@ -10,9 +10,16 @@ import { SceneInputPanel } from './daw/panels/InputPanel';
 import { DawCanvas }         from './daw/DawCanvas';
 import { SweepPanel }        from './daw/panels/SweepPanel';
 import { debugRef } from './components/scope/WoahcopeSceneR3F';
+import { loadLeakTestFixture } from './debug/leakTestFixture';
 
 const DEV_DEBUG = import.meta.env.DEV &&
 	new URLSearchParams(window.location.search).has('debug');
+
+// ─── Memory-leak harness flags (scripts/memory-leak-harness) ──────────────────
+// Read once at module load so scenario config is stable for the life of the tab.
+const harnessParams        = new URLSearchParams(window.location.search);
+const DISABLE_SCENE_INPUT  = harnessParams.get('sceneInput') === '0';
+const HARNESS_LOAD_PATCH   = harnessParams.get('loadPatch');
 
 const DebugPanel = DEV_DEBUG
 	? lazy(() => import('./debug/DebugPanel').then(m => ({ default: m.DebugPanel })))
@@ -92,6 +99,10 @@ export function App() {
 	// Load the default patch once the DAW audio graph has finished initialising.
 	useEffect(() => {
 		void dawInitPromise.then(() => {
+			if (HARNESS_LOAD_PATCH === 'leak-test') {
+				loadLeakTestFixture();
+				return;
+			}
 			const { defaultPatchId, patches } = usePatchStore.getState();
 			if (!defaultPatchId) return;
 			const saved = patches.find(p => p.id === defaultPatchId);
@@ -210,7 +221,7 @@ export function App() {
 
 							{/* Bottom canvas (SceneInputPanel) — always last child */}
 							<Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-								<SceneInputPanel />
+								{!DISABLE_SCENE_INPUT && <SceneInputPanel />}
 								<Typography sx={canvasLabelSx}>scene</Typography>
 							</Box>
 

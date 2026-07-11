@@ -17,6 +17,11 @@ import { MiniScope } from '../shared/MiniScope';
 
 const color = NODE_COLORS.output;
 
+// Memory-leak harness (scripts/memory-leak-harness): force the mini-scope's
+// initial mount state instead of requiring a click, since automated runs
+// don't drive the UI.
+const FORCE_MINI_SCOPE = new URLSearchParams(window.location.search).get('miniScope') === '1';
+
 // in-0 = X, in-1 = Y, in-5 = A  →  left edge
 const LEFT_HANDLES = [
 	{ id: 'in-0', label: 'X' },
@@ -38,7 +43,7 @@ export const MasterOutputNode = memo<NodeProps<MasterOutputFlowNode>>(
 	function MasterOutputNode({ data, selected }) {
 		const setSpeakersMuted = useDawStore(s => s.setSpeakersMuted);
 		const speakersMuted = data.speakersMuted ?? true;
-		const [expanded, setExpanded] = useState(false);
+		const [expanded, setExpanded] = useState(FORCE_MINI_SCOPE);
 
 		const canvasSize = 2 * GRID_UNIT;
 		const height = 3 * GRID_UNIT;
