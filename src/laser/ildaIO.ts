@@ -13,7 +13,7 @@ import {
 	type IldaFrame,
 	type IldaFormat,
 } from './ildaCodec';
-import { getLastCoordBuffer } from '../store/daw';
+import { getLastCoordBuffer } from '../audio/engine';
 
 /**
  * Encode the most recent coord buffer (the one the path worker most recently

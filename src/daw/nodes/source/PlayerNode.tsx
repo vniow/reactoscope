@@ -6,8 +6,8 @@ import {
 	setNodeRate, setNodeMuted, setNodeLoop,
 	getNodePosition, getNodeDuration,
 	onNodePlaybackEnd, clearNodePlaybackEndCallback,
-	useDawStore,
-} from '../../../store/daw';
+} from '../../../audio/engine';
+import { useDawStore } from '../../../store/daw';
 import { NodeHeader } from '../shared/NodeHeader';
 import { NODE_COLORS } from '../shared/nodeColors';
 import { GRID_UNIT } from '../shared/gridSystem';

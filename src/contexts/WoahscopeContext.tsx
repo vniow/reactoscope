@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { GALVO_PRESETS, DEFAULT_PRESET_ID, type GalvoPresetId } from '../laser/presets';
-import { setGalvoParams } from '../store/daw';
+import { setGalvoParams } from '../audio/engine';
 
 
 export interface PlaybackContextType {

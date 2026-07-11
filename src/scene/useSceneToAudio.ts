@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { getContext as getToneContext } from 'tone';
-import { getSceneRunning, getSceneInputWorkletNode, setLastCoordBuffer } from '../store/daw';
+import { getSceneRunning, getSceneInputWorkletNode, setLastCoordBuffer } from '../audio/engine';
 import { useEffects } from '../contexts/WoahscopeContext';
 import { collectSegments } from './pathBuilder';
 import type { Segment } from './pathBuilder';

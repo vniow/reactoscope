@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useAxis, useEffects } from '../../contexts/WoahscopeContext';
 import { updateGeometryArrays } from '../../woahscope/utils';
 import { DEFAULT_AUDIO_SETTINGS } from '../../config';
-import { getWaveformData, getSampleRate, getSceneInputPhase, getWaveformDataFromSAB, getWaveformWriteIndex } from '../../store/daw';
+import { getWaveformData, getSampleRate, getSceneInputPhase, getWaveformDataFromSAB, getWaveformWriteIndex } from '../../audio/engine';
 import {
 	N_SAMPLES,
 	FADE_AMOUNT,

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAxis } from '../../../contexts/WoahscopeContext';
-import { getWaveformData, getWaveformDataFromSAB, getWaveformWriteIndex, isMasterMultichannel, useDawStore } from '../../../store/daw';
+import { getWaveformData, getWaveformDataFromSAB, getWaveformWriteIndex } from '../../../audio/engine';
+import { isMasterMultichannel, useDawStore } from '../../../store/daw';
 import { getColourFromHue } from '../../../woahscope/utils';
 
 interface MiniScopeProps {

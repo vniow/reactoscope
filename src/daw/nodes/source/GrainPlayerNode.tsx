@@ -6,8 +6,9 @@ import {
 	setGrainPlayerGrainSize, setGrainPlayerOverlap,
 	setGrainPlayerPlaybackRate, setGrainPlayerDetune, setGrainPlayerLoop,
 	setGrainPlayerMuted, setGrainPlayerLoopStart, setGrainPlayerLoopEnd,
-	setGrainPlayerReverse, getGrainPlayerBufferDuration, useDawStore,
-} from '../../../store/daw';
+	setGrainPlayerReverse, getGrainPlayerBufferDuration,
+} from '../../../audio/engine';
+import { useDawStore } from '../../../store/daw';
 import { NodeHeader } from '../shared/NodeHeader';
 import { NODE_COLORS } from '../shared/nodeColors';
 import { GRID_UNIT } from '../shared/gridSystem';

@@ -4,7 +4,7 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
-import { startMicInput, stopMicInput } from '../../../store/daw';
+import { startMicInput, stopMicInput } from '../../../audio/engine';
 import { NodeHeader } from '../shared/NodeHeader';
 import { NODE_COLORS } from '../shared/nodeColors';
 import { GRID_UNIT } from '../shared/gridSystem';
