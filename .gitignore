@@ -27,14 +27,9 @@ dist-ssr
 .claude/
 CLAUDE.md
 
-# Tests and test tooling
-*.test.ts
-*.test.tsx
-*.spec.ts
-*.spec.tsx
+# E2E test tooling (unit tests are committed; see vitest.config.ts)
 e2e/
 playwright.config.ts
-vitest.config.ts
 
 # CI/CD (not yet configured for public use)
 .github/
