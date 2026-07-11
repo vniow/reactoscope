@@ -16,11 +16,6 @@ export default defineConfig({
 			'Cross-Origin-Embedder-Policy': 'credentialless',
 		},
 	},
-	optimizeDeps: {
-		esbuildOptions: {
-			sourcemap: false,
-		},
-	},
 	build: {
 		target: 'es2020',
 		// 'hidden' generates .map files for Sentry upload but omits sourceMappingURL
@@ -31,13 +26,21 @@ export default defineConfig({
 		// internal circular imports. Raise the warning threshold to suppress the
 		// false-positive rather than hiding a real actionable issue.
 		chunkSizeWarningLimit: 750,
-		rollupOptions: {
+		rolldownOptions: {
 			output: {
-				manualChunks: {
-					'vendor-three': ['three'],
-					'vendor-r3f':   ['@react-three/fiber', '@react-three/drei'],
-					'vendor-tone':  ['tone'],
-					'vendor-mui':   ['@mui/material', '@mui/icons-material'],
+				// Rolldown (Vite 8) rejects object-form manualChunks and its function
+				// form silently folds three into the r3f chunk (groups pull in their
+				// dependencies). codeSplitting.groups is the native replacement; group
+				// order matters — earlier groups claim their modules first, so
+				// vendor-three must precede vendor-r3f or three gets absorbed as a
+				// dependency of @react-three/fiber.
+				codeSplitting: {
+					groups: [
+						{ name: 'vendor-three', test: /node_modules[\\/]three[\\/]/ },
+						{ name: 'vendor-r3f',   test: /node_modules[\\/]@react-three[\\/]/ },
+						{ name: 'vendor-tone',  test: /node_modules[\\/]tone[\\/]/ },
+						{ name: 'vendor-mui',   test: /node_modules[\\/]@mui[\\/]/ },
+					],
 				},
 			},
 		},
