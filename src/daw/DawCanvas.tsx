@@ -1,6 +1,5 @@
 import '@xyflow/react/dist/style.css';
 import { useState, useEffect, useCallback, useRef, startTransition } from 'react';
-import { debugRef } from '../components/scope/WoahcopeSceneR3F';
 import { GRID_SUBUNIT } from './nodes/shared/gridSystem';
 import {
 	ReactFlow,
@@ -382,19 +381,10 @@ export function DawCanvas(layout: LayoutControls) {
 
 	const handleNodeDragStart = useCallback(() => {
 		isDragging.current = true;
-		if (import.meta.env.DEV) {
-			debugRef.current.isDragging = true;
-			debugRef.current.lastDragStartMs = performance.now();
-		}
 	}, []);
 
 	const handleNodeDragStop = useCallback((_event: React.MouseEvent, _node: Node, nodes: AppNode[]) => {
 		isDragging.current = false;
-		if (import.meta.env.DEV) {
-			debugRef.current.isDragging = false;
-			debugRef.current.lastDragStopMs = performance.now();
-			debugRef.current.audioVersionAtDragStop = useDawStore.getState().audioVersion;
-		}
 		// Wrap in startTransition so the Zustand flush is treated as a low-priority
 		// update. Without this, the synchronous React commit blocks the main thread
 		// for ~97ms, starving the R3F RAF loop and the SceneInput SharedArrayBuffer

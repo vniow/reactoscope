@@ -8,8 +8,6 @@ import { getWaveformData, setAnalyserSize, getWaveformDataFromSAB, getWaveformWr
 import { isMasterMultichannel } from '../../store/daw';
 import { useDawStore } from '../../store/daw';
 import { resolveRingSpan, decayFactor } from '../../laser/povRender';
-import type { DebugSnapshot } from '../../debug/types';
-import { EMPTY_SNAPSHOT } from '../../debug/types';
 import {
 	N_SAMPLES,
 	MAX_POINTS,
@@ -27,34 +25,6 @@ import {
 const LASER_EYE_TAU_S        = 0.045;
 const LASER_TAU_PERSIST_GAIN = 4;
 
-export const debugRef = { current: { ...EMPTY_SNAPSHOT } as DebugSnapshot };
-
-const isDebugMode = import.meta.env.DEV &&
-	new URLSearchParams(window.location.search).has('debug');
-
-let _debugGetToneContext: (() => { state: string }) | null = null;
-if (isDebugMode) {
-	try {
-		// eslint-disable-next-line @typescript-eslint/no-require-imports
-		const { getContext } = require('tone') as typeof import('tone');
-		_debugGetToneContext = getContext;
-	} catch {
-		// Tone.js unavailable in this environment
-	}
-}
-
-function readCenter(
-	gl: THREE.WebGLRenderer,
-	rt: THREE.WebGLRenderTarget | null,
-): [number, number, number, number] {
-	const w = rt ? rt.width  : gl.domElement.width;
-	const h = rt ? rt.height : gl.domElement.height;
-	const buf = new Uint8Array(4);
-	gl.setRenderTarget(rt);
-	const ctx = gl.getContext() as WebGLRenderingContext;
-	ctx.readPixels(w >> 1, h >> 1, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, buf);
-	return [buf[0], buf[1], buf[2], buf[3]];
-}
 
 export function WoscopeSceneR3F() {
 	const { swapXY, invertXY, intensity, hue } = useAxis();
@@ -134,7 +104,6 @@ export function WoscopeSceneR3F() {
 	const arcG = useRef(new Float32Array(MAX_POINTS));
 	const arcB = useRef(new Float32Array(MAX_POINTS));
 	const arcA = useRef(new Float32Array(MAX_POINTS));
-	const frameCountRef     = useRef(0);
 
 	useFrame(({ gl, camera: cam, invalidate: inv }, delta) => {
 		const useLaserSrc = vizModeRef.current === 'laser';
@@ -262,33 +231,6 @@ export function WoscopeSceneR3F() {
 		geometry.setDrawRange(0, Math.max(0, (nPoints - 1) * 2 * 3));
 		nPointsRef.current = nPoints;
 
-		if (isDebugMode) {
-			const dbg = getWaveformData();
-			let lMin = Infinity, lMax = -Infinity;
-			for (let i = 0; i < dbg.x.length; i++) {
-				if (dbg.x[i] < lMin) lMin = dbg.x[i];
-				if (dbg.x[i] > lMax) lMax = dbg.x[i];
-			}
-			let rMin = Infinity, rMax = -Infinity;
-			for (let i = 0; i < dbg.y.length; i++) {
-				if (dbg.y[i] < rMin) rMin = dbg.y[i];
-				if (dbg.y[i] > rMax) rMax = dbg.y[i];
-			}
-			debugRef.current.waveformLeft  = { min: lMin, max: lMax, sample: Array.from(dbg.x.subarray(0, 4)) };
-			debugRef.current.waveformRight = { min: rMin, max: rMax, sample: Array.from(dbg.y.subarray(0, 4)) };
-			debugRef.current.nPoints       = nPoints;
-
-			// Silence detector: track when waveform energy drops to near-zero and when it resumes.
-			// silenceEndMs >= silenceStartMs means "was silent, now recovered"; the inverse means "currently silent".
-			const isSilent = Math.abs(lMax) < 0.001 && Math.abs(rMax) < 0.001;
-			const wasSilent = debugRef.current.silenceStartMs > debugRef.current.silenceEndMs;
-			if (isSilent && !wasSilent) {
-				debugRef.current.silenceStartMs = performance.now();
-			} else if (!isSilent && wasSilent) {
-				debugRef.current.silenceEndMs = performance.now();
-			}
-		}
-
 		const screenTex = crtEnabled && screenTextureRef.current
 			? screenTextureRef.current
 			: whiteTex;
@@ -309,11 +251,7 @@ export function WoscopeSceneR3F() {
 		gl.setRenderTarget(lineRT);
 		gl.render(fadeScene, cam);
 
-		if (isDebugMode) debugRef.current.lineRTPixelAfterFade = readCenter(gl, lineRT);
-
 		gl.render(lineScene, cam);
-
-		if (isDebugMode) debugRef.current.lineRTPixelAfterLine = readCenter(gl, lineRT);
 
 		passQuad.material = copyMat;
 		copyMat.uniforms.uTexture0.value = lineRT.texture;
@@ -334,8 +272,6 @@ export function WoscopeSceneR3F() {
 		gl.clear();
 		gl.render(passScene, cam);
 
-		if (isDebugMode) debugRef.current.blur1RTPixel = readCenter(gl, blur1RT);
-
 		passQuad.material = copyMat;
 		copyMat.uniforms.uTexture0.value = blur1RT.texture;
 		gl.setRenderTarget(blur3RT);
@@ -355,8 +291,6 @@ export function WoscopeSceneR3F() {
 		gl.clear();
 		gl.render(passScene, cam);
 
-		if (isDebugMode) debugRef.current.blur3RTPixel = readCenter(gl, blur3RT);
-
 		passQuad.material = outputMat;
 		outputMat.uniforms.uTexture0.value        = lineRT.texture;
 		outputMat.uniforms.uTexture1.value        = blur1RT.texture;
@@ -368,13 +302,6 @@ export function WoscopeSceneR3F() {
 		gl.autoClear = true;
 		gl.setRenderTarget(null);
 		gl.render(passScene, cam);
-
-		if (isDebugMode) {
-			debugRef.current.canvasPixelAfterBlit = readCenter(gl, null);
-			debugRef.current.shaderPrograms       = gl.info.programs?.length ?? 0;
-			debugRef.current.frameCount           = ++frameCountRef.current;
-			debugRef.current.audioContextState    = _debugGetToneContext?.().state ?? 'unavailable';
-		}
 
 		inv();
 	}, 1);

@@ -1,27 +1,9 @@
 import { useRef, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
-import { getContext as getToneContext } from 'tone';
 import { getSceneRunning, getSceneInputWorkletNode, setLastCoordBuffer } from '../audio/engine';
 import { useEffects } from '../contexts/WoahscopeContext';
 import { collectSegments } from './pathBuilder';
 import type { Segment } from './pathBuilder';
-
-// ─── Console styling ──────────────────────────────────────────────────────────
-const _INFO = [
-	'%c SceneToAudio %c',
-	'background:#4a148c;color:#e1bee7;font-weight:bold;padding:2px 6px;border-radius:3px',
-	'color:inherit',
-] as const;
-const _OK = [
-	'%c SceneToAudio %c',
-	'background:#1b5e20;color:#a5d6a7;font-weight:bold;padding:2px 6px;border-radius:3px',
-	'color:inherit',
-] as const;
-const _WARN = [
-	'%c SceneToAudio %c',
-	'background:#e65100;color:#fff;font-weight:bold;padding:2px 6px;border-radius:3px',
-	'color:inherit',
-] as const;
 
 /**
  * R3F hook: each frame, traverses the current scene, packs the visible geometry
@@ -75,28 +57,17 @@ export function useSceneToAudio(): void {
 	} = useEffects();
 
 	useEffect(() => {
-		// Read the actual sample rate from Tone's AudioContext for logging.
-		let sampleRate = 44100;
-		try {
-			sampleRate = getToneContext().rawContext.sampleRate;
-		} catch {
-			// Tone context not yet available
-		}
-
 		const worker = new Worker(
 			new URL('./pathWorker.ts', import.meta.url),
 			{ type: 'module' },
 		);
-		console.log(..._INFO, `Path worker spawned — sampleRate: ${sampleRate} Hz, mode: coordinate-streaming`);
 
 		worker.onmessage = (event: MessageEvent) => {
-			const { type, data, nPoints, endPos, computeMs, nSeg } = event.data as {
-				type:      string;
-				data:      ArrayBuffer;
-				nPoints:   number;
-				endPos:    { x: number; y: number };
-				computeMs: number;
-				nSeg:      number;
+			const { type, data, nPoints, endPos } = event.data as {
+				type:    string;
+				data:    ArrayBuffer;
+				nPoints: number;
+				endPos:  { x: number; y: number };
 			};
 
 			if (type !== 'path') return;
@@ -116,20 +87,11 @@ export function useSceneToAudio(): void {
 			if (node && data) {
 				node.port.postMessage({ type: 'path', data, nPoints }, [data]);
 			}
-
-			if (import.meta.env.DEV && computeMs > 8) {
-				console.warn(..._WARN, `Slow worker frame — ${computeMs.toFixed(1)} ms, nSeg: ${nSeg}`);
-			}
-		};
-
-		worker.onerror = (e) => {
-			console.error(..._WARN, 'Worker error:', e.message);
 		};
 
 		worker.postMessage({ type: 'setCoordBufferSize', size: coordBufferSize });
 		workerRef.current = worker;
 		return () => {
-			console.log(..._OK, 'Path worker terminated (component unmounting)');
 			worker.terminate();
 			workerRef.current = null;
 		};

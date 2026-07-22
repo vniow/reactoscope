@@ -32,6 +32,7 @@ const RIGHT_TOPS   = computeHandleTops(3, 'loose', 'center');
 const BOTTOM_LEFTS = computeHandleLefts(3, 'loose');
 
 export const SceneInputNode = memo(function SceneInputNode({
+	id,
 	data,
 	selected,
 }: NodeProps<SceneInputFlowNode>) {
@@ -49,7 +50,7 @@ export const SceneInputNode = memo(function SceneInputNode({
 			pb:              3,
 			boxShadow:       selected ? `0px 4px 15px ${color}4d` : '0px 4px 15px rgba(0,0,0,0.30)',
 		}}>
-			<NodeHeader label={data.label} accentColor={color} filledHeader />
+			<NodeHeader label={data.label} id={id} selected={selected} accentColor={color} filledHeader />
 
 	
 

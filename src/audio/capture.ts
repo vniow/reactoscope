@@ -2,7 +2,6 @@ import { Merge, getContext } from 'tone';
 import { DEFAULT_AUDIO_SETTINGS } from '../config';
 import { getSampleRate } from './audioCore';
 import { getMasterEntry } from './master';
-import { ENGINE_INFO, ENGINE_OK } from './log';
 
 const { nSamples } = DEFAULT_AUDIO_SETTINGS;
 
@@ -158,7 +157,6 @@ function _tapMasterBus(dest: AudioWorkletNode): void {
 }
 
 export async function initWaveformCapture(): Promise<void> {
-	console.log(...ENGINE_INFO, 'initWaveformCapture() — loading AudioWorklet module…');
 	const toneCtx = getContext();
 
 	// Tone.js caches a single worklet promise per context (addAudioWorkletModule
@@ -167,7 +165,6 @@ export async function initWaveformCapture(): Promise<void> {
 	// per-URL deduplication and the blob-wrapper correctly.
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	await (toneCtx.rawContext as any).audioWorklet.addModule('/waveformCaptureProcessor.worklet.js');
-	console.log(...ENGINE_INFO, 'waveformCapture module loaded — creating node…');
 
 	const workletNode = toneCtx.createAudioWorkletNode('waveform-capture', {
 		numberOfInputs:   1,
@@ -184,17 +181,13 @@ export async function initWaveformCapture(): Promise<void> {
 	_waveformCaptureNode.port.postMessage({
 		type: 'sabBuffer', buffer: _captureSAB!, nSamples: _captureNSamples,
 	});
-
-	console.log(...ENGINE_OK, 'initWaveformCapture() complete');
 }
 
 export async function initGalvoProjector(): Promise<void> {
-	console.log(...ENGINE_INFO, 'initGalvoProjector() — loading AudioWorklet module…');
 	const toneCtx = getContext();
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	await (toneCtx.rawContext as any).audioWorklet.addModule('/galvoProjectorProcessor.worklet.js');
-	console.log(...ENGINE_INFO, 'galvoProjector module loaded — creating node…');
 
 	_allocGalvoRing();
 	const workletNode = toneCtx.createAudioWorkletNode('galvo-projector', {
@@ -211,6 +204,4 @@ export async function initGalvoProjector(): Promise<void> {
 	_galvoProjectorNode.port.postMessage({
 		type: 'sabBuffer', buffer: _galvoSAB!, ringLen: _galvoRingLen,
 	});
-
-	console.log(...ENGINE_OK, 'initGalvoProjector() complete');
 }

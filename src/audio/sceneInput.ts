@@ -1,6 +1,5 @@
 import { Split, getContext, start as toneStart } from 'tone';
 import { _audioNodes, SCENE_INPUT_ID } from './audioCore';
-import { ENGINE_INFO, ENGINE_OK } from './log';
 import type { SceneInputAudioEntry } from '../store/dawTypes';
 
 // ─── Scene-input phase register (SharedArrayBuffer) ──────────────────────────
@@ -20,15 +19,12 @@ export async function initSceneInput(): Promise<void> {
 	// Tone.js v15 uses standardized-audio-context internally, so rawContext is NOT
 	// a native BaseAudioContext. Use Tone's own methods to create the AudioWorklet
 	// node — they handle standardized-audio-context correctly.
-	console.log(...ENGINE_INFO, 'initSceneInput() — loading AudioWorklet module…');
-	const toneCtx    = getContext();
-	const sampleRate = toneCtx.rawContext.sampleRate;
+	const toneCtx = getContext();
 
 	// Use rawContext.audioWorklet.addModule() directly — toneCtx.addAudioWorkletModule()
 	// caches a single _workletPromise, so the first caller blocks Tone.js's own
 	// internal worklets (FeedbackCombFilter, BitCrusher, etc.) from ever registering.
 	await (toneCtx.rawContext as AudioContext).audioWorklet.addModule('/sceneInputProcessor.worklet.js');
-	console.log(...ENGINE_INFO, 'AudioWorklet module loaded — creating node…');
 
 	const workletNode = toneCtx.createAudioWorkletNode('scene-input-processor', {
 		numberOfOutputs:    1,
@@ -50,11 +46,6 @@ export async function initSceneInput(): Promise<void> {
 
 	// Give the worklet a direct write-path into the phase register.
 	(workletNode as AudioWorkletNode).port.postMessage({ type: 'phaseBuffer', buffer: _phaseSAB });
-
-	console.log(
-		...ENGINE_OK,
-		`initSceneInput() complete — sampleRate: ${sampleRate} Hz, mode: coordinate-streaming`,
-	);
 }
 
 let _sceneRunning = false;
@@ -62,7 +53,6 @@ let _sceneRunning = false;
 export async function startSceneInput(): Promise<void> {
 	await toneStart();
 	_sceneRunning = true;
-	console.log(...ENGINE_OK, 'startSceneInput() — scene audio running');
 }
 
 export function stopSceneInput(): void {
@@ -73,7 +63,6 @@ export function stopSceneInput(): void {
 	if (entry && entry.kind === 'sceneInput') {
 		(entry.workletNode as AudioWorkletNode).port.postMessage({ type: 'clear' });
 	}
-	console.log(...ENGINE_INFO, 'stopSceneInput() — scene audio stopped');
 }
 
 export function getSceneRunning(): boolean {

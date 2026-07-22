@@ -37,7 +37,6 @@ import type {
 
 export { MASTER_NODE_ID, SCENE_INPUT_ID };
 export const DEFAULT_PLAYER_ID = 'player-default';
-export const DEBUG_NODE_ID     = 'debug-default';
 
 const NODE_TYPE_EDGE_COLOR: Record<string, string> = {
 	masterOutput:    NODE_COLORS.output,
@@ -117,24 +116,16 @@ function stubLabel(kind: StubKind): string {
 
 const initialNodes: AppNode[] = [
 	{
-		id:        MASTER_NODE_ID,
-		type:      'masterOutput',
-		position:  { x: 288, y: 240 },
-		data:      { label: 'Master Output', speakersMuted: true },
-		deletable: false,
+		id:       MASTER_NODE_ID,
+		type:     'masterOutput',
+		position: { x: 288, y: 240 },
+		data:     { label: 'Master Output', speakersMuted: true },
 	},
 	{
-		id:        SCENE_INPUT_ID,
-		type:      'sceneInput',
-		position:  { x: -240, y: 240 },
-		data:      { label: 'Scene Input', scanFrequency: 50 },
-		deletable: false,
-	},
-	{
-		id:       DEBUG_NODE_ID,
-		type:     'debug',
-		position: { x: 0, y: -120 },
-		data:     { label: 'Debug' },
+		id:       SCENE_INPUT_ID,
+		type:     'sceneInput',
+		position: { x: -240, y: 240 },
+		data:     { label: 'Scene Input', scanFrequency: 50 },
 	},
 ];
 
@@ -203,22 +194,18 @@ export const useDawStore = create<DawState>((set, get) => ({
 	},
 
 	onNodesChange: (changes: NodeChange<AppNode>[]) => {
-		// Never allow the master output or scene input nodes to be deleted
-		const safeChanges = changes.filter(
-			c => !(c.type === 'remove' && (c.id === MASTER_NODE_ID || c.id === SCENE_INPUT_ID)),
-		);
 		// Dispose audio and clear playing state for removed nodes
-		const removed = safeChanges.filter(c => c.type === 'remove').map(c => c.id);
+		const removed = changes.filter(c => c.type === 'remove').map(c => c.id);
 		removed.forEach(id => engine.disposeNode(id));
 
 		if (removed.length > 0) {
 			set(state => {
 				const next = new Set(state.playingNodes);
 				removed.forEach(id => next.delete(id));
-				return { nodes: applyNodeChanges(safeChanges, state.nodes), playingNodes: next };
+				return { nodes: applyNodeChanges(changes, state.nodes), playingNodes: next };
 			});
 		} else {
-			set({ nodes: applyNodeChanges(safeChanges, get().nodes) });
+			set({ nodes: applyNodeChanges(changes, get().nodes) });
 		}
 	},
 
@@ -456,13 +443,3 @@ export function downloadPatch(patch: PatchFile, filenameStem?: string): void {
 // entry not existing, so early writes are silently dropped.
 // Exported so App.tsx can await full init before loading a default patch.
 export const dawInitPromise = engine.initAudioEngine();
-
-// ─── Dev-only hook: expose store + audio map for memory-leak debugging ────────
-if (import.meta.env.DEV) {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	(window as any).__daw = {
-		useDawStore,
-		audioNodes: engine._audioNodes,
-		loadTrackForGrainPlayer: engine.loadTrackForGrainPlayer,
-	};
-}

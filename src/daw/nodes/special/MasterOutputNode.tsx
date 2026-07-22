@@ -17,11 +17,6 @@ import { MiniScope } from '../shared/MiniScope';
 
 const color = NODE_COLORS.output;
 
-// Memory-leak harness (scripts/memory-leak-harness): force the mini-scope's
-// initial mount state instead of requiring a click, since automated runs
-// don't drive the UI.
-const FORCE_MINI_SCOPE = new URLSearchParams(window.location.search).get('miniScope') === '1';
-
 // in-0 = X, in-1 = Y, in-5 = A  →  left edge
 const LEFT_HANDLES = [
 	{ id: 'in-0', label: 'X' },
@@ -40,10 +35,10 @@ const LEFT_TOPS    = computeHandleTops(3, 'loose', 'center');
 const BOTTOM_LEFTS = computeHandleLefts(3, 'loose');
 
 export const MasterOutputNode = memo<NodeProps<MasterOutputFlowNode>>(
-	function MasterOutputNode({ data, selected }) {
+	function MasterOutputNode({ id, data, selected }) {
 		const setSpeakersMuted = useDawStore(s => s.setSpeakersMuted);
 		const speakersMuted = data.speakersMuted ?? true;
-		const [expanded, setExpanded] = useState(FORCE_MINI_SCOPE);
+		const [expanded, setExpanded] = useState(false);
 
 		const canvasSize = 2 * GRID_UNIT;
 		const height = 3 * GRID_UNIT;
@@ -58,7 +53,7 @@ export const MasterOutputNode = memo<NodeProps<MasterOutputFlowNode>>(
 				pb:              3,
 				boxShadow:       selected ? `0px 4px 15px ${color}4d` : '0px 4px 15px rgba(0,0,0,0.30)',
 			}}>
-				<NodeHeader label='Master Output' accentColor={color} filledHeader />
+				<NodeHeader label='Master Output' id={id} selected={selected} accentColor={color} filledHeader />
 
 				<Box sx={{ px: 1.75, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
 		

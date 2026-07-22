@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { dawInitPromise, useDawStore } from './store/daw';
@@ -9,21 +9,6 @@ import { WoahscopePanel }    from './daw/panels/WoahscopePanel';
 import { SceneInputPanel } from './daw/panels/InputPanel';
 import { DawCanvas }         from './daw/DawCanvas';
 import { SweepPanel }        from './daw/panels/SweepPanel';
-import { debugRef } from './components/scope/WoahcopeSceneR3F';
-import { loadLeakTestFixture } from './debug/leakTestFixture';
-
-const DEV_DEBUG = import.meta.env.DEV &&
-	new URLSearchParams(window.location.search).has('debug');
-
-// ─── Memory-leak harness flags (scripts/memory-leak-harness) ──────────────────
-// Read once at module load so scenario config is stable for the life of the tab.
-const harnessParams        = new URLSearchParams(window.location.search);
-const DISABLE_SCENE_INPUT  = harnessParams.get('sceneInput') === '0';
-const HARNESS_LOAD_PATCH   = harnessParams.get('loadPatch');
-
-const DebugPanel = DEV_DEBUG
-	? lazy(() => import('./debug/DebugPanel').then(m => ({ default: m.DebugPanel })))
-	: null;
 
 const SPLIT_KEY     = 'woahscope-daw-split';
 const DEFAULT_SPLIT = 50;
@@ -99,10 +84,6 @@ export function App() {
 	// Load the default patch once the DAW audio graph has finished initialising.
 	useEffect(() => {
 		void dawInitPromise.then(() => {
-			if (HARNESS_LOAD_PATCH === 'leak-test') {
-				loadLeakTestFixture();
-				return;
-			}
 			const { defaultPatchId, patches } = usePatchStore.getState();
 			if (!defaultPatchId) return;
 			const saved = patches.find(p => p.id === defaultPatchId);
@@ -211,17 +192,12 @@ export function App() {
 							{/* Top canvas (WoahscopePanel) — always first child */}
 							<Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
 								<WoahscopePanel />
-								{DEV_DEBUG && DebugPanel && (
-									<Suspense fallback={null}>
-										<DebugPanel debugRef={debugRef} />
-									</Suspense>
-								)}
 								<Typography sx={canvasLabelSx}>scope</Typography>
 							</Box>
 
 							{/* Bottom canvas (SceneInputPanel) — always last child */}
 							<Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-								{!DISABLE_SCENE_INPUT && <SceneInputPanel />}
+								<SceneInputPanel />
 								<Typography sx={canvasLabelSx}>scene</Typography>
 							</Box>
 

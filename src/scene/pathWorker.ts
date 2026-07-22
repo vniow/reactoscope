@@ -37,25 +37,6 @@ let _coordBufferSize = 1024;
 // Driven by the laser-mode anchorAggressiveness slider in the viz settings.
 let _dwellMax = 4;
 
-// ─── Console styling ──────────────────────────────────────────────────────────
-const _INFO = [
-	'%c PathWorker %c',
-	'background:#1a237e;color:#c5cae9;font-weight:bold;padding:2px 6px;border-radius:3px',
-	'color:inherit',
-] as const;
-const _OK = [
-	'%c PathWorker %c',
-	'background:#1b5e20;color:#a5d6a7;font-weight:bold;padding:2px 6px;border-radius:3px',
-	'color:inherit',
-] as const;
-const _WARN = [
-	'%c PathWorker %c',
-	'background:#e65100;color:#fff;font-weight:bold;padding:2px 6px;border-radius:3px',
-	'color:inherit',
-] as const;
-
-let _frameCount = 0;
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (self as any).onmessage = (event: MessageEvent) => {
 	const msg = event.data as
@@ -72,8 +53,6 @@ let _frameCount = 0;
 		return;
 	}
 	if (msg.type !== 'geometry') return;
-
-	_frameCount++;
 
 	const { segmentData, prevEnd } = msg;
 	const raw  = new Float32Array(segmentData);
@@ -99,19 +78,6 @@ let _frameCount = 0;
 	const result = buildCoordBuffer(path, _coordBufferSize, prevEnd, _dwellMax);
 	const computeMs = performance.now() - t0;
 
-	if (_frameCount === 1) {
-		console.log(
-			..._OK,
-			`First frame processed — nSeg: ${nSeg}, nPoints: ${result.nPoints},`,
-			`computeMs: ${computeMs.toFixed(2)} ms`,
-		);
-	} else if (computeMs > 8) {
-		console.warn(
-			..._WARN,
-			`Slow frame ${_frameCount} — computeMs: ${computeMs.toFixed(2)} ms, nSeg: ${nSeg}`,
-		);
-	}
-
 	// Transfer coord buffer — zero-copy on this hop
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	(self as any).postMessage(
@@ -126,5 +92,3 @@ let _frameCount = 0;
 		[result.data.buffer],
 	);
 };
-
-console.log(..._INFO, 'PathWorker loaded — coordinate-streaming mode');
