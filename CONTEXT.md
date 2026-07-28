@@ -1,6 +1,6 @@
 # Reactoscope
 
-A node-graph synthesizer whose audio output drives oscilloscope and laser
+A node-graph synthesizer whose audio output drives oscilloscope
 visualisation: sound and image are the same six-channel signal.
 
 ## Language
@@ -19,18 +19,12 @@ _Avoid_: scene node, geometry input
 
 **Coord Buffer**:
 A flattened list of beam points (position + colour) produced from scene
-geometry or an ILDA frame, ready to be scanned into audio.
+geometry, ready to be scanned into audio.
 _Avoid_: path data, point list
 
-**Galvo Projector**:
-The simulated laser projector: applies galvanometer deflection physics to the
-Master Output so laser-mode rendering matches what physical hardware would draw.
-_Avoid_: laser filter
-
 **Waveform Tap**:
-A read path from the Master Output to a renderer. Three exist today (analyser
-snapshot, capture buffer, galvo ring); renderers should not care which one
-they read.
+A read path from the Master Output to a renderer. Two exist today (analyser
+snapshot, capture buffer); renderers should not care which one they read.
 _Avoid_: audio data getter
 
 ### Graph

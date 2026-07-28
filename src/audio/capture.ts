@@ -1,6 +1,5 @@
 import { Merge, getContext } from 'tone';
 import { DEFAULT_AUDIO_SETTINGS } from '../config';
-import { getSampleRate } from './audioCore';
 import { getMasterEntry } from './master';
 
 const { nSamples } = DEFAULT_AUDIO_SETTINGS;
@@ -61,83 +60,9 @@ export function setWaveformCaptureSize(newSize: number): void {
 			type: 'resize', buffer: _captureSAB!, nSamples: newSize,
 		});
 	}
-	// Galvo ring keeps a generous window independent of the scope analysis size
-	// so render-frame hitches don't lose beam samples. Re-allocate alongside.
-	_allocGalvoRing();
-	if (_galvoProjectorNode) {
-		_galvoProjectorNode.port.postMessage({
-			type: 'resize', buffer: _galvoSAB!, ringLen: _galvoRingLen,
-		});
-	}
-}
-
-// ─── Galvo-projector capture (continuous ring buffer) ─────────────────────────
-// The worklet writes every post-transducer sample into a circular buffer and
-// publishes a monotonic writeCount. In laser mode the visualiser reads the
-// samples scanned since its last frame and deposits only that arc with
-// wall-clock decay, so rendered brightness/flicker track the real PPS.
-//
-// SAB layout: [writeCount: Uint32(4B)] + [ch0..ch5: Float32[ringLen] each]
-
-let _galvoSAB:           SharedArrayBuffer | null = null;
-let _galvoCountView:     Uint32Array       | null = null;
-let _galvoChannels:      Float32Array[]           = [];
-let _galvoRingLen:       number                   = 0;
-let _galvoProjectorNode: AudioWorkletNode  | null = null;
-
-/** Ring length: ≥ half a second of audio, so even slow render frames recover the full arc. */
-function _galvoRingLenFor(): number {
-	const sr = (() => { try { return getSampleRate(); } catch { return 48000; } })();
-	return Math.max(_captureNSamples, Math.ceil(sr / 2));
-}
-
-function _allocGalvoRing(): void {
-	_galvoRingLen   = _galvoRingLenFor();
-	_galvoSAB       = new SharedArrayBuffer(4 + CAPTURE_CH * _galvoRingLen * 4);
-	_galvoCountView = new Uint32Array(_galvoSAB, 0, 1);
-	_galvoChannels  = [];
-	for (let ch = 0; ch < CAPTURE_CH; ch++) {
-		_galvoChannels.push(new Float32Array(_galvoSAB, 4 + ch * _galvoRingLen * 4, _galvoRingLen));
-	}
-}
-
-/** Total samples the galvo worklet has written so far (monotonic, wraps at 2^32). */
-export function getGalvoWriteCount(): number {
-	if (!_galvoCountView) return 0;
-	return Atomics.load(_galvoCountView, 0);
-}
-
-/** The post-galvo ring: six channel views + the ring length. Null until init. */
-export function getGalvoRing(): {
-	x: Float32Array; y: Float32Array;
-	r: Float32Array; g: Float32Array; b: Float32Array; a: Float32Array;
-	ringLen: number;
-} | null {
-	if (_galvoChannels.length < 6) return null;
-	return {
-		x: _galvoChannels[0],
-		y: _galvoChannels[1],
-		r: _galvoChannels[2],
-		g: _galvoChannels[3],
-		b: _galvoChannels[4],
-		a: _galvoChannels[5],
-		ringLen: _galvoRingLen,
-	};
-}
-
-export function setGalvoParams(p: {
-	bandwidthHz?:    number;
-	dampingRatio?:   number;
-	modulatorTauUs?: number;
-}): void {
-	if (!_galvoProjectorNode) return;
-	_galvoProjectorNode.port.postMessage({ type: 'params', ...p });
 }
 
 // ─── Worklet initialisation ───────────────────────────────────────────────────
-// Both worklets tap the same 6-channel master bus through their own Merge:
-// waveform capture feeds scope mode unfiltered; the galvo projector applies
-// deflection physics in the worklet and feeds laser mode.
 
 function _tapMasterBus(dest: AudioWorkletNode): void {
 	const master   = getMasterEntry();
@@ -180,28 +105,5 @@ export async function initWaveformCapture(): Promise<void> {
 	_allocCaptureSAB(_captureNSamples);
 	_waveformCaptureNode.port.postMessage({
 		type: 'sabBuffer', buffer: _captureSAB!, nSamples: _captureNSamples,
-	});
-}
-
-export async function initGalvoProjector(): Promise<void> {
-	const toneCtx = getContext();
-
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	await (toneCtx.rawContext as any).audioWorklet.addModule('/galvoProjectorProcessor.worklet.js');
-
-	_allocGalvoRing();
-	const workletNode = toneCtx.createAudioWorkletNode('galvo-projector', {
-		numberOfInputs:   1,
-		numberOfOutputs:  0,
-		channelCount:     6,
-		channelCountMode: 'explicit' as ChannelCountMode,
-		processorOptions: { ringLen: _galvoRingLen },
-	});
-	_galvoProjectorNode = workletNode as unknown as AudioWorkletNode;
-
-	_tapMasterBus(_galvoProjectorNode);
-
-	_galvoProjectorNode.port.postMessage({
-		type: 'sabBuffer', buffer: _galvoSAB!, ringLen: _galvoRingLen,
 	});
 }

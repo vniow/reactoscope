@@ -172,21 +172,6 @@ export type SceneInputNodeData = {
 
 export type SceneInputFlowNode = Node<SceneInputNodeData, 'sceneInput'>;
 
-export type IldaFrameNodeData = {
-	label:     string;
-	/** Blob URL or remote URL pointing at the loaded .ild file. Session-only when blob. */
-	ildUrl:    string;
-	/** Original filename for display after blob URL expires on reload. */
-	filename:  string;
-	/** Static = freeze on frame 0; animated = cycle frames at `fps`. */
-	mode:      'static' | 'animated';
-	/** Cycle rate when mode = 'animated'. */
-	fps:       number;
-	isPlaying: boolean;
-};
-
-export type IldaFrameFlowNode = Node<IldaFrameNodeData, 'ildaFrame'>;
-
 export type DebugNodeData = { label: string };
 export type DebugFlowNode = Node<DebugNodeData, 'debug'>;
 
@@ -361,7 +346,6 @@ export type AppNode =
 	| PWMOscillatorFlowNode
 	| GrainPlayerFlowNode
 	| MicInputFlowNode
-	| IldaFrameFlowNode
 	| ReverbFlowNode
 	| JCReverbFlowNode
 	| FreeverbFlowNode
@@ -478,15 +462,6 @@ export type MicInputAudioEntry = {
 	toneNode: UserMedia;
 };
 
-export type IldaFrameAudioEntry = {
-	kind:        'ildaFrame';
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	workletNode: any;
-	coordBufs:   { data: Float32Array; nPoints: number }[];
-	frameIdx:    number;
-	frameTimer:  ReturnType<typeof setInterval> | null;
-};
-
 export type SceneInputAudioEntry = {
 	kind:        'sceneInput';
 	// workletNode is the standardized-audio-context AudioWorkletNode returned by
@@ -536,7 +511,6 @@ export type AudioNodeEntry =
 	| PWMOscillatorAudioEntry
 	| GrainPlayerAudioEntry
 	| MicInputAudioEntry
-	| IldaFrameAudioEntry
 	| SceneInputAudioEntry
 	| ReverbAudioEntry
 	| JCReverbAudioEntry

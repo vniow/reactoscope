@@ -88,20 +88,3 @@ export function disposeSceneInput(): void {
 	entry.split.dispose();
 	_audioNodes.delete(SCENE_INPUT_ID);
 }
-
-// ─── Last-coord-buffer cache ─────────────────────────────────────────────────
-// Stores whichever coord buffer the path worker emitted most recently so the
-// "Export ILDA" action can read it without recomputing or waiting for the
-// next frame.
-
-let _lastCoordBuffer: { data: Float32Array; nPoints: number } | null = null;
-
-/** Called by the scene-to-audio pipeline after forwarding a fresh frame to the worklet. */
-export function setLastCoordBuffer(data: Float32Array, nPoints: number): void {
-	_lastCoordBuffer = { data, nPoints };
-}
-
-/** Returns the most recent coord buffer produced by the path worker, or null. */
-export function getLastCoordBuffer(): { data: Float32Array; nPoints: number } | null {
-	return _lastCoordBuffer;
-}

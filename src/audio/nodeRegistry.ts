@@ -33,7 +33,6 @@ import { stubHandler }             from './nodes/stub';
 import { playerHandler }           from './nodes/player';
 import { grainPlayerHandler }      from './nodes/grainPlayer';
 import { micInputHandler }         from './nodes/micInput';
-import { ildaFrameHandler }        from './nodes/ildaFrame';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const _registry = new Map<string, NodeTypeHandler<any>>();
@@ -95,4 +94,3 @@ nodeRegistry.register('stub',             stubHandler);
 nodeRegistry.register('player',           playerHandler);
 nodeRegistry.register('grainPlayer',      grainPlayerHandler);
 nodeRegistry.register('micInput',         micInputHandler);
-nodeRegistry.register('ildaFrame',        ildaFrameHandler);

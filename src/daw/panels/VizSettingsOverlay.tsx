@@ -3,18 +3,14 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Popover from '@mui/material/Popover';
 import Typography from '@mui/material/Typography';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { useEffects } from '../../contexts/WoahscopeContext';
-import type { VizMode } from '../../contexts/WoahscopeContext';
 import { EffectsControl }        from '../../components/scope/GainControl';
 import { PhosphorControl }       from '../../components/scope/PhosphorControl';
 import { VisualizationControls } from '../../components/scope/VisualizationControls';
 import { useDawStore, isMasterMultichannel } from '../../store/daw';
 import { NODE_COLORS } from '../nodes/shared/nodeColors';
 import { METAL_BG }    from '../nodes/shared/metalBackground';
-import { hwIconBtn, hwIconBtnLit, hwToggleSx } from '../nodes/shared/hwStyles';
+import { hwIconBtn, hwIconBtnLit } from '../nodes/shared/hwStyles';
 
 const color = NODE_COLORS.scene;
 
@@ -35,9 +31,6 @@ export function VizSettingsOverlay({ onOpenChange }: { onOpenChange?: (open: boo
 	const [open, setOpen] = useState(false);
 	const setOpenTracked = (v: boolean) => { setOpen(v); onOpenChange?.(v); };
 
-	const { vizMode, setVizMode } = useEffects();
-
-	
 	const isMultichannel = useDawStore(s => isMasterMultichannel(s.edges));
 
 	return (
@@ -71,20 +64,6 @@ export function VizSettingsOverlay({ onOpenChange }: { onOpenChange?: (open: boo
 			>
 				<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
-					<Sect label='mode'>
-						<ToggleButtonGroup
-							value={vizMode}
-							exclusive
-							onChange={(_e, v: VizMode | null) => { if (v) setVizMode(v); }}
-							size='small'
-							fullWidth
-							sx={hwToggleSx(color)}
-						>
-							<ToggleButton value='oscilloscope' sx={{ flex: 1 }}>Oscilloscope</ToggleButton>
-							<ToggleButton value='laser'        sx={{ flex: 1 }}>Laser</ToggleButton>
-						</ToggleButtonGroup>
-					</Sect>
-
 					{!isMultichannel && (
 						<Sect label='phosphor'>
 							<PhosphorControl />
@@ -92,10 +71,8 @@ export function VizSettingsOverlay({ onOpenChange }: { onOpenChange?: (open: boo
 					)}
 
 					<Sect label='display'>
-						<VisualizationControls hideCrt={vizMode === 'laser'} />
+						<VisualizationControls />
 					</Sect>
-
-					
 
 					<Sect label='effects'>
 						<EffectsControl />

@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
-import { getSceneRunning, getSceneInputWorkletNode, setLastCoordBuffer } from '../audio/engine';
+import { getSceneRunning, getSceneInputWorkletNode } from '../audio/engine';
 import { useEffects } from '../contexts/WoahscopeContext';
 import { collectSegments } from './pathBuilder';
 import type { Segment } from './pathBuilder';
@@ -40,21 +40,12 @@ function packSegments(segments: Segment[]): Float32Array {
 	return raw;
 }
 
-// Maximum dwell samples emitted at a 180° reversal when anchorAggressiveness = 1.
-// Chosen so the 30K preset (0.7) rounds to dwell = 4, matching the prior constant.
-const ANCHOR_DWELL_BASE = 6;
-
 export function useSceneToAudio(): void {
 	const { scene, camera } = useThree();
 	const prevEndPos  = useRef({ x: 0, y: 0 });
 	const workerRef   = useRef<Worker | null>(null);
 	const workerBusy  = useRef(false);
-	const {
-		coordBufferSize,
-		vizMode,
-		galvoPps,
-		galvoAnchorAggressiveness,
-	} = useEffects();
+	const { coordBufferSize } = useEffects();
 
 	useEffect(() => {
 		const worker = new Worker(
@@ -74,13 +65,6 @@ export function useSceneToAudio(): void {
 
 			prevEndPos.current = endPos;
 			workerBusy.current = false;
-
-			// Stash a copy for the ILDA-export action. The original buffer is about
-			// to be detached by the worklet transfer; we want our cache live.
-			if (data) {
-				const cacheCopy = new Float32Array(data).slice();
-				setLastCoordBuffer(cacheCopy, nPoints);
-			}
 
 			// Forward coord buffer to worklet — transferable, zero-copy on this hop too.
 			const node = getSceneInputWorkletNode();
@@ -103,26 +87,6 @@ export function useSceneToAudio(): void {
 			workerRef.current.postMessage({ type: 'setCoordBufferSize', size: coordBufferSize });
 		}
 	}, [coordBufferSize]);
-
-	// Anchor-point dwell ceiling drives how aggressively the path builder duplicates
-	// samples at sharp corners. Scaled from a perceptual 0..1 slider into integer
-	// dwell counts; rounded so the standard 30K preset reproduces the prior default.
-	useEffect(() => {
-		if (!workerRef.current) return;
-		const dwellMax = Math.max(0, Math.round(galvoAnchorAggressiveness * ANCHOR_DWELL_BASE));
-		workerRef.current.postMessage({ type: 'setDwellMax', value: dwellMax });
-	}, [galvoAnchorAggressiveness]);
-
-	// In laser mode, PPS is the canonical user-facing setting: the worklet's
-	// scan-frequency (frames per second) gets derived from PPS / pointsPerFrame.
-	// Scope mode keeps the user's manual scan-frequency from DawCanvas untouched.
-	useEffect(() => {
-		if (vizMode !== 'laser') return;
-		const node = getSceneInputWorkletNode();
-		if (!node) return;
-		const fps = Math.max(1, galvoPps / Math.max(1, coordBufferSize));
-		node.port.postMessage({ type: 'scanFreq', value: fps });
-	}, [vizMode, galvoPps, coordBufferSize]);
 
 	useFrame(() => {
 		if (!workerRef.current) return;

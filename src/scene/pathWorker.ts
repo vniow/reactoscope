@@ -33,23 +33,14 @@ const FLOATS_PER_SEGMENT = FLOATS_PER_VERTEX * VERTICES_PER_SEG;
 // Coord buffer resolution — adjustable at runtime via 'setCoordBufferSize' message.
 let _coordBufferSize = 1024;
 
-// Corner-dwell ceiling — adjustable at runtime via 'setDwellMax' message.
-// Driven by the laser-mode anchorAggressiveness slider in the viz settings.
-let _dwellMax = 4;
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (self as any).onmessage = (event: MessageEvent) => {
 	const msg = event.data as
 		| { type: 'geometry'; segmentData: ArrayBuffer; prevEnd: { x: number; y: number } }
-		| { type: 'setCoordBufferSize'; size: number }
-		| { type: 'setDwellMax'; value: number };
+		| { type: 'setCoordBufferSize'; size: number };
 
 	if (msg.type === 'setCoordBufferSize') {
 		_coordBufferSize = msg.size;
-		return;
-	}
-	if (msg.type === 'setDwellMax') {
-		_dwellMax = msg.value;
 		return;
 	}
 	if (msg.type !== 'geometry') return;
@@ -75,7 +66,7 @@ let _dwellMax = 4;
 
 	const t0   = performance.now();
 	const path = orderSegments(segments, prevEnd);
-	const result = buildCoordBuffer(path, _coordBufferSize, prevEnd, _dwellMax);
+	const result = buildCoordBuffer(path, _coordBufferSize, prevEnd);
 	const computeMs = performance.now() - t0;
 
 	// Transfer coord buffer — zero-copy on this hop

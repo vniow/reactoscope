@@ -94,12 +94,6 @@ const CATALOGUE: CatalogueCategory[] = [
 				abbr: 'MIC',
 				desc: 'microphone',
 			},
-			{
-				label: 'IldaFrame',
-				action: 'ildaFrame',
-				abbr: 'ILDA',
-				desc: 'ILDA laser show file',
-			},
 			{ label: 'LFO', action: 'lfo', abbr: 'LFO', desc: 'low-freq osc' },
 			{
 				label: 'DCSignal',
@@ -446,7 +440,6 @@ const REAL_ACTIONS = new Set<string>([
 	'pwmOscillator',
 	'grainPlayer',
 	'micInput',
-	'ildaFrame',
 	'debug',
 	'reverb',
 	'jcReverb',

@@ -2,9 +2,9 @@
  * Scene-to-audio path builder.
  *
  * Three pipeline stages:
- *   1. collectSegments — traverse the Three.js scene, project geometry to NDC
- *   2. orderSegments   — nearest-neighbour ordering to minimise blank travel
- *   3. buildSamples    — arc-length parameterisation + blanking + Z→intensity
+ *   1. collectSegments  — traverse the Three.js scene, project geometry to NDC
+ *   2. orderSegments    — nearest-neighbour ordering to minimise blank travel
+ *   3. buildCoordBuffer — resample into a fixed-resolution coordinate buffer
  */
 
 import * as THREE from 'three';
@@ -39,8 +39,6 @@ export type OrderedPath = {
 // ─── Tuning constants ─────────────────────────────────────────────────────────
 
 const VISIBLE_FRACTION  = 0.85; // fraction of sample budget for geometry vs blanking
-/** Default dwell-count ceiling used when callers don't pass an explicit value. */
-const CORNER_DWELL_MAX_DEFAULT = 4;
 
 // ─── Reusable scratch objects (avoids GC pressure in useFrame) ────────────────
 
@@ -226,206 +224,32 @@ export function orderSegments(
 	return { segments, traversal, reversed, blankDists, totalGeomLen, totalBlankLen };
 }
 
-// ─── Corner dwell helper ──────────────────────────────────────────────────────
-
-/**
- * Number of duplicate samples to emit at a segment start.
- * Proportional to the direction-change angle so straight-through travel costs
- * 0 samples while a 180° reversal costs `dwellMax`.
- *
- * @param arrX/Y   Where the beam arrived from (before the blank hop or prior segment end)
- * @param pivX/Y   The pivot point — start of the new segment
- * @param depX/Y   The departure point — next vertex in the segment
- * @param dwellMax Ceiling on dwell-sample count at a 180° reversal. Configurable so
- *                 PPS-rated galvo presets can pick more aggressive anchoring on
- *                 slow rigs (20K) and lighter anchoring on fast rigs (60K).
- */
-function cornerDwellCount(
-	arrX: number, arrY: number,
-	pivX: number, pivY: number,
-	depX: number, depY: number,
-	dwellMax: number,
-): number {
-	const inLen  = Math.hypot(pivX - arrX, pivY - arrY);
-	const outLen = Math.hypot(depX - pivX, depY - pivY);
-	if (inLen < 1e-6 || outLen < 1e-6) return dwellMax; // degenerate → max dwell
-	const inX = (pivX - arrX) / inLen, inY = (pivY - arrY) / inLen;
-	const outX = (depX - pivX) / outLen, outY = (depY - pivY) / outLen;
-	const cosA = Math.max(-1, Math.min(1, inX * outX + inY * outY));
-	// cosA = 1 → straight (0 dwell); cosA = -1 → 180° (max dwell)
-	return Math.round(dwellMax * (1 - cosA) / 2);
-}
-
-// ─── Stage 3: buildSamples ────────────────────────────────────────────────────
-
-/**
- * Convert an ordered path into 6-channel audio samples [x,y,r,g,b,z] × budget.
- * Each channel is stored in a separate Float32Array (non-interleaved for ring buffer).
- * Color and intensity are interpolated per-sample from per-vertex data.
- *
- * Pass pre-allocated `out` buffers (each of length >= budget) to avoid per-frame
- * GC pressure — the caller is responsible for keeping them sized correctly.
- */
-export function buildSamples(
-	path:       OrderedPath,
-	budget:     number,
-	_prevEnd:   { x: number; y: number },
-	out?:       Float32Array[],
-): { data: Float32Array[]; endPos: { x: number; y: number } } {
-	const data: Float32Array[] = out ?? Array.from({ length: 6 }, () => new Float32Array(budget));
-	if (out) { for (const ch of out) ch.fill(0); }
-	let wp    = 0;                 // write pointer
-	let lastX = _prevEnd.x;
-	let lastY = _prevEnd.y;
-	let endX  = lastX;
-	let endY  = lastY;
-
-	if (path.traversal.length === 0) {
-		for (let i = 0; i < budget; i++) emit(lastX, lastY, -1, -1, -1, -1);
-		return { data, endPos: _prevEnd };
-	}
-
-	const { segments, traversal, reversed, blankDists, totalGeomLen, totalBlankLen } = path;
-	const geomBudget  = Math.floor(budget * VISIBLE_FRACTION);
-	const blankBudget = budget - geomBudget;
-
-	function emit(x: number, y: number, r: number, g: number, b: number, a: number): void {
-		if (wp >= budget) return;
-		data[0][wp] = x; data[1][wp] = y;
-		data[2][wp] = r; data[3][wp] = g;
-		data[4][wp] = b; data[5][wp] = a;
-		wp++;
-	}
-
-	for (let t = 0; t < traversal.length; t++) {
-		const segIdx  = traversal[t];
-		const seg     = segments[segIdx];
-		const rev     = reversed[t];
-		const bDist   = blankDists[t];
-		const sLen    = segArcLen(seg);
-		const nPts    = seg.points.length;
-		// Access points/colors in traversal direction without copying the array.
-		const ptAt    = rev ? (i: number) => seg.points[nPts - 1 - i] : (i: number) => seg.points[i];
-		const clrAt   = rev ? (i: number) => seg.colors[nPts - 1 - i] : (i: number) => seg.colors[i];
-
-		// Sample allocation proportional to arc length
-		const segSamples = totalGeomLen > 0
-			? Math.max(2, Math.round(sLen / totalGeomLen * geomBudget))
-			: Math.max(2, Math.floor(geomBudget / traversal.length));
-		const blkSamples = totalBlankLen > 0
-			? Math.max(1, Math.round(bDist / totalBlankLen * blankBudget))
-			: Math.max(1, Math.floor(blankBudget / traversal.length));
-
-		// ── Blank travel ────────────────────────────────────────────
-		// Emit -1 for R/G/B/Z so the visualizer maps them to 0 (invisible).
-		// XY still moves linearly to avoid beam discontinuity.
-		const arrX    = lastX, arrY = lastY; // capture pre-blank arrival position for dwell
-		const targetX = ptAt(0)[0];
-		const targetY = ptAt(0)[1];
-		for (let i = 0; i < blkSamples; i++) {
-			const f = blkSamples > 1 ? i / (blkSamples - 1) : 0;
-			emit(lastX + (targetX - lastX) * f, lastY + (targetY - lastY) * f, -1, -1, -1, -1);
-		}
-		lastX = targetX; lastY = targetY;
-
-		// ── Corner dwell ─────────────────────────────────────────────
-		// Duplicate samples at the segment start so galvo mirrors can settle.
-		// Count is proportional to direction change — 0 for straight travel, max for 180°.
-		const p0    = ptAt(0);
-		const depX  = nPts > 1 ? ptAt(1)[0] : p0[0];
-		const depY  = nPts > 1 ? ptAt(1)[1] : p0[1];
-		const dwell = cornerDwellCount(arrX, arrY, p0[0], p0[1], depX, depY, CORNER_DWELL_MAX_DEFAULT);
-		const c0    = clrAt(0);
-		for (let d = 0; d < dwell; d++) {
-			emit(p0[0], p0[1], 2 * c0[0] - 1, 2 * c0[1] - 1, 2 * c0[2] - 1, 2 * p0[2] - 1);
-		}
-
-		// ── Visible segment (arc-length parameterised) ───────────────
-		// Build cumulative arc-length table (reuse module-level array to avoid per-call allocation).
-		_cumLen.length = 1; _cumLen[0] = 0;
-		for (let i = 0; i < nPts - 1; i++) {
-			const pa = ptAt(i); const pb = ptAt(i + 1);
-			_cumLen.push(_cumLen[i] + dist(pa[0], pa[1], pb[0], pb[1]));
-		}
-		const totalLen = _cumLen[_cumLen.length - 1];
-
-		for (let i = 0; i < segSamples; i++) {
-			const tArc = totalLen > 0 ? (i / Math.max(1, segSamples - 1)) * totalLen : 0;
-
-			// Binary-search into _cumLen for the spanning sub-segment
-			let lo = 0, hi = _cumLen.length - 2;
-			while (lo < hi) {
-				const mid = (lo + hi) >> 1;
-				if (_cumLen[mid + 1] < tArc) lo = mid + 1; else hi = mid;
-			}
-
-			let px: number, py: number;
-			let pr: number, pg: number, pb: number, pz: number;
-
-			if (totalLen === 0) {
-				// Zero-length segment (dwell point) — use first vertex values.
-				px = p0[0];   py = p0[1];
-				pr = c0[0];   pg = c0[1];  pb = c0[2];
-				pz = p0[2];
-			} else {
-				const span = _cumLen[lo + 1] - _cumLen[lo];
-				const frac = span > 0 ? (tArc - _cumLen[lo]) / span : 0;
-				const pa   = ptAt(lo); const pb2 = ptAt(lo + 1);
-				const ca   = clrAt(lo); const cb2 = clrAt(lo + 1);
-				px = pa[0] + (pb2[0] - pa[0]) * frac;
-				py = pa[1] + (pb2[1] - pa[1]) * frac;
-				// Interpolate per-vertex color and intensity along the sub-segment.
-				pr = ca[0] + (cb2[0] - ca[0]) * frac;
-				pg = ca[1] + (cb2[1] - ca[1]) * frac;
-				pb = ca[2] + (cb2[2] - ca[2]) * frac;
-				pz = pa[2] + (pb2[2] - pa[2]) * frac;
-			}
-
-			// Remap [0, 1] → [−1, +1] for audio range.
-			// Blank travel emits −1 (invisible). Visible samples emit remapped values.
-			emit(px, py, 2 * pr - 1, 2 * pg - 1, 2 * pb - 1, 2 * pz - 1);
-			endX = px; endY = py;
-		}
-
-		lastX = ptAt(nPts - 1)[0];
-		lastY = ptAt(nPts - 1)[1];
-	}
-
-	// Pad any remaining budget at last position with blank
-	while (wp < budget) emit(lastX, lastY, -1, -1, -1, -1);
-
-	return { data, endPos: { x: endX, y: endY } };
-}
-
-// ─── Stage 3b: buildCoordBuffer ───────────────────────────────────────────────
+// ─── Stage 3: buildCoordBuffer ────────────────────────────────────────────────
 
 /**
  * Interleaved layout per point (COORD_STRIDE floats):
  *   [x, y, r, g, b, a, blank]
  * blank: 0.0 = visible, 1.0 = blanked beam travel
- * r/g/b/a are in [-1, +1] audio range (same convention as buildSamples).
+ * r/g/b/a are in [-1, +1] audio range.
  * x/y are NDC in [-1, +1].
  */
 export const COORD_STRIDE = 7;
 
 /**
  * Convert an ordered path into a fixed-resolution coordinate buffer for
- * real-time cycling in the AudioWorklet.
+ * real-time cycling in the AudioWorklet. Resamples the path to exactly
+ * `nPoints` evenly-spaced geometric points; the worklet cycles through them
+ * at a configurable scan frequency, completely decoupling draw rate from
+ * geometry density.
  *
- * Unlike buildSamples (which generates time-domain samples sized to a frame
- * budget), this function resamples the path to exactly `nPoints` evenly-spaced
- * geometric points. The worklet cycles through them at a configurable scan
- * frequency, completely decoupling draw rate from geometry density.
- *
- * Blanking is encoded as a per-point flag rather than a dedicated sample range,
- * so the worklet can output silent color channels while still moving the beam.
- * Corner dwell is encoded as repeated identical points.
+ * Blanking is encoded as a per-point flag rather than a dedicated sample
+ * range, so the worklet can output silent color channels while still moving
+ * the beam.
  */
 export function buildCoordBuffer(
 	path:     OrderedPath,
 	nPoints:  number,
 	prevEnd:  { x: number; y: number },
-	dwellMax: number = CORNER_DWELL_MAX_DEFAULT,
 ): { data: Float32Array; nPoints: number; endPos: { x: number; y: number } } {
 	const data = new Float32Array(nPoints * COORD_STRIDE);
 	let   wp   = 0;
@@ -472,7 +296,6 @@ export function buildCoordBuffer(
 			: Math.max(1, Math.floor(blankPoints / traversal.length));
 
 		// ── Blank travel ─────────────────────────────────────────────────────────
-		const arrX    = lastX, arrY = lastY;
 		const targetX = ptAt(0)[0];
 		const targetY = ptAt(0)[1];
 		for (let i = 0; i < blkPts; i++) {
@@ -481,15 +304,8 @@ export function buildCoordBuffer(
 		}
 		lastX = targetX; lastY = targetY;
 
-		// ── Corner dwell ──────────────────────────────────────────────────────────
-		const p0    = ptAt(0);
-		const depX  = nPts > 1 ? ptAt(1)[0] : p0[0];
-		const depY  = nPts > 1 ? ptAt(1)[1] : p0[1];
-		const dwell = cornerDwellCount(arrX, arrY, p0[0], p0[1], depX, depY, dwellMax);
-		const c0    = clrAt(0);
-		for (let d = 0; d < dwell; d++) {
-			emit(p0[0], p0[1], 2 * c0[0] - 1, 2 * c0[1] - 1, 2 * c0[2] - 1, 2 * p0[2] - 1, 0);
-		}
+		const p0 = ptAt(0);
+		const c0 = clrAt(0);
 
 		// ── Visible segment (arc-length parameterised) ────────────────────────────
 		// Reuse module-level _cumLen array to avoid per-segment allocation.

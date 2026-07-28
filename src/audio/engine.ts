@@ -19,7 +19,7 @@ import {
 } from './audioCore';
 import { nodeRegistry } from './nodeRegistry';
 import { getMasterEntry, disposeMasterChain } from './master';
-import { initWaveformCapture, initGalvoProjector } from './capture';
+import { initWaveformCapture } from './capture';
 import { initSceneInput, disposeSceneInput } from './sceneInput';
 import type { AppEdge } from '../store/dawTypes';
 
@@ -82,7 +82,7 @@ export { connectAudioNodes, disconnectAudioNodes };
 
 /**
  * Brings up the engine: master chain, scene input worklet (wired to the master
- * by default), then the waveform-capture and galvo-projector taps.
+ * by default), then the waveform-capture tap.
  */
 export function initAudioEngine(): Promise<void> {
 	return initSceneInput().then(() => {
@@ -93,7 +93,7 @@ export function initAudioEngine(): Promise<void> {
 		connectAudioNodes(SCENE_INPUT_ID, 'out-3', MASTER_NODE_ID, 'in-3');
 		connectAudioNodes(SCENE_INPUT_ID, 'out-4', MASTER_NODE_ID, 'in-4');
 		connectAudioNodes(SCENE_INPUT_ID, 'out-5', MASTER_NODE_ID, 'in-5');
-		return initWaveformCapture().then(initGalvoProjector);
+		return initWaveformCapture();
 	}).catch(console.error);
 }
 
@@ -121,12 +121,11 @@ export { getWaveformData, setAnalyserSize, setSpeakersMuted } from './master';
 
 export {
 	getWaveformDataFromSAB, getWaveformWriteIndex, getWaveformNSamples, setWaveformCaptureSize,
-	getGalvoRing, getGalvoWriteCount, setGalvoParams,
 } from './capture';
 
 export {
 	getSceneInputPhase, startSceneInput, stopSceneInput, getSceneRunning,
-	getSceneInputWorkletNode, setLastCoordBuffer, getLastCoordBuffer,
+	getSceneInputWorkletNode,
 } from './sceneInput';
 
 export {
@@ -145,5 +144,3 @@ export {
 } from './nodes/grainPlayer';
 
 export { startMicInput, stopMicInput } from './nodes/micInput';
-
-export { loadIldaForNode, startIldaPlayback, stopIldaPlayback, getIldaFrameInfo } from './nodes/ildaFrame';
