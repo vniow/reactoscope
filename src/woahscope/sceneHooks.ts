@@ -233,6 +233,7 @@ export function useLanczos(steps: number, nSamples: number): LanczosResources {
 
 	useEffect(() => {
 		upsamplerRef.current = new LanczosUpsampler(nSamples, steps);
+		return () => { upsamplerRef.current.dispose(); };
 	}, [steps, nSamples]);
 
 	return { upsamplerRef, smoothedX, smoothedY, smoothedR, smoothedG, smoothedB, smoothedA, nPointsRef };

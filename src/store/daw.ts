@@ -27,6 +27,7 @@ import {
 import { NODE_COLORS } from '../daw/nodes/shared/nodeColors';
 import * as engine from '../audio/engine';
 import { MASTER_NODE_ID, SCENE_INPUT_ID } from '../audio/engine';
+import { isolationMode } from '../isolationMode';
 import type {
 	AppNode,
 	AppEdge,
@@ -442,4 +443,25 @@ export function downloadPatch(patch: PatchFile, filenameStem?: string): void {
 // Bring up the audio engine (async). writeSceneAudio() guards against the scene
 // entry not existing, so early writes are silently dropped.
 // Exported so App.tsx can await full init before loading a default patch.
-export const dawInitPromise = engine.initAudioEngine();
+//
+// `?isolate=viz` (see isolationMode.ts) skips this entirely — no Tone.js
+// context, no worklets, no Scene Input scanning — so a soak run can attribute
+// footprint growth to the WebGL/Three.js rendering side alone. See issue #4.
+export const dawInitPromise = isolationMode === 'viz'
+	? Promise.resolve()
+	: engine.initAudioEngine();
+
+// ─── Dev-only memory-tracking hook ─────────────────────────────────────────────
+// Exposes the live audio node registry and store on window for console /
+// evaluate_script polling while diagnosing native-memory (GPU, audio-thread)
+// leaks that don't show up in performance.memory or a JS heap snapshot.
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+	(window as unknown as { __reactoscope?: Record<string, unknown> }).__reactoscope = {
+		store:            useDawStore,
+		audioNodes:       engine._audioNodes,
+		getWorkletStats:  engine.getSceneInputWorkletStats,
+		isolationMode,
+		// scopeRenderer / sceneRenderer are stashed by the two <Canvas onCreated>
+		// hooks (VisualizationCanvasR3F.tsx, InputPanel.tsx) once each mounts.
+	};
+}

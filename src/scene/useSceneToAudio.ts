@@ -48,6 +48,18 @@ export function useSceneToAudio(): void {
 	const { coordBufferSize } = useEffects();
 
 	useEffect(() => {
+		// Memory-leak-harness instrumentation: counts how many times this effect
+		// (and therefore the path worker + host Canvas) has mounted. A climbing
+		// count over a long run means the Canvas is remounting — e.g. via
+		// InputPanel's `size > 0` gate on useSquareSize — which would explain a
+		// leak invisible to a single play/stop cycle.
+		if (import.meta.env.DEV && typeof window !== 'undefined') {
+			const w = window as unknown as { __reactoscope?: Record<string, unknown> };
+			if (w.__reactoscope) {
+				w.__reactoscope.workerMountCount = ((w.__reactoscope.workerMountCount as number) ?? 0) + 1;
+			}
+		}
+
 		const worker = new Worker(
 			new URL('./pathWorker.ts', import.meta.url),
 			{ type: 'module' },

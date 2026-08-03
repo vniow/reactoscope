@@ -1,18 +1,23 @@
 class WaveformCaptureProcessor extends AudioWorkletProcessor {
 	constructor(options) {
 		super(options);
-		this._nSamples  = options?.processorOptions?.nSamples ?? 2048;
-		this._accumPos  = 0;
-		this._accum     = Array.from({ length: 6 }, () => new Float32Array(this._nSamples));
+		this._nSamples = options?.processorOptions?.nSamples ?? 2048;
+		this._accumPos = 0;
+		this._accum = Array.from(
+			{ length: 6 },
+			() => new Float32Array(this._nSamples),
+		);
 		this._writeIndexView = null;
-		this._channelViews   = null;
-
+		this._channelViews = null;
 		this.port.onmessage = (e) => {
 			const { type, buffer, nSamples } = e.data;
 			if (type === 'sabBuffer' || type === 'resize') {
-				this._nSamples  = nSamples;
-				this._accumPos  = 0;
-				this._accum     = Array.from({ length: 6 }, () => new Float32Array(nSamples));
+				this._nSamples = nSamples;
+				this._accumPos = 0;
+				this._accum = Array.from(
+					{ length: 6 },
+					() => new Float32Array(nSamples),
+				);
 				this._setupSAB(buffer, nSamples);
 			}
 		};
@@ -20,9 +25,11 @@ class WaveformCaptureProcessor extends AudioWorkletProcessor {
 
 	_setupSAB(buffer, nSamples) {
 		this._writeIndexView = new Uint32Array(buffer, 0, 1);
-		this._channelViews   = [];
+		this._channelViews = [];
 		for (let ch = 0; ch < 6; ch++) {
-			this._channelViews.push(new Float32Array(buffer, 4 + ch * nSamples * 4, nSamples));
+			this._channelViews.push(
+				new Float32Array(buffer, 4 + ch * nSamples * 4, nSamples),
+			);
 		}
 	}
 
@@ -38,11 +45,11 @@ class WaveformCaptureProcessor extends AudioWorkletProcessor {
 		if (!input || !input[0]) return true;
 
 		const blockSize = input[0].length;
-		let srcOffset   = 0;
+		let srcOffset = 0;
 
 		while (srcOffset < blockSize) {
 			const remaining = this._nSamples - this._accumPos;
-			const toCopy    = Math.min(blockSize - srcOffset, remaining);
+			const toCopy = Math.min(blockSize - srcOffset, remaining);
 
 			for (let ch = 0; ch < 6; ch++) {
 				const src = input[ch] ?? input[0];
@@ -53,7 +60,7 @@ class WaveformCaptureProcessor extends AudioWorkletProcessor {
 			}
 
 			this._accumPos += toCopy;
-			srcOffset      += toCopy;
+			srcOffset += toCopy;
 
 			if (this._accumPos >= this._nSamples) {
 				this._flushFrame();

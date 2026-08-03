@@ -16,10 +16,17 @@ export function whiteTexture(): DataTexture {
 	return _whiteTex;
 }
 
-/** Dispose module-scope textures. Call from the audio graph's dispose() on page unload. */
+/** Dispose module-scope textures. Safe to call more than once. */
 export function disposeSharedTextures(): void {
 	_whiteTex?.dispose();
 	_whiteTex = null;
+}
+
+// _whiteTex is a page-lifetime singleton shared by every material this module
+// creates (across both canvases), so it's freed on unload here rather than
+// from any one component's unmount — no single component owns it.
+if (typeof window !== 'undefined') {
+	window.addEventListener('beforeunload', disposeSharedTextures, { once: true });
 }
 
 export function createLineMaterial(): ShaderMaterial {

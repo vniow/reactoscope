@@ -51,6 +51,15 @@ class SceneInputProcessor extends AudioWorkletProcessor {
 		this._firstProcess = true;
 		this._frameCount   = 0;
 
+		// ─── Memory-leak-harness instrumentation ───────────────────────────────────────
+		// The audio thread is invisible to performance.memory, heap snapshots, and
+		// renderer.info — this is the only channel that reports what's actually
+		// happening inside the worklet over a long run. Throttled to 1/sec so it
+		// doesn't add per-block overhead of its own.
+		this._processCallCount = 0;
+		this._maxNPointsSeen   = 0;
+		this._lastStatsTime    = 0;
+
 		this.port.onmessage = (e) => {
 			if (e.data.type === 'path') {
 				const newCoords  = new Float32Array(e.data.data);
@@ -106,6 +115,9 @@ class SceneInputProcessor extends AudioWorkletProcessor {
 		const out      = outputs[0];
 		const nSamples = out[0]?.length ?? 128;
 
+		this._processCallCount++;
+		this._maxNPointsSeen = Math.max(this._maxNPointsSeen, this._nPoints);
+
 		if (this._firstProcess) {
 			this._firstProcess = false;
 			console.log(
@@ -157,6 +169,19 @@ class SceneInputProcessor extends AudioWorkletProcessor {
 		// Publish the phase so the main thread can read the exact cycle position
 		// without relying on audioContext.currentTime inference.
 		if (this._phaseView) this._phaseView[0] = this._index;
+
+		// Throttled stats ping — once per second of audio time, not per block.
+		if (currentTime - this._lastStatsTime >= 1) {
+			this._lastStatsTime = currentTime;
+			this.port.postMessage({
+				type:             'stats',
+				processCallCount: this._processCallCount,
+				frameSwapCount:   this._frameCount,
+				nPoints:          this._nPoints,
+				maxNPointsSeen:   this._maxNPointsSeen,
+				currentTime,
+			});
+		}
 
 		return true;
 	}

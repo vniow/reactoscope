@@ -36,7 +36,7 @@ function buildKernels(steps: number): Float32Array[] {
 
 export class LanczosUpsampler {
 	private readonly steps: number;
-	private readonly kernels: Float32Array[];
+	private kernels: Float32Array[] | null;
 	readonly outputLength: number;
 
 	constructor(inputLength: number, steps: number) {
@@ -45,10 +45,15 @@ export class LanczosUpsampler {
 		this.outputLength = inputLength * steps + 1;
 	}
 
+	/** Releases the precomputed kernel tables. Safe to call more than once. */
+	dispose(): void {
+		this.kernels = null;
+	}
 
 	apply(input: Float32Array, output: Float32Array): void {
-		const n = input.length;
 		const { steps, kernels, outputLength } = this;
+		if (!kernels) return; // disposed
+		const n = input.length;
 		for (let j = 0; j < outputLength; j++) {
 			const i0 = (j / steps) | 0;
 			const p  = j % steps;

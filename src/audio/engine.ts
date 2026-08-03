@@ -20,7 +20,8 @@ import {
 import { nodeRegistry } from './nodeRegistry';
 import { getMasterEntry, disposeMasterChain } from './master';
 import { initWaveformCapture } from './capture';
-import { initSceneInput, disposeSceneInput } from './sceneInput';
+import { initSceneInput, disposeSceneInput, seedSyntheticCoordBuffer } from './sceneInput';
+import { isolationMode } from '../isolationMode';
 import type { AppEdge } from '../store/dawTypes';
 
 // ─── Node lifecycle (dispatched through the handler registry) ─────────────────
@@ -86,6 +87,9 @@ export { connectAudioNodes, disconnectAudioNodes };
  */
 export function initAudioEngine(): Promise<void> {
 	return initSceneInput().then(() => {
+		// `?isolate=audio` unmounts both canvases, so nothing drives useSceneToAudio's
+		// live WebGL scan — feed the worklet a static buffer instead. See issue #4.
+		if (isolationMode === 'audio') seedSyntheticCoordBuffer();
 		getMasterEntry(); // ensure the master entry exists before wiring edges into it
 		connectAudioNodes(SCENE_INPUT_ID, 'out-0', MASTER_NODE_ID, 'in-0');
 		connectAudioNodes(SCENE_INPUT_ID, 'out-1', MASTER_NODE_ID, 'in-1');
@@ -125,7 +129,7 @@ export {
 
 export {
 	getSceneInputPhase, startSceneInput, stopSceneInput, getSceneRunning,
-	getSceneInputWorkletNode,
+	getSceneInputWorkletNode, getSceneInputWorkletStats,
 } from './sceneInput';
 
 export {

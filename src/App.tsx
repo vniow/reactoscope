@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { dawInitPromise, useDawStore } from './store/daw';
+import { isolationMode } from './isolationMode';
 import { usePatchStore } from './store/patchStore';
 import { WoscopeProvider } from './contexts/WoahscopeContext';
 import { ErrorBoundary }   from './components';
@@ -189,17 +190,23 @@ export function App() {
 							overflow:      'hidden',
 							minWidth:      0,
 						}}>
-							{/* Top canvas (WoahscopePanel) — always first child */}
-							<Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-								<WoahscopePanel />
-								<Typography sx={canvasLabelSx}>scope</Typography>
-							</Box>
+							{/* Top canvas (WoahscopePanel) — always first child.
+							    Unmounted under `?isolate=audio` — see isolationMode.ts. */}
+							{isolationMode !== 'audio' && (
+								<Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+									<WoahscopePanel />
+									<Typography sx={canvasLabelSx}>scope</Typography>
+								</Box>
+							)}
 
-							{/* Bottom canvas (SceneInputPanel) — always last child */}
-							<Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-								<SceneInputPanel />
-								<Typography sx={canvasLabelSx}>scene</Typography>
-							</Box>
+							{/* Bottom canvas (SceneInputPanel) — always last child.
+							    Unmounted under `?isolate=audio` — see isolationMode.ts. */}
+							{isolationMode !== 'audio' && (
+								<Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+									<SceneInputPanel />
+									<Typography sx={canvasLabelSx}>scene</Typography>
+								</Box>
+							)}
 
 							{/* Sweep panel in left-column mode — stacks below canvases */}
 							{!sweepFullWidth && sweepVisible && sweepPanel}

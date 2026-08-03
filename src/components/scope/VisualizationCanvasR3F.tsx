@@ -64,6 +64,13 @@ export function VisualizationCanvasR3F() {
 				frameloop="demand"
 				gl={{ antialias: false }}
 				style={{ width: '100%', height: '100%', display: 'block' }}
+				onCreated={(state) => {
+					// Dev-only memory-tracking hook (see store/daw.ts) — stash the
+					// renderer so its live GPU object counts (state.gl.info) are
+					// pollable from evaluate_script.
+					const w = window as unknown as { __reactoscope?: Record<string, unknown> };
+					if (w.__reactoscope) w.__reactoscope.scopeRenderer = state.gl;
+				}}
 			>
 				<WoscopeSceneR3F />
 			</Canvas>

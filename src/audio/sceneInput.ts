@@ -13,6 +13,26 @@ export function getSceneInputPhase(): number {
 	return _phaseView[0];
 }
 
+// ─── Worklet stats (memory-leak-harness instrumentation) ─────────────────────
+// The worklet pings these once/sec (see sceneInputProcessor.worklet.js). This is
+// the only visibility into the audio thread, which performance.memory, heap
+// snapshots, and renderer.info all miss entirely.
+
+export type SceneInputWorkletStats = {
+	processCallCount: number;
+	frameSwapCount:   number;
+	nPoints:          number;
+	maxNPointsSeen:   number;
+	currentTime:      number;
+	receivedAt:       number; // Date.now() when the main thread got this ping
+};
+
+let _workletStats: SceneInputWorkletStats | null = null;
+
+export function getSceneInputWorkletStats(): SceneInputWorkletStats | null {
+	return _workletStats;
+}
+
 // ─── Scene Input worklet lifecycle ────────────────────────────────────────────
 
 export async function initSceneInput(): Promise<void> {
@@ -46,6 +66,13 @@ export async function initSceneInput(): Promise<void> {
 
 	// Give the worklet a direct write-path into the phase register.
 	(workletNode as AudioWorkletNode).port.postMessage({ type: 'phaseBuffer', buffer: _phaseSAB });
+
+	workletNode.port.addEventListener('message', (e: MessageEvent) => {
+		if (e.data?.type === 'stats') {
+			_workletStats = { ...(e.data as Omit<SceneInputWorkletStats, 'receivedAt'>), receivedAt: Date.now() };
+		}
+	});
+	(workletNode as AudioWorkletNode).port.start();
 }
 
 let _sceneRunning = false;
@@ -78,6 +105,39 @@ export function getSceneInputWorkletNode(): AudioWorkletNode | null {
 	const entry = _audioNodes.get(SCENE_INPUT_ID);
 	if (!entry || entry.kind !== 'sceneInput') return null;
 	return entry.workletNode as AudioWorkletNode;
+}
+
+// Coord buffer layout — must match COORD_STRIDE in scene/pathBuilder.ts:
+// [x, y, r, g, b, a, blank] per point.
+const SYNTHETIC_COORD_STRIDE = 7;
+const SYNTHETIC_N_POINTS     = 1024;
+
+/**
+ * Feeds the worklet one static coord buffer (a traced circle) and leaves it
+ * there for the worklet to cycle through indefinitely. Used in `?isolate=audio`
+ * mode (see isolationMode.ts), where no canvas is mounted to drive
+ * useSceneToAudio's live WebGL scan — this exercises the worklet's own
+ * long-run state (buffer swapping, frame counting, its stats-ping logic) in
+ * isolation from anything WebGL. See Wayfinder issue #4.
+ */
+export function seedSyntheticCoordBuffer(): void {
+	const node = getSceneInputWorkletNode();
+	if (!node) return;
+
+	const data = new Float32Array(SYNTHETIC_N_POINTS * SYNTHETIC_COORD_STRIDE);
+	for (let i = 0; i < SYNTHETIC_N_POINTS; i++) {
+		const theta = (i / SYNTHETIC_N_POINTS) * Math.PI * 2;
+		const o = i * SYNTHETIC_COORD_STRIDE;
+		data[o]     = Math.cos(theta);
+		data[o + 1] = Math.sin(theta);
+		data[o + 2] = 1; data[o + 3] = 1; data[o + 4] = 1; data[o + 5] = 1;
+		data[o + 6] = 0;
+	}
+
+	node.port.postMessage(
+		{ type: 'path', data: data.buffer, nPoints: SYNTHETIC_N_POINTS },
+		[data.buffer],
+	);
 }
 
 /** Tears down the scene input worklet. Only called from the engine's unload cleanup. */

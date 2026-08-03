@@ -73,6 +73,13 @@ export function SceneInputPanel() {
 						frameloop='always'
 						gl={{ antialias: true }}
 						style={{ width: '100%', height: '100%', display: 'block' }}
+						onCreated={(state) => {
+							// Dev-only memory-tracking hook (see store/daw.ts) — this is the
+							// canvas that actually hosts the scanned scene geometry, so its
+							// renderer.info is the one that matters for the Scene Input leak.
+							const w = window as unknown as { __reactoscope?: Record<string, unknown> };
+							if (w.__reactoscope) w.__reactoscope.sceneRenderer = state.gl;
+						}}
 					>
 						<OrbitControls makeDefault />
 						<WireframeCube />
