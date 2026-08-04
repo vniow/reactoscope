@@ -52,6 +52,24 @@ export function getWaveformNSamples(): number {
 	return _captureNSamples;
 }
 
+// ─── Worklet liveness (bisection-map instrumentation) ─────────────────────────
+// See public/waveformCaptureProcessor.worklet.js — this worklet shares Scene
+// Input's ponyfilled-AudioWorkletNode freeze risk (issue #6), so a "no growth"
+// reading from it needs proof it was actually running the whole time.
+
+export type WaveformCaptureWorkletStats = {
+	processCallCount: number;
+	flushCount:       number;
+	currentTime:      number;
+	receivedAt:       number;
+};
+
+let _workletStats: WaveformCaptureWorkletStats | null = null;
+
+export function getWaveformCaptureWorkletStats(): WaveformCaptureWorkletStats | null {
+	return _workletStats;
+}
+
 export function setWaveformCaptureSize(newSize: number): void {
 	if (newSize === _captureNSamples && _captureSAB) return;
 	_allocCaptureSAB(newSize);
@@ -99,6 +117,13 @@ export async function initWaveformCapture(): Promise<void> {
 		processorOptions: { nSamples: _captureNSamples },
 	});
 	_waveformCaptureNode = workletNode as unknown as AudioWorkletNode;
+
+	_waveformCaptureNode.port.addEventListener('message', (e: MessageEvent) => {
+		if (e.data?.type === 'stats') {
+			_workletStats = { ...(e.data as Omit<WaveformCaptureWorkletStats, 'receivedAt'>), receivedAt: Date.now() };
+		}
+	});
+	_waveformCaptureNode.port.start();
 
 	_tapMasterBus(_waveformCaptureNode);
 

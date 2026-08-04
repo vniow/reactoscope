@@ -27,7 +27,7 @@ import {
 import { NODE_COLORS } from '../daw/nodes/shared/nodeColors';
 import * as engine from '../audio/engine';
 import { MASTER_NODE_ID, SCENE_INPUT_ID } from '../audio/engine';
-import { isolationMode } from '../isolationMode';
+import { isolationMode, excludedAudioComponents } from '../isolationMode';
 import type {
 	AppNode,
 	AppEdge,
@@ -457,10 +457,12 @@ export const dawInitPromise = isolationMode === 'viz'
 // leaks that don't show up in performance.memory or a JS heap snapshot.
 if (import.meta.env.DEV && typeof window !== 'undefined') {
 	(window as unknown as { __reactoscope?: Record<string, unknown> }).__reactoscope = {
-		store:            useDawStore,
-		audioNodes:       engine._audioNodes,
-		getWorkletStats:  engine.getSceneInputWorkletStats,
+		store:                          useDawStore,
+		audioNodes:                     engine._audioNodes,
+		getWorkletStats:                engine.getSceneInputWorkletStats,
+		getWaveformCaptureWorkletStats: engine.getWaveformCaptureWorkletStats,
 		isolationMode,
+		excludedAudioComponents:        [...excludedAudioComponents],
 		// scopeRenderer / sceneRenderer are stashed by the two <Canvas onCreated>
 		// hooks (VisualizationCanvasR3F.tsx, InputPanel.tsx) once each mounts.
 	};

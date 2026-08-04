@@ -41,6 +41,9 @@
  *   HARNESS_DURATION_HOURS=1 HARNESS_SAMPLE_INTERVAL_SEC=5 node scripts/memory-leak-harness/monitor.mjs   # quick smoke test
  *   HARNESS_ISOLATE=audio node scripts/memory-leak-harness/monitor.mjs   # audio engine only, no canvases
  *   HARNESS_ISOLATE=viz   node scripts/memory-leak-harness/monitor.mjs   # WebGL rendering only, no audio engine
+ *   HARNESS_ISOLATE=audio HARNESS_EXCLUDE=waveformCapture node scripts/memory-leak-harness/monitor.mjs   # Master Output + Scene Input only
+ *   HARNESS_ISOLATE=audio HARNESS_EXCLUDE=sceneInput       node scripts/memory-leak-harness/monitor.mjs   # Master Output + Waveform Capture only
+ *   HARNESS_ISOLATE=audio HARNESS_EXCLUDE=sceneInput,waveformCapture node scripts/memory-leak-harness/monitor.mjs   # Master Output alone
  *
  * Stop early:
  *   kill <pid>   — SIGTERM/SIGINT are handled: the browser is closed cleanly
@@ -61,7 +64,14 @@ const DURATION_MS         = (Number(process.env.HARNESS_DURATION_HOURS) || 24) *
 const SAMPLE_INTERVAL_MS  = (Number(process.env.HARNESS_SAMPLE_INTERVAL_SEC) || 30) * 1000;
 const BASE_URL             = process.env.HARNESS_URL || 'http://localhost:5173';
 const ISOLATE              = process.env.HARNESS_ISOLATE; // 'audio' | 'viz' | undefined
-const URL                  = ISOLATE ? `${BASE_URL}?isolate=${ISOLATE}` : BASE_URL;
+const EXCLUDE              = process.env.HARNESS_EXCLUDE; // 'sceneInput' | 'waveformCapture' | 'sceneInput,waveformCapture' | undefined
+const URL                  = (() => {
+	const params = new URLSearchParams();
+	if (ISOLATE)  params.set('isolate', ISOLATE);
+	if (EXCLUDE)  params.set('exclude', EXCLUDE);
+	const qs = params.toString();
+	return qs ? `${BASE_URL}?${qs}` : BASE_URL;
+})();
 
 const runId  = new Date().toISOString().replace(/[:.]/g, '-');
 const logPath = path.join(RESULTS_DIR, `${runId}.jsonl`);
@@ -171,9 +181,15 @@ async function main() {
 		throw new Error(`isolation mode mismatch: requested ${JSON.stringify(ISOLATE ?? null)}, app reports ${JSON.stringify(pageIsolationMode)}`);
 	}
 
-	log({ event: 'start', runId, url: URL, isolationMode: pageIsolationMode, rootPid, durationHours: DURATION_MS / 3600000, sampleIntervalSec: SAMPLE_INTERVAL_MS / 1000, ts: new Date().toISOString() });
+	const pageExcluded = await page.evaluate(() => (window.__reactoscope.excludedAudioComponents ?? []).slice().sort());
+	const requestedExcluded = (EXCLUDE ?? '').split(',').filter(Boolean).sort();
+	if (JSON.stringify(pageExcluded) !== JSON.stringify(requestedExcluded)) {
+		throw new Error(`excluded-components mismatch: requested ${JSON.stringify(requestedExcluded)}, app reports ${JSON.stringify(pageExcluded)}`);
+	}
+
+	log({ event: 'start', runId, url: URL, isolationMode: pageIsolationMode, excludedAudioComponents: pageExcluded, rootPid, durationHours: DURATION_MS / 3600000, sampleIntervalSec: SAMPLE_INTERVAL_MS / 1000, ts: new Date().toISOString() });
 	console.log(`[monitor] started run ${runId} — logging to ${logPath}`);
-	console.log(`[monitor] isolation mode: ${pageIsolationMode ?? '(none)'}`);
+	console.log(`[monitor] isolation mode: ${pageIsolationMode ?? '(none)'}, excluded: ${pageExcluded.length ? pageExcluded.join(',') : '(none)'}`);
 	console.log(`[monitor] browser root pid ${rootPid}, duration ${DURATION_MS / 3600000}h, interval ${SAMPLE_INTERVAL_MS / 1000}s`);
 
 	const startTime = Date.now();
@@ -203,6 +219,7 @@ async function main() {
 					scopeRenderer:    rendererInfo(w.scopeRenderer),
 					sceneRenderer:    rendererInfo(w.sceneRenderer),
 					workletStats:     w.getWorkletStats ? w.getWorkletStats() : null,
+					waveformCaptureWorkletStats: w.getWaveformCaptureWorkletStats ? w.getWaveformCaptureWorkletStats() : null,
 					workerMountCount: w.workerMountCount ?? null,
 					domNodeCount:     document.getElementsByTagName('*').length,
 				};

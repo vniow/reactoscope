@@ -21,7 +21,7 @@ import { nodeRegistry } from './nodeRegistry';
 import { getMasterEntry, disposeMasterChain } from './master';
 import { initWaveformCapture } from './capture';
 import { initSceneInput, disposeSceneInput, seedSyntheticCoordBuffer } from './sceneInput';
-import { isolationMode } from '../isolationMode';
+import { isolationMode, excludedAudioComponents } from '../isolationMode';
 import type { AppEdge } from '../store/dawTypes';
 
 // ─── Node lifecycle (dispatched through the handler registry) ─────────────────
@@ -84,20 +84,32 @@ export { connectAudioNodes, disconnectAudioNodes };
 /**
  * Brings up the engine: master chain, scene input worklet (wired to the master
  * by default), then the waveform-capture tap.
+ *
+ * `?exclude=sceneInput,waveformCapture` (see isolationMode.ts) skips the named
+ * component(s) entirely — Master Output is the unavoidable baseline. Used by
+ * the bisection soaks in Wayfinder issue #7/#9 to isolate which component of
+ * the audio engine is responsible for the leak found via #2's harness.
  */
 export function initAudioEngine(): Promise<void> {
-	return initSceneInput().then(() => {
+	const includeSceneInput      = !excludedAudioComponents.has('sceneInput');
+	const includeWaveformCapture = !excludedAudioComponents.has('waveformCapture');
+
+	const sceneInputReady = includeSceneInput ? initSceneInput() : Promise.resolve();
+
+	return sceneInputReady.then(() => {
 		// `?isolate=audio` unmounts both canvases, so nothing drives useSceneToAudio's
 		// live WebGL scan — feed the worklet a static buffer instead. See issue #4.
-		if (isolationMode === 'audio') seedSyntheticCoordBuffer();
+		if (includeSceneInput && isolationMode === 'audio') seedSyntheticCoordBuffer();
 		getMasterEntry(); // ensure the master entry exists before wiring edges into it
-		connectAudioNodes(SCENE_INPUT_ID, 'out-0', MASTER_NODE_ID, 'in-0');
-		connectAudioNodes(SCENE_INPUT_ID, 'out-1', MASTER_NODE_ID, 'in-1');
-		connectAudioNodes(SCENE_INPUT_ID, 'out-2', MASTER_NODE_ID, 'in-2');
-		connectAudioNodes(SCENE_INPUT_ID, 'out-3', MASTER_NODE_ID, 'in-3');
-		connectAudioNodes(SCENE_INPUT_ID, 'out-4', MASTER_NODE_ID, 'in-4');
-		connectAudioNodes(SCENE_INPUT_ID, 'out-5', MASTER_NODE_ID, 'in-5');
-		return initWaveformCapture();
+		if (includeSceneInput) {
+			connectAudioNodes(SCENE_INPUT_ID, 'out-0', MASTER_NODE_ID, 'in-0');
+			connectAudioNodes(SCENE_INPUT_ID, 'out-1', MASTER_NODE_ID, 'in-1');
+			connectAudioNodes(SCENE_INPUT_ID, 'out-2', MASTER_NODE_ID, 'in-2');
+			connectAudioNodes(SCENE_INPUT_ID, 'out-3', MASTER_NODE_ID, 'in-3');
+			connectAudioNodes(SCENE_INPUT_ID, 'out-4', MASTER_NODE_ID, 'in-4');
+			connectAudioNodes(SCENE_INPUT_ID, 'out-5', MASTER_NODE_ID, 'in-5');
+		}
+		return includeWaveformCapture ? initWaveformCapture() : Promise.resolve();
 	}).catch(console.error);
 }
 
@@ -125,6 +137,7 @@ export { getWaveformData, setAnalyserSize, setSpeakersMuted } from './master';
 
 export {
 	getWaveformDataFromSAB, getWaveformWriteIndex, getWaveformNSamples, setWaveformCaptureSize,
+	getWaveformCaptureWorkletStats,
 } from './capture';
 
 export {
