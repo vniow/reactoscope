@@ -27,7 +27,7 @@ import {
 import { NODE_COLORS } from '../daw/nodes/shared/nodeColors';
 import * as engine from '../audio/engine';
 import { MASTER_NODE_ID, SCENE_INPUT_ID } from '../audio/engine';
-import { isolationMode, excludedAudioComponents } from '../isolationMode';
+import { isolationMode, excludedAudioComponents, testTone } from '../isolationMode';
 import type {
 	AppNode,
 	AppEdge,
@@ -463,6 +463,7 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
 		getWaveformCaptureWorkletStats: engine.getWaveformCaptureWorkletStats,
 		isolationMode,
 		excludedAudioComponents:        [...excludedAudioComponents],
+		testTone,
 		// scopeRenderer / sceneRenderer are stashed by the two <Canvas onCreated>
 		// hooks (VisualizationCanvasR3F.tsx, InputPanel.tsx) once each mounts.
 	};

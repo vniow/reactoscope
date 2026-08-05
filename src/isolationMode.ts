@@ -13,6 +13,14 @@
  * bringing up the named audio component(s) in initAudioEngine(), so a soak
  * can bisect within the audio engine itself (Master Output is the
  * unavoidable baseline — nothing excludes it). See Wayfinder issue #9.
+ *
+ * `?testTone=1` — diagnostic only: when `sceneInput` is excluded, wires a
+ * cheap Tone.Oscillator into Master Output's six input gains instead, so a
+ * component that taps the master bus (Waveform Capture) still has real,
+ * non-silent, varying signal to process — without Scene Input's worklet
+ * being involved at all. Used to disambiguate "leaks when fed real signal"
+ * from "leaks specifically alongside Scene Input's worklet" per map #7's
+ * interaction-effect finding (issue #10).
  */
 
 export type IsolationMode = 'audio' | 'viz' | null;
@@ -33,5 +41,11 @@ function readExcludedAudioComponents(): Set<AudioComponent> {
 	);
 }
 
+function readTestTone(): boolean {
+	if (typeof window === 'undefined') return false;
+	return new URLSearchParams(window.location.search).get('testTone') === '1';
+}
+
 export const isolationMode: IsolationMode = readIsolationMode();
 export const excludedAudioComponents: Set<AudioComponent> = readExcludedAudioComponents();
+export const testTone: boolean = readTestTone();

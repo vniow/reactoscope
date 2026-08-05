@@ -1,4 +1,4 @@
-import { Gain, Merge, Analyser } from 'tone';
+import { Gain, Merge, Analyser, Oscillator } from 'tone';
 import { DEFAULT_AUDIO_SETTINGS } from '../config';
 import { _audioNodes, MASTER_NODE_ID } from './audioCore';
 import type { MasterOutputAudioEntry } from '../store/dawTypes';
@@ -101,6 +101,23 @@ export function setAnalyserSize(newSize: number): void {
 		const fresh = new Analyser('waveform', newSize);
 		gain.connect(fresh);
 		_masterEntry[key] = fresh;
+	}
+}
+
+// ─── Diagnostic test tone (?testTone=1) ────────────────────────────────────────
+// Feeds real, non-silent, varying signal into Master Output's six input gains
+// without Scene Input's worklet being involved — used to test whether a
+// master-bus tap (Waveform Capture) leaks specifically when fed real signal,
+// independent of which source produced it. See Wayfinder issue #7/#10.
+
+let _testTone: Oscillator | null = null;
+
+export function startTestTone(): void {
+	if (_testTone) return;
+	const { inputGainX, inputGainY, inputGainR, inputGainG, inputGainB, inputGainA } = getMasterEntry();
+	_testTone = new Oscillator(220, 'sine').start();
+	for (const gain of [inputGainX, inputGainY, inputGainR, inputGainG, inputGainB, inputGainA]) {
+		_testTone.connect(gain);
 	}
 }
 

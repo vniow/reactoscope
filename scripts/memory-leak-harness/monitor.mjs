@@ -65,10 +65,12 @@ const SAMPLE_INTERVAL_MS  = (Number(process.env.HARNESS_SAMPLE_INTERVAL_SEC) || 
 const BASE_URL             = process.env.HARNESS_URL || 'http://localhost:5173';
 const ISOLATE              = process.env.HARNESS_ISOLATE; // 'audio' | 'viz' | undefined
 const EXCLUDE              = process.env.HARNESS_EXCLUDE; // 'sceneInput' | 'waveformCapture' | 'sceneInput,waveformCapture' | undefined
+const TEST_TONE             = process.env.HARNESS_TEST_TONE === '1'; // real signal into Master without Scene Input — see issue #10
 const URL                  = (() => {
 	const params = new URLSearchParams();
-	if (ISOLATE)  params.set('isolate', ISOLATE);
-	if (EXCLUDE)  params.set('exclude', EXCLUDE);
+	if (ISOLATE)   params.set('isolate', ISOLATE);
+	if (EXCLUDE)   params.set('exclude', EXCLUDE);
+	if (TEST_TONE) params.set('testTone', '1');
 	const qs = params.toString();
 	return qs ? `${BASE_URL}?${qs}` : BASE_URL;
 })();

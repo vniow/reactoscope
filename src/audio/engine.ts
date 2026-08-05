@@ -18,10 +18,10 @@ import {
 	SCENE_INPUT_ID,
 } from './audioCore';
 import { nodeRegistry } from './nodeRegistry';
-import { getMasterEntry, disposeMasterChain } from './master';
+import { getMasterEntry, disposeMasterChain, startTestTone } from './master';
 import { initWaveformCapture } from './capture';
 import { initSceneInput, disposeSceneInput, seedSyntheticCoordBuffer } from './sceneInput';
-import { isolationMode, excludedAudioComponents } from '../isolationMode';
+import { isolationMode, excludedAudioComponents, testTone } from '../isolationMode';
 import type { AppEdge } from '../store/dawTypes';
 
 // ─── Node lifecycle (dispatched through the handler registry) ─────────────────
@@ -108,6 +108,11 @@ export function initAudioEngine(): Promise<void> {
 			connectAudioNodes(SCENE_INPUT_ID, 'out-3', MASTER_NODE_ID, 'in-3');
 			connectAudioNodes(SCENE_INPUT_ID, 'out-4', MASTER_NODE_ID, 'in-4');
 			connectAudioNodes(SCENE_INPUT_ID, 'out-5', MASTER_NODE_ID, 'in-5');
+		} else if (testTone) {
+			// ?testTone=1 with Scene Input excluded — real signal reaches Master
+			// without Scene Input's worklet, to disambiguate "leaks when fed real
+			// signal" from "leaks specifically alongside Scene Input". Issue #10.
+			startTestTone();
 		}
 		return includeWaveformCapture ? initWaveformCapture() : Promise.resolve();
 	}).catch(console.error);
