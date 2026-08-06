@@ -7,49 +7,46 @@ class WaveformCaptureProcessor extends AudioWorkletProcessor {
 			{ length: 6 },
 			() => new Float32Array(this._nSamples),
 		);
-		this._writeIndexView = null;
-		this._channelViews = null;
 
 		// ─── Bisection-map liveness instrumentation ────────────────────────────────
-		// This worklet is created via the same Tone.js-ponyfilled createAudioWorkletNode
-		// path as Scene Input's (see issue #6 — that worklet can stop being pulled
-		// entirely after 2 render quanta in some configs). A flat memory reading from
-		// this worklet running alone is only meaningful if it's provably still being
-		// called — this ping is that proof. Throttled to 1/sec, mirrors
+		// This worklet is created via the same createAudioWorkletNode path as Scene
+		// Input's (see issue #6 — that worklet can stop being pulled entirely after
+		// 2 render quanta in some configs). A flat memory reading from this worklet
+		// running alone is only meaningful if it's provably still being called —
+		// this ping is that proof. Throttled to 1/sec, mirrors
 		// sceneInputProcessor.worklet.js's stats mechanism.
 		this._processCallCount = 0;
 		this._flushCount       = 0;
 		this._lastStatsTime    = 0;
 
 		this.port.onmessage = (e) => {
-			const { type, buffer, nSamples } = e.data;
-			if (type === 'sabBuffer' || type === 'resize') {
+			const { type, nSamples } = e.data;
+			if (type === 'resize') {
 				this._nSamples = nSamples;
 				this._accumPos = 0;
 				this._accum = Array.from(
 					{ length: 6 },
 					() => new Float32Array(nSamples),
 				);
-				this._setupSAB(buffer, nSamples);
 			}
 		};
 	}
 
-	_setupSAB(buffer, nSamples) {
-		this._writeIndexView = new Uint32Array(buffer, 0, 1);
-		this._channelViews = [];
-		for (let ch = 0; ch < 6; ch++) {
-			this._channelViews.push(
-				new Float32Array(buffer, 4 + ch * nSamples * 4, nSamples),
-			);
-		}
-	}
-
+	// Packs the 6 completed-frame channels into one transferable buffer
+	// ([ch0 samples][ch1 samples]...[ch5 samples]) and posts it — replaces the
+	// previous SharedArrayBuffer + Atomics push model. See Wayfinder issue #7:
+	// testing whether concurrent Atomics-based shared-memory writes from two
+	// AudioWorkletNodes (this one + Scene Input's) was the leak's actual
+	// trigger, independent of "two worklets coexisting" in general.
 	_flushFrame() {
-		if (!this._writeIndexView || !this._channelViews) return;
-		for (let ch = 0; ch < 6; ch++) this._channelViews[ch].set(this._accum[ch]);
-		Atomics.add(this._writeIndexView, 0, 1);
-		this.port.postMessage({ type: 'frame', nSamples: this._nSamples });
+		const packed = new Float32Array(6 * this._nSamples);
+		for (let ch = 0; ch < 6; ch++) {
+			packed.set(this._accum[ch], ch * this._nSamples);
+		}
+		this.port.postMessage(
+			{ type: 'frame', data: packed.buffer, nSamples: this._nSamples },
+			[packed.buffer],
+		);
 	}
 
 	process(inputs) {

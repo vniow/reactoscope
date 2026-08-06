@@ -6,31 +6,30 @@ const { nSamples } = DEFAULT_AUDIO_SETTINGS;
 
 const CAPTURE_CH = 6;
 
-// ─── Waveform capture (SharedArrayBuffer push model) ─────────────────────────
-// Layout: [writeIndex:Uint32(4B)] + [ch0..ch5: Float32[N] each]
-// Worklet writes complete N-sample frames then Atomics.add(writeIndex, 1).
-// Main thread Atomics.load(writeIndex) acts as an acquire fence; all preceding
-// channel writes from the audio thread are visible after the counter changes.
+// ─── Waveform capture (postMessage push model) ────────────────────────────────
+// Previously a SharedArrayBuffer + Atomics push model — replaced here to test
+// whether concurrent Atomics-based shared-memory use across two AudioWorkletNodes
+// (this one + Scene Input's) was the actual trigger for the audio-engine memory
+// leak found in Wayfinder issue #7/#10, independent of "two worklets coexisting"
+// in general. The worklet now posts a complete N-sample frame (all 6 channels
+// packed into one transferable ArrayBuffer) each time its accumulator fills;
+// the main thread copies it into plain (non-shared) Float32Arrays and bumps a
+// plain counter. Single-threaded on the main-thread side, so no Atomics needed
+// there either — the read-side contract (getWaveformDataFromSAB /
+// getWaveformWriteIndex) is unchanged for callers.
 
-let _captureSAB:          SharedArrayBuffer | null = null;
-let _captureWriteView:    Uint32Array       | null = null;
 let _captureChannels:     Float32Array[]           = [];
-let _captureNSamples: number                       = nSamples;
+let _captureWriteIndex:   number                   = 0;
+let _captureNSamples:     number                   = nSamples;
 let _waveformCaptureNode: AudioWorkletNode  | null = null;
 
-function _allocCaptureSAB(n: number): void {
-	_captureNSamples  = n;
-	_captureSAB       = new SharedArrayBuffer(4 + CAPTURE_CH * n * 4);
-	_captureWriteView = new Uint32Array(_captureSAB, 0, 1);
-	_captureChannels  = [];
-	for (let ch = 0; ch < CAPTURE_CH; ch++) {
-		_captureChannels.push(new Float32Array(_captureSAB, 4 + ch * n * 4, n));
-	}
+function _allocCaptureChannels(n: number): void {
+	_captureNSamples = n;
+	_captureChannels = Array.from({ length: CAPTURE_CH }, () => new Float32Array(n));
 }
 
 export function getWaveformWriteIndex(): number {
-	if (!_captureWriteView) return 0;
-	return Atomics.load(_captureWriteView, 0);
+	return _captureWriteIndex;
 }
 
 export function getWaveformDataFromSAB(): {
@@ -54,8 +53,8 @@ export function getWaveformNSamples(): number {
 
 // ─── Worklet liveness (bisection-map instrumentation) ─────────────────────────
 // See public/waveformCaptureProcessor.worklet.js — this worklet shares Scene
-// Input's ponyfilled-AudioWorkletNode freeze risk (issue #6), so a "no growth"
-// reading from it needs proof it was actually running the whole time.
+// Input's AudioWorkletNode freeze risk (issue #6), so a "no growth" reading
+// from it needs proof it was actually running the whole time.
 
 export type WaveformCaptureWorkletStats = {
 	processCallCount: number;
@@ -71,12 +70,10 @@ export function getWaveformCaptureWorkletStats(): WaveformCaptureWorkletStats | 
 }
 
 export function setWaveformCaptureSize(newSize: number): void {
-	if (newSize === _captureNSamples && _captureSAB) return;
-	_allocCaptureSAB(newSize);
+	if (newSize === _captureNSamples && _captureChannels.length === CAPTURE_CH) return;
+	_allocCaptureChannels(newSize);
 	if (_waveformCaptureNode) {
-		_waveformCaptureNode.port.postMessage({
-			type: 'resize', buffer: _captureSAB!, nSamples: newSize,
-		});
+		_waveformCaptureNode.port.postMessage({ type: 'resize', nSamples: newSize });
 	}
 }
 
@@ -119,7 +116,15 @@ export async function initWaveformCapture(): Promise<void> {
 	_waveformCaptureNode = workletNode as unknown as AudioWorkletNode;
 
 	_waveformCaptureNode.port.addEventListener('message', (e: MessageEvent) => {
-		if (e.data?.type === 'stats') {
+		const msg = e.data as { type?: string };
+		if (msg?.type === 'frame') {
+			const { data, nSamples: n } = e.data as { data: ArrayBuffer; nSamples: number };
+			const packed = new Float32Array(data);
+			for (let ch = 0; ch < CAPTURE_CH; ch++) {
+				_captureChannels[ch].set(packed.subarray(ch * n, ch * n + n));
+			}
+			_captureWriteIndex++;
+		} else if (msg?.type === 'stats') {
 			_workletStats = { ...(e.data as Omit<WaveformCaptureWorkletStats, 'receivedAt'>), receivedAt: Date.now() };
 		}
 	});
@@ -127,8 +132,5 @@ export async function initWaveformCapture(): Promise<void> {
 
 	_tapMasterBus(_waveformCaptureNode);
 
-	_allocCaptureSAB(_captureNSamples);
-	_waveformCaptureNode.port.postMessage({
-		type: 'sabBuffer', buffer: _captureSAB!, nSamples: _captureNSamples,
-	});
+	_allocCaptureChannels(_captureNSamples);
 }
