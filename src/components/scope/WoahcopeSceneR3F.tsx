@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import { useAxis, useEffects } from '../../contexts/WoahscopeContext';
 import { updateGeometryArrays, getColourFromHue } from '../../woahscope/utils';
 import { DEFAULT_AUDIO_SETTINGS } from '../../config';
-import { getWaveformData, setAnalyserSize, getWaveformDataFromSAB, getWaveformWriteIndex, setWaveformCaptureSize } from '../../audio/engine';
+import { readWaveformTap, setAnalyserSize, setWaveformCaptureSize } from '../../audio/engine';
+import type { TapCursor } from '../../audio/engine';
 import { isMasterMultichannel } from '../../store/daw';
 import { useDawStore } from '../../store/daw';
 import {
@@ -83,8 +84,8 @@ export function WoscopeSceneR3F() {
 		hueColourRef.current = getColourFromHue(hue);
 	}, [hue]);
 
-	const lastWriteIndexRef = useRef(0);
-	const prevNPointsRef    = useRef(-1);
+	const tapCursorRef   = useRef<TapCursor>({ last: 0 });
+	const prevNPointsRef = useRef(-1);
 
 	useFrame(({ gl, camera: cam, invalidate: inv }) => {
 		let xBuf: Float32Array;
@@ -97,13 +98,8 @@ export function WoscopeSceneR3F() {
 		let fadeAlpha: number;
 
 		// Full-window redraw with frame-based phosphor.
-		const sabData = getWaveformDataFromSAB();
-		if (sabData !== null) {
-			const writeIdx = getWaveformWriteIndex();
-			if (writeIdx === lastWriteIndexRef.current) { inv(); return; }
-			lastWriteIndexRef.current = writeIdx;
-		}
-		const waveform = sabData ?? getWaveformData();
+		const waveform = readWaveformTap(tapCursorRef.current);
+		if (waveform === null) { inv(); return; }
 		xBuf = swapXY ? waveform.y : waveform.x;
 		yBuf = swapXY ? waveform.x : waveform.y;
 		rBuf = waveform.r;

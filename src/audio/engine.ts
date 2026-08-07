@@ -138,12 +138,12 @@ if (typeof window !== 'undefined') {
 
 export { MASTER_NODE_ID, SCENE_INPUT_ID, getSampleRate, getAudioCurrentTime, _audioNodes } from './audioCore';
 
-export { getWaveformData, setAnalyserSize, setSpeakersMuted } from './master';
+export { setAnalyserSize, setSpeakersMuted } from './master';
 
-export {
-	getWaveformDataFromSAB, getWaveformWriteIndex, getWaveformNSamples, setWaveformCaptureSize,
-	getWaveformCaptureWorkletStats,
-} from './capture';
+export { getWaveformNSamples, setWaveformCaptureSize, getWaveformCaptureWorkletStats } from './capture';
+
+export { readWaveformTap } from './waveformTap';
+export type { TapCursor } from './waveformTap';
 
 export {
 	getSceneInputPhase, startSceneInput, stopSceneInput, getSceneRunning,

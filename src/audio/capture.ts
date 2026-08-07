@@ -1,6 +1,7 @@
 import { Merge, getContext } from 'tone';
 import { DEFAULT_AUDIO_SETTINGS } from '../config';
 import { getMasterEntry } from './master';
+import type { WaveformFrame } from './master';
 
 const { nSamples } = DEFAULT_AUDIO_SETTINGS;
 
@@ -32,10 +33,7 @@ export function getWaveformWriteIndex(): number {
 	return _captureWriteIndex;
 }
 
-export function getWaveformDataFromSAB(): {
-	x: Float32Array; y: Float32Array;
-	r: Float32Array; g: Float32Array; b: Float32Array; a: Float32Array;
-} | null {
+export function getWaveformDataFromSAB(): WaveformFrame | null {
 	if (_captureChannels.length < 6) return null;
 	return {
 		x: _captureChannels[0],

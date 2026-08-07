@@ -58,15 +58,17 @@ export function setSpeakersMuted(muted: boolean): void {
 
 // ─── getWaveformData — for the oscilloscope ───────────────────────────────────
 
+export type WaveformFrame = {
+	x: Float32Array; y: Float32Array;
+	r: Float32Array; g: Float32Array; b: Float32Array; a: Float32Array;
+};
+
 /**
  * Returns the current waveform snapshot for both channels.
  * CONTRACT: do not hold references across async boundaries.
  * Copy the arrays if you need to retain the data.
  */
-export function getWaveformData(): {
-	x: Float32Array; y: Float32Array;
-	r: Float32Array; g: Float32Array; b: Float32Array; a: Float32Array;
-} {
+export function getWaveformData(): WaveformFrame {
 	const entry = getMasterEntry();
 	return {
 		x: entry.xAnalyser.getValue() as Float32Array,

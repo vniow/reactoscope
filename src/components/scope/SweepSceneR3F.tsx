@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import { useAxis, useEffects } from '../../contexts/WoahscopeContext';
 import { updateGeometryArrays } from '../../woahscope/utils';
 import { DEFAULT_AUDIO_SETTINGS } from '../../config';
-import { getWaveformData, getSampleRate, getSceneInputPhase, getWaveformDataFromSAB, getWaveformWriteIndex } from '../../audio/engine';
+import { readWaveformTap, getSampleRate, getSceneInputPhase } from '../../audio/engine';
+import type { TapCursor } from '../../audio/engine';
 import {
 	N_SAMPLES,
 	FADE_AMOUNT,
@@ -72,8 +73,8 @@ export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannel
 	const { passScene, passQuad, copyMat, blurMat, outputMat } = usePassPipeline();
 
 	// Sample rate is stable for the session — read once on mount
-	const sampleRateRef     = useRef(getSampleRate());
-	const lastWriteIndexRef = useRef(0);
+	const sampleRateRef = useRef(getSampleRate());
+	const tapCursorRef  = useRef<TapCursor>({ last: 0 });
 
 	// Refs keep frame-loop closures current without requiring re-subscription
 	const gainPowRef      = useRef(1.0);
@@ -108,20 +109,15 @@ export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannel
 	const sweepY = useMemo(() => new Float32Array(N_SAMPLES), []);
 
 	useFrame(({ gl, camera: cam, invalidate: inv }) => {
-		// SAB push model: only render when the worklet has written a new frame.
-		// Falls back to Analyser reads until the capture worklet is initialised.
-		const sabData = getWaveformDataFromSAB();
-		if (sabData !== null) {
-			const writeIdx = getWaveformWriteIndex();
-			if (writeIdx === lastWriteIndexRef.current) { inv(); return; }
-			lastWriteIndexRef.current = writeIdx;
-		}
-		const waveform       = sabData ?? getWaveformData();
-		const active         = activeChannelsRef.current;
-		const nLanes         = active.length;
-		const scanFreq       = scanFrequencyRef.current;
-		const sceneInputChs  = sceneInputChannelsRef.current;
-		const sampleRate     = sampleRateRef.current;
+		// Only render when the tap has produced a new frame; falls back to
+		// analyser reads until the capture worklet's first frame arrives.
+		const waveform = readWaveformTap(tapCursorRef.current);
+		if (waveform === null) { inv(); return; }
+		const active        = activeChannelsRef.current;
+		const nLanes        = active.length;
+		const scanFreq      = scanFrequencyRef.current;
+		const sceneInputChs = sceneInputChannelsRef.current;
+		const sampleRate    = sampleRateRef.current;
 
 		const screenTex = crtEnabled && screenTextureRef.current
 			? screenTextureRef.current
