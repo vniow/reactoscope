@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAxis } from '../../../contexts/WoahscopeContext';
-import { getWaveformData, getWaveformDataFromSAB, getWaveformWriteIndex } from '../../../audio/engine';
+import { readWaveformTap } from '../../../audio/engine';
+import type { TapCursor } from '../../../audio/engine';
 import { isMasterMultichannel, useDawStore } from '../../../store/daw';
 import { getColourFromHue } from '../../../woahscope/utils';
 
@@ -35,23 +36,19 @@ export function MiniScope({ width, height }: MiniScopeProps) {
 
 		let rafId: number;
 		let last = 0;
-		let lastWriteIndex = -1;
+		const tapCursor: TapCursor = { last: 0 };
 
 		function loop(now: number) {
 			rafId = requestAnimationFrame(loop);
 			if (now - last < INTERVAL) return;
 			last = now;
 
-			const sabData = getWaveformDataFromSAB();
-			if (sabData !== null) {
-				const writeIdx = getWaveformWriteIndex();
-				if (writeIdx === lastWriteIndex) return;
-				lastWriteIndex = writeIdx;
-			}
+			const waveform = readWaveformTap(tapCursor);
+			if (waveform === null) return;
 
 			ctx.clearRect(0, 0, width, height);
 
-			const { x, y, r, g, b, a } = sabData ?? getWaveformData();
+			const { x, y, r, g, b, a } = waveform;
 			const multi = multiRef.current;
 
 			let stereoR = 0, stereoG = 0, stereoB = 0;
