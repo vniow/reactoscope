@@ -374,7 +374,8 @@ export type PlayerAudioEntry = {
 	kind:           'player';
 	toneNode:       Player;
 	split:          Split;    // splits stereo output into L (out-0) and R (out-1)
-	startOffset:    number;   // track position (s) at the last play() or seek()
+	startOffset:    number;   // track position (s) as of startedAt
+	startedAt:      number;   // AudioContext time (s) playback most recently began; only valid while isPlaying
 	currentRate:    number;   // mirrors toneNode.playbackRate
 	isExplicitStop: boolean;  // true when stop/pause/seek initiated the onstop
 	isPlaying:      boolean;
