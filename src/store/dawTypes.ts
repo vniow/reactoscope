@@ -1,5 +1,5 @@
 import type { Node, Edge, BuiltInNode } from '@xyflow/react';
-import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, Delay, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah } from 'tone';
+import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah } from 'tone';
 
 export type OscType = 'sine' | 'square' | 'triangle' | 'sawtooth';
 
@@ -477,7 +477,7 @@ export type SceneInputAudioEntry = {
 export type ReverbAudioEntry          = { kind: 'reverb';           toneNode: Reverb };
 export type JCReverbAudioEntry        = { kind: 'jcReverb';         toneNode: JCReverb };
 export type FreeverbAudioEntry        = { kind: 'freeverb';         toneNode: Freeverb };
-export type DelayAudioEntry           = { kind: 'delay'; toneNode: { input: Gain; output: Gain }; _delay: Delay; _dryGain: Gain; _wetGain: Gain };
+export type DelayAudioEntry           = { kind: 'delay';             toneNode: FeedbackDelay };
 export type FeedbackDelayAudioEntry   = { kind: 'feedbackDelay';    toneNode: FeedbackDelay };
 export type PingPongDelayAudioEntry   = { kind: 'pingPongDelay';    toneNode: PingPongDelay };
 export type DistortionAudioEntry      = { kind: 'distortion';       toneNode: Distortion };
