@@ -12,7 +12,7 @@ import { bottomOutputHandleStyle } from '../shared/handleStyles';
 import { METAL_BG } from '../shared/metalBackground';
 import { HW_RAISED, hwLit } from '../shared/hwStyles';
 import { HwButton } from '../shared/hwComponents';
-import { HwSliderField } from '../../../components/hw/HwSliderField';
+import { HwArcSlider } from '../../../components/hw/HwArcSlider';
 import { WAVE_ICONS, OSC_TYPES } from '../shared/WaveformIcons';
 import type { FMOscillatorFlowNode, OscType } from '../../../store/dawTypes';
 
@@ -78,20 +78,12 @@ export const FMOscillatorNode = memo(function FMOscillatorNode({ id, data, selec
 					{isPlaying ? <StopIcon sx={{ fontSize: 13 }} /> : <PlayArrowIcon sx={{ fontSize: 13 }} />}
 				</HwButton>
 
-				<Box className='nodrag nowheel'>
-					<HwSliderField label='freq'        value={data.frequency}       min={20}    max={4000} step={1}   color={color} onChange={v => setNodeParam(id, { frequency: v })}       format={v => String(v)}    unit='Hz' allowValueEdit allowBoundsEdit />
-				</Box>
-				<Box className='nodrag nowheel'>
-					<HwSliderField label='mod idx'     value={data.modulationIndex} min={0}     max={50}   step={0.1} color={color} onChange={v => setNodeParam(id, { modulationIndex: v })} format={v => v.toFixed(1)}            allowValueEdit allowBoundsEdit />
-				</Box>
-				<Box className='nodrag nowheel'>
-					<HwSliderField label='harmonicity' value={data.harmonicity}     min={0}     max={20}   step={0.1} color={color} onChange={v => setNodeParam(id, { harmonicity: v })}     format={v => v.toFixed(1)}            allowValueEdit allowBoundsEdit />
-				</Box>
-				<Box className='nodrag nowheel'>
-					<HwSliderField label='detune'      value={data.detune}          min={-1200} max={1200} step={1}   color={color} onChange={v => setNodeParam(id, { detune: v })}          format={v => String(v)}    unit='ct' allowValueEdit allowBoundsEdit />
-				</Box>
-				<Box className='nodrag nowheel'>
-					<HwSliderField label='phase'       value={data.phase}           min={0}     max={360}  step={1}   color={color} onChange={v => setNodeParam(id, { phase: v })}           format={v => String(v)}    unit='°'  allowValueEdit />
+				<Box className='nodrag nowheel' sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
+					<HwArcSlider label='freq'        value={data.frequency}       min={20}    max={4000} step={1}   color={color} onChange={v => setNodeParam(id, { frequency: v })}       format={v => String(v)}    unit='Hz' allowValueEdit allowBoundsEdit />
+					<HwArcSlider label='mod idx'     value={data.modulationIndex} min={0}     max={50}   step={0.1} color={color} onChange={v => setNodeParam(id, { modulationIndex: v })} format={v => v.toFixed(1)}            allowValueEdit allowBoundsEdit />
+					<HwArcSlider label='harmonicity' value={data.harmonicity}     min={0}     max={20}   step={0.1} color={color} onChange={v => setNodeParam(id, { harmonicity: v })}     format={v => v.toFixed(1)}            allowValueEdit allowBoundsEdit />
+					<HwArcSlider label='detune'      value={data.detune}          min={-1200} max={1200} step={1}   color={color} onChange={v => setNodeParam(id, { detune: v })}          format={v => String(v)}    unit='ct' allowValueEdit allowBoundsEdit />
+					<HwArcSlider label='phase'       value={data.phase}           min={0}     max={360}  step={1}   color={color} onChange={v => setNodeParam(id, { phase: v })}           format={v => String(v)}    unit='°'  allowValueEdit />
 				</Box>
 
 			</Box>
