@@ -20,9 +20,9 @@ export const FeedbackDelayNode = memo(function FeedbackDelayNode({ id, data, sel
 			<NodeHeader id={id} label='FeedbackDelay' selected={selected} accentColor={color} filledHeader />
 
 			<Box sx={{ px: 1.75, pt: 2, pb: 0.75, display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }} className='nodrag nowheel'>
-				<HwArcSlider labelBelow label='time'     value={data.delayTime} min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { delayTime: v })} format={v => v.toFixed(2)} unit='s' allowValueEdit allowBoundsEdit />
-				<HwArcSlider labelBelow label='feedback' value={data.feedback}  min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { feedback: v })}  format={v => v.toFixed(2)}          allowValueEdit allowBoundsEdit />
-				<HwArcSlider labelBelow label='wet'      value={data.wet}       min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}        format={v => v.toFixed(2)}          allowValueEdit />
+				<HwArcSlider label='time'     value={data.delayTime} min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { delayTime: v })} format={v => v.toFixed(2)} unit='s' allowValueEdit allowBoundsEdit />
+				<HwArcSlider label='feedback' value={data.feedback}  min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { feedback: v })}  format={v => v.toFixed(2)}          allowValueEdit allowBoundsEdit />
+				<HwArcSlider label='wet'      value={data.wet}       min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}        format={v => v.toFixed(2)}          allowValueEdit />
 			</Box>
 
 			<Handle type='target' position={Position.Left}  id='in-0'  style={inputHandleStyle(color)} />

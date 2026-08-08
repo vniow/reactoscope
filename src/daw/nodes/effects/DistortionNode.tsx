@@ -24,8 +24,8 @@ export const DistortionNode = memo(function DistortionNode({ id, data, selected 
 
 			<Box sx={{ px: 1.75, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }} className='nodrag nowheel'>
 				<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-					<HwArcSlider labelBelow label='drive' value={data.distortion} min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { distortion: v })} format={v => v.toFixed(2)} allowValueEdit allowBoundsEdit />
-					<HwArcSlider labelBelow label='wet'   value={data.wet}        min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}        format={v => v.toFixed(2)} allowValueEdit />
+					<HwArcSlider label='drive' value={data.distortion} min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { distortion: v })} format={v => v.toFixed(2)} allowValueEdit allowBoundsEdit />
+					<HwArcSlider label='wet'   value={data.wet}        min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}        format={v => v.toFixed(2)} allowValueEdit />
 				</Box>
 				<HwToggleButtonGroup color={color} value={data.oversample} exclusive
 					onChange={(_, v) => v && setNodeParam(id, { oversample: v })} className='nodrag'>

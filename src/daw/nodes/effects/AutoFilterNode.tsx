@@ -35,10 +35,10 @@ export const AutoFilterNode = memo(function AutoFilterNode({ id, data, selected 
 					{isRunning ? <StopIcon sx={{ fontSize: 13 }} /> : <PlayArrowIcon sx={{ fontSize: 13 }} />}
 				</HwButton>
 				<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-					<HwArcSlider labelBelow label='freq'    value={data.frequency}     min={0.1} max={10}   step={0.1}  color={color} onChange={v => setNodeParam(id, { frequency: v })}     format={v => v.toFixed(1)} unit='Hz' allowValueEdit allowBoundsEdit />
-					<HwArcSlider labelBelow label='base'    value={data.baseFrequency} min={20}  max={2000} step={10}   color={color} onChange={v => setNodeParam(id, { baseFrequency: v })} format={v => String(v)}    unit='Hz' allowValueEdit allowBoundsEdit />
-					<HwArcSlider labelBelow label='octaves' value={data.octaves}       min={1}   max={8}    step={0.1}  color={color} onChange={v => setNodeParam(id, { octaves: v })}       format={v => v.toFixed(1)}            allowValueEdit allowBoundsEdit />
-					<HwArcSlider labelBelow label='wet'     value={data.wet}           min={0}   max={1}    step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}           format={v => v.toFixed(2)}            allowValueEdit />
+					<HwArcSlider label='freq'    value={data.frequency}     min={0.1} max={10}   step={0.1}  color={color} onChange={v => setNodeParam(id, { frequency: v })}     format={v => v.toFixed(1)} unit='Hz' allowValueEdit allowBoundsEdit />
+					<HwArcSlider label='base'    value={data.baseFrequency} min={20}  max={2000} step={10}   color={color} onChange={v => setNodeParam(id, { baseFrequency: v })} format={v => String(v)}    unit='Hz' allowValueEdit allowBoundsEdit />
+					<HwArcSlider label='octaves' value={data.octaves}       min={1}   max={8}    step={0.1}  color={color} onChange={v => setNodeParam(id, { octaves: v })}       format={v => v.toFixed(1)}            allowValueEdit allowBoundsEdit />
+					<HwArcSlider label='wet'     value={data.wet}           min={0}   max={1}    step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}           format={v => v.toFixed(2)}            allowValueEdit />
 				</Box>
 			</Box>
 

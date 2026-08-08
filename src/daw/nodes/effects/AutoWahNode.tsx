@@ -20,10 +20,10 @@ export const AutoWahNode = memo(function AutoWahNode({ id, data, selected }: Nod
 			<NodeHeader id={id} label='AutoWah' selected={selected} accentColor={color} filledHeader />
 
 			<Box sx={{ px: 1.75, pt: 2, pb: 0.75, display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }} className='nodrag nowheel'>
-				<HwArcSlider labelBelow label='base'    value={data.baseFrequency} min={50}  max={500} step={5}    color={color} onChange={v => setNodeParam(id, { baseFrequency: v })} format={v => String(v)}    unit='Hz' allowValueEdit allowBoundsEdit />
-				<HwArcSlider labelBelow label='octaves' value={data.octaves}       min={1}   max={8}   step={0.1}  color={color} onChange={v => setNodeParam(id, { octaves: v })}       format={v => v.toFixed(1)}            allowValueEdit allowBoundsEdit />
-				<HwArcSlider labelBelow label='sens'    value={data.sensitivity}   min={-40} max={0}   step={1}    color={color} onChange={v => setNodeParam(id, { sensitivity: v })}   format={v => String(v)}    unit='dB' allowValueEdit allowBoundsEdit />
-				<HwArcSlider labelBelow label='wet'     value={data.wet}           min={0}   max={1}   step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}           format={v => v.toFixed(2)}            allowValueEdit />
+				<HwArcSlider label='base'    value={data.baseFrequency} min={50}  max={500} step={5}    color={color} onChange={v => setNodeParam(id, { baseFrequency: v })} format={v => String(v)}    unit='Hz' allowValueEdit allowBoundsEdit />
+				<HwArcSlider label='octaves' value={data.octaves}       min={1}   max={8}   step={0.1}  color={color} onChange={v => setNodeParam(id, { octaves: v })}       format={v => v.toFixed(1)}            allowValueEdit allowBoundsEdit />
+				<HwArcSlider label='sens'    value={data.sensitivity}   min={-40} max={0}   step={1}    color={color} onChange={v => setNodeParam(id, { sensitivity: v })}   format={v => String(v)}    unit='dB' allowValueEdit allowBoundsEdit />
+				<HwArcSlider label='wet'     value={data.wet}           min={0}   max={1}   step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}           format={v => v.toFixed(2)}            allowValueEdit />
 			</Box>
 
 			<Handle type='target' position={Position.Left}  id='in-0'  style={inputHandleStyle(color)} />

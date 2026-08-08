@@ -20,8 +20,8 @@ export const FrequencyShifterNode = memo(function FrequencyShifterNode({ id, dat
 			<NodeHeader id={id} label='FreqShifter' selected={selected} accentColor={color} filledHeader />
 
 			<Box sx={{ px: 1.75, pt: 2, pb: 0.75, display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }} className='nodrag nowheel'>
-				<HwArcSlider labelBelow label='freq' value={data.frequency} min={-1000} max={1000} step={1}    color={color} onChange={v => setNodeParam(id, { frequency: v })} format={v => String(v)} unit='Hz' allowValueEdit allowBoundsEdit />
-				<HwArcSlider labelBelow label='wet'  value={data.wet}       min={0}     max={1}    step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}        format={v => v.toFixed(2)}          allowValueEdit />
+				<HwArcSlider label='freq' value={data.frequency} min={-1000} max={1000} step={1}    color={color} onChange={v => setNodeParam(id, { frequency: v })} format={v => String(v)} unit='Hz' allowValueEdit allowBoundsEdit />
+				<HwArcSlider label='wet'  value={data.wet}       min={0}     max={1}    step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}        format={v => v.toFixed(2)}          allowValueEdit />
 			</Box>
 
 			<Handle type='target' position={Position.Left}  id='in-0'  style={inputHandleStyle(color)} />

@@ -34,9 +34,9 @@ export const TremoloNode = memo(function TremoloNode({ id, data, selected }: Nod
 				<HwButton color={color} lit={isRunning} sx={{ py: 0.4 }} onClick={handleToggle} fullWidth className='nodrag' aria-label={isRunning ? 'Stop' : 'Start'}>
 					{isRunning ? <StopIcon sx={{ fontSize: 13 }} /> : <PlayArrowIcon sx={{ fontSize: 13 }} />}
 				</HwButton>
-				<HwArcSlider labelBelow label='freq'  value={data.frequency} min={0.1} max={20} step={0.1}  color={color} onChange={v => setNodeParam(id, { frequency: v })} format={v => v.toFixed(1)} unit='Hz' allowValueEdit allowBoundsEdit />
-				<HwArcSlider labelBelow label='depth' value={data.depth}     min={0}   max={1}  step={0.01} color={color} onChange={v => setNodeParam(id, { depth: v })}     format={v => v.toFixed(2)}            allowValueEdit allowBoundsEdit />
-				<HwArcSlider labelBelow label='wet'   value={data.wet}       min={0}   max={1}  step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}       format={v => v.toFixed(2)}            allowValueEdit />
+				<HwArcSlider label='freq'  value={data.frequency} min={0.1} max={20} step={0.1}  color={color} onChange={v => setNodeParam(id, { frequency: v })} format={v => v.toFixed(1)} unit='Hz' allowValueEdit allowBoundsEdit />
+				<HwArcSlider label='depth' value={data.depth}     min={0}   max={1}  step={0.01} color={color} onChange={v => setNodeParam(id, { depth: v })}     format={v => v.toFixed(2)}            allowValueEdit allowBoundsEdit />
+				<HwArcSlider label='wet'   value={data.wet}       min={0}   max={1}  step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}       format={v => v.toFixed(2)}            allowValueEdit />
 			</Box>
 
 			<Handle type='target' position={Position.Left}  id='in-0'  style={inputHandleStyle(color)} />
