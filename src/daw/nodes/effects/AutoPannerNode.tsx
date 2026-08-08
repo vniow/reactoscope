@@ -35,8 +35,8 @@ export const AutoPannerNode = memo(function AutoPannerNode({ id, data, selected 
 					{isRunning ? <StopIcon sx={{ fontSize: 13 }} /> : <PlayArrowIcon sx={{ fontSize: 13 }} />}
 				</HwButton>
 				<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-					<HwArcSlider labelBelow label='freq' value={data.frequency} min={0.1} max={10} step={0.1}  color={color} onChange={v => setNodeParam(id, { frequency: v })} format={v => v.toFixed(1)} unit='Hz' allowValueEdit allowBoundsEdit />
-					<HwArcSlider labelBelow label='wet'  value={data.wet}       min={0}   max={1}  step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}       format={v => v.toFixed(2)}            allowValueEdit />
+					<HwArcSlider label='freq' value={data.frequency} min={0.1} max={10} step={0.1}  color={color} onChange={v => setNodeParam(id, { frequency: v })} format={v => v.toFixed(1)} unit='Hz' allowValueEdit allowBoundsEdit />
+					<HwArcSlider label='wet'  value={data.wet}       min={0}   max={1}  step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}       format={v => v.toFixed(2)}            allowValueEdit />
 				</Box>
 			</Box>
 

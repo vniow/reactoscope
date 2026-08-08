@@ -1,4 +1,4 @@
-import { useCallback, useId, useRef, useState } from 'react';
+import { useCallback, useId, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { EditInput, useBoundsEdit } from './hwSliderShared';
@@ -37,6 +37,20 @@ function isOnRing(dist: number, r: number) {
 	return Math.abs(dist - r) <= STROKE / 2 + HIT_PAD;
 }
 
+/**
+ * Font size + edit-box width for the centered readout, keyed to how many characters
+ * the formatted value takes ("20" vs "-1200") — long values shrink to stay inside
+ * the ring instead of spilling past it.
+ */
+function valueSizing(chars: number): { fontSize: number; width: number } {
+	if (chars <= 2) return { fontSize: 12, width: 20 };
+	if (chars === 3) return { fontSize: 11, width: 25 };
+	if (chars === 4) return { fontSize: 10, width: 30 };
+	if (chars === 5) return { fontSize: 9,  width: 32 };
+	if (chars === 6) return { fontSize: 9,  width: 34 };
+	return { fontSize: 8, width: 36 };
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export interface HwArcSliderProps {
@@ -51,15 +65,13 @@ export interface HwArcSliderProps {
 	unit?:            string;
 	allowValueEdit?:  boolean;
 	allowBoundsEdit?: boolean;
-	/** Place the label centred below the arc instead of top-left. */
-	labelBelow?:      boolean;
 	/** Outer diameter of the arc (px). Default 64. */
 	size?:            number;
 }
 
 export function HwArcSlider({
 	label, value, min, max, step, color, onChange,
-	format, unit, allowValueEdit, allowBoundsEdit, labelBelow, size = 64,
+	format, unit, allowValueEdit, allowBoundsEdit, size = 64,
 }: HwArcSliderProps) {
 	const uid = useId();
 
@@ -161,116 +173,172 @@ export function HwArcSlider({
 		if (!isNaN(parsed)) onChange(Math.min(localMax, Math.max(localMin, parsed)));
 	}, [onChange, localMin, localMax]);
 
+	const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+		if (editingValue) return;
+		switch (e.key) {
+			case 'ArrowRight':
+			case 'ArrowUp':
+				e.preventDefault();
+				applyValue(value + step);
+				break;
+			case 'ArrowLeft':
+			case 'ArrowDown':
+				e.preventDefault();
+				applyValue(value - step);
+				break;
+			case 'Home':
+				e.preventDefault();
+				applyValue(localMin);
+				break;
+			case 'End':
+				e.preventDefault();
+				applyValue(localMax);
+				break;
+		}
+	}, [editingValue, value, step, applyValue, localMin, localMax]);
+
 	const thumbAngle  = ARC_START + norm * ARC_SWEEP;
 	const [tx, ty]    = polar(cx, cy, r, thumbAngle);
 	const [sx, sy]    = polar(cx, cy, r, ARC_START);
 	const gradientId  = `${filterId}-grad`;
 	const grooveId    = `${filterId}-groove`;
+	const valueSize   = useMemo(() => valueSizing(displayValue.length), [displayValue]);
 
 	return (
 		<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 0.25, width: size }}>
 
-			{/* Label + value row (label omitted here when labelBelow) */}
-			<Box sx={{ display: 'flex', justifyContent: labelBelow ? 'center' : 'space-between', alignItems: 'center', gap: 0.5 }}>
-				{!labelBelow && (
-					<Typography variant='caption' color='text.secondary' sx={{ fontSize: 10 }}>
-						{label}
-					</Typography>
-				)}
-				{allowValueEdit && editingValue ? (
-					<EditInput
-						defaultValue={displayValue}
-						onCommit={commitValue}
-						onCancel={() => setEditingValue(false)}
-						fontSize={10} width={36}
-					/>
-				) : (
-					<Typography
-						variant='caption' color='text.disabled'
-						sx={{ fontSize: 10, cursor: allowValueEdit ? 'text' : 'default', userSelect: 'none' }}
-						onClick={allowValueEdit ? () => setEditingValue(true) : undefined}
-					>
-						{displayLabel}
-					</Typography>
-				)}
-			</Box>
+			{/* Label, top center */}
+			<Typography variant='caption' color='text.secondary' sx={{ fontSize: 10, textAlign: 'center' }}>
+				{label}
+			</Typography>
 
-			{/* Arc SVG */}
-			<Box
-				component='svg'
-				width={size} height={size}
-				viewBox={`0 0 ${size} ${size}`}
-				sx={{ cursor: hoveringRing ? 'crosshair' : 'default', display: 'block', overflow: 'visible', userSelect: 'none' }}
-				className='nodrag'
-				onMouseDown={handleMouseDown}
-				onMouseMove={handleHoverMove}
-				onMouseLeave={handleHoverLeave}
-			>
-				<defs>
-					<filter id={filterId} x='-80%' y='-80%' width='260%' height='260%'>
-						<feGaussianBlur in='SourceGraphic' stdDeviation='1.8' result='blur' />
-						<feMerge>
-							<feMergeNode in='blur' />
-							<feMergeNode in='SourceGraphic' />
-						</feMerge>
-					</filter>
-					<linearGradient id={gradientId} gradientUnits='userSpaceOnUse'
-						x1={sx} y1={sy} x2={tx} y2={ty}>
-						<stop offset='0%'   stopColor={`${color}80`} />
-						<stop offset='100%' stopColor={color} />
-					</linearGradient>
-					{/* Fixed top-down light source, independent of the arc's rotation — matches the slider rail's inset shading. */}
-					<linearGradient id={grooveId} gradientUnits='userSpaceOnUse'
-						x1={cx} y1={cy - r} x2={cx} y2={cy + r}>
-						<stop offset='0%'   stopColor='#0a0a0c' />
-						<stop offset='50%'  stopColor='#0d0d0f' />
-						<stop offset='100%' stopColor='#131316' />
-					</linearGradient>
-				</defs>
+			{/* Arc SVG + centered value readout */}
+			<Box sx={{ position: 'relative', width: size, height: size }}>
+				<Box
+					component='svg'
+					width={size} height={size}
+					viewBox={`0 0 ${size} ${size}`}
+					sx={{
+						cursor: hoveringRing ? 'crosshair' : 'default', display: 'block', overflow: 'visible', userSelect: 'none',
+						'&:focus-visible': { outline: `2px solid ${color}`, outlineOffset: 2, borderRadius: '50%' },
+					}}
+					className='nodrag'
+					role='slider'
+					tabIndex={0}
+					aria-label={label}
+					aria-valuemin={localMin}
+					aria-valuemax={localMax}
+					aria-valuenow={value}
+					aria-valuetext={displayLabel}
+					onMouseDown={handleMouseDown}
+					onMouseMove={handleHoverMove}
+					onMouseLeave={handleHoverLeave}
+					onKeyDown={handleKeyDown}
+				>
+					<defs>
+						<filter id={filterId} x='-80%' y='-80%' width='260%' height='260%'>
+							<feGaussianBlur in='SourceGraphic' stdDeviation='1.8' result='blur' />
+							<feMerge>
+								<feMergeNode in='blur' />
+								<feMergeNode in='SourceGraphic' />
+							</feMerge>
+						</filter>
+						<linearGradient id={gradientId} gradientUnits='userSpaceOnUse'
+							x1={sx} y1={sy} x2={tx} y2={ty}>
+							<stop offset='0%'   stopColor={`${color}80`} />
+							<stop offset='100%' stopColor={color} />
+						</linearGradient>
+						{/* Fixed top-down light source, independent of the arc's rotation — matches the slider rail's inset shading. */}
+						<linearGradient id={grooveId} gradientUnits='userSpaceOnUse'
+							x1={cx} y1={cy - r} x2={cx} y2={cy + r}>
+							<stop offset='0%'   stopColor='#0a0a0c' />
+							<stop offset='50%'  stopColor='#0d0d0f' />
+							<stop offset='100%' stopColor='#131316' />
+						</linearGradient>
+					</defs>
 
-				{/* Background track — carved groove: dark walls, top-lit face, thin outer-edge highlight */}
-				<path
-					d={arcPath(cx, cy, r, ARC_START, ARC_SWEEP)}
-					fill='none'
-					stroke='#0d0d0f'
-					strokeWidth={STROKE + 2}
-					strokeLinecap='round'
-				/>
-				<path
-					d={arcPath(cx, cy, r, ARC_START, ARC_SWEEP)}
-					fill='none'
-					stroke={`url(#${grooveId})`}
-					strokeWidth={STROKE}
-					strokeLinecap='round'
-				/>
-				<path
-					d={arcPath(cx, cy, r + STROKE / 2 - 0.5, ARC_START, ARC_SWEEP)}
-					fill='none'
-					stroke='rgba(255,255,255,0.05)'
-					strokeWidth={1}
-					strokeLinecap='round'
-				/>
-
-				{/* Value track */}
-				{norm > 0.005 && (
+					{/* Background track — carved groove: dark walls, top-lit face, thin outer-edge highlight */}
 					<path
-						d={arcPath(cx, cy, r, ARC_START, norm * ARC_SWEEP)}
+						d={arcPath(cx, cy, r, ARC_START, ARC_SWEEP)}
 						fill='none'
-						stroke={`url(#${gradientId})`}
+						stroke='#0d0d0f'
+						strokeWidth={STROKE + 2}
+						strokeLinecap='round'
+					/>
+					<path
+						d={arcPath(cx, cy, r, ARC_START, ARC_SWEEP)}
+						fill='none'
+						stroke={`url(#${grooveId})`}
 						strokeWidth={STROKE}
 						strokeLinecap='round'
-						filter={`url(#${filterId})`}
 					/>
-				)}
+					<path
+						d={arcPath(cx, cy, r + STROKE / 2 - 0.5, ARC_START, ARC_SWEEP)}
+						fill='none'
+						stroke='rgba(255,255,255,0.05)'
+						strokeWidth={1}
+						strokeLinecap='round'
+					/>
 
-				{/* Thumb */}
-				<circle
-					cx={tx} cy={ty} r={STROKE - 1}
-					fill='#3a3a42'
-					stroke={color}
-					strokeWidth={1.5}
-					filter={norm > 0.005 ? `url(#${filterId})` : undefined}
-				/>
+					{/* Value track */}
+					{norm > 0.005 && (
+						<path
+							d={arcPath(cx, cy, r, ARC_START, norm * ARC_SWEEP)}
+							fill='none'
+							stroke={`url(#${gradientId})`}
+							strokeWidth={STROKE}
+							strokeLinecap='round'
+							filter={`url(#${filterId})`}
+						/>
+					)}
+
+					{/* Thumb */}
+					<circle
+						cx={tx} cy={ty} r={STROKE}
+						fill='#3a3a42'
+						stroke={color}
+						strokeWidth={1.5}
+						filter={norm > 0.005 ? `url(#${filterId})` : undefined}
+					/>
+				</Box>
+
+				{/* Centered value readout — sits in the dead space the ring-only hit-test already excludes */}
+				<Box sx={{
+					position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+					display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+					pointerEvents: 'none',
+				}}>
+					{allowValueEdit && editingValue ? (
+						<Box sx={{ pointerEvents: 'auto', transform: 'translateY(-2px)' }}>
+							<EditInput
+								defaultValue={displayValue}
+								onCommit={commitValue}
+								onCancel={() => setEditingValue(false)}
+								fontSize={valueSize.fontSize} width={Math.min(size - 28, valueSize.width)}
+								color={color} align='center'
+							/>
+						</Box>
+					) : (
+						<Typography
+							variant='caption' color='text.primary'
+							sx={{
+								fontSize: valueSize.fontSize, fontWeight: 600, lineHeight: 1.1, userSelect: 'none', pointerEvents: 'auto',
+								cursor: allowValueEdit ? 'text' : 'default',
+							}}
+							onClick={allowValueEdit ? () => setEditingValue(true) : undefined}
+						>
+							{displayValue}
+						</Typography>
+					)}
+					{unit && (
+						<Typography
+							variant='caption' color='text.disabled'
+							sx={{ fontSize: 8, lineHeight: 1.2, userSelect: 'none' }}
+						>
+							{unit}
+						</Typography>
+					)}
+				</Box>
 			</Box>
 
 			{/* Bounds row */}
@@ -282,6 +350,7 @@ export function HwArcSlider({
 							onCommit={commitMin}
 							onCancel={() => setEditingMin(false)}
 							compact width={24}
+							color={color} align='center'
 						/>
 					) : (
 						<Typography
@@ -298,6 +367,7 @@ export function HwArcSlider({
 							onCommit={commitMax}
 							onCancel={() => setEditingMax(false)}
 							compact width={24}
+							color={color} align='center'
 						/>
 					) : (
 						<Typography
@@ -309,14 +379,6 @@ export function HwArcSlider({
 						</Typography>
 					)}
 				</Box>
-			)}
-
-			{/* Below-arc label */}
-			{labelBelow && (
-				<Typography variant='caption' color='text.secondary'
-					sx={{ fontSize: 10, textAlign: 'center', mt: 1 }}>
-					{label}
-				</Typography>
 			)}
 
 		</Box>

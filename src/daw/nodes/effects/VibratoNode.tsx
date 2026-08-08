@@ -20,9 +20,9 @@ export const VibratoNode = memo(function VibratoNode({ id, data, selected }: Nod
 			<NodeHeader id={id} label='Vibrato' selected={selected} accentColor={color} filledHeader />
 
 			<Box sx={{ px: 1.75, pt: 2, pb: 0.75, display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }} className='nodrag nowheel'>
-				<HwArcSlider labelBelow label='freq'  value={data.frequency} min={0.1} max={20} step={0.1}  color={color} onChange={v => setNodeParam(id, { frequency: v })} format={v => v.toFixed(1)} unit='Hz' allowValueEdit allowBoundsEdit />
-				<HwArcSlider labelBelow label='depth' value={data.depth}     min={0}   max={1}  step={0.01} color={color} onChange={v => setNodeParam(id, { depth: v })}     format={v => v.toFixed(2)}            allowValueEdit allowBoundsEdit />
-				<HwArcSlider labelBelow label='wet'   value={data.wet}       min={0}   max={1}  step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}       format={v => v.toFixed(2)}            allowValueEdit />
+				<HwArcSlider label='freq'  value={data.frequency} min={0.1} max={20} step={0.1}  color={color} onChange={v => setNodeParam(id, { frequency: v })} format={v => v.toFixed(1)} unit='Hz' allowValueEdit allowBoundsEdit />
+				<HwArcSlider label='depth' value={data.depth}     min={0}   max={1}  step={0.01} color={color} onChange={v => setNodeParam(id, { depth: v })}     format={v => v.toFixed(2)}            allowValueEdit allowBoundsEdit />
+				<HwArcSlider label='wet'   value={data.wet}       min={0}   max={1}  step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}       format={v => v.toFixed(2)}            allowValueEdit />
 			</Box>
 
 			<Handle type='target' position={Position.Left}  id='in-0'  style={inputHandleStyle(color)} />

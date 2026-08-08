@@ -20,8 +20,8 @@ export const ChebyshevNode = memo(function ChebyshevNode({ id, data, selected }:
 			<NodeHeader id={id} label='Chebyshev' selected={selected} accentColor={color} filledHeader />
 
 			<Box sx={{ px: 1.75, pt: 2, pb: 0.75, display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }} className='nodrag nowheel'>
-				<HwArcSlider labelBelow label='order' value={data.order} min={1} max={100} step={1}    color={color} onChange={v => setNodeParam(id, { order: v })} format={v => String(Math.round(v))} allowValueEdit allowBoundsEdit />
-				<HwArcSlider labelBelow label='wet'   value={data.wet}   min={0} max={1}   step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}   format={v => v.toFixed(2)}           allowValueEdit />
+				<HwArcSlider label='order' value={data.order} min={1} max={100} step={1}    color={color} onChange={v => setNodeParam(id, { order: v })} format={v => String(Math.round(v))} allowValueEdit allowBoundsEdit />
+				<HwArcSlider label='wet'   value={data.wet}   min={0} max={1}   step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}   format={v => v.toFixed(2)}           allowValueEdit />
 			</Box>
 
 			<Handle type='target' position={Position.Left}  id='in-0'  style={inputHandleStyle(color)} />

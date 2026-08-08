@@ -20,10 +20,10 @@ export const PitchShiftNode = memo(function PitchShiftNode({ id, data, selected 
 			<NodeHeader id={id} label='PitchShift' selected={selected} accentColor={color} filledHeader />
 
 			<Box sx={{ px: 1.75, pt: 2, pb: 0.75, display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }} className='nodrag nowheel'>
-				<HwArcSlider labelBelow label='pitch'  value={data.pitch}      min={-12}  max={12}  step={1}    color={color} onChange={v => setNodeParam(id, { pitch: v })}      format={v => String(v)}    unit='st' allowValueEdit allowBoundsEdit />
-				<HwArcSlider labelBelow label='window' value={data.windowSize} min={0.03} max={0.1} step={0.01} color={color} onChange={v => setNodeParam(id, { windowSize: v })} format={v => v.toFixed(2)} unit='s'  allowValueEdit />
-				<HwArcSlider labelBelow label='fdbk'   value={data.feedback}   min={0}    max={1}   step={0.01} color={color} onChange={v => setNodeParam(id, { feedback: v })}   format={v => v.toFixed(2)}           allowValueEdit />
-				<HwArcSlider labelBelow label='wet'    value={data.wet}        min={0}    max={1}   step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}        format={v => v.toFixed(2)}           allowValueEdit />
+				<HwArcSlider label='pitch'  value={data.pitch}      min={-12}  max={12}  step={1}    color={color} onChange={v => setNodeParam(id, { pitch: v })}      format={v => String(v)}    unit='st' allowValueEdit allowBoundsEdit />
+				<HwArcSlider label='window' value={data.windowSize} min={0.03} max={0.1} step={0.01} color={color} onChange={v => setNodeParam(id, { windowSize: v })} format={v => v.toFixed(2)} unit='s'  allowValueEdit />
+				<HwArcSlider label='fdbk'   value={data.feedback}   min={0}    max={1}   step={0.01} color={color} onChange={v => setNodeParam(id, { feedback: v })}   format={v => v.toFixed(2)}           allowValueEdit />
+				<HwArcSlider label='wet'    value={data.wet}        min={0}    max={1}   step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}        format={v => v.toFixed(2)}           allowValueEdit />
 			</Box>
 
 			<Handle type='target' position={Position.Left}  id='in-0'  style={inputHandleStyle(color)} />
