@@ -18,68 +18,169 @@ import type { OscillatorFlowNode } from '../../../store/dawTypes';
 
 const color = NODE_COLORS.source;
 
-export const OscillatorNode = memo(function OscillatorNode({ id, data, selected }: NodeProps<OscillatorFlowNode>) {
-	const setNodeParam = useDawStore(s => s.setNodeParam);
-	const startNode    = useDawStore(s => s.startNode);
-	const stopNode     = useDawStore(s => s.stopNode);
-	const isPlaying    = useDawStore(s => s.playingNodes.has(id));
+export const OscillatorNode = memo(function OscillatorNode({
+	id,
+	data,
+	selected,
+}: NodeProps<OscillatorFlowNode>) {
+	const setNodeParam = useDawStore((s) => s.setNodeParam);
+	const startNode = useDawStore((s) => s.startNode);
+	const stopNode = useDawStore((s) => s.stopNode);
+	const isPlaying = useDawStore((s) => s.playingNodes.has(id));
 
 	const handleToggle = async () => {
 		if (isPlaying) stopNode(id);
-		else           await startNode(id);
+		else await startNode(id);
 	};
 
 	return (
-		<Box sx={{ borderRadius: 1, backgroundImage: METAL_BG, width: 2 * GRID_UNIT, position: 'relative', pb: 2, boxShadow: selected ? `0px 4px 15px ${color}4d` : '0px 4px 15px rgba(0,0,0,0.30)' }}>
-			<NodeHeader id={id} label='Oscillator' selected={selected} accentColor={color} filledHeader />
+		<Box
+			sx={{
+				borderRadius: 1,
+				backgroundImage: METAL_BG,
+				width: 2 * GRID_UNIT,
+				position: 'relative',
+				pb: 2,
+				boxShadow: selected
+					? `0px 4px 15px ${color}4d`
+					: '0px 4px 15px rgba(0,0,0,0.30)',
+			}}
+		>
+			<NodeHeader
+				id={id}
+				label='Oscillator'
+				selected={selected}
+				accentColor={color}
+				filledHeader
+			/>
 
-			<Box sx={{ px: 1.75, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-
-				<Box className='nodrag' sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+			<Box
+				sx={{
+					px: 1.75,
+					pt: 2,
+					pb: 0.75,
+					display: 'flex',
+					flexDirection: 'column',
+					gap: 0.75,
+				}}
+			>
+				<Box
+					className='nodrag'
+					sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}
+				>
 					<Box sx={{ display: 'flex', gap: '1px' }}>
 						{OSC_TYPES.map((t, i) => {
 							const active = data.type === t;
-							const lit    = hwLit(color);
-							const radius = i === 0 ? '3px 0 0 3px' : i === 3 ? '0 3px 3px 0' : '0';
+							const lit = hwLit(color);
+							const radius =
+								i === 0 ? '3px 0 0 3px' : i === 3 ? '0 3px 3px 0' : '0';
 							return (
-								<Box key={t} onClick={() => setNodeParam(id, { type: t })} sx={{
-									flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-									py: 0.75, cursor: 'pointer',
-									color: active ? color : 'text.disabled',
-									...(active ? lit : HW_RAISED),
-									borderRadius: radius,
-									'&:hover': active
-										? { ...lit, filter: 'brightness(1.1)' }
-										: { background: 'linear-gradient(to bottom, #40404a 0%, #2e2e34 100%)', color: 'text.secondary' },
-								}}>
+								<Box
+									key={t}
+									onClick={() => setNodeParam(id, { type: t })}
+									sx={{
+										flex: 1,
+										display: 'flex',
+										alignItems: 'center',
+										justifyContent: 'center',
+										py: 0.75,
+										cursor: 'pointer',
+										color: active ? color : 'text.disabled',
+										...(active ? lit : HW_RAISED),
+										borderRadius: radius,
+										'&:hover': active
+											? { ...lit, filter: 'brightness(1.1)' }
+											: {
+													background:
+														'linear-gradient(to bottom, #40404a 0%, #2e2e34 100%)',
+													color: 'text.secondary',
+												},
+									}}
+								>
 									{WAVE_ICONS[t](active, color)}
 								</Box>
 							);
 						})}
 					</Box>
-					<Typography sx={{ fontSize: 9, color: 'text.disabled', textAlign: 'center', letterSpacing: 0.5 }}>
+					<Typography
+						sx={{
+							fontSize: 9,
+							color: 'text.disabled',
+							textAlign: 'center',
+							letterSpacing: 0.5,
+						}}
+					>
 						{data.type}
 					</Typography>
 				</Box>
 
-				<HwButton color={color} lit={isPlaying} sx={{ py: 0.4 }} onClick={handleToggle} fullWidth className='nodrag'
-					aria-label={isPlaying ? 'Stop oscillator' : 'Start oscillator'}>
-					{isPlaying ? <StopIcon sx={{ fontSize: 13 }} /> : <PlayArrowIcon sx={{ fontSize: 13 }} />}
+				<HwButton
+					color={color}
+					lit={isPlaying}
+					sx={{ py: 0.4 }}
+					onClick={handleToggle}
+					fullWidth
+					className='nodrag'
+					aria-label={isPlaying ? 'Stop oscillator' : 'Start oscillator'}
+				>
+					{isPlaying ? (
+						<StopIcon sx={{ fontSize: 13 }} />
+					) : (
+						<PlayArrowIcon sx={{ fontSize: 13 }} />
+					)}
 				</HwButton>
 
 				<Box className='nodrag nowheel'>
-					<HwSliderField label='freq'   value={data.frequency} min={20}    max={4000} step={1}    color={color} onChange={v => setNodeParam(id, { frequency: v })} format={v => String(v)}    unit='Hz' allowValueEdit allowBoundsEdit />
+					<HwSliderField
+						label='freq'
+						value={data.frequency}
+						min={20}
+						max={4000}
+						step={1}
+						color={color}
+						onChange={(v) => setNodeParam(id, { frequency: v })}
+						format={(v) => String(v)}
+						unit='Hz'
+						allowValueEdit
+						allowBoundsEdit
+					/>
 				</Box>
 				<Box className='nodrag nowheel'>
-					<HwSliderField label='detune' value={data.detune}    min={-1200} max={1200} step={1}    color={color} onChange={v => setNodeParam(id, { detune: v })}    format={v => String(v)}    unit='ct' allowValueEdit />
+					<HwSliderField
+						label='detune'
+						value={data.detune}
+						min={-1200}
+						max={1200}
+						step={1}
+						color={color}
+						onChange={(v) => setNodeParam(id, { detune: v })}
+						format={(v) => String(v)}
+						unit='ct'
+						allowValueEdit
+					/>
 				</Box>
 				<Box className='nodrag nowheel'>
-					<HwSliderField label='phase'  value={data.phase}     min={0}     max={360}  step={1}    color={color} onChange={v => setNodeParam(id, { phase: v })}     format={v => String(v)}    unit='°'  allowValueEdit />
+					<HwSliderField
+						label='phase'
+						value={data.phase}
+						min={0}
+						max={360}
+						step={1}
+						color={color}
+						onChange={(v) => setNodeParam(id, { phase: v })}
+						format={(v) => String(v)}
+						unit='deg'
+						allowValueEdit
+					/>
 				</Box>
-
 			</Box>
 
-			<Handle type='source' position={Position.Bottom} id='out-0' style={bottomOutputHandleStyle(color)} />
+			<Handle
+				type='source'
+				position={Position.Bottom}
+				id='out-0'
+				style={bottomOutputHandleStyle(color)}
+			/>
 		</Box>
 	);
 });
