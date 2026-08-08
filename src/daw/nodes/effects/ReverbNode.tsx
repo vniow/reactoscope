@@ -20,9 +20,9 @@ export const ReverbNode = memo(function ReverbNode({ id, data, selected }: NodeP
 			<NodeHeader id={id} label='Reverb' selected={selected} accentColor={color} filledHeader />
 
 			<Box sx={{ px: 1.75, pt: 2, pb: 0.75, display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }} className='nodrag nowheel'>
-				<HwArcSlider labelBelow label='decay'    value={data.decay}    min={0.1} max={10}  step={0.1}  color={color} onChange={v => setNodeParam(id, { decay: v })}    format={v => v.toFixed(1)} unit='s'  allowValueEdit allowBoundsEdit />
-				<HwArcSlider labelBelow label='preDelay' value={data.preDelay} min={0}   max={0.5} step={0.01} color={color} onChange={v => setNodeParam(id, { preDelay: v })} format={v => v.toFixed(2)} unit='s'  allowValueEdit allowBoundsEdit />
-				<HwArcSlider labelBelow label='wet'      value={data.wet}      min={0}   max={1}   step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}      format={v => v.toFixed(2)}            allowValueEdit />
+				<HwArcSlider label='decay'    value={data.decay}    min={0.1} max={10}  step={0.1}  color={color} onChange={v => setNodeParam(id, { decay: v })}    format={v => v.toFixed(1)} unit='s'  allowValueEdit allowBoundsEdit />
+				<HwArcSlider label='preDelay' value={data.preDelay} min={0}   max={0.5} step={0.01} color={color} onChange={v => setNodeParam(id, { preDelay: v })} format={v => v.toFixed(2)} unit='s'  allowValueEdit allowBoundsEdit />
+				<HwArcSlider label='wet'      value={data.wet}      min={0}   max={1}   step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}      format={v => v.toFixed(2)}            allowValueEdit />
 			</Box>
 
 			<Handle type='target' position={Position.Left}  id='in-0'  style={inputHandleStyle(color)} />

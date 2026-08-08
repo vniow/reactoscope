@@ -20,8 +20,8 @@ export const StereoWidenerNode = memo(function StereoWidenerNode({ id, data, sel
 			<NodeHeader id={id} label='StereoWidener' selected={selected} accentColor={color} filledHeader />
 
 			<Box sx={{ px: 1.75, pt: 2, pb: 0.75, display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }} className='nodrag nowheel'>
-				<HwArcSlider labelBelow label='width' value={data.width} min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { width: v })} format={v => v.toFixed(2)} allowValueEdit />
-				<HwArcSlider labelBelow label='wet'   value={data.wet}   min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}   format={v => v.toFixed(2)} allowValueEdit />
+				<HwArcSlider label='width' value={data.width} min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { width: v })} format={v => v.toFixed(2)} allowValueEdit />
+				<HwArcSlider label='wet'   value={data.wet}   min={0} max={1} step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}   format={v => v.toFixed(2)} allowValueEdit />
 			</Box>
 
 			<Handle type='target' position={Position.Left}  id='in-0'  style={inputHandleStyle(color)} />
