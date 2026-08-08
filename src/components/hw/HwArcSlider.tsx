@@ -273,17 +273,9 @@ export function HwArcSlider({
 				/>
 			</Box>
 
-			{/* Below-arc label */}
-			{labelBelow && (
-				<Typography variant='caption' color='text.secondary'
-					sx={{ fontSize: 10, textAlign: 'center', mt: 0.25 }}>
-					{label}
-				</Typography>
-			)}
-
 			{/* Bounds row */}
 			{allowBoundsEdit && (
-				<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+				<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.25 }}>
 					{editingMin ? (
 						<EditInput
 							defaultValue={String(localMin)}
@@ -317,6 +309,14 @@ export function HwArcSlider({
 						</Typography>
 					)}
 				</Box>
+			)}
+
+			{/* Below-arc label */}
+			{labelBelow && (
+				<Typography variant='caption' color='text.secondary'
+					sx={{ fontSize: 10, textAlign: 'center', mt: 1 }}>
+					{label}
+				</Typography>
 			)}
 
 		</Box>
