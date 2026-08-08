@@ -1,14 +1,18 @@
-import { Player, Split, getTransport, start as toneStart } from 'tone';
-import { _audioNodes } from '../audioCore';
+import { Player, Split, start as toneStart } from 'tone';
+import { _audioNodes, getAudioCurrentTime } from '../audioCore';
 import type { NodeTypeHandler } from './nodeHandler';
 import type { PlayerNodeData, PlayerAudioEntry } from '../../store/dawTypes';
 
 // ─── Player node ──────────────────────────────────────────────────────────────
-// Playback is transport-coupled: position is derived from the Tone transport
-// clock (startOffset + transport.seconds * rate), so play/pause/seek/rate all
-// have to stop and restart the transport in lockstep with the Player. Those
-// operations live here as the player module's own interface; the handler covers
-// the shared lifecycle protocol (create/dispose).
+// Position is tracked against the AudioContext's own clock (startOffset +
+// elapsed-since-startedAt * rate) — not Tone.Transport. Transport is a global
+// singleton; an earlier version of this module used it as a shared stopwatch,
+// which meant starting/seeking one Player node reset the position readout of
+// every other Player node on the canvas. getAudioCurrentTime() is monotonic
+// like Transport but not stateful/resettable, so nothing here can stomp on
+// another node's tracking.
+
+const START_LATENCY = 0.01; // matches the '+0.01' scheduling offset passed to toneNode.start()
 
 function getEntry(id: string): PlayerAudioEntry | undefined {
 	const e = _audioNodes.get(id);
@@ -27,6 +31,7 @@ export const playerHandler: NodeTypeHandler<PlayerNodeData> = {
 			toneNode,
 			split,
 			startOffset:    0,
+			startedAt:      0,
 			currentRate:    1,
 			isExplicitStop: false,
 			isPlaying:      false,
@@ -39,7 +44,6 @@ export const playerHandler: NodeTypeHandler<PlayerNodeData> = {
 				return;
 			}
 			// Natural end of track
-			getTransport().stop();
 			entry.startOffset = 0;
 			entry.isPlaying   = false;
 			entry.playbackEndCb?.();
@@ -60,21 +64,18 @@ export const playerHandler: NodeTypeHandler<PlayerNodeData> = {
 		_audioNodes.delete(id);
 	},
 
-	setAudioParam() { /* playback is driven by the transport helpers below */ },
+	setAudioParam() { /* playback is driven by the operations below */ },
 };
 
-// ─── Transport-coupled playback operations ───────────────────────────────────
+// ─── Playback operations ──────────────────────────────────────────────────────
 
 export async function playNode(id: string): Promise<void> {
 	const entry = getEntry(id);
 	if (!entry) return;
 
-	const transport = getTransport();
 	await toneStart();
-	transport.stop();
-	transport.seconds = 0;
 	entry.toneNode.start('+0.01', entry.startOffset);
-	transport.start('+0.01');
+	entry.startedAt = getAudioCurrentTime() + START_LATENCY;
 	entry.isPlaying = true;
 }
 
@@ -82,11 +83,9 @@ export function pauseNode(id: string): void {
 	const entry = getEntry(id);
 	if (!entry) return;
 
-	const transport = getTransport();
 	entry.startOffset    = getNodePosition(id);
 	entry.isExplicitStop = true;
 	entry.toneNode.stop();
-	transport.stop();
 	entry.isPlaying = false;
 }
 
@@ -94,16 +93,11 @@ export function seekNode(id: string, seconds: number): void {
 	const entry = getEntry(id);
 	if (!entry) return;
 
-	const transport  = getTransport();
-	const wasPlaying = entry.toneNode.state === 'started';
 	entry.startOffset = seconds;
-	if (wasPlaying) {
+	if (entry.toneNode.state === 'started') {
 		entry.isExplicitStop = true;
-		entry.toneNode.stop();
-		transport.stop();
-		transport.seconds = 0;
-		entry.toneNode.start('+0.01', entry.startOffset);
-		transport.start('+0.01');
+		entry.toneNode.seek(seconds);
+		entry.startedAt = getAudioCurrentTime();
 	}
 }
 
@@ -111,15 +105,12 @@ export async function loadTrackForNode(id: string, url: string): Promise<void> {
 	const entry = getEntry(id);
 	if (!entry) return;
 
-	const transport = getTransport();
 	if (entry.toneNode.state === 'started') {
 		entry.isExplicitStop = true;
 		entry.toneNode.stop();
-		transport.stop();
 	}
-	transport.seconds    = 0;
-	entry.startOffset    = 0;
-	entry.isPlaying      = false;
+	entry.startOffset = 0;
+	entry.isPlaying   = false;
 	await entry.toneNode.load(url);
 }
 
@@ -127,12 +118,9 @@ export function setNodeRate(id: string, rate: number): void {
 	const entry = getEntry(id);
 	if (!entry) return;
 
-	const transport = getTransport();
 	if (entry.toneNode.state === 'started') {
 		entry.startOffset = getNodePosition(id);
-		transport.stop();
-		transport.seconds = 0;
-		transport.start('+0.01');
+		entry.startedAt   = getAudioCurrentTime();
 	}
 	entry.currentRate           = rate;
 	entry.toneNode.playbackRate = rate;
@@ -154,7 +142,7 @@ export function getNodePosition(id: string): number {
 	const entry = getEntry(id);
 	if (!entry) return 0;
 	if (!entry.isPlaying) return entry.startOffset;
-	return entry.startOffset + getTransport().seconds * entry.currentRate;
+	return entry.startOffset + (getAudioCurrentTime() - entry.startedAt) * entry.currentRate;
 }
 
 export function getNodeDuration(id: string): number {
