@@ -1,5 +1,5 @@
-import { getContext } from 'tone';
-import type { AudioNodeMap, AppEdge } from '../store/dawTypes';
+import { getContext, ToneAudioNode } from 'tone';
+import type { AudioNodeMap, AudioNodeEntry, AppEdge } from '../store/dawTypes';
 
 // ─── Shared audio node registry ───────────────────────────────────────────────
 // Module-level singleton — the same Map instance is imported by daw.ts and all
@@ -26,45 +26,108 @@ export function getAudioCurrentTime(): number {
 	return getContext().rawContext.currentTime;
 }
 
-// ─── Tone.js graph traversal helpers ────────────────────────────────────────���
+// ─── Routing adapters ─────────────────────────────────────────────────────────
+// A Port is a resolved connection endpoint: the real Tone.js node to call
+// .connect()/.disconnect() on, and which of its channels a handle refers to.
+// Tone's own connect()/disconnect() already walk a node's .input/.output chain
+// down to the raw AudioNode internally — every port here is a genuine
+// ToneAudioNode, so nothing in this file needs to do that walk by hand.
+//
+// Every AudioNodeEntry kind gets exactly one adapter in ROUTING, keyed by
+// kind — connectAudioNodes/disconnectAudioNodes dispatch through it once,
+// instead of each doing its own kind-branching. Most kinds share
+// `genericAdapter`: their whole routable surface is `entry.toneNode` itself.
+// A kind needs its own adapter only when its real input/output isn't
+// reachable that way — either it lives under a different field (`split`, or
+// masterOutput's six named gains), or reading it needs per-handle knowledge
+// the generic case can't have.
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ToneInputNode = any;
+export type Port = { node: ToneAudioNode; channel: number };
 
-function _getTargetToneNode(
-	tgt: NonNullable<ReturnType<typeof _audioNodes.get>>,
-	targetHandle: string,
-): ToneInputNode | null {
-	if (tgt.kind === 'masterOutput') {
-		if (targetHandle === 'in-0') return tgt.inputGainX;
-		if (targetHandle === 'in-1') return tgt.inputGainY;
-		if (targetHandle === 'in-2') return tgt.inputGainR;
-		if (targetHandle === 'in-3') return tgt.inputGainG;
-		if (targetHandle === 'in-4') return tgt.inputGainB;
-		if (targetHandle === 'in-5') return tgt.inputGainA;
-		return null;
-	}
-	if ('toneNode' in tgt) return (tgt as { toneNode: ToneInputNode }).toneNode;
-	return null;
-}
+type PortAdapter = {
+	getOutput?(entry: AudioNodeEntry, sourceHandle: string): Port | null;
+	getInput?(entry: AudioNodeEntry, targetHandle: string): Port | null;
+};
 
-// Follow the Tone.js .input chain to the underlying raw AudioNode.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function _resolveInput(node: ToneInputNode): any {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let n: any = node;
-	for (let i = 0; i < 16 && n?.input !== undefined; i++) n = n.input;
-	return n;
-}
+const genericAdapter: PortAdapter = {
+	getOutput: (entry) =>
+		'toneNode' in entry && entry.toneNode instanceof ToneAudioNode
+			? { node: entry.toneNode, channel: 0 } : null,
+	getInput: (entry) =>
+		'toneNode' in entry && entry.toneNode instanceof ToneAudioNode
+			? { node: entry.toneNode, channel: 0 } : null,
+};
 
-// Follow the Tone.js .output chain to the underlying raw AudioNode.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function _resolveOutput(node: ToneInputNode): any {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let n: any = node;
-	for (let i = 0; i < 16 && n?.output !== undefined; i++) n = n.output;
-	return n;
-}
+const masterOutputAdapter: PortAdapter = {
+	// Target-only: six named gains, one per handle. Never a connection source.
+	getInput: (entry, targetHandle) => {
+		if (entry.kind !== 'masterOutput') return null;
+		const gain = {
+			'in-0': entry.inputGainX, 'in-1': entry.inputGainY,
+			'in-2': entry.inputGainR, 'in-3': entry.inputGainG,
+			'in-4': entry.inputGainB, 'in-5': entry.inputGainA,
+		}[targetHandle];
+		return gain ? { node: gain, channel: 0 } : null;
+	},
+};
+
+const splitOutputAdapter: PortAdapter = {
+	// player / grainPlayer: source-only, out-0 = L, out-1 = R of a Split(2).
+	getOutput: (entry, sourceHandle) =>
+		'split' in entry ? { node: entry.split, channel: sourceHandle === 'out-1' ? 1 : 0 } : null,
+};
+
+const sceneInputAdapter: PortAdapter = {
+	// Source-only, six channels of a Split(6) selected by handle index.
+	getOutput: (entry, sourceHandle) =>
+		entry.kind === 'sceneInput'
+			? { node: entry.split, channel: parseInt(sourceHandle.replace('out-', ''), 10) } : null,
+};
+
+const delayAdapter: PortAdapter = {
+	// TODO: delete once DelayAudioEntry wraps a real FeedbackDelay — it'll fall
+	// into genericAdapter like every other effect once toneNode is a real node
+	// instead of a plain { input, output } composite.
+	getOutput: (entry) => entry.kind === 'delay' ? { node: entry.toneNode.output, channel: 0 } : null,
+	getInput:  (entry) => entry.kind === 'delay' ? { node: entry.toneNode.input,  channel: 0 } : null,
+};
+
+const ROUTING: Record<AudioNodeEntry['kind'], PortAdapter> = {
+	masterOutput: masterOutputAdapter,
+	player:       splitOutputAdapter,
+	grainPlayer:  splitOutputAdapter,
+	sceneInput:   sceneInputAdapter,
+	delay:        delayAdapter,
+	oscillator:       genericAdapter,
+	gain:             genericAdapter,
+	noise:            genericAdapter,
+	dcSignal:         genericAdapter,
+	lfo:              genericAdapter,
+	fmOscillator:     genericAdapter,
+	amOscillator:     genericAdapter,
+	fatOscillator:    genericAdapter,
+	pulseOscillator:  genericAdapter,
+	pwmOscillator:    genericAdapter,
+	micInput:         genericAdapter,
+	reverb:           genericAdapter,
+	jcReverb:         genericAdapter,
+	freeverb:         genericAdapter,
+	feedbackDelay:    genericAdapter,
+	pingPongDelay:    genericAdapter,
+	distortion:       genericAdapter,
+	chebyshev:        genericAdapter,
+	bitCrusher:       genericAdapter,
+	frequencyShifter: genericAdapter,
+	pitchShift:       genericAdapter,
+	stereoWidener:    genericAdapter,
+	chorus:           genericAdapter,
+	phaser:           genericAdapter,
+	tremolo:          genericAdapter,
+	vibrato:          genericAdapter,
+	autoFilter:       genericAdapter,
+	autoPanner:       genericAdapter,
+	autoWah:          genericAdapter,
+};
 
 // ─── Audio routing ────────────────────────────────────────────────────────────
 // Both functions rely on the master entry already being in _audioNodes.
@@ -81,21 +144,12 @@ export function connectAudioNodes(
 	const tgt = _audioNodes.get(targetId);
 	if (!src || !tgt) return;
 
-	const destNode = _getTargetToneNode(tgt, targetHandle);
-	if (!destNode) return;
-
-	const outputIndex = sourceHandle === 'out-1' ? 1 : 0;
-	const destAudio   = _resolveInput(destNode);
+	const srcPort = ROUTING[src.kind].getOutput?.(src, sourceHandle);
+	const dstPort = ROUTING[tgt.kind].getInput?.(tgt, targetHandle);
+	if (!srcPort || !dstPort) return;
 
 	try {
-		if (src.kind === 'player' || src.kind === 'grainPlayer') {
-			_resolveOutput(src.split as unknown as ToneInputNode).connect(destAudio, outputIndex, 0);
-		} else if (src.kind === 'sceneInput') {
-			const chanIndex = parseInt(sourceHandle.replace('out-', ''), 10);
-			src.split.output.connect(destAudio, chanIndex, 0);
-		} else if ('toneNode' in src) {
-			_resolveOutput((src as { toneNode: ToneInputNode }).toneNode).connect(destAudio, outputIndex, 0);
-		}
+		srcPort.node.connect(dstPort.node, srcPort.channel, dstPort.channel);
 	} catch (e) {
 		if ((e as Error)?.message?.includes('already connected') ||
 			(e as Error)?.message?.includes('InvalidStateError')) return;
@@ -113,21 +167,12 @@ export function disconnectAudioNodes(
 	const tgt = _audioNodes.get(targetId);
 	if (!src || !tgt) return;
 
-	const destNode = _getTargetToneNode(tgt, targetHandle);
-	if (!destNode) return;
-
-	const outputIndex = sourceHandle === 'out-1' ? 1 : 0;
-	const destAudio   = _resolveInput(destNode);
+	const srcPort = ROUTING[src.kind].getOutput?.(src, sourceHandle);
+	const dstPort = ROUTING[tgt.kind].getInput?.(tgt, targetHandle);
+	if (!srcPort || !dstPort) return;
 
 	try {
-		if (src.kind === 'player' || src.kind === 'grainPlayer') {
-			_resolveOutput(src.split as unknown as ToneInputNode).disconnect(destAudio, outputIndex);
-		} else if (src.kind === 'sceneInput') {
-			const chanIndex = parseInt(sourceHandle.replace('out-', ''), 10);
-			src.split.output.disconnect(destAudio, chanIndex, 0);
-		} else if ('toneNode' in src) {
-			_resolveOutput((src as { toneNode: ToneInputNode }).toneNode).disconnect(destAudio, outputIndex);
-		}
+		srcPort.node.disconnect(dstPort.node, srcPort.channel, dstPort.channel);
 	} catch {
 		// Not connected — ignore
 	}
