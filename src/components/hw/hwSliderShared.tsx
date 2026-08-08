@@ -12,6 +12,8 @@ export function EditInput({
 	compact   = false,
 	fontSize: fontSizeProp,
 	width:    widthProp,
+	color,
+	align     = 'right',
 }: {
 	defaultValue: string;
 	onCommit:     (raw: string) => void;
@@ -21,12 +23,19 @@ export function EditInput({
 	fontSize?:    number;
 	/** Override input width. Defaults to standard slider sizes (54 / 38). */
 	width?:       number;
+	/** Accent the box border/glow with the owning control's color. Neutral gray if omitted. */
+	color?:       string;
+	/** Text alignment within the box. Defaults to 'right' (matches corner-anchored displays). */
+	align?:       'left' | 'center' | 'right';
 }) {
 	const [raw, setRaw] = useState(defaultValue);
 	return (
 		<Box sx={{
 			background:   HW_INSET.background,
-			boxShadow:    `inset 0 0 0 1px #0d0d0f, ${HW_INSET.boxShadow}`,
+			border:       `1px solid ${color ? `${color}50` : '#0d0d0f'}`,
+			boxShadow:    color
+				? `inset 0 2px 4px rgba(0,0,0,0.55), 0 0 6px ${color}30`
+				: 'inset 0 2px 4px rgba(0,0,0,0.55)',
 			borderRadius: HW_INSET.borderRadius,
 			px: 0.5, display: 'inline-flex', alignItems: 'center',
 		}}>
@@ -45,7 +54,7 @@ export function EditInput({
 					fontSize: fontSizeProp ?? (compact ? 8 : 10),
 					color:    'text.primary',
 					width:    widthProp    ?? (compact ? 38 : 54),
-					'& .MuiInputBase-input': { p: 0, textAlign: 'right', lineHeight: 1.66 },
+					'& .MuiInputBase-input': { p: 0, textAlign: align, lineHeight: 1.66 },
 				}}
 			/>
 		</Box>

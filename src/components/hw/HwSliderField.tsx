@@ -46,7 +46,7 @@ export function HwSliderField({
 			<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.25 }}>
 				<Typography variant='caption' color='text.secondary' sx={{ fontSize: 10 }}>{label}</Typography>
 				{allowValueEdit && editingValue ? (
-					<EditInput defaultValue={displayValue} onCommit={commitValue} onCancel={() => setEditingValue(false)} />
+					<EditInput defaultValue={displayValue} onCommit={commitValue} onCancel={() => setEditingValue(false)} color={color} />
 				) : (
 					<Typography
 						variant='caption' color='text.disabled'
@@ -71,7 +71,7 @@ export function HwSliderField({
 			{allowBoundsEdit && (
 				<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.25 }}>
 					{editingMin ? (
-						<EditInput defaultValue={String(localMin)} onCommit={commitMin} onCancel={() => setEditingMin(false)} compact />
+						<EditInput defaultValue={String(localMin)} onCommit={commitMin} onCancel={() => setEditingMin(false)} compact color={color} align='center' />
 					) : (
 						<Typography
 							variant='caption'
@@ -82,7 +82,7 @@ export function HwSliderField({
 						</Typography>
 					)}
 					{editingMax ? (
-						<EditInput defaultValue={String(localMax)} onCommit={commitMax} onCancel={() => setEditingMax(false)} compact />
+						<EditInput defaultValue={String(localMax)} onCommit={commitMax} onCancel={() => setEditingMax(false)} compact color={color} align='center' />
 					) : (
 						<Typography
 							variant='caption'
