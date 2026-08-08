@@ -1,4 +1,4 @@
-import { useCallback, useId, useState } from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { EditInput, useBoundsEdit } from './hwSliderShared';
@@ -28,6 +28,14 @@ function arcPath(cx: number, cy: number, r: number, startDeg: number, sweepDeg: 
 const ARC_START = 135;
 const ARC_SWEEP = 270;
 const STROKE    = 5;
+
+/** Extra grab margin (px) around the visible stroke — the ring is the hit target, not the whole square. */
+const HIT_PAD = 7;
+
+/** Is a point `dist` px from center within the padded ring band at radius `r`? */
+function isOnRing(dist: number, r: number) {
+	return Math.abs(dist - r) <= STROKE / 2 + HIT_PAD;
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -78,13 +86,21 @@ export function HwArcSlider({
 		onChange(parseFloat(clamped.toFixed(decimals)));
 	}, [step, localMin, localMax, decimals, onChange]);
 
-	const handleMouseDown = useCallback((e: React.MouseEvent) => {
-		e.preventDefault();
-		e.stopPropagation();
+	const draggingRef = useRef(false);
+	const [hoveringRing, setHoveringRing] = useState(false);
 
+	const handleMouseDown = useCallback((e: React.MouseEvent) => {
 		const rect    = (e.currentTarget as SVGSVGElement).getBoundingClientRect();
 		const centerX = rect.left + rect.width  / 2;
 		const centerY = rect.top  + rect.height / 2;
+		const r       = rect.width / 2 - STROKE / 2 - 2;
+
+		const dist0 = Math.hypot(e.clientX - centerX, e.clientY - centerY);
+		if (!isOnRing(dist0, r)) return;
+
+		e.preventDefault();
+		e.stopPropagation();
+		draggingRef.current = true;
 
 		const angleNorm = (clientX: number, clientY: number) => {
 			const angleDeg  = (Math.atan2(clientY - centerY, clientX - centerX) * 180 / Math.PI + 360) % 360;
@@ -98,8 +114,23 @@ export function HwArcSlider({
 			applyValue(localMin + angleNorm(clientX, clientY) * (localMax - localMin));
 		};
 
-		const onMove = (me: MouseEvent) => apply(me.clientX, me.clientY);
-		const onUp   = () => {
+		// Grab is gated to the ring, but once dragging the value tracks the cursor
+		// anywhere on screen — same as the current native window listeners below.
+		let rafId: number | null = null;
+		let pendingXY: [number, number] | null = null;
+
+		const onMove = (me: MouseEvent) => {
+			pendingXY = [me.clientX, me.clientY];
+			if (rafId != null) return;
+			rafId = requestAnimationFrame(() => {
+				rafId = null;
+				if (pendingXY) apply(...pendingXY);
+			});
+		};
+		const onUp = () => {
+			if (rafId != null) cancelAnimationFrame(rafId);
+			draggingRef.current = false;
+			setHoveringRing(false);
 			window.removeEventListener('mousemove', onMove);
 			window.removeEventListener('mouseup', onUp);
 		};
@@ -108,6 +139,21 @@ export function HwArcSlider({
 
 		apply(e.clientX, e.clientY);
 	}, [localMin, localMax, applyValue]);
+
+	const handleHoverMove = useCallback((e: React.MouseEvent) => {
+		if (draggingRef.current) return;
+		const rect    = (e.currentTarget as SVGSVGElement).getBoundingClientRect();
+		const centerX = rect.left + rect.width  / 2;
+		const centerY = rect.top  + rect.height / 2;
+		const r       = rect.width / 2 - STROKE / 2 - 2;
+		const dist    = Math.hypot(e.clientX - centerX, e.clientY - centerY);
+		setHoveringRing(isOnRing(dist, r));
+	}, []);
+
+	const handleHoverLeave = useCallback(() => {
+		if (draggingRef.current) return;
+		setHoveringRing(false);
+	}, []);
 
 	const commitValue = useCallback((raw: string) => {
 		setEditingValue(false);
@@ -119,6 +165,7 @@ export function HwArcSlider({
 	const [tx, ty]    = polar(cx, cy, r, thumbAngle);
 	const [sx, sy]    = polar(cx, cy, r, ARC_START);
 	const gradientId  = `${filterId}-grad`;
+	const grooveId    = `${filterId}-groove`;
 
 	return (
 		<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 0.25, width: size }}>
@@ -153,9 +200,11 @@ export function HwArcSlider({
 				component='svg'
 				width={size} height={size}
 				viewBox={`0 0 ${size} ${size}`}
-				sx={{ cursor: 'crosshair', display: 'block', overflow: 'visible', userSelect: 'none' }}
+				sx={{ cursor: hoveringRing ? 'crosshair' : 'default', display: 'block', overflow: 'visible', userSelect: 'none' }}
 				className='nodrag'
 				onMouseDown={handleMouseDown}
+				onMouseMove={handleHoverMove}
+				onMouseLeave={handleHoverLeave}
 			>
 				<defs>
 					<filter id={filterId} x='-80%' y='-80%' width='260%' height='260%'>
@@ -170,14 +219,35 @@ export function HwArcSlider({
 						<stop offset='0%'   stopColor={`${color}80`} />
 						<stop offset='100%' stopColor={color} />
 					</linearGradient>
+					{/* Fixed top-down light source, independent of the arc's rotation — matches the slider rail's inset shading. */}
+					<linearGradient id={grooveId} gradientUnits='userSpaceOnUse'
+						x1={cx} y1={cy - r} x2={cx} y2={cy + r}>
+						<stop offset='0%'   stopColor='#0a0a0c' />
+						<stop offset='50%'  stopColor='#0d0d0f' />
+						<stop offset='100%' stopColor='#131316' />
+					</linearGradient>
 				</defs>
 
-				{/* Background track */}
+				{/* Background track — carved groove: dark walls, top-lit face, thin outer-edge highlight */}
 				<path
 					d={arcPath(cx, cy, r, ARC_START, ARC_SWEEP)}
 					fill='none'
-					stroke='rgba(255,255,255,0.07)'
+					stroke='#0d0d0f'
+					strokeWidth={STROKE + 2}
+					strokeLinecap='round'
+				/>
+				<path
+					d={arcPath(cx, cy, r, ARC_START, ARC_SWEEP)}
+					fill='none'
+					stroke={`url(#${grooveId})`}
 					strokeWidth={STROKE}
+					strokeLinecap='round'
+				/>
+				<path
+					d={arcPath(cx, cy, r + STROKE / 2 - 0.5, ARC_START, ARC_SWEEP)}
+					fill='none'
+					stroke='rgba(255,255,255,0.05)'
+					strokeWidth={1}
 					strokeLinecap='round'
 				/>
 
