@@ -1,148 +1,236 @@
-import './App.css';
-import WaveScreen from './components/Screen/WaveScreen';
-import React, { useEffect, useRef, useState } from 'react';
-import { ProcessPCM } from './components/Audio/ProcessPCM';
-import * as THREE from 'three';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import { dawInitPromise, useDawStore } from './store/daw';
+import { isolationMode } from './isolationMode';
+import { usePatchStore } from './store/patchStore';
+import { WoscopeProvider } from './contexts/WoahscopeContext';
+import { ErrorBoundary }   from './components';
+import { WoahscopePanel }    from './daw/panels/WoahscopePanel';
+import { SceneInputPanel } from './daw/panels/InputPanel';
+import { DawCanvas }         from './daw/DawCanvas';
+import { SweepPanel }        from './daw/panels/SweepPanel';
 
-const audioContext = new AudioContext();
-const merger = audioContext.createChannelMerger(2);
+const SPLIT_KEY     = 'woahscope-daw-split';
+const DEFAULT_SPLIT = 50;
+const MIN_SPLIT     = 15;
+const MAX_SPLIT     = 85;
 
-function App() {
-  const [width, height] = [512, 512];
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [scene] = useState(new THREE.Scene());
-  const [camera] = useState(
-    new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 1000)
-  );
-  const [points, setPoints] = useState<THREE.Vector3[]>([]);
-  const [pcmX, setPcmX] = useState(new Float32Array(width).fill(0));
-  const [pcmY, setPcmY] = useState(new Float32Array(height).fill(0));
-  const [isMouseDown, setIsMouseDown] = useState(false);
+const SWEEP_HEIGHT_KEY    = 'woahscope-sweep-height';
+const SWEEP_FULLWIDTH_KEY = 'woahscope-sweep-fullwidth';
+const SWEEP_VISIBLE_KEY   = 'woahscope-sweep-visible';
+const CANVAS_SWAP_KEY     = 'woahscope-canvases-swapped';
+const COLUMN_SWAP_KEY     = 'woahscope-columns-swapped';
+const DEFAULT_SWEEP_HEIGHT = 150;
+const MIN_SWEEP_HEIGHT     = 60;
+const MAX_SWEEP_HEIGHT     = 500;
 
-  useEffect(() => {
-    if (canvasRef.current) {
-      const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current });
-      camera.position.z = 5;
-      renderer.render(scene, camera);
-
-      const handleMouseUp = () => setIsMouseDown(false);
-      window.addEventListener('mouseup', handleMouseUp);
-
-      return () => window.removeEventListener('mouseup', handleMouseUp);
-    }
-  }, [camera, scene]);
-
-  const handleMouseDown = () => setIsMouseDown(true);
-
-  const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isMouseDown || !canvasRef.current) return;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    updatePoints(x, y);
-  };
-
-  const updatePoints = (x: number, y: number) => {
-    const newPoint = new THREE.Vector3(x, y, 0);
-    const newPoints = [...points, newPoint];
-
-    setPoints(newPoints);
-    updateScene(newPoints);
-  };
-
-  const updatePointsArray = (newPoints: THREE.Vector3[]) => {
-    setPoints((prevPoints) => [...prevPoints, ...newPoints]);
-    updateScene([...points, ...newPoints]);
-  };
-
-  const generateRandomPoints = () => {
-    const numberOfPoints = Math.floor(Math.random() * 10) + 1; // Generate between 1 and 10 points
-    const newPoints = [];
-    for (let i = 0; i < numberOfPoints; i++) {
-      const x = Math.random() * 2 - 1; // Random x between -1 and 1
-      const y = Math.random() * 2 - 1; // Random y between -1 and 1
-      newPoints.push(new THREE.Vector3(x, y, 0));
-      if (i > 0) {
-        const prevPoint = newPoints[newPoints.length - 2];
-        const midX = (prevPoint.x + x) / 2;
-        const midY = (prevPoint.y + y) / 2;
-        newPoints.splice(
-          newPoints.length - 1,
-          0,
-          new THREE.Vector3(midX, midY, 0)
-        );
-      }
-    }
-    updatePointsArray(newPoints);
-  };
-
-  const updateScene = (points: THREE.Vector3[]) => {
-    if (!canvasRef.current) return;
-    const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current }); // Initialize renderer here to ensure it's always defined
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const material = new THREE.LineBasicMaterial({ color: 'rgb(4, 217, 255)' });
-    const line = new THREE.Line(geometry, material);
-    scene.clear();
-    scene.add(line);
-    renderer.render(scene, camera);
-  };
-
-  const clearCanvas = () => {
-    setPoints([]);
-    scene.clear();
-    if (canvasRef.current) {
-      const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current });
-      renderer.render(scene, camera);
-    }
-    setPcmX(new Float32Array(width).fill(0));
-    setPcmY(new Float32Array(height).fill(0));
-  };
-
-  return (
-    <div>
-      <div className='draw-canvas'>
-        <label>draw on me</label>
-        <label>warning: it'll be noisy</label>
-        <canvas
-          ref={canvasRef}
-          width={width}
-          height={height}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={() => setIsMouseDown(false)}
-        />
-      </div>
-      <button onClick={clearCanvas}>clear canvas</button>
-      <button onClick={generateRandomPoints}>random points</button>
-      <ProcessPCM
-        points={points}
-        setPcmX={setPcmX}
-        setPcmY={setPcmY}
-      />
-      <div className='wave-container'>
-        <div className='wave-screen-wrapper'>
-          <label>left</label>
-          <WaveScreen
-            pcm={pcmX}
-            audioContext={audioContext}
-            merger={merger}
-            channel={0}
-          />
-        </div>
-        <div className='wave-screen-wrapper'>
-          <label>right</label>
-          <WaveScreen
-            pcm={pcmY}
-            audioContext={audioContext}
-            merger={merger}
-            channel={1}
-          />
-        </div>
-      </div>
-    </div>
-  );
+function clampSplit(v: number) {
+	return Math.min(MAX_SPLIT, Math.max(MIN_SPLIT, v));
 }
 
-export default App;
+function clampSweepHeight(v: number) {
+	return Math.min(MAX_SWEEP_HEIGHT, Math.max(MIN_SWEEP_HEIGHT, v));
+}
+
+function readStored<T>(key: string, parse: (raw: string) => T, fallback: T): T {
+	try {
+		const raw = localStorage.getItem(key);
+		if (raw !== null) return parse(raw);
+	} catch {
+		// ignore
+	}
+	return fallback;
+}
+
+const canvasLabelSx = {
+	position:      'absolute',
+	top:           6,
+	left:          8,
+	fontSize:      9,
+	fontFamily:    'monospace',
+	letterSpacing: 1,
+	textTransform: 'uppercase',
+	color:         'text.disabled',
+	pointerEvents: 'none',
+	userSelect:    'none',
+	lineHeight:    1,
+} as const;
+
+export function App() {
+	const [splitPercent,    setSplitPercent]    = useState(() =>
+		readStored(SPLIT_KEY, v => clampSplit(Number(v)), DEFAULT_SPLIT),
+	);
+	const [sweepHeight,     setSweepHeight]     = useState(() =>
+		readStored(SWEEP_HEIGHT_KEY, v => clampSweepHeight(Number(v)), DEFAULT_SWEEP_HEIGHT),
+	);
+	const [sweepFullWidth,  setSweepFullWidth]  = useState(() =>
+		readStored(SWEEP_FULLWIDTH_KEY, v => v === 'true', false),
+	);
+	const [sweepVisible,    setSweepVisible]    = useState(() =>
+		readStored(SWEEP_VISIBLE_KEY, v => v === 'true', false),
+	);
+	const [canvasesSwapped, setCanvasesSwapped] = useState(() =>
+		readStored(CANVAS_SWAP_KEY, v => v === 'true', false),
+	);
+	const [columnsSwapped,  setColumnsSwapped]  = useState(() =>
+		readStored(COLUMN_SWAP_KEY, v => v === 'true', false),
+	);
+
+	const isDraggingRef     = useRef(false);
+	const containerRef      = useRef<HTMLDivElement>(null);
+	const columnsSwappedRef = useRef(columnsSwapped);
+	useEffect(() => { columnsSwappedRef.current = columnsSwapped; }, [columnsSwapped]);
+
+	// Load the default patch once the DAW audio graph has finished initialising.
+	useEffect(() => {
+		void dawInitPromise.then(() => {
+			const { defaultPatchId, patches } = usePatchStore.getState();
+			if (!defaultPatchId) return;
+			const saved = patches.find(p => p.id === defaultPatchId);
+			if (saved) useDawStore.getState().loadPatch(saved.patch);
+		});
+	}, []);
+
+	useEffect(() => { try { localStorage.setItem(SPLIT_KEY,           String(splitPercent));    } catch { /* ignore */ } }, [splitPercent]);
+	useEffect(() => { try { localStorage.setItem(SWEEP_HEIGHT_KEY,    String(sweepHeight));     } catch { /* ignore */ } }, [sweepHeight]);
+	useEffect(() => { try { localStorage.setItem(SWEEP_FULLWIDTH_KEY, String(sweepFullWidth));  } catch { /* ignore */ } }, [sweepFullWidth]);
+	useEffect(() => { try { localStorage.setItem(SWEEP_VISIBLE_KEY,   String(sweepVisible));    } catch { /* ignore */ } }, [sweepVisible]);
+	useEffect(() => { try { localStorage.setItem(CANVAS_SWAP_KEY,     String(canvasesSwapped)); } catch { /* ignore */ } }, [canvasesSwapped]);
+	useEffect(() => { try { localStorage.setItem(COLUMN_SWAP_KEY,     String(columnsSwapped));  } catch { /* ignore */ } }, [columnsSwapped]);
+
+	// Horizontal split drag
+	const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
+		e.preventDefault();
+		isDraggingRef.current = true;
+		document.body.style.cursor     = 'col-resize';
+		document.body.style.userSelect = 'none';
+	}, []);
+
+	useEffect(() => {
+		const onMouseMove = (e: MouseEvent) => {
+			if (!isDraggingRef.current || !containerRef.current) return;
+			const rect   = containerRef.current.getBoundingClientRect();
+			const rawPct = ((e.clientX - rect.left) / rect.width) * 100;
+			// When columns are visually swapped the canvas column is on the right,
+			// so the split percentage runs in the opposite direction.
+			const pct = columnsSwappedRef.current ? 100 - rawPct : rawPct;
+			setSplitPercent(clampSplit(pct));
+		};
+		const onMouseUp = () => {
+			if (!isDraggingRef.current) return;
+			isDraggingRef.current          = false;
+			document.body.style.cursor     = '';
+			document.body.style.userSelect = '';
+		};
+		window.addEventListener('mousemove', onMouseMove);
+		window.addEventListener('mouseup',   onMouseUp);
+		return () => {
+			window.removeEventListener('mousemove', onMouseMove);
+			window.removeEventListener('mouseup',   onMouseUp);
+		};
+	}, []);
+
+	const handleSweepResize = useCallback((newHeight: number) => {
+		setSweepHeight(clampSweepHeight(newHeight));
+	}, []);
+
+	const handleToggleFullWidth = useCallback(() => {
+		setSweepFullWidth(v => !v);
+	}, []);
+
+	const sweepPanel = (
+		<SweepPanel
+			height={sweepHeight}
+			fullWidth={sweepFullWidth}
+			onResize={handleSweepResize}
+			onToggleFullWidth={handleToggleFullWidth}
+		/>
+	);
+
+	return (
+		<ErrorBoundary>
+		<WoscopeProvider>
+			<noscript>gotta enable JavaScript yo</noscript>
+
+			<Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+
+				{/* Main two-column row.
+				    flexDirection drives column swap — no child reordering needed. */}
+				<Box
+					ref={containerRef}
+					sx={{
+						display:       'flex',
+						flexDirection: columnsSwapped ? 'row-reverse' : 'row',
+						flex:          1,
+						minHeight:     0,
+						overflow:      'hidden',
+					}}
+				>
+					{/* Canvas column — always first in the DOM tree */}
+					<Box
+						sx={{
+							width:         `${splitPercent}%`,
+							flexShrink:    0,
+							height:        '100%',
+							overflow:      'hidden',
+							bgcolor:       '#000',
+							display:       'flex',
+							flexDirection: 'column',
+						}}
+					>
+						{/* Canvas + toolbar column.
+						    flexDirection drives canvas swap — WoahscopePanel and
+						    SpinningRectPanel stay in fixed DOM positions; only the
+						    visual order flips. */}
+						<Box sx={{
+							flex:          1,
+							display:       'flex',
+							flexDirection: canvasesSwapped ? 'column-reverse' : 'column',
+							overflow:      'hidden',
+							minWidth:      0,
+						}}>
+							{/* Top canvas (WoahscopePanel) — always first child.
+							    Unmounted under `?isolate=audio` — see isolationMode.ts. */}
+							{isolationMode !== 'audio' && (
+								<Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+									<WoahscopePanel />
+									<Typography sx={canvasLabelSx}>scope</Typography>
+								</Box>
+							)}
+
+							{/* Bottom canvas (SceneInputPanel) — always last child.
+							    Unmounted under `?isolate=audio` — see isolationMode.ts. */}
+							{isolationMode !== 'audio' && (
+								<Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+									<SceneInputPanel />
+									<Typography sx={canvasLabelSx}>scene</Typography>
+								</Box>
+							)}
+
+							{/* Sweep panel in left-column mode — stacks below canvases */}
+							{!sweepFullWidth && sweepVisible && sweepPanel}
+						</Box>
+					</Box>
+
+					{/* DAW column — always last in the DOM tree */}
+					<Box sx={{ flex: 1, height: '100%', overflow: 'hidden', minWidth: 0, borderLeft: '1px solid #1e1e1e' }}>
+						<DawCanvas
+							columnsSwapped={columnsSwapped}
+							onColumnsSwap={() => setColumnsSwapped(v => !v)}
+							canvasesSwapped={canvasesSwapped}
+							onCanvasesSwap={() => setCanvasesSwapped(v => !v)}
+							sweepVisible={sweepVisible}
+							onSweepToggle={() => setSweepVisible(v => !v)}
+							onResizeStart={handleDividerMouseDown}
+						/>
+					</Box>
+				</Box>
+
+				{/* Sweep panel in full-width mode */}
+				{sweepFullWidth && sweepVisible && sweepPanel}
+			</Box>
+		</WoscopeProvider>
+		</ErrorBoundary>
+	);
+}

@@ -1,0 +1,7 @@
+allowBuilds:
+  '@sentry/cli': false
+  esbuild: true
+minimumReleaseAgeExclude:
+  - '@xyflow/react@12.11.3'
+  - '@xyflow/system@0.0.80'
+  - zustand@5.0.15

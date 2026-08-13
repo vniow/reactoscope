@@ -1,0 +1,47 @@
+import { memo } from 'react';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
+import Box from '@mui/material/Box';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import StopIcon from '@mui/icons-material/Stop';
+import { useDawStore } from '../../../store/daw';
+import { NodeHeader } from '../shared/NodeHeader';
+import { NODE_COLORS } from '../shared/nodeColors';
+import { GRID_UNIT } from '../shared/gridSystem';
+import { inputHandleStyle, outputHandleStyle } from '../shared/handleStyles';
+import { METAL_BG } from '../shared/metalBackground';
+import { HwButton } from '../shared/hwComponents';
+import { HwArcSlider } from '../../../components/hw/HwArcSlider';
+import type { AutoPannerFlowNode } from '../../../store/dawTypes';
+
+const color = NODE_COLORS.effects;
+
+export const AutoPannerNode = memo(function AutoPannerNode({ id, data, selected }: NodeProps<AutoPannerFlowNode>) {
+	const setNodeParam  = useDawStore(s => s.setNodeParam);
+	const startNode     = useDawStore(s => s.startNode);
+	const stopNode      = useDawStore(s => s.stopNode);
+	const isRunning     = useDawStore(s => s.playingNodes.has(id));
+
+	const handleToggle = async () => {
+		if (isRunning) stopNode(id);
+		else           await startNode(id);
+	};
+
+	return (
+		<Box sx={{ borderRadius: 1, backgroundImage: METAL_BG, width: 2 * GRID_UNIT, position: 'relative', boxShadow: selected ? `0px 4px 15px ${color}4d` : '0px 4px 15px rgba(0,0,0,0.30)' }}>
+			<NodeHeader id={id} label='AutoPanner' selected={selected} accentColor={color} filledHeader />
+
+			<Box sx={{ px: 1.75, pt: 2, pb: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75 }} className='nodrag nowheel'>
+				<HwButton color={color} lit={isRunning} sx={{ py: 0.4 }} onClick={handleToggle} fullWidth className='nodrag' aria-label={isRunning ? 'Stop' : 'Start'}>
+					{isRunning ? <StopIcon sx={{ fontSize: 13 }} /> : <PlayArrowIcon sx={{ fontSize: 13 }} />}
+				</HwButton>
+				<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
+					<HwArcSlider label='freq' value={data.frequency} min={0.1} max={10} step={0.1}  color={color} onChange={v => setNodeParam(id, { frequency: v })} format={v => v.toFixed(1)} unit='Hz' allowValueEdit allowBoundsEdit />
+					<HwArcSlider label='wet'  value={data.wet}       min={0}   max={1}  step={0.01} color={color} onChange={v => setNodeParam(id, { wet: v })}       format={v => v.toFixed(2)}            allowValueEdit />
+				</Box>
+			</Box>
+
+			<Handle type='target' position={Position.Left}  id='in-0'  style={inputHandleStyle(color)} />
+			<Handle type='source' position={Position.Right} id='out-0' style={outputHandleStyle(color)} />
+		</Box>
+	);
+});

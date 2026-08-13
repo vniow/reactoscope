@@ -22,3 +22,21 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# E2E test tooling (unit tests are committed; see vitest.config.ts)
+e2e/
+playwright.config.ts
+
+# CI/CD (not yet configured for public use)
+.github/
+
+# Internal docs and reference files
+PROGRESS.md
+oscilloscope/
+
+# Memory-leak harness output
+scripts/memory-leak-harness/results/
