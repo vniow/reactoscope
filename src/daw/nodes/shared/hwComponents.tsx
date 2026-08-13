@@ -33,15 +33,32 @@ export function HwButton({ color, lit = false, sx: sxProp, children, ...props }:
 	);
 }
 
-export function HwSwitch({ checked, color, onChange }: { checked: boolean; color: string; onChange: () => void }) {
+function handleToggleKeyDown(onActivate: () => void) {
+	return (e: React.KeyboardEvent) => {
+		if (e.key === ' ' || e.key === 'Enter') {
+			e.preventDefault();
+			onActivate();
+		}
+	};
+}
+
+export function HwSwitch({ checked, color, onChange, label }: { checked: boolean; color: string; onChange: () => void; label: string }) {
 	const lit = hwLit(color);
 	return (
-		<Box onClick={onChange} sx={{
-			...HW_INSET,
-			...(checked ? { ...lit, borderRadius: '9px' } : { borderRadius: '9px' }),
-			width: 32, height: 18,
-			position: 'relative', cursor: 'pointer', flexShrink: 0,
-		}}>
+		<Box
+			onClick={onChange}
+			onKeyDown={handleToggleKeyDown(onChange)}
+			role='switch'
+			tabIndex={0}
+			aria-checked={checked}
+			aria-label={label}
+			sx={{
+				...HW_INSET,
+				...(checked ? { ...lit, borderRadius: '9px' } : { borderRadius: '9px' }),
+				width: 32, height: 18,
+				position: 'relative', cursor: 'pointer', flexShrink: 0,
+				'&:focus-visible': { outline: `2px solid ${color}`, outlineOffset: 2 },
+			}}>
 			<Box sx={{
 				position: 'absolute',
 				top: '50%',
@@ -62,14 +79,32 @@ export function HwSwitch({ checked, color, onChange }: { checked: boolean; color
 	);
 }
 
-export function HwLed({ checked, round, color, onClick }: { checked: boolean; round?: boolean; color: string; onClick: () => void }) {
+type HwLedProps = {
+	checked: boolean;
+	round?: boolean;
+	color: string;
+	onClick: () => void;
+	label: string;
+	/** ARIA role for the toggle semantics this LED represents. Defaults to a standalone checkbox. */
+	role?: 'checkbox' | 'radio' | 'switch';
+};
+
+export function HwLed({ checked, round, color, onClick, label, role = 'checkbox' }: HwLedProps) {
 	const lit = hwLit(color);
 	return (
-		<Box onClick={onClick} sx={{
-			width: 14, height: 14, cursor: 'pointer', flexShrink: 0,
-			display: 'flex', alignItems: 'center', justifyContent: 'center',
-			...(checked ? lit : HW_RAISED), borderRadius: round ? '50%' : '2px',
-		}}>
+		<Box
+			onClick={onClick}
+			onKeyDown={handleToggleKeyDown(onClick)}
+			role={role}
+			tabIndex={0}
+			aria-checked={checked}
+			aria-label={label}
+			sx={{
+				width: 14, height: 14, cursor: 'pointer', flexShrink: 0,
+				display: 'flex', alignItems: 'center', justifyContent: 'center',
+				...(checked ? lit : HW_RAISED), borderRadius: round ? '50%' : '2px',
+				'&:focus-visible': { outline: `2px solid ${color}`, outlineOffset: 2 },
+			}}>
 			{checked && (
 				<Box sx={{
 					width: round ? 5 : 6, height: round ? 5 : 6,

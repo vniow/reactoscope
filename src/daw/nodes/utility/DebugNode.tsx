@@ -141,7 +141,7 @@ export const DebugNode = memo(function DebugNode({
 							<Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
 								{['send', 'eq', 'comp'].map((l, i) => (
 									<Box key={l} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-										<HwLed checked={checks[i]} color={color} onClick={() => toggleCheck(i)} />
+										<HwLed checked={checks[i]} color={color} onClick={() => toggleCheck(i)} label={l} />
 										<Typography variant='caption' color={checks[i] ? 'text.primary' : 'text.secondary'} sx={{ fontSize: 11 }}>{l}</Typography>
 									</Box>
 								))}
@@ -173,7 +173,7 @@ export const DebugNode = memo(function DebugNode({
 							<Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
 								{['mono', 'stereo', 'mid'].map((l, i) => (
 									<Box key={l} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-										<HwLed checked={radio === i} round color={color} onClick={() => setRadio(i)} />
+										<HwLed checked={radio === i} round color={color} onClick={() => setRadio(i)} label={l} role='radio' />
 										<Typography variant='caption' color={radio === i ? 'text.primary' : 'text.secondary'} sx={{ fontSize: 11 }}>{l}</Typography>
 									</Box>
 								))}

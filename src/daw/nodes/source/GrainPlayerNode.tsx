@@ -108,7 +108,7 @@ export const GrainPlayerNode = memo(function GrainPlayerNode({
 				/>
 
 				<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 0.5 }} className='nodrag'>
-					<HwLed checked={isReversed} color={color} onClick={handleReverse} />
+					<HwLed checked={isReversed} color={color} onClick={handleReverse} label='Reverse playback' role='switch' />
 				</Box>
 
 				<Box className='nodrag nowheel'>
