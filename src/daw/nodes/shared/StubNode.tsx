@@ -12,8 +12,6 @@ import type { StubFlowNode, StubKind } from '../../../store/dawTypes';
 // Only entries that differ from the default mono in → mono out topology.
 const STUB_TOPOLOGY: Partial<Record<StubKind, { inputs: string[]; outputs: string[] }>> = {
 	noiseGenerator: { inputs: [],               outputs: ['out-0'] },
-	panner:         { inputs: ['in-0'],         outputs: ['out-0', 'out-1'] },
-	crossFade:      { inputs: ['in-0', 'in-1'], outputs: ['out-0'] },
 	// Source-like stubs (instruments, oscillators) have no audio input
 	synth:          { inputs: [], outputs: ['out-0'] },
 	monoSynth:      { inputs: [], outputs: ['out-0'] },

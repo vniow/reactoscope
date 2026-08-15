@@ -1,7 +1,16 @@
 import { Compressor } from 'tone';
 import { _audioNodes } from '../audioCore';
 import type { NodeTypeHandler } from './nodeHandler';
-import type { CompressorNodeData } from '../../store/dawTypes';
+import type { CompressorNodeData, CompressorBandData } from '../../store/dawTypes';
+
+/** Applies a partial band update to a real Compressor instance — shared with MidSideCompressor/MultibandCompressor, whose `mid`/`side`/`low`/`high` bands are each a full Compressor instance too. */
+export function applyCompressorBand(node: Compressor, update: Partial<CompressorBandData>): void {
+	if (update.threshold !== undefined) node.threshold.value = update.threshold;
+	if (update.ratio     !== undefined) node.ratio.value     = update.ratio;
+	if (update.attack    !== undefined) node.attack.value    = update.attack;
+	if (update.release   !== undefined) node.release.value   = update.release;
+	if (update.knee      !== undefined) node.knee.value      = update.knee;
+}
 
 export const compressorHandler: NodeTypeHandler<CompressorNodeData> = {
 	defaultData: { label: 'Compressor', threshold: -24, ratio: 12, attack: 0.003, release: 0.25, knee: 30 },
@@ -27,10 +36,6 @@ export const compressorHandler: NodeTypeHandler<CompressorNodeData> = {
 	setAudioParam(id, update) {
 		const e = _audioNodes.get(id);
 		if (e?.kind !== 'compressor') return;
-		if (update.threshold !== undefined) e.toneNode.threshold.value = update.threshold;
-		if (update.ratio     !== undefined) e.toneNode.ratio.value     = update.ratio;
-		if (update.attack    !== undefined) e.toneNode.attack.value    = update.attack;
-		if (update.release   !== undefined) e.toneNode.release.value   = update.release;
-		if (update.knee      !== undefined) e.toneNode.knee.value      = update.knee;
+		applyCompressorBand(e.toneNode, update);
 	},
 };

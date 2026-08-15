@@ -59,6 +59,14 @@ import { multibandSplitHandler }   from './nodes/multibandSplit';
 import { analyserHandler }         from './nodes/analyser';
 import { followerHandler }         from './nodes/follower';
 import { soloHandler }             from './nodes/solo';
+import { crossFadeHandler }        from './nodes/crossFade';
+import { pannerHandler }           from './nodes/panner';
+import { midSideCompressorHandler } from './nodes/midSideCompressor';
+import { multibandCompressorHandler } from './nodes/multibandCompressor';
+import { panner3dHandler } from './nodes/panner3d';
+import { waveShaperHandler } from './nodes/waveShaper';
+import { recorderHandler } from './nodes/recorder';
+import { channelHandler } from './nodes/channel';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const _registry = new Map<string, NodeTypeHandler<any>>();
@@ -146,3 +154,11 @@ nodeRegistry.register('multibandSplit',   multibandSplitHandler);
 nodeRegistry.register('analyser',         analyserHandler);
 nodeRegistry.register('follower',         followerHandler);
 nodeRegistry.register('solo',             soloHandler);
+nodeRegistry.register('crossFade',        crossFadeHandler);
+nodeRegistry.register('panner',           pannerHandler);
+nodeRegistry.register('midSideCompressor', midSideCompressorHandler);
+nodeRegistry.register('multibandCompressor', multibandCompressorHandler);
+nodeRegistry.register('panner3d', panner3dHandler);
+nodeRegistry.register('waveShaper', waveShaperHandler);
+nodeRegistry.register('recorder', recorderHandler);
+nodeRegistry.register('channel', channelHandler);

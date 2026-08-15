@@ -173,3 +173,7 @@ export { getDCMeterValue } from './nodes/dcMeter';
 export { getWaveformValue } from './nodes/waveform';
 export { getAnalyserValue } from './nodes/analyser';
 export { setSoloed } from './nodes/solo';
+
+export {
+	isRecorderSupported, startRecordingNode, pauseRecordingNode, stopRecordingNode, getRecorderState,
+} from './nodes/recorder';
