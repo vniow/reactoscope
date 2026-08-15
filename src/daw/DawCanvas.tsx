@@ -87,16 +87,22 @@ import { AutoPannerNode }         from './nodes/effects/AutoPannerNode';
 import { AutoWahNode }            from './nodes/effects/AutoWahNode';
 import { LimiterNode }            from './nodes/dynamics/LimiterNode';
 import { GateNode }               from './nodes/dynamics/GateNode';
+import { CompressorNode }         from './nodes/dynamics/CompressorNode';
 import { BiquadFilterNode }       from './nodes/processing/BiquadFilterNode';
+import { FilterNode }             from './nodes/processing/FilterNode';
+import { EQ3Node }                from './nodes/processing/EQ3Node';
 import { PanVolNode }             from './nodes/processing/PanVolNode';
 import { SplitNode }              from './nodes/processing/SplitNode';
 import { MergeNode }              from './nodes/processing/MergeNode';
 import { MonoNode }               from './nodes/processing/MonoNode';
 import { VolumeNode }             from './nodes/processing/VolumeNode';
+import { MultibandSplitNode }     from './nodes/processing/MultibandSplitNode';
 import { FFTNode }                from './nodes/analysis/FFTNode';
 import { MeterNode }              from './nodes/analysis/MeterNode';
 import { DCMeterNode }            from './nodes/analysis/DCMeterNode';
 import { WaveformNode }           from './nodes/analysis/WaveformNode';
+import { AnalyserNode }           from './nodes/analysis/AnalyserNode';
+import { FollowerNode }           from './nodes/analysis/FollowerNode';
 import { SignalNode }             from './nodes/signal/SignalNode';
 import { ScaleNode }              from './nodes/signal/ScaleNode';
 import { ScaleExpNode }           from './nodes/signal/ScaleExpNode';
@@ -150,16 +156,22 @@ const nodeTypes = {
 	autoWah:          AutoWahNode,
 	limiter:          LimiterNode,
 	gate:             GateNode,
+	compressor:       CompressorNode,
 	biquadFilter:     BiquadFilterNode,
+	filter:           FilterNode,
+	eq3:              EQ3Node,
 	panVol:           PanVolNode,
 	split:            SplitNode,
 	merge:            MergeNode,
 	mono:             MonoNode,
 	volume:           VolumeNode,
+	multibandSplit:   MultibandSplitNode,
 	fft:              FFTNode,
 	meter:            MeterNode,
 	dcMeter:          DCMeterNode,
 	waveform:         WaveformNode,
+	analyser:         AnalyserNode,
+	follower:         FollowerNode,
 	signal:           SignalNode,
 	scale:            ScaleNode,
 	scaleExp:         ScaleExpNode,
