@@ -23,13 +23,13 @@ export const NODE_COLORS = {
 	source:    PALETTE.blue,      // signal generators: oscillators, noise, player, DC
 	processor: PALETTE.gold,      // signal processors: gain, EQ, filter
 	scene:     PALETTE.purple,    // scene geometry → audio bridge
-	output:    PALETTE.green,     // final destination / master out
+	output:    PALETTE.silver,    // final destination / master out
 	debug:     PALETTE.graphite,  // design sandbox / monitoring utility
 
 	// ── Reserved for future node categories ───────────────────────────────────
 	dynamics:  PALETTE.red,       // compressors, limiters, transient shapers
 	effects:   PALETTE.orange,    // reverb, delay, modulation, time-based FX
-	utility:   PALETTE.silver,    // meters, spectrum analysers, DC blockers
+	utility:   PALETTE.green,     // meters, spectrum analysers, DC blockers, signal math
 } as const;
 
 export type NodeCategory = keyof typeof NODE_COLORS;

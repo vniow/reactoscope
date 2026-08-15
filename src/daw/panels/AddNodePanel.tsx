@@ -561,11 +561,11 @@ export function AddNodePanel({
 
 	const itemBtnSx = (catColor: string) => ({
 		...hwBtn(catColor),
-		background: `linear-gradient(to bottom, ${catColor}22 0%, ${catColor}0e 100%)`,
-		border: `1px solid ${catColor}38`,
-		borderTopColor: `${catColor}48`,
-		borderLeftColor: `${catColor}30`,
-		color: `${catColor}d0`,
+		background: `linear-gradient(to bottom, ${catColor}40 0%, ${catColor}1e 100%)`,
+		border: `1px solid ${catColor}60`,
+		borderTopColor: `${catColor}75`,
+		borderLeftColor: `${catColor}55`,
+		color: catColor,
 		width: '100%',
 		px: 1,
 		py: 1,
@@ -576,13 +576,13 @@ export function AddNodePanel({
 		flexDirection: 'column' as const,
 		alignItems: 'flex-start',
 		'&:hover': {
-			background: `linear-gradient(to bottom, ${catColor}38 0%, ${catColor}1c 100%)`,
-			border: `1px solid ${catColor}70`,
-			borderTopColor: `${catColor}80`,
+			background: `linear-gradient(to bottom, ${catColor}5c 0%, ${catColor}30 100%)`,
+			border: `1px solid ${catColor}95`,
+			borderTopColor: `${catColor}aa`,
 			color: catColor,
-			boxShadow: `0 2px 5px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06), 0 0 8px ${catColor}30`,
+			boxShadow: `0 2px 5px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06), 0 0 10px ${catColor}45`,
 		},
-		'&:active': { ...hwBtn(catColor)['&:active'], borderColor: `${catColor}60` },
+		'&:active': { ...hwBtn(catColor)['&:active'], borderColor: `${catColor}80` },
 	});
 
 	return (
