@@ -108,6 +108,19 @@ const mergeNodeAdapter: PortAdapter = {
 	getOutput: (entry) => entry.kind === 'merge' ? { node: entry.toneNode, channel: 0 } : null,
 };
 
+const multibandSplitAdapter: PortAdapter = {
+	// MultibandSplit: plain Gain input, but no single `.output` — out-0/1/2
+	// select the low/mid/high child Filter instances directly.
+	getInput: (entry) => entry.kind === 'multibandSplit' ? { node: entry.toneNode, channel: 0 } : null,
+	getOutput: (entry, sourceHandle) => {
+		if (entry.kind !== 'multibandSplit') return null;
+		const node = sourceHandle === 'out-1' ? entry.toneNode.mid
+			: sourceHandle === 'out-2' ? entry.toneNode.high
+			: entry.toneNode.low;
+		return { node, channel: 0 };
+	},
+};
+
 const ROUTING: Record<AudioNodeEntry['kind'], PortAdapter> = {
 	masterOutput: masterOutputAdapter,
 	player:       splitOutputAdapter,
@@ -116,6 +129,7 @@ const ROUTING: Record<AudioNodeEntry['kind'], PortAdapter> = {
 	delay:        delayAdapter,
 	split:        splitNodeAdapter,
 	merge:        mergeNodeAdapter,
+	multibandSplit: multibandSplitAdapter,
 	oscillator:       genericAdapter,
 	gain:             genericAdapter,
 	noise:            genericAdapter,
@@ -147,7 +161,10 @@ const ROUTING: Record<AudioNodeEntry['kind'], PortAdapter> = {
 	autoWah:          genericAdapter,
 	limiter:          genericAdapter,
 	gate:             genericAdapter,
+	compressor:       genericAdapter,
 	biquadFilter:     genericAdapter,
+	filter:           genericAdapter,
+	eq3:              genericAdapter,
 	panVol:           genericAdapter,
 	mono:             genericAdapter,
 	volume:           genericAdapter,
@@ -155,6 +172,8 @@ const ROUTING: Record<AudioNodeEntry['kind'], PortAdapter> = {
 	meter:            genericAdapter,
 	dcMeter:          genericAdapter,
 	waveform:         genericAdapter,
+	analyser:         genericAdapter,
+	follower:         genericAdapter,
 	signal:           genericAdapter,
 	scale:            genericAdapter,
 	scaleExp:         genericAdapter,

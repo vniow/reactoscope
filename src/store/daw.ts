@@ -112,7 +112,6 @@ const STUB_LABELS: Partial<Record<StubKind, string>> = {
 	multibandCompressor: 'MultibandCompressor',
 	panner3d:            'Panner3D',
 	crossFade:           'CrossFade',
-	multibandSplit:      'MultibandSplit',
 	amplitudeEnvelope:   'AmplitudeEnvelope',
 	frequencyEnvelope:   'FrequencyEnvelope',
 	waveShaper:          'WaveShaper',

@@ -52,6 +52,12 @@ import { absHandler }              from './nodes/abs';
 import { negateHandler }           from './nodes/negate';
 import { audioToGainHandler }      from './nodes/audioToGain';
 import { gainToAudioHandler }      from './nodes/gainToAudio';
+import { compressorHandler }       from './nodes/compressor';
+import { filterHandler }           from './nodes/filter';
+import { eq3Handler }              from './nodes/eq3';
+import { multibandSplitHandler }   from './nodes/multibandSplit';
+import { analyserHandler }         from './nodes/analyser';
+import { followerHandler }         from './nodes/follower';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const _registry = new Map<string, NodeTypeHandler<any>>();
@@ -132,3 +138,9 @@ nodeRegistry.register('abs',              absHandler);
 nodeRegistry.register('negate',           negateHandler);
 nodeRegistry.register('audioToGain',      audioToGainHandler);
 nodeRegistry.register('gainToAudio',      gainToAudioHandler);
+nodeRegistry.register('compressor',       compressorHandler);
+nodeRegistry.register('filter',           filterHandler);
+nodeRegistry.register('eq3',              eq3Handler);
+nodeRegistry.register('multibandSplit',   multibandSplitHandler);
+nodeRegistry.register('analyser',         analyserHandler);
+nodeRegistry.register('follower',         followerHandler);
