@@ -97,6 +97,7 @@ import { MergeNode }              from './nodes/processing/MergeNode';
 import { MonoNode }               from './nodes/processing/MonoNode';
 import { VolumeNode }             from './nodes/processing/VolumeNode';
 import { MultibandSplitNode }     from './nodes/processing/MultibandSplitNode';
+import { SoloNode }               from './nodes/processing/SoloNode';
 import { FFTNode }                from './nodes/analysis/FFTNode';
 import { MeterNode }              from './nodes/analysis/MeterNode';
 import { DCMeterNode }            from './nodes/analysis/DCMeterNode';
@@ -166,6 +167,7 @@ const nodeTypes = {
 	mono:             MonoNode,
 	volume:           VolumeNode,
 	multibandSplit:   MultibandSplitNode,
+	solo:             SoloNode,
 	fft:              FFTNode,
 	meter:            MeterNode,
 	dcMeter:          DCMeterNode,

@@ -58,6 +58,7 @@ import { eq3Handler }              from './nodes/eq3';
 import { multibandSplitHandler }   from './nodes/multibandSplit';
 import { analyserHandler }         from './nodes/analyser';
 import { followerHandler }         from './nodes/follower';
+import { soloHandler }             from './nodes/solo';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const _registry = new Map<string, NodeTypeHandler<any>>();
@@ -144,3 +145,4 @@ nodeRegistry.register('eq3',              eq3Handler);
 nodeRegistry.register('multibandSplit',   multibandSplitHandler);
 nodeRegistry.register('analyser',         analyserHandler);
 nodeRegistry.register('follower',         followerHandler);
+nodeRegistry.register('solo',             soloHandler);

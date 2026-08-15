@@ -485,6 +485,7 @@ const REAL_ACTIONS = new Set<string>([
 	'multibandSplit',
 	'analyser',
 	'follower',
+	'solo',
 ]);
 
 // ─── Component ────────────────────────────────────────────────────────────────
