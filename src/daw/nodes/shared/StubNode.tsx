@@ -13,8 +13,6 @@ import type { StubFlowNode, StubKind } from '../../../store/dawTypes';
 const STUB_TOPOLOGY: Partial<Record<StubKind, { inputs: string[]; outputs: string[] }>> = {
 	noiseGenerator: { inputs: [],               outputs: ['out-0'] },
 	panner:         { inputs: ['in-0'],         outputs: ['out-0', 'out-1'] },
-	split:          { inputs: ['in-0'],         outputs: ['out-0', 'out-1'] },
-	merge:          { inputs: ['in-0', 'in-1'], outputs: ['out-0'] },
 	multibandSplit: { inputs: ['in-0'],         outputs: ['out-0', 'out-1', 'out-2'] },
 	crossFade:      { inputs: ['in-0', 'in-1'], outputs: ['out-0'] },
 	// Source-like stubs (instruments, oscillators) have no audio input

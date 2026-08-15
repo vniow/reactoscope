@@ -85,6 +85,25 @@ import { VibratoNode }            from './nodes/effects/VibratoNode';
 import { AutoFilterNode }         from './nodes/effects/AutoFilterNode';
 import { AutoPannerNode }         from './nodes/effects/AutoPannerNode';
 import { AutoWahNode }            from './nodes/effects/AutoWahNode';
+import { LimiterNode }            from './nodes/dynamics/LimiterNode';
+import { GateNode }               from './nodes/dynamics/GateNode';
+import { BiquadFilterNode }       from './nodes/processing/BiquadFilterNode';
+import { PanVolNode }             from './nodes/processing/PanVolNode';
+import { SplitNode }              from './nodes/processing/SplitNode';
+import { MergeNode }              from './nodes/processing/MergeNode';
+import { MonoNode }               from './nodes/processing/MonoNode';
+import { VolumeNode }             from './nodes/processing/VolumeNode';
+import { FFTNode }                from './nodes/analysis/FFTNode';
+import { MeterNode }              from './nodes/analysis/MeterNode';
+import { DCMeterNode }            from './nodes/analysis/DCMeterNode';
+import { WaveformNode }           from './nodes/analysis/WaveformNode';
+import { SignalNode }             from './nodes/signal/SignalNode';
+import { ScaleNode }              from './nodes/signal/ScaleNode';
+import { ScaleExpNode }           from './nodes/signal/ScaleExpNode';
+import { AbsNode }                from './nodes/signal/AbsNode';
+import { NegateNode }             from './nodes/signal/NegateNode';
+import { AudioToGainNode }        from './nodes/signal/AudioToGainNode';
+import { GainToAudioNode }        from './nodes/signal/GainToAudioNode';
 import { DeletableEdge }    from './edges/DeletableEdge';
 import { AddNodePanel }     from './panels/AddNodePanel';
 import { PatchPanel }      from './panels/PatchPanel';
@@ -129,6 +148,25 @@ const nodeTypes = {
 	autoFilter:       AutoFilterNode,
 	autoPanner:       AutoPannerNode,
 	autoWah:          AutoWahNode,
+	limiter:          LimiterNode,
+	gate:             GateNode,
+	biquadFilter:     BiquadFilterNode,
+	panVol:           PanVolNode,
+	split:            SplitNode,
+	merge:            MergeNode,
+	mono:             MonoNode,
+	volume:           VolumeNode,
+	fft:              FFTNode,
+	meter:            MeterNode,
+	dcMeter:          DCMeterNode,
+	waveform:         WaveformNode,
+	signal:           SignalNode,
+	scale:            ScaleNode,
+	scaleExp:         ScaleExpNode,
+	abs:              AbsNode,
+	negate:           NegateNode,
+	audioToGain:      AudioToGainNode,
+	gainToAudio:      GainToAudioNode,
 };
 
 const edgeTypes = {
