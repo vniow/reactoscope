@@ -108,14 +108,8 @@ function edgeColorForSource(sourceId: string, nodes: AppNode[]): string {
 // Everything else falls back to capitalising the action string.
 const STUB_LABELS: Partial<Record<StubKind, string>> = {
 	noiseGenerator:      'Noise',
-	midSideCompressor:   'MidSideCompressor',
-	multibandCompressor: 'MultibandCompressor',
-	panner3d:            'Panner3D',
-	crossFade:           'CrossFade',
-	multibandSplit:      'MultibandSplit',
 	amplitudeEnvelope:   'AmplitudeEnvelope',
 	frequencyEnvelope:   'FrequencyEnvelope',
-	waveShaper:          'WaveShaper',
 	greaterThan:         'GreaterThan',
 	toneEvent:           'ToneEvent',
 };
@@ -161,6 +155,7 @@ type DawState = {
 	selectedNodeId: string | null;
 	sceneRunning:   boolean;
 	playingNodes:   Set<string>;
+	soloedNodeId:   string | null;
 
 	onNodesChange:     OnNodesChange<AppNode>;
 	onEdgesChange:     OnEdgesChange<AppEdge>;
@@ -175,6 +170,7 @@ type DawState = {
 	updateNodeData:      (id: string, data: Partial<Record<string, unknown>>) => void;
 	updateNodePositions: (updatedNodes: AppNode[]) => void;
 	setSelectedNodeId:   (id: string | null) => void;
+	toggleSolo:          (id: string) => void;
 	setSpeakersMuted:    (muted: boolean) => void;
 	edgePathType:        'bezier' | 'straight' | 'step' | 'smoothstep';
 	setEdgePathType:     (type: 'bezier' | 'straight' | 'step' | 'smoothstep') => void;
@@ -192,6 +188,7 @@ export const useDawStore = create<DawState>((set, get) => ({
 	selectedNodeId: null,
 	sceneRunning:   false,
 	playingNodes:   new Set<string>(),
+	soloedNodeId:   null,
 
 	setNodePlaying: (id, playing) => set(state => {
 		const next = new Set(state.playingNodes);
@@ -216,7 +213,11 @@ export const useDawStore = create<DawState>((set, get) => ({
 			set(state => {
 				const next = new Set(state.playingNodes);
 				removed.forEach(id => next.delete(id));
-				return { nodes: applyNodeChanges(changes, state.nodes), playingNodes: next };
+				return {
+					nodes:        applyNodeChanges(changes, state.nodes),
+					playingNodes: next,
+					soloedNodeId: state.soloedNodeId && removed.includes(state.soloedNodeId) ? null : state.soloedNodeId,
+				};
 			});
 		} else {
 			set({ nodes: applyNodeChanges(changes, get().nodes) });
@@ -351,6 +352,21 @@ export const useDawStore = create<DawState>((set, get) => ({
 
 	setSelectedNodeId: (id) => set({ selectedNodeId: id }),
 
+	// Only one Solo/Channel instance can be soloed at a time (Tone.Solo's own
+	// static registry enforces this on the audio side, ADR-0003) — this field
+	// is the UI's mirror of that, letting every Solo node's component dim
+	// itself when a *different* instance is the soloed one.
+	toggleSolo: (id) => {
+		const current = get().soloedNodeId;
+		if (current === id) {
+			engine.setSoloed(id, false);
+			set({ soloedNodeId: null });
+		} else {
+			engine.setSoloed(id, true);
+			set({ soloedNodeId: id });
+		}
+	},
+
 	setSpeakersMuted: (muted) => {
 		engine.setSpeakersMuted(muted);
 		set({
@@ -418,6 +434,7 @@ export const useDawStore = create<DawState>((set, get) => ({
 			sceneRunning:   false,
 			selectedNodeId: null,
 			playingNodes:   new Set<string>(),
+			soloedNodeId:   null,
 		});
 	},
 

@@ -479,6 +479,21 @@ const REAL_ACTIONS = new Set<string>([
 	'negate',
 	'audioToGain',
 	'gainToAudio',
+	'compressor',
+	'filter',
+	'eq3',
+	'multibandSplit',
+	'analyser',
+	'follower',
+	'solo',
+	'crossFade',
+	'panner',
+	'panner3d',
+	'waveShaper',
+	'recorder',
+	'midSideCompressor',
+	'multibandCompressor',
+	'channel',
 ]);
 
 // ─── Component ────────────────────────────────────────────────────────────────
