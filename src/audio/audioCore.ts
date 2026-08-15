@@ -92,12 +92,30 @@ const delayAdapter: PortAdapter = {
 	getInput:  (entry) => entry.kind === 'delay' ? { node: entry.toneNode.input,  channel: 0 } : null,
 };
 
+const splitNodeAdapter: PortAdapter = {
+	// Split: single mono input, out-0/out-1 select the ChannelSplitterNode's
+	// two output channels on the same underlying toneNode.
+	getInput:  (entry) => entry.kind === 'split' ? { node: entry.toneNode, channel: 0 } : null,
+	getOutput: (entry, sourceHandle) =>
+		entry.kind === 'split' ? { node: entry.toneNode, channel: sourceHandle === 'out-1' ? 1 : 0 } : null,
+};
+
+const mergeNodeAdapter: PortAdapter = {
+	// Merge: in-0/in-1 select the ChannelMergerNode's two input channels,
+	// single combined output.
+	getInput: (entry, targetHandle) =>
+		entry.kind === 'merge' ? { node: entry.toneNode, channel: targetHandle === 'in-1' ? 1 : 0 } : null,
+	getOutput: (entry) => entry.kind === 'merge' ? { node: entry.toneNode, channel: 0 } : null,
+};
+
 const ROUTING: Record<AudioNodeEntry['kind'], PortAdapter> = {
 	masterOutput: masterOutputAdapter,
 	player:       splitOutputAdapter,
 	grainPlayer:  splitOutputAdapter,
 	sceneInput:   sceneInputAdapter,
 	delay:        delayAdapter,
+	split:        splitNodeAdapter,
+	merge:        mergeNodeAdapter,
 	oscillator:       genericAdapter,
 	gain:             genericAdapter,
 	noise:            genericAdapter,
@@ -127,6 +145,23 @@ const ROUTING: Record<AudioNodeEntry['kind'], PortAdapter> = {
 	autoFilter:       genericAdapter,
 	autoPanner:       genericAdapter,
 	autoWah:          genericAdapter,
+	limiter:          genericAdapter,
+	gate:             genericAdapter,
+	biquadFilter:     genericAdapter,
+	panVol:           genericAdapter,
+	mono:             genericAdapter,
+	volume:           genericAdapter,
+	fft:              genericAdapter,
+	meter:            genericAdapter,
+	dcMeter:          genericAdapter,
+	waveform:         genericAdapter,
+	signal:           genericAdapter,
+	scale:            genericAdapter,
+	scaleExp:         genericAdapter,
+	abs:              genericAdapter,
+	negate:           genericAdapter,
+	audioToGain:      genericAdapter,
+	gainToAudio:      genericAdapter,
 };
 
 // ─── Audio routing ────────────────────────────────────────────────────────────

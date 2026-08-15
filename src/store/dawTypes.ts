@@ -1,5 +1,5 @@
 import type { Node, Edge, BuiltInNode } from '@xyflow/react';
-import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah } from 'tone';
+import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio } from 'tone';
 
 export type OscType = 'sine' | 'square' | 'triangle' | 'sawtooth';
 
@@ -36,23 +36,22 @@ export type GainNodeData = {
 
 export type StubKind =
 	// — existing processing stubs (not yet implemented) —
-	| 'filter' | 'compressor' | 'noiseGenerator' | 'panner' | 'split' | 'merge'
+	| 'filter' | 'compressor' | 'noiseGenerator' | 'panner'
 	// — Source / Instrument —
 	| 'omniOscillator'
 	| 'players' | 'userMedia'
 	| 'synth' | 'monoSynth' | 'polySynth' | 'fmSynth' | 'amSynth' | 'duoSynth'
 	| 'membraneSynth' | 'metalSynth' | 'noiseSynth' | 'pluckSynth' | 'sampler'
 	// — Dynamics —
-	| 'limiter' | 'gate' | 'midSideCompressor' | 'multibandCompressor'
+	| 'midSideCompressor' | 'multibandCompressor'
 	// — Processing —
-	| 'biquadFilter' | 'eq3' | 'channel' | 'panVol' | 'panner3d' | 'crossFade'
-	| 'mono' | 'multibandSplit' | 'solo' | 'volume' | 'convolver'
+	| 'eq3' | 'channel' | 'panner3d' | 'crossFade'
+	| 'multibandSplit' | 'solo' | 'convolver'
 	// — Analysis —
-	| 'analyser' | 'fft' | 'meter' | 'dcMeter' | 'waveform' | 'follower' | 'recorder'
+	| 'analyser' | 'follower' | 'recorder'
 	| 'amplitudeEnvelope' | 'frequencyEnvelope'
 	// — Signal —
-	| 'signal' | 'waveShaper' | 'scale' | 'scaleExp' | 'abs' | 'add' | 'multiply'
-	| 'negate' | 'greaterThan' | 'audioToGain' | 'gainToAudio'
+	| 'waveShaper' | 'add' | 'multiply' | 'greaterThan'
 	// — Event —
 	| 'loop' | 'sequence' | 'pattern' | 'part' | 'toneEvent';
 
@@ -327,6 +326,126 @@ export type AutoWahNodeData = {
 };
 export type AutoWahFlowNode = Node<AutoWahNodeData, 'autoWah'>;
 
+// ─── Dynamics node data types ─────────────────────────────────────────────────
+
+export type LimiterNodeData = {
+	label:     string;
+	threshold: number;   // dB, -60–0, default -12
+};
+export type LimiterFlowNode = Node<LimiterNodeData, 'limiter'>;
+
+export type GateNodeData = {
+	label:     string;
+	threshold: number;   // dB, -100–0, default -40
+	smoothing: number;   // seconds, 0–1, default 0.1
+};
+export type GateFlowNode = Node<GateNodeData, 'gate'>;
+
+// ─── Processing node data types ───────────────────────────────────────────────
+
+export type BiquadFilterType = 'lowpass' | 'highpass' | 'bandpass' | 'lowshelf' | 'highshelf' | 'notch' | 'allpass' | 'peaking';
+
+export type BiquadFilterNodeData = {
+	label:     string;
+	frequency: number;           // Hz, 20–20000, default 350
+	type:      BiquadFilterType; // default 'lowpass'
+	Q:         number;           // 0.001–100, default 1
+	detune:    number;           // cents, -1200–1200, default 0
+	gain:      number;           // dB, -40–40, default 0 (lowshelf/highshelf/peaking only)
+};
+export type BiquadFilterFlowNode = Node<BiquadFilterNodeData, 'biquadFilter'>;
+
+export type PanVolNodeData = {
+	label:  string;
+	pan:    number;    // -1–1, default 0
+	volume: number;    // dB, -60–6, default 0
+	mute:   boolean;   // default false
+};
+export type PanVolFlowNode = Node<PanVolNodeData, 'panVol'>;
+
+export type SplitNodeData = { label: string };
+export type SplitFlowNode = Node<SplitNodeData, 'split'>;
+
+export type MergeNodeData = { label: string };
+export type MergeFlowNode = Node<MergeNodeData, 'merge'>;
+
+export type MonoNodeData = { label: string };
+export type MonoFlowNode = Node<MonoNodeData, 'mono'>;
+
+export type VolumeNodeData = {
+	label:  string;
+	volume: number;    // dB, -60–6, default 0
+	mute:   boolean;   // default false
+};
+export type VolumeFlowNode = Node<VolumeNodeData, 'volume'>;
+
+// ─── Analysis node data types ─────────────────────────────────────────────────
+// Analyser-family "tap" nodes: pass audio through unchanged (in-0 → out-0) and
+// separately expose a live-polled readout via engine.ts getters — see
+// getFFTValue/getMeterValue/getDCMeterValue/getWaveformValue.
+
+export const ANALYSIS_SIZE_OPTIONS = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384] as const;
+export type AnalysisSize = typeof ANALYSIS_SIZE_OPTIONS[number];
+
+export type FFTNodeData = {
+	label:       string;
+	size:        AnalysisSize; // power of two, default 1024
+	smoothing:   number;       // 0–1, default 0.8
+	normalRange: boolean;      // default false (dB output when false)
+};
+export type FFTFlowNode = Node<FFTNodeData, 'fft'>;
+
+export type MeterNodeData = {
+	label:       string;
+	smoothing:   number;    // 0–1, default 0.8
+	normalRange: boolean;   // default false (dB output when false)
+};
+export type MeterFlowNode = Node<MeterNodeData, 'meter'>;
+
+export type DCMeterNodeData = { label: string };
+export type DCMeterFlowNode = Node<DCMeterNodeData, 'dcMeter'>;
+
+export type WaveformNodeData = {
+	label: string;
+	size:  AnalysisSize;   // power of two, default 1024
+};
+export type WaveformFlowNode = Node<WaveformNodeData, 'waveform'>;
+
+// ─── Signal node data types ────────────────────────────────────────────────────
+
+export type SignalNodeData = {
+	label: string;
+	value: number;   // default 0, range -1000–1000
+};
+export type SignalFlowNode = Node<SignalNodeData, 'signal'>;
+
+export type ScaleNodeData = {
+	label: string;
+	min:   number;   // default 0, range -100–100
+	max:   number;   // default 1, range -100–100
+};
+export type ScaleFlowNode = Node<ScaleNodeData, 'scale'>;
+
+export type ScaleExpNodeData = {
+	label:    string;
+	min:      number;   // default 0, range -100–100
+	max:      number;   // default 1, range -100–100
+	exponent: number;   // default 1, range 0.1–8
+};
+export type ScaleExpFlowNode = Node<ScaleExpNodeData, 'scaleExp'>;
+
+export type AbsNodeData = { label: string };
+export type AbsFlowNode = Node<AbsNodeData, 'abs'>;
+
+export type NegateNodeData = { label: string };
+export type NegateFlowNode = Node<NegateNodeData, 'negate'>;
+
+export type AudioToGainNodeData = { label: string };
+export type AudioToGainFlowNode = Node<AudioToGainNodeData, 'audioToGain'>;
+
+export type GainToAudioNodeData = { label: string };
+export type GainToAudioFlowNode = Node<GainToAudioNodeData, 'gainToAudio'>;
+
 export type AppNode =
 	| BuiltInNode
 	| PlayerFlowNode
@@ -364,7 +483,26 @@ export type AppNode =
 	| VibratoFlowNode
 	| AutoFilterFlowNode
 	| AutoPannerFlowNode
-	| AutoWahFlowNode;
+	| AutoWahFlowNode
+	| LimiterFlowNode
+	| GateFlowNode
+	| BiquadFilterFlowNode
+	| PanVolFlowNode
+	| SplitFlowNode
+	| MergeFlowNode
+	| MonoFlowNode
+	| VolumeFlowNode
+	| FFTFlowNode
+	| MeterFlowNode
+	| DCMeterFlowNode
+	| WaveformFlowNode
+	| SignalFlowNode
+	| ScaleFlowNode
+	| ScaleExpFlowNode
+	| AbsFlowNode
+	| NegateFlowNode
+	| AudioToGainFlowNode
+	| GainToAudioFlowNode;
 
 export type AppEdge = Edge;
 
@@ -495,6 +633,26 @@ export type AutoFilterAudioEntry      = { kind: 'autoFilter';       toneNode: Au
 export type AutoPannerAudioEntry      = { kind: 'autoPanner';       toneNode: AutoPanner };
 export type AutoWahAudioEntry         = { kind: 'autoWah';          toneNode: AutoWah };
 
+export type LimiterAudioEntry     = { kind: 'limiter';     toneNode: Limiter };
+export type GateAudioEntry        = { kind: 'gate';        toneNode: Gate };
+export type BiquadFilterAudioEntry = { kind: 'biquadFilter'; toneNode: BiquadFilter };
+export type PanVolAudioEntry      = { kind: 'panVol';      toneNode: PanVol };
+export type SplitNodeAudioEntry   = { kind: 'split';       toneNode: Split };
+export type MergeNodeAudioEntry   = { kind: 'merge';       toneNode: Merge };
+export type MonoAudioEntry        = { kind: 'mono';        toneNode: Mono };
+export type VolumeAudioEntry      = { kind: 'volume';      toneNode: Volume };
+export type FFTAudioEntry         = { kind: 'fft';         toneNode: FFT };
+export type MeterAudioEntry       = { kind: 'meter';       toneNode: Meter };
+export type DCMeterAudioEntry     = { kind: 'dcMeter';     toneNode: DCMeter };
+export type WaveformAudioEntry    = { kind: 'waveform';    toneNode: Waveform };
+export type SignalNodeAudioEntry  = { kind: 'signal';      toneNode: Signal<'number'> };
+export type ScaleAudioEntry       = { kind: 'scale';       toneNode: Scale };
+export type ScaleExpAudioEntry    = { kind: 'scaleExp';    toneNode: ScaleExp };
+export type AbsAudioEntry         = { kind: 'abs';         toneNode: Abs };
+export type NegateAudioEntry      = { kind: 'negate';      toneNode: Negate };
+export type AudioToGainAudioEntry = { kind: 'audioToGain'; toneNode: AudioToGain };
+export type GainToAudioAudioEntry = { kind: 'gainToAudio'; toneNode: GainToAudio };
+
 // Stubs are NOT in the audio registry — they have no Tone.js instances yet.
 
 export type AudioNodeEntry =
@@ -531,7 +689,26 @@ export type AudioNodeEntry =
 	| VibratoAudioEntry
 	| AutoFilterAudioEntry
 	| AutoPannerAudioEntry
-	| AutoWahAudioEntry;
+	| AutoWahAudioEntry
+	| LimiterAudioEntry
+	| GateAudioEntry
+	| BiquadFilterAudioEntry
+	| PanVolAudioEntry
+	| SplitNodeAudioEntry
+	| MergeNodeAudioEntry
+	| MonoAudioEntry
+	| VolumeAudioEntry
+	| FFTAudioEntry
+	| MeterAudioEntry
+	| DCMeterAudioEntry
+	| WaveformAudioEntry
+	| SignalNodeAudioEntry
+	| ScaleAudioEntry
+	| ScaleExpAudioEntry
+	| AbsAudioEntry
+	| NegateAudioEntry
+	| AudioToGainAudioEntry
+	| GainToAudioAudioEntry;
 
 export type AudioNodeMap = Map<string, AudioNodeEntry>;
 
