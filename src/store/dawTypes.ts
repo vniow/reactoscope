@@ -1,5 +1,5 @@
 import type { Node, Edge, BuiltInNode } from '@xyflow/react';
-import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower } from 'tone';
+import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower, Solo } from 'tone';
 
 export type OscType = 'sine' | 'square' | 'triangle' | 'sawtooth';
 
@@ -46,7 +46,7 @@ export type StubKind =
 	| 'midSideCompressor' | 'multibandCompressor'
 	// — Processing —
 	| 'channel' | 'panner3d' | 'crossFade'
-	| 'solo' | 'convolver'
+	| 'convolver'
 	// — Analysis —
 	| 'recorder'
 	| 'amplitudeEnvelope' | 'frequencyEnvelope'
@@ -420,6 +420,12 @@ export type MultibandSplitNodeData = {
 };
 export type MultibandSplitFlowNode = Node<MultibandSplitNodeData, 'multibandSplit'>;
 
+// Whether this instance is soloed is store-driven (daw.ts's soloedNodeId,
+// ADR-0003), not a field here — only one instance can be soloed at a time,
+// so a per-node boolean would just duplicate the store's own truth.
+export type SoloNodeData = { label: string };
+export type SoloFlowNode = Node<SoloNodeData, 'solo'>;
+
 // ─── Analysis node data types ─────────────────────────────────────────────────
 // Analyser-family "tap" nodes: pass audio through unchanged (in-0 → out-0) and
 // separately expose a live-polled readout via engine.ts getters — see
@@ -555,6 +561,7 @@ export type AppNode =
 	| MonoFlowNode
 	| VolumeFlowNode
 	| MultibandSplitFlowNode
+	| SoloFlowNode
 	| FFTFlowNode
 	| MeterFlowNode
 	| DCMeterFlowNode
@@ -710,6 +717,7 @@ export type MergeNodeAudioEntry   = { kind: 'merge';       toneNode: Merge };
 export type MonoAudioEntry        = { kind: 'mono';        toneNode: Mono };
 export type VolumeAudioEntry      = { kind: 'volume';      toneNode: Volume };
 export type MultibandSplitAudioEntry = { kind: 'multibandSplit'; toneNode: MultibandSplit };
+export type SoloAudioEntry        = { kind: 'solo';        toneNode: Solo };
 export type FFTAudioEntry         = { kind: 'fft';         toneNode: FFT };
 export type MeterAudioEntry       = { kind: 'meter';       toneNode: Meter };
 export type DCMeterAudioEntry     = { kind: 'dcMeter';     toneNode: DCMeter };
@@ -773,6 +781,7 @@ export type AudioNodeEntry =
 	| MonoAudioEntry
 	| VolumeAudioEntry
 	| MultibandSplitAudioEntry
+	| SoloAudioEntry
 	| FFTAudioEntry
 	| MeterAudioEntry
 	| DCMeterAudioEntry
