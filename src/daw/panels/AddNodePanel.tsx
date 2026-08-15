@@ -489,6 +489,7 @@ const REAL_ACTIONS = new Set<string>([
 	'crossFade',
 	'panner',
 	'midSideCompressor',
+	'multibandCompressor',
 ]);
 
 // ─── Component ────────────────────────────────────────────────────────────────

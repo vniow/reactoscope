@@ -89,6 +89,7 @@ import { LimiterNode }            from './nodes/dynamics/LimiterNode';
 import { GateNode }               from './nodes/dynamics/GateNode';
 import { CompressorNode }         from './nodes/dynamics/CompressorNode';
 import { MidSideCompressorNode }  from './nodes/dynamics/MidSideCompressorNode';
+import { MultibandCompressorNode } from './nodes/dynamics/MultibandCompressorNode';
 import { BiquadFilterNode }       from './nodes/processing/BiquadFilterNode';
 import { FilterNode }             from './nodes/processing/FilterNode';
 import { EQ3Node }                from './nodes/processing/EQ3Node';
@@ -162,6 +163,7 @@ const nodeTypes = {
 	gate:             GateNode,
 	compressor:       CompressorNode,
 	midSideCompressor: MidSideCompressorNode,
+	multibandCompressor: MultibandCompressorNode,
 	biquadFilter:     BiquadFilterNode,
 	filter:           FilterNode,
 	eq3:              EQ3Node,

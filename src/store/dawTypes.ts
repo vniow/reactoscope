@@ -1,5 +1,5 @@
 import type { Node, Edge, BuiltInNode } from '@xyflow/react';
-import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower, Solo, CrossFade, Panner, MidSideCompressor } from 'tone';
+import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower, Solo, CrossFade, Panner, MidSideCompressor, MultibandCompressor } from 'tone';
 
 export type OscType = 'sine' | 'square' | 'triangle' | 'sawtooth';
 
@@ -42,8 +42,6 @@ export type StubKind =
 	| 'players' | 'userMedia'
 	| 'synth' | 'monoSynth' | 'polySynth' | 'fmSynth' | 'amSynth' | 'duoSynth'
 	| 'membraneSynth' | 'metalSynth' | 'noiseSynth' | 'pluckSynth' | 'sampler'
-	// — Dynamics —
-	| 'multibandCompressor'
 	// — Processing —
 	| 'channel' | 'panner3d'
 	| 'convolver'
@@ -364,6 +362,19 @@ export type MidSideCompressorNodeData = {
 };
 export type MidSideCompressorFlowNode = Node<MidSideCompressorNodeData, 'midSideCompressor'>;
 
+// v1 UI exposes only threshold+ratio per band via CompressorControls' `params`
+// prop (docs/node-roadmap.md: 17 live controls is too heavy) — attack/release/
+// knee still live on each band's data, just defaulted and not user-editable yet.
+export type MultibandCompressorNodeData = {
+	label:         string;
+	lowFrequency:  number;   // Hz, 20–2000, default 250
+	highFrequency: number;   // Hz, 200–20000, default 2000
+	low:           CompressorBandData;
+	mid:           CompressorBandData;
+	high:          CompressorBandData;
+};
+export type MultibandCompressorFlowNode = Node<MultibandCompressorNodeData, 'multibandCompressor'>;
+
 // ─── Processing node data types ───────────────────────────────────────────────
 
 export type BiquadFilterType = 'lowpass' | 'highpass' | 'bandpass' | 'lowshelf' | 'highshelf' | 'notch' | 'allpass' | 'peaking';
@@ -582,6 +593,7 @@ export type AppNode =
 	| GateFlowNode
 	| CompressorFlowNode
 	| MidSideCompressorFlowNode
+	| MultibandCompressorFlowNode
 	| BiquadFilterFlowNode
 	| FilterFlowNode
 	| EQ3FlowNode
@@ -741,6 +753,7 @@ export type LimiterAudioEntry     = { kind: 'limiter';     toneNode: Limiter };
 export type GateAudioEntry        = { kind: 'gate';        toneNode: Gate };
 export type CompressorAudioEntry  = { kind: 'compressor';  toneNode: Compressor };
 export type MidSideCompressorAudioEntry = { kind: 'midSideCompressor'; toneNode: MidSideCompressor };
+export type MultibandCompressorAudioEntry = { kind: 'multibandCompressor'; toneNode: MultibandCompressor };
 export type BiquadFilterAudioEntry = { kind: 'biquadFilter'; toneNode: BiquadFilter };
 export type FilterAudioEntry      = { kind: 'filter';      toneNode: Filter };
 export type EQ3AudioEntry         = { kind: 'eq3';         toneNode: EQ3 };
@@ -808,6 +821,7 @@ export type AudioNodeEntry =
 	| GateAudioEntry
 	| CompressorAudioEntry
 	| MidSideCompressorAudioEntry
+	| MultibandCompressorAudioEntry
 	| BiquadFilterAudioEntry
 	| FilterAudioEntry
 	| EQ3AudioEntry

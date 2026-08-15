@@ -180,6 +180,7 @@ const ROUTING: Record<AudioNodeEntry['kind'], PortAdapter> = {
 	gate:             genericAdapter,
 	compressor:       genericAdapter,
 	midSideCompressor: genericAdapter,
+	multibandCompressor: genericAdapter,
 	biquadFilter:     genericAdapter,
 	filter:           genericAdapter,
 	eq3:              genericAdapter,
