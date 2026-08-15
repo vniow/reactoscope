@@ -109,6 +109,7 @@ import { DCMeterNode }            from './nodes/analysis/DCMeterNode';
 import { WaveformNode }           from './nodes/analysis/WaveformNode';
 import { AnalyserNode }           from './nodes/analysis/AnalyserNode';
 import { FollowerNode }           from './nodes/analysis/FollowerNode';
+import { RecorderNode }           from './nodes/analysis/RecorderNode';
 import { SignalNode }             from './nodes/signal/SignalNode';
 import { ScaleNode }              from './nodes/signal/ScaleNode';
 import { ScaleExpNode }           from './nodes/signal/ScaleExpNode';
@@ -185,6 +186,7 @@ const nodeTypes = {
 	waveform:         WaveformNode,
 	analyser:         AnalyserNode,
 	follower:         FollowerNode,
+	recorder:         RecorderNode,
 	signal:           SignalNode,
 	scale:            ScaleNode,
 	scaleExp:         ScaleExpNode,

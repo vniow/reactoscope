@@ -490,6 +490,7 @@ const REAL_ACTIONS = new Set<string>([
 	'panner',
 	'panner3d',
 	'waveShaper',
+	'recorder',
 	'midSideCompressor',
 	'multibandCompressor',
 ]);

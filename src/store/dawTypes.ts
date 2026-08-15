@@ -1,5 +1,5 @@
 import type { Node, Edge, BuiltInNode } from '@xyflow/react';
-import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower, Solo, CrossFade, Panner, MidSideCompressor, MultibandCompressor, Panner3D, WaveShaper } from 'tone';
+import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower, Solo, CrossFade, Panner, MidSideCompressor, MultibandCompressor, Panner3D, WaveShaper, Recorder } from 'tone';
 
 export type OscType = 'sine' | 'square' | 'triangle' | 'sawtooth';
 
@@ -46,7 +46,6 @@ export type StubKind =
 	| 'channel'
 	| 'convolver'
 	// — Analysis —
-	| 'recorder'
 	| 'amplitudeEnvelope' | 'frequencyEnvelope'
 	// — Signal —
 	| 'add' | 'multiply' | 'greaterThan'
@@ -530,6 +529,13 @@ export type FollowerNodeData = {
 };
 export type FollowerFlowNode = Node<FollowerNodeData, 'follower'>;
 
+// Sink — in-0 only, no output, cannot chain further downstream. No live params
+// (mimeType is constructor-only on Tone's Recorder — see ADR-0006); recording
+// state/blob live in the audio entry and component-local UI state, driven by
+// recorder.ts's own start/pause/stop functions, not setAudioParam.
+export type RecorderNodeData = { label: string };
+export type RecorderFlowNode = Node<RecorderNodeData, 'recorder'>;
+
 // ─── Signal node data types ────────────────────────────────────────────────────
 
 export type SignalNodeData = {
@@ -639,6 +645,7 @@ export type AppNode =
 	| WaveformFlowNode
 	| AnalyserFlowNode
 	| FollowerFlowNode
+	| RecorderFlowNode
 	| SignalFlowNode
 	| ScaleFlowNode
 	| ScaleExpFlowNode
@@ -801,6 +808,7 @@ export type DCMeterAudioEntry     = { kind: 'dcMeter';     toneNode: DCMeter };
 export type WaveformAudioEntry    = { kind: 'waveform';    toneNode: Waveform };
 export type AnalyserAudioEntry    = { kind: 'analyser';    toneNode: Analyser };
 export type FollowerAudioEntry    = { kind: 'follower';    toneNode: Follower };
+export type RecorderAudioEntry    = { kind: 'recorder';    toneNode: Recorder };
 export type SignalNodeAudioEntry  = { kind: 'signal';      toneNode: Signal<'number'> };
 export type ScaleAudioEntry       = { kind: 'scale';       toneNode: Scale };
 export type ScaleExpAudioEntry    = { kind: 'scaleExp';    toneNode: ScaleExp };
@@ -871,6 +879,7 @@ export type AudioNodeEntry =
 	| WaveformAudioEntry
 	| AnalyserAudioEntry
 	| FollowerAudioEntry
+	| RecorderAudioEntry
 	| SignalNodeAudioEntry
 	| ScaleAudioEntry
 	| ScaleExpAudioEntry

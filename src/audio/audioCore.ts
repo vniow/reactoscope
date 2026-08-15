@@ -195,6 +195,7 @@ const ROUTING: Record<AudioNodeEntry['kind'], PortAdapter> = {
 	waveform:         genericAdapter,
 	analyser:         genericAdapter,
 	follower:         genericAdapter,
+	recorder:         genericAdapter,
 	signal:           genericAdapter,
 	scale:            genericAdapter,
 	scaleExp:         genericAdapter,

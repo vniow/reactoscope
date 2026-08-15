@@ -65,6 +65,7 @@ import { midSideCompressorHandler } from './nodes/midSideCompressor';
 import { multibandCompressorHandler } from './nodes/multibandCompressor';
 import { panner3dHandler } from './nodes/panner3d';
 import { waveShaperHandler } from './nodes/waveShaper';
+import { recorderHandler } from './nodes/recorder';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const _registry = new Map<string, NodeTypeHandler<any>>();
@@ -158,3 +159,4 @@ nodeRegistry.register('midSideCompressor', midSideCompressorHandler);
 nodeRegistry.register('multibandCompressor', multibandCompressorHandler);
 nodeRegistry.register('panner3d', panner3dHandler);
 nodeRegistry.register('waveShaper', waveShaperHandler);
+nodeRegistry.register('recorder', recorderHandler);
