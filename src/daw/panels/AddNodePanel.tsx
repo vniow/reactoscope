@@ -488,6 +488,7 @@ const REAL_ACTIONS = new Set<string>([
 	'solo',
 	'crossFade',
 	'panner',
+	'panner3d',
 	'midSideCompressor',
 	'multibandCompressor',
 ]);

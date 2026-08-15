@@ -147,6 +147,7 @@ const ROUTING: Record<AudioNodeEntry['kind'], PortAdapter> = {
 	multibandSplit: multibandSplitAdapter,
 	crossFade:    crossFadeAdapter,
 	panner:       pannerAdapter,
+	panner3d:     genericAdapter,
 	oscillator:       genericAdapter,
 	gain:             genericAdapter,
 	noise:            genericAdapter,

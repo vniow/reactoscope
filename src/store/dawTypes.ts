@@ -1,5 +1,5 @@
 import type { Node, Edge, BuiltInNode } from '@xyflow/react';
-import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower, Solo, CrossFade, Panner, MidSideCompressor, MultibandCompressor } from 'tone';
+import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower, Solo, CrossFade, Panner, MidSideCompressor, MultibandCompressor, Panner3D } from 'tone';
 
 export type OscType = 'sine' | 'square' | 'triangle' | 'sawtooth';
 
@@ -43,7 +43,7 @@ export type StubKind =
 	| 'synth' | 'monoSynth' | 'polySynth' | 'fmSynth' | 'amSynth' | 'duoSynth'
 	| 'membraneSynth' | 'metalSynth' | 'noiseSynth' | 'pluckSynth' | 'sampler'
 	// — Processing —
-	| 'channel' | 'panner3d'
+	| 'channel'
 	| 'convolver'
 	// — Analysis —
 	| 'recorder'
@@ -466,6 +466,20 @@ export type CrossFadeNodeData = {
 };
 export type CrossFadeFlowNode = Node<CrossFadeNodeData, 'crossFade'>;
 
+// v1 UI exposes only position + panningModel (docs/node-roadmap.md) — the
+// listener-cone/distance-falloff params (orientationX/Y/Z, distanceModel,
+// refDistance, maxDistance, rolloffFactor, coneInnerAngle/OuterAngle/
+// OuterGain) stay at their Tone.js defaults, ~14 controls is too heavy for v1.
+export type Panner3DPanningModel = 'equalpower' | 'HRTF';
+export type Panner3DNodeData = {
+	label:        string;
+	positionX:    number;   // default 0
+	positionY:    number;   // default 0
+	positionZ:    number;   // default 0
+	panningModel: Panner3DPanningModel; // default 'equalpower'
+};
+export type Panner3DFlowNode = Node<Panner3DNodeData, 'panner3d'>;
+
 // ─── Analysis node data types ─────────────────────────────────────────────────
 // Analyser-family "tap" nodes: pass audio through unchanged (in-0 → out-0) and
 // separately expose a live-polled readout via engine.ts getters — see
@@ -606,6 +620,7 @@ export type AppNode =
 	| SoloFlowNode
 	| PannerFlowNode
 	| CrossFadeFlowNode
+	| Panner3DFlowNode
 	| FFTFlowNode
 	| MeterFlowNode
 	| DCMeterFlowNode
@@ -766,6 +781,7 @@ export type MultibandSplitAudioEntry = { kind: 'multibandSplit'; toneNode: Multi
 export type SoloAudioEntry        = { kind: 'solo';        toneNode: Solo };
 export type PannerAudioEntry      = { kind: 'panner';      toneNode: Panner; split: Split };
 export type CrossFadeAudioEntry   = { kind: 'crossFade';   toneNode: CrossFade };
+export type Panner3DAudioEntry    = { kind: 'panner3d';    toneNode: Panner3D };
 export type FFTAudioEntry         = { kind: 'fft';         toneNode: FFT };
 export type MeterAudioEntry       = { kind: 'meter';       toneNode: Meter };
 export type DCMeterAudioEntry     = { kind: 'dcMeter';     toneNode: DCMeter };
@@ -834,6 +850,7 @@ export type AudioNodeEntry =
 	| SoloAudioEntry
 	| PannerAudioEntry
 	| CrossFadeAudioEntry
+	| Panner3DAudioEntry
 	| FFTAudioEntry
 	| MeterAudioEntry
 	| DCMeterAudioEntry
