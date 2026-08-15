@@ -186,6 +186,7 @@ const ROUTING: Record<AudioNodeEntry['kind'], PortAdapter> = {
 	filter:           genericAdapter,
 	eq3:              genericAdapter,
 	panVol:           genericAdapter,
+	channel:          genericAdapter,
 	mono:             genericAdapter,
 	volume:           genericAdapter,
 	solo:             genericAdapter,

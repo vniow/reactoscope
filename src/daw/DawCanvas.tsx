@@ -94,6 +94,7 @@ import { BiquadFilterNode }       from './nodes/processing/BiquadFilterNode';
 import { FilterNode }             from './nodes/processing/FilterNode';
 import { EQ3Node }                from './nodes/processing/EQ3Node';
 import { PanVolNode }             from './nodes/processing/PanVolNode';
+import { ChannelNode }            from './nodes/processing/ChannelNode';
 import { SplitNode }              from './nodes/processing/SplitNode';
 import { MergeNode }              from './nodes/processing/MergeNode';
 import { MonoNode }               from './nodes/processing/MonoNode';
@@ -171,6 +172,7 @@ const nodeTypes = {
 	filter:           FilterNode,
 	eq3:              EQ3Node,
 	panVol:           PanVolNode,
+	channel:          ChannelNode,
 	split:            SplitNode,
 	merge:            MergeNode,
 	mono:             MonoNode,

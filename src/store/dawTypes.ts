@@ -1,5 +1,5 @@
 import type { Node, Edge, BuiltInNode } from '@xyflow/react';
-import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower, Solo, CrossFade, Panner, MidSideCompressor, MultibandCompressor, Panner3D, WaveShaper, Recorder } from 'tone';
+import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower, Solo, CrossFade, Panner, MidSideCompressor, MultibandCompressor, Panner3D, WaveShaper, Recorder, Channel } from 'tone';
 
 export type OscType = 'sine' | 'square' | 'triangle' | 'sawtooth';
 
@@ -43,7 +43,6 @@ export type StubKind =
 	| 'synth' | 'monoSynth' | 'polySynth' | 'fmSynth' | 'amSynth' | 'duoSynth'
 	| 'membraneSynth' | 'metalSynth' | 'noiseSynth' | 'pluckSynth' | 'sampler'
 	// — Processing —
-	| 'channel'
 	| 'convolver'
 	// — Analysis —
 	| 'amplitudeEnvelope' | 'frequencyEnvelope'
@@ -419,6 +418,19 @@ export type PanVolNodeData = {
 };
 export type PanVolFlowNode = Node<PanVolNodeData, 'panVol'>;
 
+// Channel is PanVol + Solo internally composed (docs/node-roadmap.md) — solo
+// state is deliberately NOT a field here, same reasoning as SoloNodeData:
+// it's store-driven (daw.ts's soloedNodeId, ADR-0003) since Channel and Solo
+// share Tone's own static solo registry. send/receive bus routing is
+// permanently out of scope (docs/adr/0007-channel-send-receive-out-of-scope.md).
+export type ChannelNodeData = {
+	label:  string;
+	volume: number;    // dB, -60–6, default 0
+	pan:    number;    // -1–1, default 0
+	mute:   boolean;   // default false
+};
+export type ChannelFlowNode = Node<ChannelNodeData, 'channel'>;
+
 export type SplitNodeData = { label: string };
 export type SplitFlowNode = Node<SplitNodeData, 'split'>;
 
@@ -630,6 +642,7 @@ export type AppNode =
 	| FilterFlowNode
 	| EQ3FlowNode
 	| PanVolFlowNode
+	| ChannelFlowNode
 	| SplitFlowNode
 	| MergeFlowNode
 	| MonoFlowNode
@@ -793,6 +806,7 @@ export type BiquadFilterAudioEntry = { kind: 'biquadFilter'; toneNode: BiquadFil
 export type FilterAudioEntry      = { kind: 'filter';      toneNode: Filter };
 export type EQ3AudioEntry         = { kind: 'eq3';         toneNode: EQ3 };
 export type PanVolAudioEntry      = { kind: 'panVol';      toneNode: PanVol };
+export type ChannelAudioEntry     = { kind: 'channel';     toneNode: Channel };
 export type SplitNodeAudioEntry   = { kind: 'split';       toneNode: Split };
 export type MergeNodeAudioEntry   = { kind: 'merge';       toneNode: Merge };
 export type MonoAudioEntry        = { kind: 'mono';        toneNode: Mono };
@@ -864,6 +878,7 @@ export type AudioNodeEntry =
 	| FilterAudioEntry
 	| EQ3AudioEntry
 	| PanVolAudioEntry
+	| ChannelAudioEntry
 	| SplitNodeAudioEntry
 	| MergeNodeAudioEntry
 	| MonoAudioEntry

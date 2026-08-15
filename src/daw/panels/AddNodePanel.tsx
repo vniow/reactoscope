@@ -493,6 +493,7 @@ const REAL_ACTIONS = new Set<string>([
 	'recorder',
 	'midSideCompressor',
 	'multibandCompressor',
+	'channel',
 ]);
 
 // ─── Component ────────────────────────────────────────────────────────────────
