@@ -88,6 +88,7 @@ import { AutoWahNode }            from './nodes/effects/AutoWahNode';
 import { LimiterNode }            from './nodes/dynamics/LimiterNode';
 import { GateNode }               from './nodes/dynamics/GateNode';
 import { CompressorNode }         from './nodes/dynamics/CompressorNode';
+import { MidSideCompressorNode }  from './nodes/dynamics/MidSideCompressorNode';
 import { BiquadFilterNode }       from './nodes/processing/BiquadFilterNode';
 import { FilterNode }             from './nodes/processing/FilterNode';
 import { EQ3Node }                from './nodes/processing/EQ3Node';
@@ -160,6 +161,7 @@ const nodeTypes = {
 	limiter:          LimiterNode,
 	gate:             GateNode,
 	compressor:       CompressorNode,
+	midSideCompressor: MidSideCompressorNode,
 	biquadFilter:     BiquadFilterNode,
 	filter:           FilterNode,
 	eq3:              EQ3Node,

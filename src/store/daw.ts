@@ -108,7 +108,6 @@ function edgeColorForSource(sourceId: string, nodes: AppNode[]): string {
 // Everything else falls back to capitalising the action string.
 const STUB_LABELS: Partial<Record<StubKind, string>> = {
 	noiseGenerator:      'Noise',
-	midSideCompressor:   'MidSideCompressor',
 	multibandCompressor: 'MultibandCompressor',
 	panner3d:            'Panner3D',
 	amplitudeEnvelope:   'AmplitudeEnvelope',

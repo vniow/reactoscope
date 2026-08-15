@@ -61,6 +61,7 @@ import { followerHandler }         from './nodes/follower';
 import { soloHandler }             from './nodes/solo';
 import { crossFadeHandler }        from './nodes/crossFade';
 import { pannerHandler }           from './nodes/panner';
+import { midSideCompressorHandler } from './nodes/midSideCompressor';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const _registry = new Map<string, NodeTypeHandler<any>>();
@@ -150,3 +151,4 @@ nodeRegistry.register('follower',         followerHandler);
 nodeRegistry.register('solo',             soloHandler);
 nodeRegistry.register('crossFade',        crossFadeHandler);
 nodeRegistry.register('panner',           pannerHandler);
+nodeRegistry.register('midSideCompressor', midSideCompressorHandler);

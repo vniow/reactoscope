@@ -1,5 +1,5 @@
 import type { Node, Edge, BuiltInNode } from '@xyflow/react';
-import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower, Solo, CrossFade, Panner } from 'tone';
+import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower, Solo, CrossFade, Panner, MidSideCompressor } from 'tone';
 
 export type OscType = 'sine' | 'square' | 'triangle' | 'sawtooth';
 
@@ -43,7 +43,7 @@ export type StubKind =
 	| 'synth' | 'monoSynth' | 'polySynth' | 'fmSynth' | 'amSynth' | 'duoSynth'
 	| 'membraneSynth' | 'metalSynth' | 'noiseSynth' | 'pluckSynth' | 'sampler'
 	// — Dynamics —
-	| 'midSideCompressor' | 'multibandCompressor'
+	| 'multibandCompressor'
 	// — Processing —
 	| 'channel' | 'panner3d'
 	| 'convolver'
@@ -341,15 +341,28 @@ export type GateNodeData = {
 };
 export type GateFlowNode = Node<GateNodeData, 'gate'>;
 
-export type CompressorNodeData = {
-	label:     string;
+// Shared by every node with a real Compressor band — standalone Compressor,
+// and MidSideCompressor's/MultibandCompressor's mid/side/low/high children
+// (see CompressorControls, docs/adr/0004-nested-param-panel-layout.md).
+export type CompressorBandData = {
 	threshold: number;   // dB, -100–0, default -24
 	ratio:     number;   // 1–20, default 12
 	attack:    number;   // seconds, 0–1, default 0.003
 	release:   number;   // seconds, 0–1, default 0.25
 	knee:      number;   // dB, 0–40, default 30
 };
+
+export type CompressorNodeData = { label: string } & CompressorBandData;
 export type CompressorFlowNode = Node<CompressorNodeData, 'compressor'>;
+
+// Requires a genuinely stereo input — mid/side encoding is meaningless on
+// mono, flagged in the node's UI (docs/node-roadmap.md).
+export type MidSideCompressorNodeData = {
+	label: string;
+	mid:   CompressorBandData;
+	side:  CompressorBandData;
+};
+export type MidSideCompressorFlowNode = Node<MidSideCompressorNodeData, 'midSideCompressor'>;
 
 // ─── Processing node data types ───────────────────────────────────────────────
 
@@ -568,6 +581,7 @@ export type AppNode =
 	| LimiterFlowNode
 	| GateFlowNode
 	| CompressorFlowNode
+	| MidSideCompressorFlowNode
 	| BiquadFilterFlowNode
 	| FilterFlowNode
 	| EQ3FlowNode
@@ -726,6 +740,7 @@ export type AutoWahAudioEntry         = { kind: 'autoWah';          toneNode: Au
 export type LimiterAudioEntry     = { kind: 'limiter';     toneNode: Limiter };
 export type GateAudioEntry        = { kind: 'gate';        toneNode: Gate };
 export type CompressorAudioEntry  = { kind: 'compressor';  toneNode: Compressor };
+export type MidSideCompressorAudioEntry = { kind: 'midSideCompressor'; toneNode: MidSideCompressor };
 export type BiquadFilterAudioEntry = { kind: 'biquadFilter'; toneNode: BiquadFilter };
 export type FilterAudioEntry      = { kind: 'filter';      toneNode: Filter };
 export type EQ3AudioEntry         = { kind: 'eq3';         toneNode: EQ3 };
@@ -792,6 +807,7 @@ export type AudioNodeEntry =
 	| LimiterAudioEntry
 	| GateAudioEntry
 	| CompressorAudioEntry
+	| MidSideCompressorAudioEntry
 	| BiquadFilterAudioEntry
 	| FilterAudioEntry
 	| EQ3AudioEntry
