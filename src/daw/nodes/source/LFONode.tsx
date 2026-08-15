@@ -68,18 +68,29 @@ export const LFONode = memo(function LFONode({
 					className='nodrag'
 					sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}
 				>
-					<Box sx={{ display: 'flex', gap: '1px' }}>
+					<Box
+						sx={{
+							display: 'grid',
+							gridTemplateColumns: 'repeat(2, 1fr)',
+							gap: '1px',
+						}}
+					>
 						{OSC_TYPES.map((t: OscType, i) => {
 							const active = data.type === t;
 							const lit = hwLit(color);
 							const radius =
-								i === 0 ? '3px 0 0 3px' : i === 3 ? '0 3px 3px 0' : '0';
+								i === 0
+									? '3px 0 0 0'
+									: i === 1
+										? '0 3px 0 0'
+										: i === 2
+											? '0 0 0 3px'
+											: '0 0 3px 0';
 							return (
 								<Box
 									key={t}
 									onClick={() => setNodeParam(id, { type: t })}
 									sx={{
-										flex: 1,
 										display: 'flex',
 										alignItems: 'center',
 										justifyContent: 'center',
