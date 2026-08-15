@@ -116,6 +116,7 @@ import { AbsNode }                from './nodes/signal/AbsNode';
 import { NegateNode }             from './nodes/signal/NegateNode';
 import { AudioToGainNode }        from './nodes/signal/AudioToGainNode';
 import { GainToAudioNode }        from './nodes/signal/GainToAudioNode';
+import { WaveShaperNode }         from './nodes/signal/WaveShaperNode';
 import { DeletableEdge }    from './edges/DeletableEdge';
 import { AddNodePanel }     from './panels/AddNodePanel';
 import { PatchPanel }      from './panels/PatchPanel';
@@ -191,6 +192,7 @@ const nodeTypes = {
 	negate:           NegateNode,
 	audioToGain:      AudioToGainNode,
 	gainToAudio:      GainToAudioNode,
+	waveShaper:       WaveShaperNode,
 };
 
 const edgeTypes = {

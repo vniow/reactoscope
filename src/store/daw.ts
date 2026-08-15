@@ -110,7 +110,6 @@ const STUB_LABELS: Partial<Record<StubKind, string>> = {
 	noiseGenerator:      'Noise',
 	amplitudeEnvelope:   'AmplitudeEnvelope',
 	frequencyEnvelope:   'FrequencyEnvelope',
-	waveShaper:          'WaveShaper',
 	greaterThan:         'GreaterThan',
 	toneEvent:           'ToneEvent',
 };

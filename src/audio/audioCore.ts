@@ -202,6 +202,7 @@ const ROUTING: Record<AudioNodeEntry['kind'], PortAdapter> = {
 	negate:           genericAdapter,
 	audioToGain:      genericAdapter,
 	gainToAudio:      genericAdapter,
+	waveShaper:       genericAdapter,
 };
 
 // ─── Audio routing ────────────────────────────────────────────────────────────

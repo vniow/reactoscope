@@ -1,5 +1,5 @@
 import type { Node, Edge, BuiltInNode } from '@xyflow/react';
-import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower, Solo, CrossFade, Panner, MidSideCompressor, MultibandCompressor, Panner3D } from 'tone';
+import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower, Solo, CrossFade, Panner, MidSideCompressor, MultibandCompressor, Panner3D, WaveShaper } from 'tone';
 
 export type OscType = 'sine' | 'square' | 'triangle' | 'sawtooth';
 
@@ -49,7 +49,7 @@ export type StubKind =
 	| 'recorder'
 	| 'amplitudeEnvelope' | 'frequencyEnvelope'
 	// — Signal —
-	| 'waveShaper' | 'add' | 'multiply' | 'greaterThan'
+	| 'add' | 'multiply' | 'greaterThan'
 	// — Event —
 	| 'loop' | 'sequence' | 'pattern' | 'part' | 'toneEvent';
 
@@ -565,6 +565,18 @@ export type AudioToGainFlowNode = Node<AudioToGainNodeData, 'audioToGain'>;
 export type GainToAudioNodeData = { label: string };
 export type GainToAudioFlowNode = Node<GainToAudioNodeData, 'gainToAudio'>;
 
+// WaveShaper's mapping is a JS function/array, not a slider-able value — the
+// dropdown's value is a preset *name* stored purely for serialization/redraw;
+// selecting one triggers an imperative setMap() rather than a watched param
+// (docs/adr/0005-waveshaper-preset-driven.md).
+export type WaveShaperPreset = 'identity' | 'softClip' | 'hardClip';
+export type WaveShaperNodeData = {
+	label:      string;
+	preset:     WaveShaperPreset;         // default 'identity'
+	oversample: 'none' | '2x' | '4x';     // default 'none'
+};
+export type WaveShaperFlowNode = Node<WaveShaperNodeData, 'waveShaper'>;
+
 export type AppNode =
 	| BuiltInNode
 	| PlayerFlowNode
@@ -633,7 +645,8 @@ export type AppNode =
 	| AbsFlowNode
 	| NegateFlowNode
 	| AudioToGainFlowNode
-	| GainToAudioFlowNode;
+	| GainToAudioFlowNode
+	| WaveShaperFlowNode;
 
 export type AppEdge = Edge;
 
@@ -795,6 +808,7 @@ export type AbsAudioEntry         = { kind: 'abs';         toneNode: Abs };
 export type NegateAudioEntry      = { kind: 'negate';      toneNode: Negate };
 export type AudioToGainAudioEntry = { kind: 'audioToGain'; toneNode: AudioToGain };
 export type GainToAudioAudioEntry = { kind: 'gainToAudio'; toneNode: GainToAudio };
+export type WaveShaperAudioEntry  = { kind: 'waveShaper';  toneNode: WaveShaper };
 
 // Stubs are NOT in the audio registry — they have no Tone.js instances yet.
 
@@ -863,7 +877,8 @@ export type AudioNodeEntry =
 	| AbsAudioEntry
 	| NegateAudioEntry
 	| AudioToGainAudioEntry
-	| GainToAudioAudioEntry;
+	| GainToAudioAudioEntry
+	| WaveShaperAudioEntry;
 
 export type AudioNodeMap = Map<string, AudioNodeEntry>;
 
