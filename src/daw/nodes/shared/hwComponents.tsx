@@ -10,7 +10,7 @@ type HwToggleButtonGroupProps = {
 	color: string;
 	/** Number of equal-width columns. Omit for a horizontal strip layout. */
 	cols?: number;
-} & Omit<ToggleButtonGroupProps, 'sx'>;
+} & Omit<ToggleButtonGroupProps, 'sx' | 'color'>;
 
 export function HwToggleButtonGroup({ color, cols, children, ...props }: HwToggleButtonGroupProps) {
 	const sx = cols ? hwGridToggleSx(color, cols) : hwToggleSx(color);
@@ -26,8 +26,9 @@ type HwButtonProps = { color: string; lit?: boolean } & Omit<ButtonProps, 'color
 
 export function HwButton({ color, lit = false, sx: sxProp, children, ...props }: HwButtonProps) {
 	const base = lit ? hwBtnLit(color) : hwBtn(color);
+	const sx = sxProp ? [base, ...(Array.isArray(sxProp) ? sxProp : [sxProp])] : [base];
 	return (
-		<Button sx={sxProp ? [base, sxProp] : base} {...props}>
+		<Button sx={sx} {...props}>
 			{children}
 		</Button>
 	);
