@@ -98,6 +98,8 @@ import { MonoNode }               from './nodes/processing/MonoNode';
 import { VolumeNode }             from './nodes/processing/VolumeNode';
 import { MultibandSplitNode }     from './nodes/processing/MultibandSplitNode';
 import { SoloNode }               from './nodes/processing/SoloNode';
+import { CrossFadeNode }          from './nodes/processing/CrossFadeNode';
+import { PannerNode }             from './nodes/processing/PannerNode';
 import { FFTNode }                from './nodes/analysis/FFTNode';
 import { MeterNode }              from './nodes/analysis/MeterNode';
 import { DCMeterNode }            from './nodes/analysis/DCMeterNode';
@@ -168,6 +170,8 @@ const nodeTypes = {
 	volume:           VolumeNode,
 	multibandSplit:   MultibandSplitNode,
 	solo:             SoloNode,
+	crossFade:        CrossFadeNode,
+	panner:           PannerNode,
 	fft:              FFTNode,
 	meter:            MeterNode,
 	dcMeter:          DCMeterNode,

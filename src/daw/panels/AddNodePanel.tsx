@@ -486,6 +486,8 @@ const REAL_ACTIONS = new Set<string>([
 	'analyser',
 	'follower',
 	'solo',
+	'crossFade',
+	'panner',
 ]);
 
 // ─── Component ────────────────────────────────────────────────────────────────

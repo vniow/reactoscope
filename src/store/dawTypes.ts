@@ -1,5 +1,5 @@
 import type { Node, Edge, BuiltInNode } from '@xyflow/react';
-import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower, Solo } from 'tone';
+import type { Player, Gain, Analyser, Oscillator, Merge, Split, Noise, Signal, LFO, FMOscillator, AMOscillator, FatOscillator, PulseOscillator, PWMOscillator, GrainPlayer, UserMedia, Reverb, JCReverb, Freeverb, FeedbackDelay, PingPongDelay, Distortion, Chebyshev, BitCrusher, FrequencyShifter, PitchShift, StereoWidener, Chorus, Phaser, Tremolo, Vibrato, AutoFilter, AutoPanner, AutoWah, Limiter, Gate, BiquadFilter, PanVol, Mono, Volume, FFT, Meter, DCMeter, Waveform, Scale, ScaleExp, Abs, Negate, AudioToGain, GainToAudio, Compressor, Filter, EQ3, MultibandSplit, Follower, Solo, CrossFade, Panner } from 'tone';
 
 export type OscType = 'sine' | 'square' | 'triangle' | 'sawtooth';
 
@@ -36,7 +36,7 @@ export type GainNodeData = {
 
 export type StubKind =
 	// — existing processing stubs (not yet implemented) —
-	| 'noiseGenerator' | 'panner'
+	| 'noiseGenerator'
 	// — Source / Instrument —
 	| 'omniOscillator'
 	| 'players' | 'userMedia'
@@ -45,7 +45,7 @@ export type StubKind =
 	// — Dynamics —
 	| 'midSideCompressor' | 'multibandCompressor'
 	// — Processing —
-	| 'channel' | 'panner3d' | 'crossFade'
+	| 'channel' | 'panner3d'
 	| 'convolver'
 	// — Analysis —
 	| 'recorder'
@@ -426,6 +426,22 @@ export type MultibandSplitFlowNode = Node<MultibandSplitNodeData, 'multibandSpli
 export type SoloNodeData = { label: string };
 export type SoloFlowNode = Node<SoloNodeData, 'solo'>;
 
+// Panner wraps a single stereo StereoPannerNode — it has no native separate
+// L/R outputs. out-0/out-1 are a reactoscope design choice, satisfied by an
+// internal Split(2) the handler wires the panner's output into.
+export type PannerNodeData = {
+	label: string;
+	pan:   number;   // -1–1, default 0
+};
+export type PannerFlowNode = Node<PannerNodeData, 'panner'>;
+
+// CrossFade has no single `.input` — in-0/in-1 wire directly to toneNode.a/.b.
+export type CrossFadeNodeData = {
+	label: string;
+	fade:  number;   // 0–1, default 0.5
+};
+export type CrossFadeFlowNode = Node<CrossFadeNodeData, 'crossFade'>;
+
 // ─── Analysis node data types ─────────────────────────────────────────────────
 // Analyser-family "tap" nodes: pass audio through unchanged (in-0 → out-0) and
 // separately expose a live-polled readout via engine.ts getters — see
@@ -562,6 +578,8 @@ export type AppNode =
 	| VolumeFlowNode
 	| MultibandSplitFlowNode
 	| SoloFlowNode
+	| PannerFlowNode
+	| CrossFadeFlowNode
 	| FFTFlowNode
 	| MeterFlowNode
 	| DCMeterFlowNode
@@ -718,6 +736,8 @@ export type MonoAudioEntry        = { kind: 'mono';        toneNode: Mono };
 export type VolumeAudioEntry      = { kind: 'volume';      toneNode: Volume };
 export type MultibandSplitAudioEntry = { kind: 'multibandSplit'; toneNode: MultibandSplit };
 export type SoloAudioEntry        = { kind: 'solo';        toneNode: Solo };
+export type PannerAudioEntry      = { kind: 'panner';      toneNode: Panner; split: Split };
+export type CrossFadeAudioEntry   = { kind: 'crossFade';   toneNode: CrossFade };
 export type FFTAudioEntry         = { kind: 'fft';         toneNode: FFT };
 export type MeterAudioEntry       = { kind: 'meter';       toneNode: Meter };
 export type DCMeterAudioEntry     = { kind: 'dcMeter';     toneNode: DCMeter };
@@ -782,6 +802,8 @@ export type AudioNodeEntry =
 	| VolumeAudioEntry
 	| MultibandSplitAudioEntry
 	| SoloAudioEntry
+	| PannerAudioEntry
+	| CrossFadeAudioEntry
 	| FFTAudioEntry
 	| MeterAudioEntry
 	| DCMeterAudioEntry
