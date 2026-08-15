@@ -1,11 +1,18 @@
-# Shared tap+readout hook for Analysis nodes
+# Shared tap+readout hook for canvas-drawing Analysis nodes
 
-Tier 1 shipped four Analysis nodes (FFT, Meter, DCMeter, Waveform) that each pass audio through
-unchanged and poll a `getValue()`-family method via their own `requestAnimationFrame` loop,
-duplicated near-identically across `FFTNode.tsx`/`MeterNode.tsx`/`DCMeterNode.tsx`/
-`WaveformNode.tsx`. Tier 2 adds a fifth, Analyser. Rather than add a fifth bespoke copy, we're
-extracting a shared hook that owns the rAF polling loop and returns the latest value; each node
-keeps its own draw/render logic (bar spectrum, line waveform, needle meter, etc. genuinely
-differ), and the four existing nodes get refactored onto it in the same batch. Five instances of
-the same polling loop is the point where the duplication risk (one copy silently drifting from
-the other four) outweighs the cost of the refactor touching already-shipped files.
+Tier 1 shipped four Analysis nodes that each pass audio through unchanged and poll a
+`getValue()`-family method for a live readout, but they split into two genuinely different
+rendering shapes, not one: FFT and Waveform each run their own `requestAnimationFrame` loop that
+draws straight to a `<canvas>`, bypassing React state entirely for frame-rate reasons; Meter and
+DCMeter instead poll via `setInterval(100ms)`, feeding a numeric readout and an `HwLevelMeter` bar
+through plain React state. On inspection these aren't one duplicated pattern, they're two — and
+only the first (FFT/Waveform) is what Analyser needs, since Analyser's `type` param toggles
+between drawing an FFT spectrum and a waveform line, i.e. it's the union of exactly what FFT and
+Waveform already each do.
+
+We're extracting a shared hook for the rAF+canvas shape only — it owns the polling loop and
+returns the latest value, each node keeps its own draw call (bar spectrum vs line trace) — and
+refactoring `FFTNode.tsx`/`WaveformNode.tsx` onto it alongside building `AnalyserNode.tsx` on the
+same hook. `MeterNode.tsx`/`DCMeterNode.tsx` are left as they are: forcing their
+setInterval+React-state pattern into the same abstraction as the canvas one would be unifying two
+things that only superficially look alike, not removing real duplication.
