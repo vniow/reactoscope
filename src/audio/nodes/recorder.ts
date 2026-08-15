@@ -46,7 +46,16 @@ export async function startRecordingNode(id: string): Promise<void> {
 	const entry = getEntry(id);
 	if (!entry) return;
 	await toneStart();
-	await entry.toneNode.start();
+	// The underlying MediaRecorder's `start` event only fires once audio data
+	// actually begins flowing through the stream -- an idle Recorder (nothing
+	// wired in yet, or a silent/unstarted source) never gets it, which would
+	// hang this forever even though the native recorder's .state already
+	// flips to "started" synchronously. Race a short timeout so the UI never
+	// gets stuck waiting on an event that may never arrive.
+	await Promise.race([
+		entry.toneNode.start().catch(() => {}),
+		new Promise<void>(resolve => setTimeout(resolve, 200)),
+	]);
 }
 
 export function pauseRecordingNode(id: string): void {

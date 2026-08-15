@@ -9,7 +9,6 @@ import {
 	useReactFlow,
 	applyNodeChanges,
 	type NodeChange,
-	type Node,
 } from '@xyflow/react';
 import { useShallow } from 'zustand/react/shallow';
 import Box from '@mui/material/Box';
@@ -451,7 +450,7 @@ export function DawCanvas(layout: LayoutControls) {
 		isDragging.current = true;
 	}, []);
 
-	const handleNodeDragStop = useCallback((_event: React.MouseEvent, _node: Node, nodes: AppNode[]) => {
+	const handleNodeDragStop = useCallback((_event: MouseEvent | TouchEvent, _node: AppNode, nodes: AppNode[]) => {
 		isDragging.current = false;
 		// Wrap in startTransition so the Zustand flush is treated as a low-priority
 		// update. Without this, the synchronous React commit blocks the main thread
