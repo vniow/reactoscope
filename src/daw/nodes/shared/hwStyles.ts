@@ -165,13 +165,15 @@ export function hwMenuItemSx(color: string) {
 
 export function hwSelectMenuProps(color: string) {
 	return {
-		PaperProps: {
-			sx: {
-				background:   '#1a1a1e',
-				border:       '1px solid #0d0d0f',
-				borderColor:  `${color}40`,
-				boxShadow:    `0 4px 12px rgba(0,0,0,0.7), 0 0 0 1px ${color}20`,
-				'& .MuiMenuItem-root': hwMenuItemSx(color),
+		slotProps: {
+			paper: {
+				sx: {
+					background:   '#1a1a1e',
+					border:       '1px solid #0d0d0f',
+					borderColor:  `${color}40`,
+					boxShadow:    `0 4px 12px rgba(0,0,0,0.7), 0 0 0 1px ${color}20`,
+					'& .MuiMenuItem-root': hwMenuItemSx(color),
+				},
 			},
 		},
 	};
