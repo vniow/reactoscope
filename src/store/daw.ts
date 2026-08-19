@@ -34,6 +34,10 @@ import type {
 	StubKind,
 	PatchFile,
 	MasterOutputNodeData,
+	GeometrySourceEntry,
+	GeometrySourceType,
+	GeometrySourceData,
+	GeometrySourceTransform,
 } from './dawTypes';
 
 export { MASTER_NODE_ID, SCENE_INPUT_ID };
@@ -146,6 +150,15 @@ const initialEdges: AppEdge[] = [
 	{ id: 'e-scene-a', source: SCENE_INPUT_ID, sourceHandle: 'out-5', target: MASTER_NODE_ID, targetHandle: 'in-5', animated: false, type: 'deletable', style: { stroke: NODE_COLORS.scene } },
 ];
 
+function identityTransform(): GeometrySourceTransform {
+	return { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] };
+}
+
+// Preserves the app's original hardcoded-cube behaviour as the starting scene.
+const initialSources: GeometrySourceEntry[] = [
+	{ id: 'source-cube-default', type: 'cube', data: { transform: identityTransform() } },
+];
+
 // ─── Zustand store ────────────────────────────────────────────────────────────
 
 type DawState = {
@@ -156,6 +169,17 @@ type DawState = {
 	sceneRunning:   boolean;
 	playingNodes:   Set<string>;
 	soloedNodeId:   string | null;
+
+	// Scene geometry sources — scene-native, kept separate from the node graph
+	// (Wayfinder map #39). See src/scene/sources/sourceRegistry.tsx for the
+	// type→component registry that renders these.
+	sources:                 GeometrySourceEntry[];
+	selectedSourceId:        string | null;
+	addSource:               (type: GeometrySourceType, dataOverride?: Partial<GeometrySourceData>) => string;
+	removeSource:            (id: string) => void;
+	duplicateSource:         (id: string) => string;
+	updateSourceTransform:   (id: string, transform: Partial<GeometrySourceTransform>) => void;
+	setSelectedSourceId:     (id: string | null) => void;
 
 	onNodesChange:     OnNodesChange<AppNode>;
 	onEdgesChange:     OnEdgesChange<AppEdge>;
@@ -189,6 +213,51 @@ export const useDawStore = create<DawState>((set, get) => ({
 	sceneRunning:   false,
 	playingNodes:   new Set<string>(),
 	soloedNodeId:   null,
+
+	sources:          initialSources,
+	selectedSourceId: null,
+
+	addSource: (type, dataOverride) => {
+		const id = `${type}-${Date.now()}`;
+		const data: GeometrySourceData = { transform: identityTransform(), ...dataOverride };
+		set(state => ({ sources: [...state.sources, { id, type, data }], selectedSourceId: id }));
+		return id;
+	},
+
+	removeSource: (id) => {
+		set(state => ({
+			sources:          state.sources.filter(s => s.id !== id),
+			selectedSourceId: state.selectedSourceId === id ? null : state.selectedSourceId,
+		}));
+	},
+
+	duplicateSource: (id) => {
+		const src = get().sources.find(s => s.id === id);
+		if (!src) return '';
+		const newId = `${src.type}-${Date.now()}`;
+		const offsetPosition: [number, number, number] = [
+			src.data.transform.position[0] + 0.15,
+			src.data.transform.position[1],
+			src.data.transform.position[2],
+		];
+		const copy: GeometrySourceEntry = {
+			id:   newId,
+			type: src.type,
+			data: { ...src.data, transform: { ...src.data.transform, position: offsetPosition } },
+		};
+		set(state => ({ sources: [...state.sources, copy], selectedSourceId: newId }));
+		return newId;
+	},
+
+	updateSourceTransform: (id, transform) => {
+		set(state => ({
+			sources: state.sources.map(s =>
+				s.id === id ? { ...s, data: { ...s.data, transform: { ...s.data.transform, ...transform } } } : s,
+			),
+		}));
+	},
+
+	setSelectedSourceId: (id) => set({ selectedSourceId: id }),
 
 	setNodePlaying: (id, playing) => set(state => {
 		const next = new Set(state.playingNodes);
@@ -427,14 +496,19 @@ export const useDawStore = create<DawState>((set, get) => ({
 		);
 
 		set({
-			nodes:          restoredNodes,
-			edges:          patch.edges,
-			edgePathType:   patch.edgePathType,
-			audioVersion:   get().audioVersion + 1,
-			sceneRunning:   false,
-			selectedNodeId: null,
-			playingNodes:   new Set<string>(),
-			soloedNodeId:   null,
+			nodes:            restoredNodes,
+			edges:            patch.edges,
+			edgePathType:     patch.edgePathType,
+			// Old saved patches predate this field — fall back to the default
+			// cube so their visual behaviour (a cube was always shown, then
+			// hardcoded) doesn't silently regress to an empty scene.
+			sources:          patch.sources ?? initialSources,
+			selectedSourceId: null,
+			audioVersion:     get().audioVersion + 1,
+			sceneRunning:     false,
+			selectedNodeId:   null,
+			playingNodes:     new Set<string>(),
+			soloedNodeId:     null,
 		});
 	},
 
@@ -455,8 +529,8 @@ export function isMasterMultichannel(edges: AppEdge[]): boolean {
 // ─── Patch export helpers ─────────────────────────────────────────────────────
 
 export function exportPatch(name: string): PatchFile {
-	const { nodes, edges, edgePathType } = useDawStore.getState();
-	return { version: 1, savedAt: new Date().toISOString(), name, nodes, edges, edgePathType };
+	const { nodes, edges, edgePathType, sources } = useDawStore.getState();
+	return { version: 1, savedAt: new Date().toISOString(), name, nodes, edges, edgePathType, sources };
 }
 
 export function downloadPatch(patch: PatchFile, filenameStem?: string): void {
