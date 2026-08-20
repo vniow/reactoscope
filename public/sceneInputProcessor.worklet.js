@@ -151,8 +151,13 @@ class SceneInputProcessor extends AudioWorkletProcessor {
 			const g = this._coords[o0 + 3] + frac * (this._coords[o1 + 3] - this._coords[o0 + 3]);
 			const b = this._coords[o0 + 4] + frac * (this._coords[o1 + 4] - this._coords[o0 + 4]);
 			const a = this._coords[o0 + 5] + frac * (this._coords[o1 + 5] - this._coords[o0 + 5]);
-			// Blank is binary — use the current point's value, don't blend it
-			const blank = this._coords[o0 + 6] > 0.5;
+			// Blank is binary, but r/g/b/a above are linearly interpolated between
+			// pos0 and pos1 — reading the flag from pos0 alone means any sample
+			// that straddles a visible→blank (or blank→visible) boundary gets
+			// classified "visible" while its color has already been dragged partway
+			// toward silence, leaking a faint but real line at every blank-travel
+			// jump. Treating either endpoint as blank closes that gap.
+			const blank = this._coords[o0 + 6] > 0.5 || this._coords[o1 + 6] > 0.5;
 
 			// Clamp guards against corrupt buffer data causing runaway deflection
 			if (out[0]) out[0][i] = x < -1.5 ? -1 : x > 1.5 ? 1 : x;
