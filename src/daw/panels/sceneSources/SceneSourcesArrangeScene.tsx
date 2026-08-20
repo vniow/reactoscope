@@ -21,6 +21,7 @@ import { useDawStore } from '../../../store/daw';
 import { hwIconBtn, hwToggleSx } from '../../nodes/shared/hwStyles';
 import { NODE_COLORS } from '../../nodes/shared/nodeColors';
 import { sourceRegistry } from '../../../scene/sources/sourceRegistry';
+import { EXCLUDE_FROM_SCAN_KEY } from '../../../scene/pathBuilder';
 
 const ACCENT = NODE_COLORS.scene;
 type Mode = 'translate' | 'rotate' | 'scale';
@@ -95,6 +96,10 @@ export function SceneSourcesArrangeScene() {
 			{selectedObj && selectedSource && (
 				<>
 					<TransformControls
+						// The gizmo (rings/arrows) is real THREE.Line geometry living in
+						// this same scene — exclude it from the audio-beam scan, or it
+						// shows up as extra lines in the oscilloscope output.
+						ref={el => { if (el) el.userData[EXCLUDE_FROM_SCAN_KEY] = true; }}
 						object={selectedObj}
 						mode={mode}
 						onMouseDown={() => { if (orbit) orbit.enabled = false; }}
