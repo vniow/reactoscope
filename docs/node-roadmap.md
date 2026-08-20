@@ -45,6 +45,28 @@ handler must satisfy.
 
 ---
 
+## Scene / geometry authoring (not started — known future direction)
+
+Everything below this point is about the audio-processing side of the graph. There is currently
+**no node type that generates or manipulates 3D scene geometry at all.** `SceneInputPanel`
+(`src/daw/panels/InputPanel.tsx`) hard-codes a single wireframe cube — built once at module load,
+colored by position — as the only thing `useSceneToAudio`/`collectSegments` ever scans. The
+`sceneInput` node in the graph wraps this fixed scene's audio lifecycle; it doesn't source
+geometry from the graph itself.
+
+A real shape-authoring story — node types that generate or import geometry (parametric curves,
+Lissajous generators, primitive shapes, imported meshes) and feed `Scene Input`, replacing the
+hardcoded cube — is a known future direction, not a rejected idea. Not scoped or sequenced yet.
+See `docs/architecture-comparison.md` for how the two reference projects handle this differently
+(vectorsynthesis: static per-shape wavetables authored offline; xyscope.js: no shape concept at
+all, just whatever audio already exists) — reactoscope's live-scene-graph model doesn't have a
+direct precedent in either, so this will likely need its own design pass when it's picked up.
+Per-vertex color already flows correctly through `collectSegments` once real geometry exists
+(`geometry.attributes.color`) — no separate color-mode work is needed once shape-authoring nodes
+land.
+
+---
+
 ## Dynamics (5 nodes)
 
 ### Compressor (`compressor`) — Tier 2
