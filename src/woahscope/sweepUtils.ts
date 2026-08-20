@@ -1,15 +1,15 @@
 import { getColourFromHue } from './utils';
 
-export type ChannelId = 'x' | 'y' | 'r' | 'g' | 'b' | 'a';
+export type ChannelId = 'x' | 'y' | 'r' | 'g' | 'b' | 'z';
 
-export const CHANNEL_ORDER: ChannelId[] = ['x', 'y', 'r', 'g', 'b', 'a'];
+export const CHANNEL_ORDER: ChannelId[] = ['x', 'y', 'r', 'g', 'b', 'z'];
 
 const CHANNEL_HUES: Record<ChannelId, number> = {
-	x: 180, y: 60, r: 0, g: 120, b: 240, a: 300,
+	x: 180, y: 60, r: 0, g: 120, b: 240, z: 300,
 };
 
 export const CHANNEL_LABEL: Record<ChannelId, string> = {
-	x: 'X', y: 'Y', r: 'R', g: 'G', b: 'B', a: 'A',
+	x: 'X', y: 'Y', r: 'R', g: 'G', b: 'B', z: 'Z',
 };
 
 export function channelColour(ch: ChannelId): [number, number, number] {
@@ -27,8 +27,8 @@ export function channelHex(ch: ChannelId): string {
  * stable sweep trigger point.
  *
  * Uses an auto-level (midpoint of the signal's range) so DC-offset signals
- * and channels whose values cluster away from zero (e.g. R/G/B/A during blank
- * travel) still get a consistent anchor.
+ * and channels whose values cluster away from zero (e.g. R/G/B pinned near
+ * -1, or Z pinned near -1, during blank travel) still get a consistent anchor.
  *
  * Hysteresis is expressed as a fraction of the signal's peak-to-peak range so
  * it scales correctly regardless of amplitude.

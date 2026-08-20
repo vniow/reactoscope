@@ -57,7 +57,7 @@ export function WoscopeSceneR3F() {
 	const { passScene, passQuad, copyMat,
 	        blurMat, outputMat }                          = usePassPipeline();
 	const { upsamplerRef, smoothedX, smoothedY,
-	        smoothedR, smoothedG, smoothedB, smoothedA,
+	        smoothedR, smoothedG, smoothedB, smoothedZ,
 	        nPointsRef }                                  = useLanczos(lanczosSteps, nSamples);
 
 	useEffect(() => {
@@ -93,7 +93,7 @@ export function WoscopeSceneR3F() {
 		let rBuf: Float32Array;
 		let gBuf: Float32Array;
 		let bBuf: Float32Array;
-		let aBuf: Float32Array;
+		let zBuf: Float32Array;
 		let nPoints: number;
 		let fadeAlpha: number;
 
@@ -105,7 +105,7 @@ export function WoscopeSceneR3F() {
 		rBuf = waveform.r;
 		gBuf = waveform.g;
 		bBuf = waveform.b;
-		aBuf = waveform.a;
+		zBuf = waveform.z;
 
 		nPoints = N_SAMPLES;
 		if (lanczosEnabled) {
@@ -114,14 +114,14 @@ export function WoscopeSceneR3F() {
 			upsamplerRef.current.apply(rBuf, smoothedR.current);
 			upsamplerRef.current.apply(gBuf, smoothedG.current);
 			upsamplerRef.current.apply(bBuf, smoothedB.current);
-			upsamplerRef.current.apply(aBuf, smoothedA.current);
+			upsamplerRef.current.apply(zBuf, smoothedZ.current);
 			nPoints = upsamplerRef.current.outputLength;
 			xBuf = smoothedX.current;
 			yBuf = smoothedY.current;
 			rBuf = smoothedR.current;
 			gBuf = smoothedG.current;
 			bBuf = smoothedB.current;
-			aBuf = smoothedA.current;
+			zBuf = smoothedZ.current;
 		}
 
 		fadeAlpha = persistPowRef.current * FADE_AMOUNT;
@@ -134,7 +134,7 @@ export function WoscopeSceneR3F() {
 			const cr = multi ? 0.5 + 0.5 * rBuf[i] : hr;
 			const cg = multi ? 0.5 + 0.5 * gBuf[i] : hg;
 			const cb = multi ? 0.5 + 0.5 * bBuf[i] : hb;
-			const ca = 0.5 + 0.5 * aBuf[i];
+			const ca = 0.5 + 0.5 * zBuf[i];
 			const base = i * 4 * 4; // 4 verts × 4 floats
 			for (let v = 0; v < 4; v++) {
 				const off = base + v * 4;

@@ -17,11 +17,11 @@ import { MiniScope } from '../shared/MiniScope';
 
 const color = NODE_COLORS.output;
 
-// in-0 = X, in-1 = Y, in-5 = A  →  left edge
+// in-0 = X, in-1 = Y, in-5 = Z  →  left edge
 const LEFT_HANDLES = [
 	{ id: 'in-0', label: 'X' },
 	{ id: 'in-1', label: 'Y' },
-	{ id: 'in-5', label: 'A' },
+	{ id: 'in-5', label: 'Z' },
 ] as const;
 
 // in-2 = R, in-3 = G, in-4 = B  →  bottom edge
@@ -81,7 +81,7 @@ export const MasterOutputNode = memo<NodeProps<MasterOutputFlowNode>>(
 					)}
 				</Box>
 
-				{/* Left-edge handles: X, Y, A */}
+				{/* Left-edge handles: X, Y, Z */}
 				{LEFT_HANDLES.map((h, i) => (
 					<Fragment key={h.id}>
 						<Handle

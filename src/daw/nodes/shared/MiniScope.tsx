@@ -48,7 +48,7 @@ export function MiniScope({ width, height }: MiniScopeProps) {
 
 			ctx.clearRect(0, 0, width, height);
 
-			const { x, y, r, g, b, a } = waveform;
+			const { x, y, r, g, b, z } = waveform;
 			const multi = multiRef.current;
 
 			let stereoR = 0, stereoG = 0, stereoB = 0;
@@ -60,7 +60,7 @@ export function MiniScope({ width, height }: MiniScopeProps) {
 			}
 
 			for (let i = 0; i < x.length; i += STRIDE) {
-				const ca = (0.5 + 0.5 * a[i]).toFixed(3);
+				const ca = (0.5 + 0.5 * z[i]).toFixed(3);
 				if (multi) {
 					const cr = Math.round((0.5 + 0.5 * r[i]) * 255);
 					const cg = Math.round((0.5 + 0.5 * g[i]) * 255);

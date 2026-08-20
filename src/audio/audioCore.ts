@@ -65,7 +65,7 @@ const masterOutputAdapter: PortAdapter = {
 		const gain = {
 			'in-0': entry.inputGainX, 'in-1': entry.inputGainY,
 			'in-2': entry.inputGainR, 'in-3': entry.inputGainG,
-			'in-4': entry.inputGainB, 'in-5': entry.inputGainA,
+			'in-4': entry.inputGainB, 'in-5': entry.inputGainZ,
 		}[targetHandle];
 		return gain ? { node: gain, channel: 0 } : null;
 	},

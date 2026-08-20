@@ -14,11 +14,11 @@ import type { SceneInputFlowNode } from '../../../store/dawTypes';
 
 const color = NODE_COLORS.scene;
 
-// out-0 = X, out-1 = Y, out-5 = A  →  right edge
+// out-0 = X, out-1 = Y, out-5 = Z  →  right edge
 const RIGHT_HANDLES = [
 	{ id: 'out-0', label: 'X' },
 	{ id: 'out-1', label: 'Y' },
-	{ id: 'out-5', label: 'A' },
+	{ id: 'out-5', label: 'Z' },
 ] as const;
 
 // out-2 = R, out-3 = G, out-4 = B  →  bottom edge
@@ -65,7 +65,7 @@ export const SceneInputNode = memo(function SceneInputNode({
 				</HwButton>
 			</Box>
 
-			{/* Right-edge: X, Y, A */}
+			{/* Right-edge: X, Y, Z */}
 			{RIGHT_HANDLES.map((h, i) => (
 				<Fragment key={h.id}>
 					<Handle

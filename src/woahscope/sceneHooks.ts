@@ -106,7 +106,7 @@ export interface LineMesh {
 	startArray:  Float32Array;
 	endArray:    Float32Array;
 	aIdxArray:   Float32Array;
-	aColorArray: Float32Array;  // vec4 per vertex: r, g, b, a
+	aColorArray: Float32Array;  // vec4 per vertex: r, g, b, z (z modulates shader intensity)
 }
 
 export function useLineMesh(): LineMesh {
@@ -217,7 +217,7 @@ export interface LanczosResources {
 	smoothedR:    React.RefObject<Float32Array>;
 	smoothedG:    React.RefObject<Float32Array>;
 	smoothedB:    React.RefObject<Float32Array>;
-	smoothedA:    React.RefObject<Float32Array>;
+	smoothedZ:    React.RefObject<Float32Array>;
 	nPointsRef:   React.RefObject<number>;
 }
 
@@ -228,7 +228,7 @@ export function useLanczos(steps: number, nSamples: number): LanczosResources {
 	const smoothedR    = useRef(new Float32Array(MAX_POINTS));
 	const smoothedG    = useRef(new Float32Array(MAX_POINTS));
 	const smoothedB    = useRef(new Float32Array(MAX_POINTS));
-	const smoothedA    = useRef(new Float32Array(MAX_POINTS));
+	const smoothedZ    = useRef(new Float32Array(MAX_POINTS));
 	const nPointsRef   = useRef<number>(nSamples);
 
 	useEffect(() => {
@@ -236,5 +236,5 @@ export function useLanczos(steps: number, nSamples: number): LanczosResources {
 		return () => { upsamplerRef.current.dispose(); };
 	}, [steps, nSamples]);
 
-	return { upsamplerRef, smoothedX, smoothedY, smoothedR, smoothedG, smoothedB, smoothedA, nPointsRef };
+	return { upsamplerRef, smoothedX, smoothedY, smoothedR, smoothedG, smoothedB, smoothedZ, nPointsRef };
 }

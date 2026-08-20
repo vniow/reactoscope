@@ -19,8 +19,8 @@
  * Segment wire format (Float32, 12 values per segment — 2 vertices):
  *   [x0, y0, intensity0, r0, g0, b0,  x1, y1, intensity1, r1, g1, b1]
  *
- * Coord buffer layout (Float32, COORD_STRIDE=7 values per point):
- *   [x, y, r, g, b, a, blank]  — blank: 0=visible, 1=blanked travel
+ * Coord buffer layout (Float32, COORD_STRIDE=6 values per point):
+ *   [x, y, r, g, b, z]  — z: analog intensity/blanking, -1=blanked, +1=full
  */
 
 import { orderSegments, buildCoordBuffer } from './pathBuilder';

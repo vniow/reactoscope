@@ -58,7 +58,7 @@ model assumes they never are.
 
 "Multichannel" means three different things across these projects — worth being precise:
 
-- **reactoscope**: a fixed 6-channel Web Audio bus (X, Y, R, G, B, A) via `Tone.Split(6)` /
+- **reactoscope**: a fixed 6-channel Web Audio bus (X, Y, R, G, B, Z) via `Tone.Split(6)` /
   `outputChannelCount: [6]` on the scene-input worklet. "Multichannel" in the UI sense
   (`isMasterMultichannel`, `store/daw.ts:448`) means *whether R/G/B are independently wired* vs.
   falling back to a single hue tint — it's a color-routing distinction, not a channel-count one.
@@ -122,24 +122,31 @@ time), that's a real architectural extension over all three, not a catch-up.
 ## Alpha / Z / blanking channel
 
 The most consequential difference, and the one with the most direct implications for reactoscope's
-roadmap toward laser output:
+roadmap toward laser output. **Updated per ADR-0009**: reactoscope collapsed its two
+representations into one — see below for the current state; the "as originally built" comparison
+is kept for context on how it got there.
 
-- **reactoscope**: blanking is an explicit **7th field** in the interleaved coord buffer
-  (`COORD_STRIDE = 7`: `[x, y, r, g, b, a, blank]`), separate from the alpha channel. `blank=1`
-  forces R/G/B/A to `-1` (silent) while the beam still physically moves — see
-  `sceneInputProcessor.worklet.js:160-164`. Alpha (`A`) is a *color* channel (vertex-color alpha,
-  modulates shader brightness — `fsLine.glsl:51`, `vColor.a`), not a blanking signal. So
-  reactoscope already has both: alpha as intensity modulation, and blank as a hard on/off — they
-  are two distinct, independently-controllable signals.
+- **reactoscope (current)**: a single analog **Z channel** is the 6th field in the interleaved
+  coord buffer (`COORD_STRIDE = 6`: `[x, y, r, g, b, z]`), continuous in `[-1, +1]`. `-1` is fully
+  blanked, `+1` is full intensity, and the worklet linearly interpolates it exactly like X/Y/R/G/B —
+  no separate boolean, no branch in `sceneInputProcessor.worklet.js`. This matches how the value was
+  already being produced upstream: `buildCoordBuffer` was filling the old "alpha" slot with
+  `2*intensity-1` for every visible point (`pathBuilder.ts`), so the rename mostly just gave the
+  existing signal an accurate name and deleted the redundant flag layered on top of it.
+  (As originally built: blanking was a **separate 7th field**, `COORD_STRIDE = 7`:
+  `[x, y, r, g, b, a, blank]`. `blank=1` forced R/G/B/A to `-1` while the beam kept moving, and the
+  worklet read `blank` as a hard threshold on `_coords[o+6]` — a genuinely separate signal from
+  alpha, and the source of an interpolation-boundary bug: reading the flag from one endpoint let a
+  sample mid-fade toward silence still register as "visible.")
 - **vectorsynthesis**: has a dedicated Z-axis blanking convention matching real ILDA/oscilloscope
   hardware, computed explicitly (`vs-blanking.pd`: horizontal/vertical threshold windows ANDed
   together, `expr~ $v1 && $v2`, multiplied against brightness) plus a second, independent blanking
   path for shape-multiplex transitions (`masterblank~` in `vs-multiplex.pd`). Two blanking
   mechanisms for two different reasons (raster-window blanking vs. shape-transition blanking) — a
-  finer-grained split than reactoscope's single `blank` flag. Color itself, in the ILDA-RGB stage
-  (`vs-ilda-rgb.pd`), is generated from continuous rotating-phase functions per channel (`wrap~` +
-  per-channel phase offset), not sourced from per-vertex geometry data the way reactoscope's
-  `colorAttr` is.
+  finer-grained split than reactoscope's single `z` channel currently supports, though reactoscope's
+  is now continuous rather than binary. Color itself, in the ILDA-RGB stage (`vs-ilda-rgb.pd`), is
+  generated from continuous rotating-phase functions per channel (`wrap~` + per-channel phase
+  offset), not sourced from per-vertex geometry data the way reactoscope's `colorAttr` is.
 - **xyscope.js**: **no blanking/Z concept exists at all.** Confirmed absence, not an oversight
   reactoscope needs to worry about replicating — brightness there is purely a function of the
   Gaussian shader math and global exposure/persistence controls. This tracks with xyscope.js being
@@ -147,12 +154,14 @@ roadmap toward laser output:
 
 This is the sharpest point of comparison for reactoscope's stated goal (driving "an analog XY
 vector display, including a laser"): **vectorsynthesis is the only one of the three actually built
-for laser hardware, and its blanking model is more granular than reactoscope's current one.**
-reactoscope's single binary `blank` flag conflates "this is inter-shape travel, hide it" with
-anything a real ILDA-safety pipeline would also want (e.g. blanking during sharp-angle corners to
-avoid galvo overshoot burn-in, which ILDA-oriented tools typically add explicitly — `vs-decimate.pd`
-and the point-budget split in `buildCoordBuffer` are the closest reactoscope equivalents, but they
-optimize sample count, not corner-angle safety).
+for laser hardware.** Its blanking is split into two independently-controlled mechanisms
+(raster-window vs. shape-transition); reactoscope's single `z` channel still conflates "this is
+inter-shape travel, hide it" with anything a real ILDA-safety pipeline would also want (e.g.
+blanking during sharp-angle corners to avoid galvo overshoot burn-in, which ILDA-oriented tools
+typically add explicitly — `vs-decimate.pd` and the point-budget split in `buildCoordBuffer` are the
+closest reactoscope equivalents, but they optimize sample count, not corner-angle safety). Going
+continuous (ADR-0009) doesn't resolve that gap — it just means if/when corner-safety blanking is
+added, it composes into the existing analog `z` value instead of requiring a new flag.
 
 ## Other architecturally relevant differences
 
@@ -178,10 +187,10 @@ optimize sample count, not corner-angle safety).
   pipeline is more capable than either reference by default — worth being aware that this is a
   reactoscope strength when comparing renderer feature-parity. It also means vectorsynthesis's
   rotating-phase color model isn't actually a missing *feature* — it already falls out of the
-  existing graph for free. `MasterOutput`'s R/G/B/A inputs (`in-2`..`in-5`) are each a plain `Gain`
+  existing graph for free. `MasterOutput`'s R/G/B/Z inputs (`in-2`..`in-5`) are each a plain `Gain`
   node (`audioCore.ts:66-69`), wired like any other audio input; Web Audio sums whatever connects to
-  a `Gain`. Patching an LFO (or any node) into Master Output's R/G/B/A directly — instead of, or
-  alongside, Scene Input's own R/G/B/A output — already produces continuous phase-driven color
+  a `Gain`. Patching an LFO (or any node) into Master Output's R/G/B/Z directly — instead of, or
+  alongside, Scene Input's own R/G/B/Z output — already produces continuous phase-driven color
   cycling independent of geometry, with no new node type required. No action needed here; noting it
   so it's findable rather than re-derived later.
 - **Render/synth coupling**: reactoscope generates the coord buffer and renders it in the same

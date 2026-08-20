@@ -9,7 +9,7 @@
  * - Handle ID convention:
  *     Source handles: 'out-0', 'out-1', ...  (position Bottom)
  *     Target handles: 'in-0',  'in-1',  ...  (position Top)
- *   MasterOutput: 'in-0'..'in-5' = X, Y, R, G, B, A
+ *   MasterOutput: 'in-0'..'in-5' = X, Y, R, G, B, Z
  */
 
 import { create } from 'zustand';
@@ -147,7 +147,7 @@ const initialEdges: AppEdge[] = [
 	{ id: 'e-scene-r', source: SCENE_INPUT_ID, sourceHandle: 'out-2', target: MASTER_NODE_ID, targetHandle: 'in-2', animated: false, type: 'deletable', style: { stroke: NODE_COLORS.scene } },
 	{ id: 'e-scene-g', source: SCENE_INPUT_ID, sourceHandle: 'out-3', target: MASTER_NODE_ID, targetHandle: 'in-3', animated: false, type: 'deletable', style: { stroke: NODE_COLORS.scene } },
 	{ id: 'e-scene-b', source: SCENE_INPUT_ID, sourceHandle: 'out-4', target: MASTER_NODE_ID, targetHandle: 'in-4', animated: false, type: 'deletable', style: { stroke: NODE_COLORS.scene } },
-	{ id: 'e-scene-a', source: SCENE_INPUT_ID, sourceHandle: 'out-5', target: MASTER_NODE_ID, targetHandle: 'in-5', animated: false, type: 'deletable', style: { stroke: NODE_COLORS.scene } },
+	{ id: 'e-scene-z', source: SCENE_INPUT_ID, sourceHandle: 'out-5', target: MASTER_NODE_ID, targetHandle: 'in-5', animated: false, type: 'deletable', style: { stroke: NODE_COLORS.scene } },
 ];
 
 function identityTransform(): GeometrySourceTransform {

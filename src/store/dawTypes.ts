@@ -722,7 +722,7 @@ export type MasterOutputAudioEntry = {
 	inputGainR: Gain;     // in-2 = Red
 	inputGainG: Gain;     // in-3 = Green
 	inputGainB: Gain;     // in-4 = Blue
-	inputGainA: Gain;     // in-5 = Alpha
+	inputGainZ: Gain;     // in-5 = Z (analog intensity/blanking)
 	merge:       Merge;    // 6-channel merge → speakerGain
 	speakerGain: Gain;    // gates audio to destination; gain=0 when muted
 	xAnalyser:  Analyser; // X axis of oscilloscope (stereo L)
@@ -730,7 +730,7 @@ export type MasterOutputAudioEntry = {
 	rAnalyser:  Analyser; // Red colour channel
 	gAnalyser:  Analyser; // Green colour channel
 	bAnalyser:  Analyser; // Blue colour channel
-	aAnalyser:  Analyser; // Alpha colour channel
+	zAnalyser:  Analyser; // Z (intensity/blanking) channel
 };
 
 export type OscillatorAudioEntry = {

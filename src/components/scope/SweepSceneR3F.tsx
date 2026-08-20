@@ -26,7 +26,7 @@ import {
 // trigger search when no period information is available.
 const DISPLAY_SAMPLES = N_SAMPLES >> 1;
 
-const ALL_CHANNELS: ChannelId[] = ['x', 'y', 'r', 'g', 'b', 'a'];
+const ALL_CHANNELS: ChannelId[] = ['x', 'y', 'r', 'g', 'b', 'z'];
 
 export type TriggerMode = 'clock' | 'edge' | 'free';
 
@@ -60,11 +60,11 @@ export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannel
 	const mesh2 = useLineMesh(); // R
 	const mesh3 = useLineMesh(); // G
 	const mesh4 = useLineMesh(); // B
-	const mesh5 = useLineMesh(); // A
+	const mesh5 = useLineMesh(); // Z
 
 	const meshMap = useMemo(() => ({
 		x: mesh0, y: mesh1, r: mesh2,
-		g: mesh3, b: mesh4, a: mesh5,
+		g: mesh3, b: mesh4, z: mesh5,
 	} as Record<ChannelId, typeof mesh0>), [mesh0, mesh1, mesh2, mesh3, mesh4, mesh5]);
 
 	const { lineRT, blur1RT, blur2RT, blur3RT, blur4RT } = useRenderTargets();

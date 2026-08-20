@@ -8,9 +8,17 @@ visualisation: sound and image are the same six-channel signal.
 ### Signal path
 
 **Master Output**:
-The six-channel bus (X, Y, R, G, B, A) every signal converges on. X/Y position
-the beam, R/G/B/A colour it; the same bus feeds the speakers and every renderer.
+The six-channel bus (X, Y, R, G, B, Z) every signal converges on. X/Y position
+the beam, R/G/B colour it, Z is its analog intensity/blanking control; the
+same bus feeds the speakers and every renderer.
 _Avoid_: master node, output stage
+
+**Z Channel**:
+The analog beam-intensity control, in `[-1, +1]`: `-1` is fully blanked (beam
+off), `+1` is full intensity, and everything between is a continuous dimming —
+there is no separate on/off flag. Named for the Z axis on a real oscilloscope
+or laser, which modulates intensity the same way, independent of X/Y deflection.
+_Avoid_: alpha channel, blank flag, A channel
 
 **Scene Input**:
 The source that turns 3D scene geometry into six-channel audio by scanning a
