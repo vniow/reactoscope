@@ -5,11 +5,12 @@
  * worker) and cycles through it at a configurable scan frequency, generating
  * 6-channel audio in real-time. No ring buffer, no SharedArrayBuffer, no Atomics.
  *
- * Coord buffer layout (STRIDE=7 floats per point, interleaved):
- *   [x, y, r, g, b, a, blank]
- *   x, y  — beam position in [-1, +1]
- *   r,g,b,a — color/intensity in [-1, +1] audio range
- *   blank — 0.0 = visible, 1.0 = blanked beam travel (color channels → -1)
+ * Coord buffer layout (STRIDE=6 floats per point, interleaved):
+ *   [x, y, r, g, b, z]
+ *   x, y — beam position in [-1, +1]
+ *   r,g,b — color in [-1, +1] audio range
+ *   z — analog intensity/blanking channel in [-1, +1]: -1 = beam off,
+ *       +1 = full intensity, continuous in between (no boolean blank flag)
  *
  * Messages accepted via port:
  *   { type: 'path',     data: ArrayBuffer, nPoints: number }  — new coord frame
@@ -19,7 +20,7 @@
  * known coords indefinitely — no audio gap on a dropped frame.
  */
 
-const STRIDE = 7;
+const STRIDE = 6;
 
 // ─── Console styling ──────────────────────────────────────────────────────────
 const _INFO = [
@@ -150,23 +151,15 @@ class SceneInputProcessor extends AudioWorkletProcessor {
 			const r = this._coords[o0 + 2] + frac * (this._coords[o1 + 2] - this._coords[o0 + 2]);
 			const g = this._coords[o0 + 3] + frac * (this._coords[o1 + 3] - this._coords[o0 + 3]);
 			const b = this._coords[o0 + 4] + frac * (this._coords[o1 + 4] - this._coords[o0 + 4]);
-			const a = this._coords[o0 + 5] + frac * (this._coords[o1 + 5] - this._coords[o0 + 5]);
-			// Blank is binary, but r/g/b/a above are linearly interpolated between
-			// pos0 and pos1 — reading the flag from pos0 alone means any sample
-			// that straddles a visible→blank (or blank→visible) boundary gets
-			// classified "visible" while its color has already been dragged partway
-			// toward silence, leaking a faint but real line at every blank-travel
-			// jump. Treating either endpoint as blank closes that gap.
-			const blank = this._coords[o0 + 6] > 0.5 || this._coords[o1 + 6] > 0.5;
+			const z = this._coords[o0 + 5] + frac * (this._coords[o1 + 5] - this._coords[o0 + 5]);
 
 			// Clamp guards against corrupt buffer data causing runaway deflection
 			if (out[0]) out[0][i] = x < -1.5 ? -1 : x > 1.5 ? 1 : x;
 			if (out[1]) out[1][i] = y < -1.5 ? -1 : y > 1.5 ? 1 : y;
-			// Blank travel: beam still moves (XY) but color channels are silent
-			if (out[2]) out[2][i] = blank ? -1 : r;
-			if (out[3]) out[3][i] = blank ? -1 : g;
-			if (out[4]) out[4][i] = blank ? -1 : b;
-			if (out[5]) out[5][i] = blank ? -1 : a;
+			if (out[2]) out[2][i] = r;
+			if (out[3]) out[3][i] = g;
+			if (out[4]) out[4][i] = b;
+			if (out[5]) out[5][i] = z;
 
 			this._index = (this._index + step) % 1.0;
 		}

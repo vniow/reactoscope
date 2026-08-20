@@ -41,7 +41,7 @@ export function getWaveformDataFromSAB(): WaveformFrame | null {
 		r: _captureChannels[2],
 		g: _captureChannels[3],
 		b: _captureChannels[4],
-		a: _captureChannels[5],
+		z: _captureChannels[5],
 	};
 }
 
@@ -86,7 +86,7 @@ function _tapMasterBus(dest: AudioWorkletNode): void {
 	master.inputGainR.connect(tapMerge, 0, 2);
 	master.inputGainG.connect(tapMerge, 0, 3);
 	master.inputGainB.connect(tapMerge, 0, 4);
-	master.inputGainA.connect(tapMerge, 0, 5);
+	master.inputGainZ.connect(tapMerge, 0, 5);
 
 	// tapMerge.output is the underlying standardized-audio-context
 	// ChannelMergerNode; the worklet node lives in the same context.

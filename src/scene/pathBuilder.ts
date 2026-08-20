@@ -249,12 +249,13 @@ export function orderSegments(
 
 /**
  * Interleaved layout per point (COORD_STRIDE floats):
- *   [x, y, r, g, b, a, blank]
- * blank: 0.0 = visible, 1.0 = blanked beam travel
- * r/g/b/a are in [-1, +1] audio range.
+ *   [x, y, r, g, b, z]
+ * z is the analog intensity/blanking channel: -1.0 = fully blanked (beam off),
+ * +1.0 = full intensity, continuous in between — no separate boolean.
+ * r/g/b/z are in [-1, +1] audio range.
  * x/y are NDC in [-1, +1].
  */
-export const COORD_STRIDE = 7;
+export const COORD_STRIDE = 6;
 
 /**
  * Convert an ordered path into a fixed-resolution coordinate buffer for
@@ -263,9 +264,10 @@ export const COORD_STRIDE = 7;
  * at a configurable scan frequency, completely decoupling draw rate from
  * geometry density.
  *
- * Blanking is encoded as a per-point flag rather than a dedicated sample
- * range, so the worklet can output silent color channels while still moving
- * the beam.
+ * Blanking is encoded as the z channel dropping to -1 rather than a
+ * dedicated sample range, so the worklet can output a dark/silent beam while
+ * still moving it — and because z is continuous, the transition into and out
+ * of blank travel interpolates smoothly instead of switching at a hard edge.
  */
 export function buildCoordBuffer(
 	path:     OrderedPath,
@@ -279,17 +281,16 @@ export function buildCoordBuffer(
 	let endX   = lastX;
 	let endY   = lastY;
 
-	function emit(x: number, y: number, r: number, g: number, b: number, a: number, blank: number): void {
+	function emit(x: number, y: number, r: number, g: number, b: number, z: number): void {
 		if (wp >= nPoints) return;
 		const o   = wp * COORD_STRIDE;
 		data[o]   = x;  data[o + 1] = y;
-		data[o + 2] = r; data[o + 3] = g; data[o + 4] = b; data[o + 5] = a;
-		data[o + 6] = blank;
+		data[o + 2] = r; data[o + 3] = g; data[o + 4] = b; data[o + 5] = z;
 		wp++;
 	}
 
 	if (path.traversal.length === 0) {
-		while (wp < nPoints) emit(lastX, lastY, -1, -1, -1, -1, 1);
+		while (wp < nPoints) emit(lastX, lastY, -1, -1, -1, -1);
 		return { data, nPoints, endPos: prevEnd };
 	}
 
@@ -321,7 +322,7 @@ export function buildCoordBuffer(
 		const targetY = ptAt(0)[1];
 		for (let i = 0; i < blkPts; i++) {
 			const f = blkPts > 1 ? i / (blkPts - 1) : 0;
-			emit(lastX + (targetX - lastX) * f, lastY + (targetY - lastY) * f, -1, -1, -1, -1, 1);
+			emit(lastX + (targetX - lastX) * f, lastY + (targetY - lastY) * f, -1, -1, -1, -1);
 		}
 		lastX = targetX; lastY = targetY;
 
@@ -364,7 +365,7 @@ export function buildCoordBuffer(
 				pz = pa[2] + (pb2[2] - pa[2]) * frac;
 			}
 
-			emit(px, py, 2 * pr - 1, 2 * pg - 1, 2 * pb - 1, 2 * pz - 1, 0);
+			emit(px, py, 2 * pr - 1, 2 * pg - 1, 2 * pb - 1, 2 * pz - 1);
 			endX = px; endY = py;
 		}
 
@@ -373,7 +374,7 @@ export function buildCoordBuffer(
 	}
 
 	// Pad remainder at last position as blank
-	while (wp < nPoints) emit(lastX, lastY, -1, -1, -1, -1, 1);
+	while (wp < nPoints) emit(lastX, lastY, -1, -1, -1, -1);
 
 	return { data, nPoints, endPos: { x: endX, y: endY } };
 }

@@ -108,8 +108,8 @@ export function getSceneInputWorkletNode(): AudioWorkletNode | null {
 }
 
 // Coord buffer layout — must match COORD_STRIDE in scene/pathBuilder.ts:
-// [x, y, r, g, b, a, blank] per point.
-const SYNTHETIC_COORD_STRIDE = 7;
+// [x, y, r, g, b, z] per point.
+const SYNTHETIC_COORD_STRIDE = 6;
 const SYNTHETIC_N_POINTS     = 1024;
 
 /**
@@ -131,7 +131,6 @@ export function seedSyntheticCoordBuffer(): void {
 		data[o]     = Math.cos(theta);
 		data[o + 1] = Math.sin(theta);
 		data[o + 2] = 1; data[o + 3] = 1; data[o + 4] = 1; data[o + 5] = 1;
-		data[o + 6] = 0;
 	}
 
 	node.port.postMessage(

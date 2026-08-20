@@ -47,7 +47,7 @@ void main (void) {
 
     float brightness = mix(lineBrightness, pointBrightness, isPoint) * uvl.w;
 
-    // vColor.rgb = beam colour; vColor.a modulates overall intensity (alpha = 0 → dim)
+    // vColor.rgb = beam colour; vColor.a carries the Z (intensity/blanking) channel — 0 → dim/off
     vec3 tinted = 2.0 * texture2D(uScreen, vTexCoord).rgb * brightness * vColor.rgb * vColor.a;
     gl_FragColor = vec4(tinted, 1.0);
 }

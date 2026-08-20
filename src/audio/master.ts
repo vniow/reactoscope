@@ -6,9 +6,10 @@ import type { MasterOutputAudioEntry } from '../store/dawTypes';
 const { nSamples } = DEFAULT_AUDIO_SETTINGS;
 
 // ─── Master output chain (lazy init) ─────────────────────────────────────────
-// Six input gains (X, Y, R, G, B, A) feed a 6-channel merge; the merge gates
+// Six input gains (X, Y, R, G, B, Z) feed a 6-channel merge; the merge gates
 // through speakerGain (muted by default) to the destination. Each input gain
-// also feeds a per-channel Analyser for the oscilloscope tap.
+// also feeds a per-channel Analyser for the oscilloscope tap. Z is the analog
+// intensity/blanking channel — not a color, just conventionally the sixth slot.
 
 let _masterEntry: MasterOutputAudioEntry | null = null;
 
@@ -20,14 +21,14 @@ export function getMasterEntry(): MasterOutputAudioEntry {
 	const inputGainR = new Gain();
 	const inputGainG = new Gain();
 	const inputGainB = new Gain();
-	const inputGainA = new Gain();
+	const inputGainZ = new Gain();
 	const merge      = new Merge(6);
 	const xAnalyser  = new Analyser('waveform', nSamples);
 	const yAnalyser  = new Analyser('waveform', nSamples);
 	const rAnalyser  = new Analyser('waveform', nSamples);
 	const gAnalyser  = new Analyser('waveform', nSamples);
 	const bAnalyser  = new Analyser('waveform', nSamples);
-	const aAnalyser  = new Analyser('waveform', nSamples);
+	const zAnalyser  = new Analyser('waveform', nSamples);
 
 	// connect(destination, outputNumber, inputNumber)
 	inputGainX.connect(merge, 0, 0); inputGainX.connect(xAnalyser);
@@ -35,7 +36,7 @@ export function getMasterEntry(): MasterOutputAudioEntry {
 	inputGainR.connect(merge, 0, 2); inputGainR.connect(rAnalyser);
 	inputGainG.connect(merge, 0, 3); inputGainG.connect(gAnalyser);
 	inputGainB.connect(merge, 0, 4); inputGainB.connect(bAnalyser);
-	inputGainA.connect(merge, 0, 5); inputGainA.connect(aAnalyser);
+	inputGainZ.connect(merge, 0, 5); inputGainZ.connect(zAnalyser);
 
 	const speakerGain = new Gain(0); // muted by default
 	merge.connect(speakerGain);
@@ -43,9 +44,9 @@ export function getMasterEntry(): MasterOutputAudioEntry {
 
 	_masterEntry = {
 		kind: 'masterOutput',
-		inputGainX, inputGainY, inputGainR, inputGainG, inputGainB, inputGainA,
+		inputGainX, inputGainY, inputGainR, inputGainG, inputGainB, inputGainZ,
 		merge, speakerGain,
-		xAnalyser, yAnalyser, rAnalyser, gAnalyser, bAnalyser, aAnalyser,
+		xAnalyser, yAnalyser, rAnalyser, gAnalyser, bAnalyser, zAnalyser,
 	};
 	_audioNodes.set(MASTER_NODE_ID, _masterEntry);
 	return _masterEntry;
@@ -60,7 +61,7 @@ export function setSpeakersMuted(muted: boolean): void {
 
 export type WaveformFrame = {
 	x: Float32Array; y: Float32Array;
-	r: Float32Array; g: Float32Array; b: Float32Array; a: Float32Array;
+	r: Float32Array; g: Float32Array; b: Float32Array; z: Float32Array;
 };
 
 /**
@@ -76,15 +77,15 @@ export function getWaveformData(): WaveformFrame {
 		r: entry.rAnalyser.getValue() as Float32Array,
 		g: entry.gAnalyser.getValue() as Float32Array,
 		b: entry.bAnalyser.getValue() as Float32Array,
-		a: entry.aAnalyser.getValue() as Float32Array,
+		z: entry.zAnalyser.getValue() as Float32Array,
 	};
 }
 
 /** Resizes all six analysers in place — Analyser.size live-updates fftSize, no reconnect needed. */
 export function setAnalyserSize(newSize: number): void {
 	if (!_masterEntry) return;
-	const { xAnalyser, yAnalyser, rAnalyser, gAnalyser, bAnalyser, aAnalyser } = _masterEntry;
-	for (const analyser of [xAnalyser, yAnalyser, rAnalyser, gAnalyser, bAnalyser, aAnalyser]) {
+	const { xAnalyser, yAnalyser, rAnalyser, gAnalyser, bAnalyser, zAnalyser } = _masterEntry;
+	for (const analyser of [xAnalyser, yAnalyser, rAnalyser, gAnalyser, bAnalyser, zAnalyser]) {
 		analyser.size = newSize;
 	}
 }
@@ -99,9 +100,9 @@ let _testTone: Oscillator | null = null;
 
 export function startTestTone(): void {
 	if (_testTone) return;
-	const { inputGainX, inputGainY, inputGainR, inputGainG, inputGainB, inputGainA } = getMasterEntry();
+	const { inputGainX, inputGainY, inputGainR, inputGainG, inputGainB, inputGainZ } = getMasterEntry();
 	_testTone = new Oscillator(220, 'sine').start();
-	for (const gain of [inputGainX, inputGainY, inputGainR, inputGainG, inputGainB, inputGainA]) {
+	for (const gain of [inputGainX, inputGainY, inputGainR, inputGainG, inputGainB, inputGainZ]) {
 		_testTone.connect(gain);
 	}
 }
@@ -111,9 +112,9 @@ export function disposeMasterChain(): void {
 	if (!_masterEntry) return;
 	const m = _masterEntry;
 	[
-		m.inputGainX, m.inputGainY, m.inputGainR, m.inputGainG, m.inputGainB, m.inputGainA,
+		m.inputGainX, m.inputGainY, m.inputGainR, m.inputGainG, m.inputGainB, m.inputGainZ,
 		m.merge, m.speakerGain,
-		m.xAnalyser, m.yAnalyser, m.rAnalyser, m.gAnalyser, m.bAnalyser, m.aAnalyser,
+		m.xAnalyser, m.yAnalyser, m.rAnalyser, m.gAnalyser, m.bAnalyser, m.zAnalyser,
 	].forEach(n => n.dispose());
 	_audioNodes.delete(MASTER_NODE_ID);
 	_masterEntry = null;
