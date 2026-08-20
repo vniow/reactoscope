@@ -670,6 +670,35 @@ export type AppNode =
 
 export type AppEdge = Edge;
 
+// ─── Scene geometry sources ────────────────────────────────────────────────────
+// Scene-native (not graph nodes — Wayfinder map #39, issue #40): a `sources`
+// list separate from the node graph, mirroring the audio-node store-entry /
+// runtime-handler split (issue #42) but with a plain React component as the
+// "handler" instead of an imperative create/dispose pair, since R3F's own
+// mount/unmount already gives lifecycle management for free.
+
+export type GeometrySourceType = 'cube' | 'circle' | 'plane' | 'sphere' | 'svgImport' | 'gltfImport';
+
+export type GeometrySourceTransform = {
+	position: [number, number, number];
+	rotation: [number, number, number];
+	scale:    [number, number, number];
+};
+
+export type GeometrySourceData = {
+	transform:    GeometrySourceTransform;
+	// svgImport / gltfImport only — the imported file's bytes as a self-describing
+	// data URI (issue #44), e.g. 'data:model/gltf-binary;base64,...'.
+	assetDataUri?: string;
+	assetName?:    string; // display name, e.g. "satellite.glb"
+};
+
+export type GeometrySourceEntry = {
+	id:   string;
+	type: GeometrySourceType;
+	data: GeometrySourceData;
+};
+
 // ─── Audio node registry entries ─────────────────────────────────────────────
 
 export type PlayerAudioEntry = {
@@ -915,4 +944,5 @@ export type PatchFile = {
 	nodes:        AppNode[];
 	edges:        AppEdge[];
 	edgePathType: 'bezier' | 'straight' | 'step' | 'smoothstep';
+	sources:      GeometrySourceEntry[];
 };

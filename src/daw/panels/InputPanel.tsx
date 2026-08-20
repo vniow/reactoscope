@@ -1,9 +1,11 @@
+import { Suspense } from 'react';
 import Box from '@mui/material/Box';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import * as THREE from 'three';
 import { useSquareSize } from '../../hooks/useSquareSize';
 import { useSceneToAudio } from '../../scene/useSceneToAudio';
+import { SceneSourcesArrangeScene } from './sceneSources/SceneSourcesArrangeScene';
+import { SceneSourcesOverlay } from './sceneSources/SceneSourcesOverlay';
 
 /**
  * Two canvases rationale: the oscilloscope uses frameloop="demand" (only renders
@@ -12,27 +14,6 @@ import { useSceneToAudio } from '../../scene/useSceneToAudio';
  * WebGL context via <View>, so separate contexts is the correct choice here.
  * Browser WebGL context limits (8–16) are not a concern for two canvases.
  */
-
-const EDGES_GEO = (() => {
-	const geo = new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1));
-	const pos = geo.getAttribute('position');
-	const colors = new Float32Array(pos.count * 3);
-	for (let i = 0; i < pos.count; i++) {
-		colors[i * 3]     = pos.getX(i) + 0.5;
-		colors[i * 3 + 1] = pos.getY(i) + 0.5;
-		colors[i * 3 + 2] = pos.getZ(i) + 0.5;
-	}
-	geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-	return geo;
-})();
-
-function WireframeCube() {
-	return (
-		<lineSegments geometry={EDGES_GEO}>
-			<lineBasicMaterial vertexColors />
-		</lineSegments>
-	);
-}
 
 /** Runs useSceneToAudio inside the Canvas context so useThree() works. */
 function SceneAudioBridge() {
@@ -57,7 +38,7 @@ export function SceneInputPanel() {
 				borderTop:      '1px solid #1a1a1a',
 			}}
 		>
-			<Box sx={{ width: size, height: size, flexShrink: 0, overflow: 'hidden' }}>
+			<Box sx={{ width: size, height: size, flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
 				{size > 0 && (
 					<Canvas
 						orthographic
@@ -82,10 +63,14 @@ export function SceneInputPanel() {
 						}}
 					>
 						<OrbitControls makeDefault />
-						<WireframeCube />
+						{/* Suspense: svgImport/gltfImport sources load async via useLoader (#46, #48) */}
+						<Suspense fallback={null}>
+							<SceneSourcesArrangeScene />
+						</Suspense>
 						<SceneAudioBridge />
 					</Canvas>
 				)}
+				<SceneSourcesOverlay />
 			</Box>
 		</Box>
 	);

@@ -40,6 +40,15 @@ export type OrderedPath = {
 
 const VISIBLE_FRACTION  = 0.85; // fraction of sample budget for geometry vs blanking
 
+/**
+ * Set `object.userData[EXCLUDE_FROM_SCAN_KEY] = true` on a scene object to
+ * keep it (and its whole subtree) out of the beam path — for UI-only scene
+ * content that must render visually but isn't part of the authored geometry,
+ * e.g. the arrange-scene's TransformControls gizmo (its rings/arrows are
+ * real THREE.Line objects living in the same scene collectSegments scans).
+ */
+export const EXCLUDE_FROM_SCAN_KEY = 'reactoscopeExcludeFromScan';
+
 // ─── Reusable scratch objects (avoids GC pressure in useFrame) ────────────────
 
 const _vpMatrix = new THREE.Matrix4();
@@ -66,8 +75,18 @@ export function collectSegments(scene: THREE.Scene, camera: THREE.Camera): Segme
 
 	const segments: Segment[] = [];
 
-	scene.traverse((obj) => {
-		if (!obj.visible) return;
+	// Manual recursion (not scene.traverse) so an excluded object's whole
+	// subtree is pruned rather than visited-then-filtered per node — needed
+	// for UI-only scene objects like the arrange-scene's TransformControls
+	// gizmo (its rings/arrows are real THREE.Line objects that would
+	// otherwise get scanned into the beam path — see EXCLUDE_FROM_SCAN_KEY).
+	function walk(obj: THREE.Object3D): void {
+		if (!obj.visible || obj.userData[EXCLUDE_FROM_SCAN_KEY]) return;
+		visit(obj);
+		for (const child of obj.children) walk(child);
+	}
+
+	function visit(obj: THREE.Object3D): void {
 
 		// ── Resolve MVP matrix (cached per object reference) ──
 		let mvp = _mvpCache.get(obj);
@@ -138,7 +157,9 @@ export function collectSegments(scene: THREE.Scene, camera: THREE.Camera): Segme
 				segments.push({ points: [v.pt, v.pt], colors: [v.col, v.col] });
 			}
 		}
-	});
+	}
+
+	walk(scene);
 
 	return segments;
 }
