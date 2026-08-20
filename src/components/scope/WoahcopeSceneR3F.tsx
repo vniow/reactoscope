@@ -114,7 +114,12 @@ export function WoscopeSceneR3F() {
 			upsamplerRef.current.apply(rBuf, smoothedR.current);
 			upsamplerRef.current.apply(gBuf, smoothedG.current);
 			upsamplerRef.current.apply(bBuf, smoothedB.current);
-			upsamplerRef.current.apply(aBuf, smoothedA.current);
+			// Alpha carries the blank/visible gate, not a continuous quantity —
+			// sinc-interpolating it would smear a sharp transition into a smooth
+			// ramp, re-leaking brightness the audio pipeline already zeroed.
+			// applyMin propagates blank (the channel's floor) from any sample
+			// within the kernel's support instead of averaging.
+			upsamplerRef.current.applyMin(aBuf, smoothedA.current);
 			nPoints = upsamplerRef.current.outputLength;
 			xBuf = smoothedX.current;
 			yBuf = smoothedY.current;
@@ -131,10 +136,20 @@ export function WoscopeSceneR3F() {
 		const [hr, hg, hb] = hueColourRef.current;
 		const multi = isMultichannelRef.current;
 		for (let i = 0; i < nPoints; i++) {
+			// Segment i spans sample[i] -> sample[i+1] (updateGeometryArrays) but is
+			// drawn as one uniformly-coloured quad (vsLine.glsl: vColor = aColor for
+			// all 4 verts) — colouring it from sample[i] alone meant a visible->blank
+			// transition segment rendered at sample[i]'s full brightness across its
+			// whole geometric length, leaking a faint line into every blank-travel
+			// jump regardless of the worklet's own per-sample blanking. Blank forces
+			// alpha to -1 (the channel's floor), so taking the min of both endpoints'
+			// alpha makes the whole segment silent if either end is blank — same
+			// "either endpoint blank wins" principle as the worklet-side fix.
+			const j  = i + 1 < nPoints ? i + 1 : i;
 			const cr = multi ? 0.5 + 0.5 * rBuf[i] : hr;
 			const cg = multi ? 0.5 + 0.5 * gBuf[i] : hg;
 			const cb = multi ? 0.5 + 0.5 * bBuf[i] : hb;
-			const ca = 0.5 + 0.5 * aBuf[i];
+			const ca = 0.5 + 0.5 * Math.min(aBuf[i], aBuf[j]);
 			const base = i * 4 * 4; // 4 verts × 4 floats
 			for (let v = 0; v < 4; v++) {
 				const off = base + v * 4;
