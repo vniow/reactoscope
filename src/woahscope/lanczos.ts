@@ -66,4 +66,28 @@ export class LanczosUpsampler {
 			output[j] = val;
 		}
 	}
+
+	/**
+	 * Same output indexing as apply(), but takes the min of only the two raw
+	 * samples immediately bracketing each output position — not the full
+	 * kernel-support window apply() uses. Alpha represents a hard binary gate
+	 * (blanked beam travel vs. visible), not a continuous quantity, so it
+	 * needs "which two real samples does this output position fall between"
+	 * (same principle as the worklet and per-segment fixes), not the wide
+	 * neighbourhood apply()'s sinc reconstruction needs — using the full
+	 * 2*LANCZOS_A window here over-corrected: every shared-vertex corner
+	 * carries at least one (zero-distance) blank point by construction
+	 * (buildCoordBuffer's `Math.max(1, ...)` floor), and bleeding blank
+	 * across a 16-sample window from that single point ate real edge pixels
+	 * on both sides of every corner, showing up as a gap.
+	 */
+	applyMin(input: Float32Array, output: Float32Array): void {
+		const { steps, outputLength } = this;
+		const n = input.length;
+		for (let j = 0; j < outputLength; j++) {
+			const i0 = (j / steps) | 0;
+			const i1 = Math.min(i0 + 1, n - 1);
+			output[j] = Math.min(input[i0], input[i1]);
+		}
+	}
 }
