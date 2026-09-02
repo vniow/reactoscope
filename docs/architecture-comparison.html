@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Architecture Comparison — reactoscope vs. vectorsynthesis vs. xyscope.js vs. LaserBoy vs. laser-dac-rs vs. PlayzerX</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #f7f7f9;
+    --panel: #ffffff;
+    --border: #e2e2e8;
+    --text: #1b1c22;
+    --text-dim: #55565f;
+    --code-bg: #eef0f4;
+    --code-text: #b3306b;
+
+    --reacto: #2f6fed;
+    --reacto-bg: #eaf1ff;
+    --vs: #8a4fd6;
+    --vs-bg: #f3ebfd;
+    --xy: #e08a1e;
+    --xy-bg: #fdf1e0;
+    --lb: #d13c3c;
+    --lb-bg: #fdeaea;
+    --dac: #1a9c74;
+    --dac-bg: #e4f7ef;
+    --pzx: #b8860b;
+    --pzx-bg: #fbf1da;
+
+    --callout-bg: #fff8e6;
+    --callout-border: #e8c25a;
+    --gap-bg: #fdeceb;
+    --gap-border: #e0736a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14151a;
+      --panel: #1c1e26;
+      --border: #2c2e38;
+      --text: #eceef4;
+      --text-dim: #a3a6b4;
+      --code-bg: #262834;
+      --code-text: #ff8fb8;
+
+      --reacto: #6fa0ff;
+      --reacto-bg: #1c2740;
+      --vs: #bb93ef;
+      --vs-bg: #2a2140;
+      --xy: #f0aa4e;
+      --xy-bg: #3a2c18;
+      --lb: #f0837c;
+      --lb-bg: #3a1f1f;
+      --dac: #4fd8a8;
+      --dac-bg: #123a2c;
+      --pzx: #e0b84a;
+      --pzx-bg: #3a3013;
+
+      --callout-bg: #332c14;
+      --callout-border: #a5842f;
+      --gap-bg: #3a1f1e;
+      --gap-border: #a34e46;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.55;
+    margin: 0;
+    padding: 0 0 5rem 0;
+  }
+  main {
+    max-width: 1020px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+  }
+  h1 {
+    font-size: 1.6rem;
+    margin: 0 0 0.4rem 0;
+    letter-spacing: -0.01em;
+  }
+  h2 {
+    font-size: 1.25rem;
+    margin: 3rem 0 0.9rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 { font-size: 1rem; margin: 1.4rem 0 0.5rem 0; }
+  p { color: var(--text-dim); }
+  p.lede { color: var(--text); font-size: 1.02rem; }
+  code {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    font-size: 0.88em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  a { color: var(--reacto); }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1.2rem 0 0.5rem 0;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+  }
+  .chip .dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; display: inline-block; }
+  .chip.reacto { background: var(--reacto-bg); color: var(--reacto); }
+  .chip.vs { background: var(--vs-bg); color: var(--vs); }
+  .chip.xy { background: var(--xy-bg); color: var(--xy); }
+  .chip.lb { background: var(--lb-bg); color: var(--lb); }
+  .chip.dac { background: var(--dac-bg); color: var(--dac); }
+  .chip.pzx { background: var(--pzx-bg); color: var(--pzx); }
+  .chip .dot.reacto { background: var(--reacto); }
+  .chip .dot.vs { background: var(--vs); }
+  .chip .dot.xy { background: var(--xy); }
+  .chip .dot.lb { background: var(--lb); }
+  .chip .dot.dac { background: var(--dac); }
+  .chip .dot.pzx { background: var(--pzx); }
+
+  .tldr-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.9rem;
+    margin-top: 1.4rem;
+  }
+  .tldr-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+  }
+  .tldr-card .num {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .tldr-card p { margin: 0.35rem 0 0 0; font-size: 0.88rem; color: var(--text); }
+
+  /* pipeline diagrams */
+  .pipeline-wrap { overflow-x: auto; margin: 0.7rem 0 1.3rem 0; }
+  .pipeline {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    min-width: max-content;
+    padding: 0.2rem 0.1rem;
+  }
+  .pipeline .step {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.82rem;
+    max-width: 190px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .pipeline .step .t { font-weight: 700; }
+  .pipeline .step .d { color: var(--text-dim); font-size: 0.76rem; margin-top: 0.15rem; }
+  .pipeline .arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 0.4rem;
+    color: var(--text-dim);
+    font-size: 1.1rem;
+  }
+  .pipeline .step.reacto { border-color: var(--reacto); }
+  .pipeline .step.vs { border-color: var(--vs); }
+  .pipeline .step.xy { border-color: var(--xy); }
+  .pipeline .step.lb { border-color: var(--lb); }
+  .pipeline .step.dac { border-color: var(--dac); }
+  .pipeline .step.pzx { border-color: var(--pzx); }
+  .pipeline .step.ext {
+    background: transparent;
+    border-style: dashed;
+    color: var(--text-dim);
+  }
+
+  .proj-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin: 1.1rem 0 0.3rem 0;
+  }
+  .proj-label .dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; }
+  .proj-label.reacto .dot { background: var(--reacto); } .proj-label.reacto { color: var(--reacto); }
+  .proj-label.vs .dot { background: var(--vs); } .proj-label.vs { color: var(--vs); }
+  .proj-label.xy .dot { background: var(--xy); } .proj-label.xy { color: var(--xy); }
+  .proj-label.lb .dot { background: var(--lb); } .proj-label.lb { color: var(--lb); }
+  .proj-label.dac .dot { background: var(--dac); } .proj-label.dac { color: var(--dac); }
+  .proj-label.pzx .dot { background: var(--pzx); } .proj-label.pzx { color: var(--pzx); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin: 0.6rem 0 1.2rem 0;
+  }
+  .table-wrap { overflow-x: auto; }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 0.6rem 0.7rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: var(--panel); font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-dim); }
+  td { background: var(--panel); }
+  th.reacto, td.col-reacto { border-top: 2px solid var(--reacto); }
+  th.vs, td.col-vs { border-top: 2px solid var(--vs); }
+  th.xy, td.col-xy { border-top: 2px solid var(--xy); }
+  th.lb, td.col-lb { border-top: 2px solid var(--lb); }
+  th.dac, td.col-dac { border-top: 2px solid var(--dac); }
+  th.pzx, td.col-pzx { border-top: 2px solid var(--pzx); }
+
+  .callout {
+    background: var(--callout-bg);
+    border: 1px solid var(--callout-border);
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .callout .label { font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+
+  .gap-box {
+    background: var(--gap-bg);
+    border: 1px solid var(--gap-border);
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    margin: 1rem 0;
+  }
+  .gap-box .label {
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--lb);
+    margin-bottom: 0.35rem;
+  }
+  .gap-box p { color: var(--text); font-size: 0.9rem; margin: 0.3rem 0; }
+
+  .cardgrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 0.9rem;
+    margin: 0.8rem 0 1.2rem 0;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+  }
+  .card h4 { margin: 0 0 0.4rem 0; font-size: 0.9rem; }
+  .card p { margin: 0; font-size: 0.84rem; }
+
+  /* dwell bar chart */
+  .dwell-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    height: 130px;
+    padding: 0.5rem 0.5rem 0 0.5rem;
+    margin: 0.8rem 0 0.3rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .dwell-bar-col { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; flex: 1; height: 100%; justify-content: flex-end;}
+  .dwell-bar {
+    width: 100%;
+    max-width: 46px;
+    background: var(--lb);
+    border-radius: 4px 4px 0 0;
+    opacity: 0.85;
+  }
+  .dwell-bar.flat { background: var(--dac); }
+  .dwell-labels { display: flex; gap: 1rem; margin-bottom: 1.4rem; }
+  .dwell-labels div { flex: 1; text-align: center; font-size: 0.74rem; color: var(--text-dim); }
+
+  /* ease curve svg */
+  .ease-wrap { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; margin: 0.8rem 0 1.2rem 0; }
+  .ease-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem 1rem; flex: 1; min-width: 260px; }
+  .ease-card h4 { margin: 0 0 0.5rem 0; font-size: 0.86rem; }
+  .ease-card svg { width: 100%; height: auto; display: block; }
+
+  footer {
+    max-width: 1020px;
+    margin: 3rem auto 0 auto;
+    padding: 1.2rem 1.5rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <h1>Architecture comparison</h1>
+  <p class="lede">reactoscope vs. vectorsynthesis vs. xyscope.js vs. LaserBoy vs. laser-dac-rs vs. PlayzerX — how six systems turn geometry into a beam-position signal (and, for two of them, get it onto real hardware), and where they disagree.</p>
+
+  <div class="legend">
+    <span class="chip reacto"><span class="dot reacto"></span>reactoscope</span>
+    <span class="chip vs"><span class="dot vs"></span>vectorsynthesis</span>
+    <span class="chip xy"><span class="dot xy"></span>xyscope.js</span>
+    <span class="chip lb"><span class="dot lb"></span>LaserBoy</span>
+    <span class="chip dac"><span class="dot dac"></span>laser-dac-rs</span>
+    <span class="chip pzx"><span class="dot pzx"></span>PlayzerX</span>
+  </div>
+
+  <div class="tldr-grid">
+    <div class="tldr-card">
+      <div class="num">Finding 1</div>
+      <p>LaserBoy and laser-dac-rs both close the corner-safety gap ADR-0008 said had no reference — and they disagree with each other on how.</p>
+    </div>
+    <div class="tldr-card">
+      <div class="num">Finding 2</div>
+      <p>reactoscope's ordering minimizes raw distance; LaserBoy minimizes physical settle-time cost. Same algorithm shape, different cost function.</p>
+    </div>
+    <div class="tldr-card">
+      <div class="num">Finding 3</div>
+      <p>Naming collision: LaserBoy's "Z channel" is a spatial depth axis. reactoscope's "Z channel" is analog intensity/blanking. Same letter, unrelated meaning.</p>
+    </div>
+    <div class="tldr-card">
+      <div class="num">Finding 4</div>
+      <p>laser-dac-rs generates zero points — it's the delivery layer reactoscope doesn't have yet, sitting downstream of everything else here.</p>
+    </div>
+    <div class="tldr-card">
+      <div class="num">Finding 5</div>
+      <p>laser-dac-rs's own "oscilloscope" backend solves reactoscope's namesake problem independently — and adds two anti-glitch behaviors reactoscope lacks.</p>
+    </div>
+    <div class="tldr-card">
+      <div class="num">Finding 6</div>
+      <p>PlayzerX is the only project driving a real, physical laser — a single resonant MEMS mirror, not dual galvos — and it has zero corner-safety logic of its own.</p>
+    </div>
+  </div>
+
+  <h2>Point generation → path → output, side by side</h2>
+  <p>Same physical job (turn geometry into a beam-position signal), five very different pipelines. Dashed boxes are external to the software.</p>
+
+  <div class="proj-label reacto"><span class="dot"></span>reactoscope</div>
+  <div class="pipeline-wrap"><div class="pipeline">
+    <div class="step reacto"><span class="t">THREE.js scene</span><span class="d">live, editable</span></div>
+    <div class="arrow">→</div>
+    <div class="step reacto"><span class="t">collectSegments</span><span class="d">every R3F frame, in a Worker</span></div>
+    <div class="arrow">→</div>
+    <div class="step reacto"><span class="t">orderSegments</span><span class="d">greedy nearest-neighbour, distance only</span></div>
+    <div class="arrow">→</div>
+    <div class="step reacto"><span class="t">buildCoordBuffer</span><span class="d">fixed nPoints, arc-length resample</span></div>
+    <div class="arrow">→</div>
+    <div class="step reacto"><span class="t">AudioWorklet</span><span class="d">real-time cycling</span></div>
+    <div class="arrow">→</div>
+    <div class="step ext"><span class="t">Speakers / GPU render</span></div>
+  </div></div>
+
+  <div class="proj-label vs"><span class="dot"></span>vectorsynthesis</div>
+  <div class="pipeline-wrap"><div class="pipeline">
+    <div class="step ext"><span class="t">3D model / WKT geometry</span></div>
+    <div class="arrow">→</div>
+    <div class="step vs"><span class="t">lines_vertices.py / wkt_parse.py</span><span class="d">offline, human-run, once</span></div>
+    <div class="arrow">→</div>
+    <div class="step vs"><span class="t">wavetables (*.txt)</span><span class="d">fixed vertex sequence per shape</span></div>
+    <div class="arrow">→</div>
+    <div class="step vs"><span class="t">PD table-lookup oscillator</span><span class="d">phasor scans the table</span></div>
+    <div class="arrow">→</div>
+    <div class="step vs"><span class="t">vs-multiplex.pd</span><span class="d">authored time-slice per shape</span></div>
+    <div class="arrow">→</div>
+    <div class="step vs"><span class="t">vs-blanking / vs-ilda-rgb</span><span class="d">raster-window blanking + phase color</span></div>
+    <div class="arrow">→</div>
+    <div class="step ext"><span class="t">Audio interface → CRT / laser / Vectrex</span></div>
+  </div></div>
+
+  <div class="proj-label xy"><span class="dot"></span>xyscope.js</div>
+  <div class="pipeline-wrap"><div class="pipeline">
+    <div class="step ext"><span class="t">Audio already playing</span></div>
+    <div class="arrow">→</div>
+    <div class="step xy"><span class="t">ScriptProcessorNode capture</span><span class="d">XXY_doScriptProcessor</span></div>
+    <div class="arrow">→</div>
+    <div class="step xy"><span class="t">Lanczos resample</span><span class="d">XXY_Filter, a=8, steps=6</span></div>
+    <div class="arrow">→</div>
+    <div class="step xy"><span class="t">buildWaves()</span><span class="d">flattens all primitives, no ordering</span></div>
+    <div class="arrow">→</div>
+    <div class="step xy"><span class="t">WebGL Gaussian shader</span><span class="d">erf intensity, no blanking</span></div>
+  </div></div>
+
+  <div class="proj-label lb"><span class="dot"></span>LaserBoy</div>
+  <div class="pipeline-wrap"><div class="pipeline">
+    <div class="step lb"><span class="t">Keyboard editor / DXF / fonts / oscillator generators</span><span class="d">hand-authored, one frame at a time</span></div>
+    <div class="arrow">→</div>
+    <div class="step lb"><span class="t">Effects menu (opt-in)</span><span class="d">reduce_lit_vectors, reorder_segments, remove_dwell_vertices…</span></div>
+    <div class="arrow">→</div>
+    <div class="step lb"><span class="t">.ild export</span><span class="d">writes points as-is, no insertion</span></div>
+  </div></div>
+  <div class="pipeline-wrap"><div class="pipeline">
+    <div class="step lb" style="margin-left:0"><span class="t">same authored frame</span></div>
+    <div class="arrow">→</div>
+    <div class="step lb"><span class="t">optimize() — mandatory</span><span class="d">add_dwell + span interpolation</span></div>
+    <div class="arrow">→</div>
+    <div class="step lb"><span class="t">.wav export</span><span class="d">variable length, DAC-ready</span></div>
+    <div class="arrow">→</div>
+    <div class="step ext"><span class="t">Sound card → real galvo hardware</span></div>
+  </div></div>
+
+  <div class="proj-label dac"><span class="dot"></span>laser-dac-rs</div>
+  <p style="margin:0 0 0.3rem 0; font-size:0.85rem;">Generates nothing — this is the delivery layer every other row above hands off to.</p>
+  <div class="pipeline-wrap"><div class="pipeline">
+    <div class="step ext"><span class="t">Caller-generated LaserPoints</span><span class="d">Frame API or Streaming API</span></div>
+    <div class="arrow">→</div>
+    <div class="step dac"><span class="t">TransitionPlan</span><span class="d">3-phase blanking / Coalesce at seams</span></div>
+    <div class="arrow">→</div>
+    <div class="step dac"><span class="t">OutputFilter (optional)</span><span class="d">final hook on the presented slice</span></div>
+    <div class="arrow">→</div>
+    <div class="step dac"><span class="t">OutputModel adapter</span><span class="d">UsbFrameSwap / NetworkFifo / UdpTimed</span></div>
+    <div class="arrow">→</div>
+    <div class="step ext"><span class="t">Helios / Ether Dream / IDN / LaserCube / AVB / oscilloscope</span></div>
+  </div></div>
+
+  <div class="proj-label pzx"><span class="dot"></span>PlayzerX</div>
+  <p style="margin:0 0 0.3rem 0; font-size:0.85rem;">A real, physical laser projector's own SDK — generates nothing, orders nothing, no dwell/transition logic at all.</p>
+  <div class="pipeline-wrap"><div class="pipeline">
+    <div class="step ext"><span class="t">Caller-generated X/Y/M or X/Y/RGB arrays</span><span class="d">already ordered, already safe</span></div>
+    <div class="arrow">→</div>
+    <div class="step pzx"><span class="t">SendDataXYM / SendDataXYRGB</span><span class="d">binary USB-serial frames, 9 or 11 bytes/sample</span></div>
+    <div class="arrow">→</div>
+    <div class="step pzx"><span class="t">Onboard circular FIFO</span><span class="d">125,000 (mono) / 83,333 (RGB) samples</span></div>
+    <div class="arrow">→</div>
+    <div class="step pzx"><span class="t">Onboard LPF</span><span class="d">only mitigation: dampens MEMS ringing</span></div>
+    <div class="arrow">→</div>
+    <div class="step ext"><span class="t">Single 2-axis MEMS mirror</span></div>
+  </div></div>
+
+  <h2>Point generation, line rendering, multichannel</h2>
+
+  <div class="table-wrap"><table>
+    <tr><th class="reacto">reactoscope</th><th class="vs">vectorsynthesis</th><th class="xy">xyscope.js</th><th class="lb">LaserBoy</th></tr>
+    <tr>
+      <td class="col-reacto">Live scene traversal every frame (<code>collectSegments</code>)</td>
+      <td class="col-vs">Pre-baked wavetables, authored offline</td>
+      <td class="col-xy">Raw samples from whatever audio is already playing</td>
+      <td class="col-lb">Hand-authored / imported, one frame at a time</td>
+    </tr>
+    <tr>
+      <td class="col-reacto">Fixed-resolution arc-length resample to <code>nPoints</code></td>
+      <td class="col-vs">None — table density is whatever the author baked in</td>
+      <td class="col-xy">Lanczos kernel resample (same purpose as reactoscope's <code>useLanczos</code>)</td>
+      <td class="col-lb">None for <code>.ild</code>; variable-length dwell+interpolation insertion for <code>.wav</code></td>
+    </tr>
+  </table></div>
+
+  <div class="callout">
+    <div class="label">Where's laser-dac-rs?</div>
+    Not in this table — it generates <strong>zero</strong> points. Its Frame/Stream API takes <code>LaserPoint</code>s the caller already produced and is purely about pacing and delivering them. It's the layer reactoscope doesn't have yet: something downstream of <code>buildCoordBuffer</code> owning hardware timing, reconnect, and safety once points already exist. See the dedicated section below.
+  </div>
+
+  <h3>Line generation</h3>
+  <div class="cardgrid">
+    <div class="card"><h4 style="color:var(--reacto)">reactoscope</h4><p>GPU quad per segment, Gaussian-integral (erf) intensity — <code>fsLine.glsl</code>.</p></div>
+    <div class="card"><h4 style="color:var(--vs)">vectorsynthesis</h4><p>No line-rendering stage at all — PD emits analog signal, external hardware draws it.</p></div>
+    <div class="card"><h4 style="color:var(--xy)">xyscope.js</h4><p>Same erf shader math as reactoscope, independently converged — <code>shader_gaussianFragment</code>.</p></div>
+    <div class="card"><h4 style="color:var(--lb)">LaserBoy</h4><p>CPU-rasterized bitmap blitted via FLTK <code>fl_draw_image</code> — an editor preview, not a beam simulation.</p></div>
+    <div class="card"><h4 style="color:var(--dac)">laser-dac-rs</h4><p>No rendering at all — real hardware (or the <code>idn-simulator</code> tool) is whatever draws the line.</p></div>
+  </div>
+
+  <h3>Multichannel support</h3>
+  <div class="table-wrap"><table>
+    <tr><th class="reacto">reactoscope</th><th class="vs">vectorsynthesis</th><th class="xy">xyscope.js</th><th class="lb">LaserBoy</th><th class="dac">laser-dac-rs</th><th class="pzx">PlayzerX</th></tr>
+    <tr>
+      <td class="col-reacto">Fixed 6-channel bus: X,Y,R,G,B,Z</td>
+      <td class="col-vs">Whatever the interface exposes; ILDA convention typical; plus shape-multiplexing onto one beam</td>
+      <td class="col-xy">Hard-locked to 2 (X/Y stereo); RGB/laser is an acknowledged "pending" gap</td>
+      <td class="col-lb">Hard-coded 6-channel ILDA convention: X,Y,Z,R,G,B (<code>LASERBOY_CHANNEL_*</code> = 0..5)</td>
+      <td class="col-dac"><code>LaserPoint</code> is 6 fields (x,y,r,g,b,intensity) but wire channel count is <strong>per-backend</strong>: 6ch for <code>avb</code>, only 2 (X/Y, no color) for <code>oscilloscope</code></td>
+      <td class="col-pzx">A <strong>hardware SKU</strong>, not config: mono units speak XYM (3ch), RGB units speak XYRGB (5ch) — no runtime path between them. 12-bit position (4096 steps), coarser than everyone else</td>
+    </tr>
+  </table></div>
+
+  <div class="gap-box">
+    <div class="label">⚠ Naming collision</div>
+    <p><strong>LaserBoy's <code>CHANNEL_Z</code> is a spatial position axis (3D depth).</strong> <strong>reactoscope's "Z channel" is an analog intensity/blanking control</strong> (−1 = blanked, +1 = full intensity). Same letter, two projects, two unrelated real-world axes each named itself after. Don't assume shared meaning when cross-referencing the two codebases.</p>
+  </div>
+
+  <h2>Path generation — the real divergence</h2>
+  <p>reactoscope and LaserBoy are the only two of the five that solve an ordering problem at all — both use a greedy nearest-candidate walk with optional reversal. laser-dac-rs doesn't order anything (that's the caller's job) but it does own what happens <em>at the seam</em> once ordering is done — a third, distinct answer to travel-safety.</p>
+
+  <div class="cardgrid">
+    <div class="card">
+      <h4 style="color:var(--reacto)">reactoscope — distance-only cost</h4>
+      <p>For each unvisited segment, compare raw Euclidean distance from the current beam position to that segment's start/end. Pick whichever is closest. No awareness of the turn angle needed to actually continue there.</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--lb)">LaserBoy — settle-time cost</h4>
+      <p><code>points_away</code> = dwell points for the incoming turn angle + interpolation steps for the blank jump + dwell points for the outgoing turn angle. Two candidates equidistant in pixels can cost very differently once the turn is priced in.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="label">Why this matters</div>
+    A smooth continuation and a sharp reversal, at equal distance, look identical to reactoscope's current cost function. LaserBoy's metric tells them apart — because on real hardware they aren't remotely equivalent in cost. LaserBoy also merges shared-endpoint segments <em>before</em> ordering (<code>conglomerate_lit_segments</code>), reducing segment count rather than just ordering what's there — reactoscope's <code>collectSegments</code> does the opposite by default, fracturing every polyline into 2-vertex pairs before ordering even starts.
+  </div>
+
+  <h3>Two working answers to travel-safety, compared</h3>
+  <div class="table-wrap"><table>
+    <tr><th class="lb">LaserBoy — <code>add_dwell</code></th><th class="dac">laser-dac-rs — <code>default_transition</code></th></tr>
+    <tr>
+      <td class="col-lb">Fires on <strong>every</strong> vertex-to-vertex transition inside a frame (blank→lit, lit→lit, lit→blank)</td>
+      <td class="col-dac">Fires only at the seam <strong>between</strong> two submitted frames/chunks — blind to in-frame corners</td>
+    </tr>
+    <tr>
+      <td class="col-lb">Dwell scales with turn angle: 0 on a straight line, max on a full reversal</td>
+      <td class="col-dac">Dwell is fixed regardless of angle: always ~100µs end-dwell + ~400µs start-dwell</td>
+    </tr>
+    <tr>
+      <td class="col-lb">Transit = uniform linear steps, count from a max-slew-rate constant</td>
+      <td class="col-dac">Transit = quintic ease-in-out curve, count scales with L∞ distance (0–64 points)</td>
+    </tr>
+    <tr>
+      <td class="col-lb">No explicit closed-loop concept</td>
+      <td class="col-dac"><code>TransitionPlan::Coalesce</code> — merges identical seam endpoints, no duplicate-point halt on loops</td>
+    </tr>
+  </table></div>
+
+  <div class="ease-wrap">
+    <div class="ease-card">
+      <h4 style="color:var(--lb)">LaserBoy: linear transit</h4>
+      <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        <line x1="10" y1="90" x2="190" y2="90" stroke="var(--border)" stroke-width="1"/>
+        <line x1="10" y1="90" x2="10" y2="10" stroke="var(--border)" stroke-width="1"/>
+        <line x1="10" y1="90" x2="190" y2="10" stroke="var(--lb)" stroke-width="2.5" fill="none"/>
+      </svg>
+      <p style="font-size:0.78rem; margin-top:0.4rem;">Constant speed across the whole jump — same step size regardless of position in the travel.</p>
+    </div>
+    <div class="ease-card">
+      <h4 style="color:var(--dac)">laser-dac-rs: quintic ease-in-out</h4>
+      <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        <line x1="10" y1="90" x2="190" y2="90" stroke="var(--border)" stroke-width="1"/>
+        <line x1="10" y1="90" x2="10" y2="10" stroke="var(--border)" stroke-width="1"/>
+        <path d="M 10 90 C 60 90, 70 90, 100 50 S 140 10, 190 10" stroke="var(--dac)" stroke-width="2.5" fill="none"/>
+      </svg>
+      <p style="font-size:0.78rem; margin-top:0.4rem;">Slow start, fast middle, slow finish — models actual galvo acceleration/deceleration.</p>
+    </div>
+  </div>
+
+  <h2>Shape distinction</h2>
+  <p>All six systems agree on one thing: "shape" is a build-time or edit-time concept that does not survive translation to a beam-position signal.</p>
+  <div class="cardgrid">
+    <div class="card"><h4 style="color:var(--reacto)">reactoscope</h4><p>Shapes are <code>THREE.Object3D</code> instances — but <code>orderSegments</code> flattens everything into one undifferentiated pool.</p></div>
+    <div class="card"><h4 style="color:var(--vs)">vectorsynthesis</h4><p>Named wavetable per shape, lost the instant the phasor sweeps past its window.</p></div>
+    <div class="card"><h4 style="color:var(--xy)">xyscope.js</h4><p><code>this.shapes</code> array exists at the p5 API level, collapsed by <code>buildWaves()</code>.</p></div>
+    <div class="card"><h4 style="color:var(--lb)">LaserBoy</h4><p>"Lit segments" are individually addressable (<code>explode_segments</code>) — but identity is gone the moment a frame is exported.</p></div>
+    <div class="card"><h4 style="color:var(--dac)">laser-dac-rs</h4><p>Never sees shapes, only a flat point vector per <code>Frame</code> — but frame <em>identity</em> does survive to the seam: <code>TransitionPlan</code> knows which two frames are adjacent.</p></div>
+    <div class="card"><h4 style="color:var(--pzx)">PlayzerX</h4><p>No concept of shape <em>or</em> frame — only flat X/Y/color arrays passed to <code>SendData*</code>. Not even laser-dac-rs's frame-boundary survives here.</p></div>
+  </div>
+
+  <h2>Corner-safety: the gap ADR-0008 flagged, now doubly closed</h2>
+
+  <div class="gap-box">
+    <div class="label">ADR-0008 said</div>
+    <p>"There's no existing pattern to crib from — this would be new design work, not integration of a known technique." Neither vectorsynthesis nor xyscope.js had a real corner/galvo-overshoot safety mechanism to point to.</p>
+  </div>
+
+  <p>LaserBoy's <code>add_dwell</code> classifies every vertex-to-vertex transition and inserts repeated copies of the vertex — more at sharper turns, none on a straight line:</p>
+
+  <div class="dwell-chart">
+    <div class="dwell-bar-col"><div class="dwell-bar" style="height:2%"></div></div>
+    <div class="dwell-bar-col"><div class="dwell-bar" style="height:25%"></div></div>
+    <div class="dwell-bar-col"><div class="dwell-bar" style="height:50%"></div></div>
+    <div class="dwell-bar-col"><div class="dwell-bar" style="height:75%"></div></div>
+    <div class="dwell-bar-col"><div class="dwell-bar" style="height:100%"></div></div>
+  </div>
+  <div class="dwell-labels">
+    <div>0°<br>straight line</div>
+    <div>45°</div>
+    <div>90°<br>right angle</div>
+    <div>135°</div>
+    <div>180°<br>full reversal</div>
+  </div>
+  <p style="text-align:center; font-size:0.82rem; margin-top:-0.6rem;"><code>dwell = ceil((angle / π) × sample_rate × max_dwell_microsec)</code></p>
+
+  <p>laser-dac-rs takes a different approach: fixed dwell duration regardless of angle, but a smooth quintic-eased transit whose point count scales with distance (see the comparison table above). Its dwell/transit only fires at frame seams — it has no visibility into corners <em>inside</em> a single submitted frame, which is exactly the case LaserBoy's <code>add_dwell</code> covers and laser-dac-rs doesn't.</p>
+
+  <div class="callout">
+    <div class="label">A working extension point, not just a hypothetical</div>
+    ADR-0008 named two possible homes for corner-safety logic: inside the resampler (<code>buildCoordBuffer</code>), or as a downstream DAC-adapter concern. laser-dac-rs picked the adapter side and shipped it as a real, documented API: <code>OutputFilter</code> runs on the exact point slice about to hit hardware, after transition composition — its own worked example clamps out-of-range points to blanked. This doesn't mean reactoscope must adopt the same placement, but it proves that placement is workable, not speculative.
+  </div>
+
+  <div class="gap-box">
+    <div class="label">PlayzerX has none of this — confirmed, not assumed</div>
+    <p>A grep for "order," "sort," "nearest," "blank," "dwell," "transition," or "interpolat" across PlayzerX's entire implementation returns <strong>zero matches</strong>. Of the two projects in this comparison that talk to real beam-steering hardware, laser-dac-rs chose to own seam-level safety; PlayzerX chose to own none of it. That's the clearest illustration anywhere in this comparison of how much LaserBoy's and laser-dac-rs's cost functions actually add over doing nothing at all.</p>
+  </div>
+
+  <h2>Hardware delivery layer (laser-dac-rs only)</h2>
+  <p>None of reactoscope, vectorsynthesis, xyscope.js, or LaserBoy model this layer at all — genuinely new territory, not a variant of something the other four already do differently. PlayzerX has the raw material (a real device FIFO — see its own section below) but none of the scheduling/safety logic on top; treat it as the floor this layer starts from, not a second full example of it.
+
+  <div class="cardgrid">
+    <div class="card">
+      <h4>Backend timing model</h4>
+      <p><code>OutputModel</code> unifies three real hardware pacing strategies behind one scheduler: <code>UsbFrameSwap</code> (Helios — wait for ready, write whole frames), <code>NetworkFifo</code> (Ether Dream/LaserCube/AVB — top up a queryable queue), <code>UdpTimed</code> (IDN — OS send time against a deadline is the only clock).</p>
+    </div>
+    <div class="card">
+      <h4>Color delay</h4>
+      <p>Galvo mirrors settle slower than color modulators respond, so R/G/B/intensity are deliberately delayed 50–200µs relative to X/Y. A physical-latency concept none of the other five projects model at all — not even PlayzerX, whose onboard filter treats the whole drive signal generically.</p>
+    </div>
+    <div class="card">
+      <h4>Startup blanking</h4>
+      <p>Forces the first points after arming to stay blank so mirrors reach their initial position first — same idea as LaserBoy's <code>intro</code> segment, arrived at independently.</p>
+    </div>
+    <div class="card">
+      <h4>Reconnect & liveness</h4>
+      <p>Automatic reconnection with backoff, plus a read-only liveness handle for watchdogs. Hardware disconnection isn't a first-class case anywhere else here — PlayzerX has manual connect/disconnect but no automatic backoff-and-retry logic.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="label">The closest existing code to reactoscope's own name</div>
+    The <code>oscilloscope</code> backend drives a real scope tube's XY input from stereo audio — X→left, Y→right, no color channel at all, because a scope tube has none. It independently solved two anti-glitch problems reactoscope doesn't currently address: on underrun it <strong>holds the last output sample</strong> instead of snapping to center, and on mute it <strong>ramps toward center over ~3ms</strong> instead of cutting instantly. It also states the hard constraint that separates a scope from a laser DAC: the beam is <em>always</em> visible, there is no "off" — so blanked points must still carry real position data, or the beam visibly jumps. reactoscope's continuous Z-channel already gets this right by construction (blanking dims to −1, it never removes the X/Y sample) — good to know this was a real risk the design already avoids, not one it was never exposed to.
+  </div>
+
+  <h2>PlayzerX: a real MEMS-mirror laser projector, not a galvo</h2>
+  <p>Every other project here targets, emulates, or abstracts over <strong>dual galvo mirror</strong> hardware — one moving-magnet/moving-coil galvo per axis, the traditional ILDA convention. PlayzerX targets something mechanically different: a single <strong>biaxial MEMS mirror</strong> chip that steers both X and Y from one micro-mechanical device. That changes what "corner safety" even means, and it's worth its own section rather than folding into the galvo-oriented ones above.</p>
+
+  <div class="cardgrid">
+    <div class="card">
+      <h4 style="color:var(--pzx)">Thin API, zero built-in safety</h4>
+      <p>Connection lifecycle + <code>SendDataXY</code>/<code>XYM</code>/<code>XYRGB</code> + buffer queries. That's the whole surface. No ordering, no transition composition, no output filter — the host must hand it an already-safe point stream.</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--pzx)">Hardware-fixed data format</h4>
+      <p>12-bit X/Y (4096 steps, origin at 2048), 8-bit color/modulation. <code>XYM</code> vs. <code>XYRGB</code> is which physical unit you bought, not a runtime choice.</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--pzx)">Real circular FIFO, two independent rates</h4>
+      <p>125,000 samples (mono) / 83,333 (RGB) onboard. Write rate (host→device, ≤~50,000/sec over USB serial) and read rate (device→mirror, <code>SetSampleRate</code>, default 22,000/sec) are fully decoupled — and fully manual to manage.</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--pzx)">A zero-software analog mode exists too</h4>
+      <p>PlayzerX-AIN drives the mirror from three raw voltage channels (X, Y, intensity) — "cannot be directly controlled via a software interface." Third-party laser-show controllers and even a bare NI-DAQ card drive it this way.</p>
+    </div>
+  </div>
+
+  <div class="gap-box">
+    <div class="label">A failure mode with a name: mechanical resonance and ringing</div>
+    <p>PlayzerX's own docs warn plainly: the MEMS mirror is <strong>"a high-Q spring-mass system"</strong> — sending too few points at too high a sample rate produces sparse, jagged excursions that excite its resonance and ring. The fix shipped is an onboard low-pass filter on the controller, a <strong>hardware-level</strong> mitigation categorically different from every software fix elsewhere in this comparison (LaserBoy's angle-proportional dwell, laser-dac-rs's quintic-eased transit). Neither of those techniques exists here — the device compensates for its own physics instead of asking the point stream to be gentler.</p>
+  </div>
+
+  <div class="ease-wrap">
+    <div class="ease-card">
+      <h4 style="color:var(--dac)">Galvo response (LaserBoy / laser-dac-rs world)</h4>
+      <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        <line x1="10" y1="50" x2="190" y2="50" stroke="var(--border)" stroke-width="1"/>
+        <path d="M 10 90 C 60 90, 70 50, 100 50 S 140 50, 190 50" stroke="var(--dac)" stroke-width="2.5" fill="none"/>
+      </svg>
+      <p style="font-size:0.78rem; margin-top:0.4rem;">Heavily-damped servo loop: settles smoothly onto target, at worst a small overshoot software dwell/easing can absorb.</p>
+    </div>
+    <div class="ease-card">
+      <h4 style="color:var(--pzx)">MEMS mirror under sparse+fast drive</h4>
+      <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+        <line x1="10" y1="50" x2="190" y2="50" stroke="var(--border)" stroke-width="1"/>
+        <path d="M 10 90 C 40 90, 50 15, 75 50 S 100 75, 115 50 S 135 35, 150 50 S 165 45, 175 50 L 190 50" stroke="var(--pzx)" stroke-width="2.5" fill="none"/>
+      </svg>
+      <p style="font-size:0.78rem; margin-top:0.4rem;">High-Q resonant structure: a rapid excursion can ring for several cycles before settling — a firmware-level LPF dampens it, not a software point-insertion algorithm.</p>
+    </div>
+  </div>
+
+  <h3>Limitations</h3>
+  <div class="cardgrid">
+    <div class="card"><h4>12-bit position resolution</h4><p>4096 steps/axis — coarser than every other project's f32/16-bit-equivalent position handling.</p></div>
+    <div class="card"><h4>No safety logic of any kind</h4><p>Nothing here would catch the mechanical-ringing failure mode its own docs warn about — avoiding it is entirely on the caller's point-generation code.</p></div>
+    <div class="card"><h4>Manual backpressure</h4><p>Buffer-level management is the caller's job (polled <code>GetSamplesRemaining</code>, <code>WaitForBufferLevel</code>) — no <code>OutputModel</code>-style scheduler abstracting it away.</p></div>
+    <div class="card"><h4>Spec inconsistency</h4><p>The header's own doc comment says <code>SetSampleRate</code> ranges 200–50,000/sec; the USB protocol reference says 50–50,000. Verify against real hardware before depending on the exact floor.</p></div>
+    <div class="card"><h4>Heavy, dated dependency footprint</h4><p>Prebuilt Windows <code>.lib</code>/<code>.dll</code> artifacts; the underlying device layer bundles OpenCV <strong>2.4.13</strong> binaries (c. 2013) — the heaviest, oldest dependency chain in this comparison.</p></div>
+  </div>
+
+  <h2>Points-per-second (kpps) budgeting</h2>
+  <p>The one genuinely physical constraint in this whole comparison: a galvo mirror can only redirect the beam so many times a second. Real laser projectors run roughly 20–40 kpps typically, 60–100 kpps at the high end. Here's how each project treats that ceiling — or doesn't.</p>
+
+  <div class="callout">
+    <div class="label">reactoscope has no kpps concept at all</div>
+    Effective point rate is an emergent, unchecked product of two independent sliders: <code>coordBufferSize</code> (256–4096 points) × <code>scanFrequency</code> (0.1–192 Hz). That spans <strong>~26 to ~786,000 points/sec</strong> — four orders of magnitude past real hardware, with nothing flagging it.
+  </div>
+
+  <div class="ease-wrap">
+    <div class="ease-card" style="flex:2; min-width:320px;">
+      <h4>reactoscope's slider range vs. real laser hardware</h4>
+      <svg viewBox="0 0 480 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Log scale bar comparing reactoscope's configurable point-rate range against real laser projector kpps">
+        <!-- log scale from 10 to 1,000,000 points/sec -->
+        <line x1="40" y1="110" x2="460" y2="110" stroke="var(--border)" stroke-width="1"/>
+        <text x="32" y="128" font-size="10" fill="var(--text-dim)">10</text>
+        <text x="112" y="128" font-size="10" fill="var(--text-dim)">100</text>
+        <text x="196" y="128" font-size="10" fill="var(--text-dim)">1k</text>
+        <text x="356" y="128" font-size="10" fill="var(--text-dim)">100k</text>
+        <text x="443" y="128" font-size="10" fill="var(--text-dim)">1M</text>
+        <!-- log scale: x=40 -> 10^1, x=460 -> 10^6 (84px/decade). reactoscope: 26-786,432 pts/sec -->
+        <rect x="75" y="60" width="376" height="18" rx="4" fill="var(--reacto)" opacity="0.35"/>
+        <text x="75" y="55" font-size="10" fill="var(--reacto)">reactoscope: 26 – 786,000 pts/sec</text>
+        <!-- real laser DACs: ~20k-100k pts/sec -->
+        <rect x="317" y="85" width="59" height="18" rx="4" fill="var(--dac)"/>
+        <text x="280" y="80" font-size="10" fill="var(--dac)">real laser DACs: ~20k – 100k pts/sec</text>
+      </svg>
+      <p style="font-size:0.78rem; margin-top:0.2rem;">Log scale. reactoscope's configurable range fully contains the real hardware band but extends roughly 8× past it in both directions with no warning.</p>
+    </div>
+  </div>
+
+  <div class="cardgrid">
+    <div class="card"><h4 style="color:var(--vs)">vectorsynthesis</h4><p>Audio sample rate <em>is</em> the point rate directly — no separate resample stage. <code>vs-decimate.pd</code> thins density manually; nothing computes the decimation a real DAC's kpps ceiling would require.</p></div>
+    <div class="card"><h4 style="color:var(--xy)">xyscope.js</h4><p>Not applicable — never targets galvo hardware, so mechanical kpps isn't a constraint it needs to model.</p></div>
+    <div class="card"><h4 style="color:var(--lb)">LaserBoy</h4><p><code>sample_rate</code> is a first-class, rig-calibrated constant driving every dwell formula. <code>still_frame_duration</code> converts a kpps budget into an explicit repeat-count computation — but a too-complex frame just silently takes longer to draw once.</p></div>
+  </div>
+
+  <h3>laser-dac-rs: kpps as a hardware-reported fact, not a user setting</h3>
+  <div class="table-wrap"><table>
+    <tr><th class="dac">DAC</th><th class="dac">pps_min</th><th class="dac">pps_max</th><th class="dac">max_points_per_chunk</th></tr>
+    <tr><td class="col-dac">Helios</td><td class="col-dac">7</td><td class="col-dac">65,535</td><td class="col-dac">4095</td></tr>
+    <tr><td class="col-dac">Ether Dream</td><td class="col-dac">1</td><td class="col-dac">100,000</td><td class="col-dac">1799</td></tr>
+    <tr><td class="col-dac">IDN</td><td class="col-dac">1</td><td class="col-dac">100,000</td><td class="col-dac">179</td></tr>
+    <tr><td class="col-dac">LaserCube USB</td><td class="col-dac">1</td><td class="col-dac">35,000</td><td class="col-dac">4096</td></tr>
+    <tr><td class="col-dac">AVB / oscilloscope</td><td class="col-dac">1</td><td class="col-dac">100,000</td><td class="col-dac">4096 / ring-buffer-sized</td></tr>
+    <tr><td class="col-dac">LaserCube Network</td><td class="col-dac">1</td><td class="col-dac"><strong>queried live from device</strong></td><td class="col-dac">protocol-negotiated</td></tr>
+  </table></div>
+
+  <div class="callout">
+    <div class="label">Two things nobody else here does</div>
+    <strong>LaserCube Network doesn't trust a hardcoded spec number</strong> — it reads the actual connected unit's self-reported rate ceiling at runtime and clamps requests to it (<code>resolved_point_rate_max</code>, <code>clamp_point_rate</code>). And the <code>pps_min</code> field's own doc names the <em>low-end</em> failure mode too — too few points/sec "increases point dwell time and can produce flickery output." Every other project in this comparison only worries about too many points, never too few.
+  </div>
+
+  <p style="font-size:0.86rem;">Enforcement is real but narrower than it first looks: bounds are checked in the <em>reconnect</em> path (rejecting a reconnect into a device that can't sustain the current rate — one test is literally named "PPS 500 is below pps_min=1000 — should be rejected even with reconnect"), but there's no equivalent hard rejection visible on the very first session-start call. And two backends (<code>oscilloscope</code>, <code>avb</code>) aren't native point-rate protocols at all — they're audio interfaces at a fixed sample rate, reconciled to an arbitrary requested <code>pps</code> via <code>StreamingResampler</code>.</p>
+
+  <div class="callout">
+    <div class="label">PlayzerX: kpps from measured hardware behavior, not a spec field</div>
+    Two independent rates, not one: write (host→device, ≤~50,000 samples/sec over USB serial) and read (device→mirror, <code>SetSampleRate</code>, default 22,000/sec, up to 50,000 claimed). Plus a failure mode none of the software projects have to reason about at all — too few points at too high a rate excites the MEMS mirror's own mechanical resonance and rings, a <em>physical</em> problem no dwell/interpolation algorithm would catch, because the cause isn't in the signal.
+  </div>
+
+  <div class="gap-box">
+    <div class="label">For reactoscope</div>
+    <p>reactoscope has the least kpps-awareness here despite being the only live, real-time system in the group. If real laser output becomes a goal, <code>DacCapabilities{pps_min, pps_max, max_points_per_chunk}</code> is the cleanest shape to validate against — <code>coordBufferSize × scanFrequency</code> is exactly the "requested pps" that config takes. Cheaper first step available today: just surface that product as a computed kpps readout in the UI and flag it past a realistic ceiling (~60 kpps) — no new dependency needed yet.</p>
+  </div>
+
+  <h2>Other differences worth knowing</h2>
+  <div class="cardgrid">
+    <div class="card"><h4>Persistence/phosphor</h4><p>reactoscope and xyscope.js share the same accumulate→fade→blur-bloom pipeline. vectorsynthesis and laser-dac-rs have none — that's the physical phosphor/hardware's job. LaserBoy's preview has none either (a raster snapshot, not a simulation).</p></div>
+    <div class="card"><h4>Color source</h4><p>reactoscope reads real per-vertex RGB from geometry. Both PD/JS references derive color from a single global parameter instead (hue slider / rotating phase function).</p></div>
+    <div class="card"><h4>Render/synth coupling</h4><p>reactoscope owns both ends (generate + render). vectorsynthesis and xyscope.js each assume the opposite. laser-dac-rs and PlayzerX both add a third position: pure delivery middleware, owning neither — PlayzerX is that position stripped to just the wire and a buffer-depth counter.</p></div>
+    <div class="card"><h4>Live vs. offline authoring</h4><p>reactoscope's live DAW has no counterpart in vectorsynthesis, xyscope.js, or LaserBoy. laser-dac-rs's Frame API — "zero-copy latest-wins" submission — is structurally the closest match to reactoscope's own live-replace pattern, arrived at independently. PlayzerX has no authoring loop at all, live or offline — it's a hardware SDK, not an app.</p></div>
+    <div class="card"><h4>Optimization: pipeline stage vs. menu command</h4><p>reactoscope's ordering/resampling run unconditionally every frame. laser-dac-rs's transition blanking is equally unconditional, for the same reason: every frame it accepts is headed for real hardware. LaserBoy's equivalents are opt-in menu commands, except its own hardware-facing <code>.wav</code> path. PlayzerX has no optimization stage of any kind, ever.</p></div>
+  </div>
+
+</main>
+
+<footer>
+  Generated from <code>docs/architecture-comparison.md</code> for visual reference — the Markdown file remains the source of truth; update that first, then regenerate this page. Source citations for every claim above (file:line references into <code>src/</code>, <code>LaserBoy/src/</code>, <code>laser-dac-rs-main/src/</code>, and <code>playzerx-master/</code>) live in the Markdown version.
+</footer>
+
+</body>
+</html>

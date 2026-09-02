@@ -40,3 +40,9 @@ oscilloscope/
 
 # Memory-leak harness output
 scripts/memory-leak-harness/results/
+
+# Other
+
+Laserboy/
+laser-dac-rs-main
+playzerx-master/
