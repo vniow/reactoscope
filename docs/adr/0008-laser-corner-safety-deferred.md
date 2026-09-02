@@ -2,6 +2,12 @@
 status: accepted
 ---
 
+> **Update**: still deferred, but the "no way to evaluate a technique" half of the blocker is being
+> addressed — ADR-0010 specifies a Galvo Laser Beam Emulator whose Scanner Model simulates the
+> mechanical response both candidate techniques are compensating for. That emulator is the
+> measuring instrument for this decision; it does not make it. Note also that the "widening the
+> `blank` field" option floated below was overtaken by ADR-0009, which removed the flag entirely.
+
 # Galvo corner-safety blanking is deferred, not solved by the existing blank flag
 
 Laser output (driving real ILDA/galvo hardware) is a real goal for reactoscope, not just framing —
