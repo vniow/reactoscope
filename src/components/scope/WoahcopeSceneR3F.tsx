@@ -95,7 +95,6 @@ export function WoscopeSceneR3F() {
 		let bBuf: Float32Array;
 		let zBuf: Float32Array;
 		let nPoints: number;
-		let fadeAlpha: number;
 
 		// Full-window redraw with frame-based phosphor.
 		const waveform = readWaveformTap(tapCursorRef.current);
@@ -124,7 +123,7 @@ export function WoscopeSceneR3F() {
 			zBuf = smoothedZ.current;
 		}
 
-		fadeAlpha = persistPowRef.current * FADE_AMOUNT;
+		const fadeAlpha = persistPowRef.current * FADE_AMOUNT;
 		updateGeometryArrays(nPoints, aIdxArray, startArray, endArray, xBuf, yBuf);
 
 		// Fill per-point colour buffer
