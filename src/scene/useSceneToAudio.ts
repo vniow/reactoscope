@@ -1,9 +1,21 @@
 import { useRef, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
-import { getSceneRunning, getSceneInputWorkletNode } from '../audio/engine';
+import { getSceneRunning, getSceneInputWorkletNode, getSampleRate } from '../audio/engine';
 import { useEffects } from '../contexts/WoahscopeContext';
+import { useDawStore, SCENE_INPUT_ID } from '../store/daw';
 import { collectSegments } from './pathBuilder';
 import type { Segment } from './pathBuilder';
+import type { SceneInputNodeData } from '../store/dawTypes';
+
+// PROTOTYPE (foldover investigation): a coordinate buffer with more points than
+// the scan rate can render in one cycle forces the worklet to skip table
+// entries with no anti-aliasing — the source of the Nyquist-foldover artifact.
+// Capping the buffer to ~one point per audio sample lets buildCoordBuffer's own
+// arc-length resampling do a proper resample instead of the worklet blindly
+// decimating. Floor keeps very high scan frequencies from collapsing the
+// shape to a handful of points.
+const DEFAULT_SCAN_FREQ     = 60; // Hz — mirrors DawCanvas.tsx's default
+const MIN_COORD_BUFFER_SIZE = 64;
 
 /**
  * R3F hook: each frame, traverses the current scene, packs the visible geometry
@@ -46,6 +58,10 @@ export function useSceneToAudio(): void {
 	const workerRef   = useRef<Worker | null>(null);
 	const workerBusy  = useRef(false);
 	const { coordBufferSize } = useEffects();
+	const scanFrequency = useDawStore((s) => {
+		const node = s.nodes.find((n) => n.id === SCENE_INPUT_ID);
+		return (node?.data as SceneInputNodeData | undefined)?.scanFrequency ?? DEFAULT_SCAN_FREQ;
+	});
 
 	useEffect(() => {
 		// Memory-leak-harness instrumentation: counts how many times this effect
@@ -85,20 +101,23 @@ export function useSceneToAudio(): void {
 			}
 		};
 
-		worker.postMessage({ type: 'setCoordBufferSize', size: coordBufferSize });
 		workerRef.current = worker;
 		return () => {
 			worker.terminate();
 			workerRef.current = null;
 		};
-	// eslint-disable-next-line react-hooks/exhaustive-deps -- worker created once; coordBufferSize sync is handled by the effect below
+	// eslint-disable-next-line react-hooks/exhaustive-deps -- worker created once; buffer-size sync is handled by the effect below
 	}, []);
 
+	// Cap the buffer to what the current scan rate can render in one cycle
+	// (~one point per audio sample) so buildCoordBuffer's arc-length resample
+	// does the anti-aliasing, instead of the worklet skipping table entries.
 	useEffect(() => {
-		if (workerRef.current) {
-			workerRef.current.postMessage({ type: 'setCoordBufferSize', size: coordBufferSize });
-		}
-	}, [coordBufferSize]);
+		if (!workerRef.current) return;
+		const period        = getSampleRate() / scanFrequency;
+		const effectiveSize = Math.max(MIN_COORD_BUFFER_SIZE, Math.min(coordBufferSize, Math.floor(period)));
+		workerRef.current.postMessage({ type: 'setCoordBufferSize', size: effectiveSize });
+	}, [coordBufferSize, scanFrequency]);
 
 	useFrame(() => {
 		if (!workerRef.current) return;
