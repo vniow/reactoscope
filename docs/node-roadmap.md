@@ -45,25 +45,29 @@ handler must satisfy.
 
 ---
 
-## Scene / geometry authoring (not started — known future direction)
+## Scene / geometry authoring (shipped as scene-native sources, not as nodes)
 
-Everything below this point is about the audio-processing side of the graph. There is currently
-**no node type that generates or manipulates 3D scene geometry at all.** `SceneInputPanel`
-(`src/daw/panels/InputPanel.tsx`) hard-codes a single wireframe cube — built once at module load,
-colored by position — as the only thing `useSceneToAudio`/`collectSegments` ever scans. The
-`sceneInput` node in the graph wraps this fixed scene's audio lifecycle; it doesn't source
-geometry from the graph itself.
+Everything below this point is about the audio-processing side of the graph. Geometry authoring
+exists, but deliberately **not** as node types: it's a scene-native concept kept separate from the
+node graph (Wayfinder map #39). `src/scene/sources/sourceRegistry.tsx` maps a
+`GeometrySourceType` to a React component — `cube`, `circle`, `plane`, `sphere`, `svgImport`,
+`gltfImport` — and the store owns the instances (`sources: GeometrySourceEntry[]`, with
+`addSource`/`removeSource`/`duplicateSource`/`updateSourceTransform` in `store/daw.ts`).
+`src/daw/panels/sceneSources/` provides the add menu and an arrange-scene UI with
+`TransformControls` gizmos.
 
-A real shape-authoring story — node types that generate or import geometry (parametric curves,
-Lissajous generators, primitive shapes, imported meshes) and feed `Scene Input`, replacing the
-hardcoded cube — is a known future direction, not a rejected idea. Not scoped or sequenced yet.
-See `docs/architecture-comparison.md` for how the two reference projects handle this differently
-(vectorsynthesis: static per-shape wavetables authored offline; xyscope.js: no shape concept at
-all, just whatever audio already exists) — reactoscope's live-scene-graph model doesn't have a
-direct precedent in either, so this will likely need its own design pass when it's picked up.
-Per-vertex color already flows correctly through `collectSegments` once real geometry exists
-(`geometry.attributes.color`) — no separate color-mode work is needed once shape-authoring nodes
-land.
+The registry mirrors `nodeRegistry.ts`'s type→handler split, except the "handler" is a plain React
+component, since R3F's own mount/unmount already gives lifecycle management for free.
+
+Still open, and genuinely not started: **generative/parametric geometry** — parametric curves,
+Lissajous generators, and anything where geometry is a *computed function of signal* rather than a
+placed asset. That's the case where the scene-native/graph split gets interesting, since such a
+source would want graph inputs. See `docs/architecture-comparison.md` for how the reference
+projects handle this differently (vectorsynthesis: static per-shape wavetables authored offline;
+xyscope.js: no shape concept at all, just whatever audio already exists) — reactoscope's
+live-scene-graph model doesn't have a direct precedent in either, so this will need its own design
+pass when it's picked up. Per-vertex color already flows correctly through `collectSegments`
+(`geometry.attributes.color`), so no separate color-mode work is needed.
 
 ---
 
