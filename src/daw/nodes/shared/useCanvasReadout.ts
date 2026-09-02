@@ -14,7 +14,10 @@ export function useCanvasReadout(
 	draw:      (ctx: CanvasRenderingContext2D) => void,
 ): void {
 	const drawRef = useRef(draw);
-	drawRef.current = draw;
+	// Synced after commit rather than during render — writing a ref in render is
+	// unsafe under concurrent rendering, and the rAF loop below only ever reads
+	// `drawRef.current` from a frame callback, which always runs post-commit.
+	useEffect(() => { drawRef.current = draw; });
 
 	useEffect(() => {
 		const rafRef = { current: 0 };

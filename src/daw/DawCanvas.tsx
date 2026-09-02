@@ -284,10 +284,11 @@ function SampleRateControl({
 			>
 				<SpeedIcon sx={{ fontSize: 12 }} />
 			</IconButton>
-			{/* eslint-disable-next-line react-hooks/refs */}
 			<Popover
 				open={open}
-				anchorEl={anchorRef.current}
+				// Resolved lazily by MUI at positioning time, not read during render.
+				// Only called while `open`, by which point the button is mounted.
+				anchorEl={() => anchorRef.current!}
 				onClose={() => setOpenTracked(false)}
 				anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
 				transformOrigin={{ vertical: 'center', horizontal: 'left' }}
@@ -431,10 +432,11 @@ function ScanFreqControl({
 			>
 				<TuneIcon sx={{ fontSize: 12 }} />
 			</IconButton>
-			{/* eslint-disable-next-line react-hooks/refs */}
 			<Popover
 				open={open}
-				anchorEl={anchorRef.current}
+				// Resolved lazily by MUI at positioning time, not read during render.
+				// Only called while `open`, by which point the button is mounted.
+				anchorEl={() => anchorRef.current!}
 				onClose={() => setOpenTracked(false)}
 				anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
 				transformOrigin={{ vertical: 'center', horizontal: 'left' }}

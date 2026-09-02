@@ -6,7 +6,7 @@
  * controls disable while dragging so they don't fight the gizmo.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import { useThree } from '@react-three/fiber';
 import { Html, TransformControls } from '@react-three/drei';
@@ -34,24 +34,30 @@ export function SceneSourcesArrangeScene() {
 	const duplicateSource        = useDawStore(s => s.duplicateSource);
 	const removeSource           = useDawStore(s => s.removeSource);
 
-	const groupRefs    = useRef<Record<string, THREE.Group | null>>({});
-	// Stable per-id ref callbacks — a fresh inline arrow function every render
-	// would make React re-attach the ref (and re-run forceRerender) on every
-	// single render: an infinite loop ("Maximum update depth exceeded").
-	const refCallbacks = useRef<Record<string, (el: THREE.Group | null) => void>>({});
-	const [, forceRerender] = useState(0);
+	// The mounted THREE.Group per source id, held in state rather than a ref:
+	// the gizmo and the floating toolbar are rendered *from* this object, so
+	// React has to re-render once it exists. This previously lived in a ref with
+	// a forceRerender counter alongside it, which meant deciding what to draw by
+	// reading a ref during render — the same re-render, but invisible to React.
+	const [groups, setGroups] = useState<Record<string, THREE.Group | null>>({});
 	const [mode, setMode] = useState<Mode>('translate');
 	const orbit = useThree(s => s.controls) as unknown as { enabled: boolean } | null;
 
-	const getRefCallback = (id: string) => {
-		if (!refCallbacks.current[id]) {
-			refCallbacks.current[id] = (el: THREE.Group | null) => {
-				groupRefs.current[id] = el;
-				if (el) forceRerender(n => n + 1);
-			};
+	// Stable per-id ref callbacks — a fresh inline arrow function every render
+	// would make React detach and re-attach every ref on every single render.
+	// Keyed on the source *ids* rather than the `sources` array itself: dragging
+	// the gizmo rewrites `sources` on every frame (via updateSourceTransform),
+	// which would otherwise rebuild these callbacks mid-drag. The identity check
+	// below makes a repeat attach a no-op, so re-attaching can't loop.
+	const sourceIdKey  = JSON.stringify(sources.map(s => s.id));
+	const refCallbacks = useMemo(() => {
+		const map: Record<string, (el: THREE.Group | null) => void> = {};
+		for (const id of JSON.parse(sourceIdKey) as string[]) {
+			map[id] = (el: THREE.Group | null) =>
+				setGroups(prev => (prev[id] === el ? prev : { ...prev, [id]: el }));
 		}
-		return refCallbacks.current[id];
-	};
+		return map;
+	}, [sourceIdKey]);
 
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
@@ -65,12 +71,12 @@ export function SceneSourcesArrangeScene() {
 		return () => window.removeEventListener('keydown', onKey);
 	}, []);
 
-	const selectedObj    = selectedSourceId ? groupRefs.current[selectedSourceId] : null;
+	const selectedObj    = selectedSourceId ? groups[selectedSourceId] ?? null : null;
 	const selectedSource = sources.find(s => s.id === selectedSourceId) ?? null;
 
 	const commitTransform = () => {
 		if (!selectedSourceId) return;
-		const obj = groupRefs.current[selectedSourceId];
+		const obj = groups[selectedSourceId];
 		if (!obj) return;
 		updateSourceTransform(selectedSourceId, {
 			position: [obj.position.x, obj.position.y, obj.position.z],
@@ -88,7 +94,7 @@ export function SceneSourcesArrangeScene() {
 						key={s.id}
 						onClick={e => { e.stopPropagation(); setSelectedSourceId(s.id === selectedSourceId ? null : s.id); }}
 					>
-						<Source ref={getRefCallback(s.id)} id={s.id} data={s.data} />
+						<Source ref={refCallbacks[s.id]} id={s.id} data={s.data} />
 					</group>
 				);
 			})}
