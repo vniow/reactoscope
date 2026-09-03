@@ -6,6 +6,7 @@ import { isolationMode } from './isolationMode';
 import { usePatchStore } from './store/patchStore';
 import { WoscopeProvider } from './contexts/WoahscopeContext';
 import { BeamEmulatorProvider } from './contexts/BeamEmulatorContext';
+import { GalvoProvider } from './contexts/GalvoContext';
 import { ErrorBoundary }   from './components';
 import { WoahscopePanel }    from './daw/panels/WoahscopePanel';
 import { SceneInputPanel } from './daw/panels/InputPanel';
@@ -153,6 +154,7 @@ export function App() {
 		<ErrorBoundary>
 		<WoscopeProvider>
 		<BeamEmulatorProvider>
+		<GalvoProvider>
 			<noscript>gotta enable JavaScript yo</noscript>
 
 			<Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -232,6 +234,7 @@ export function App() {
 				{/* Sweep panel in full-width mode */}
 				{sweepFullWidth && sweepVisible && sweepPanel}
 			</Box>
+		</GalvoProvider>
 		</BeamEmulatorProvider>
 		</WoscopeProvider>
 		</ErrorBoundary>
