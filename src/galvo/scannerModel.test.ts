@@ -130,4 +130,30 @@ describe('createScannerAxis', () => {
 		const out = axis.process(new Float32Array(100).fill(0.5));
 		for (const v of out) expect(v).toBeCloseTo(0.5, 5);
 	});
+
+	it('two axis instances never share state, even after one is driven hard', () => {
+		const sampleRate = 48000;
+		const params = { bandwidth: 1000, damping: 0.7, slewLimit: 1e9 };
+
+		// Ground truth: what a completely untouched axis does with this input.
+		const reference    = createScannerAxis(sampleRate, params);
+		const referenceOut = reference.process(new Float32Array(50).fill(0.3));
+
+		// A same-params instance, driven hard and reset — this is what would
+		// leak into `isolated` below if coefficients or history were ever
+		// shared across instances (e.g. a module-level cache keyed by params).
+		const other = createScannerAxis(sampleRate, params);
+		other.process(new Float32Array(5000).fill(-1));
+		other.reset(0.9);
+		other.process(new Float32Array(2000).fill(0.9));
+
+		// Created *after* `other`'s abuse, with identical params — must behave
+		// exactly like `reference`, not like whatever `other` is currently doing.
+		const isolated    = createScannerAxis(sampleRate, params);
+		const isolatedOut = isolated.process(new Float32Array(50).fill(0.3));
+
+		for (let n = 0; n < referenceOut.length; n++) {
+			expect(isolatedOut[n]).toBeCloseTo(referenceOut[n], 6);
+		}
+	});
 });
