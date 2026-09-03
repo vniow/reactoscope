@@ -313,9 +313,20 @@ export function buildCoordBuffer(
 		const segPts = totalGeomLen > 0
 			? Math.max(2, Math.round(sLen / totalGeomLen * geomPoints))
 			: Math.max(2, Math.floor(geomPoints / traversal.length));
+		// At least 2, not 1: a blank-travel jump has to bridge both position
+		// (old -> target) and Z (bright -> blank -> bright) at once, and the
+		// worklet linearly interpolates both between consecutive coord-buffer
+		// entries. With a single marker, wherever it's placed, one of the two
+		// legs (visible-end -> marker, marker -> visible-start) necessarily
+		// spans the *full* jump distance while Z ramps across that same span —
+		// a beam partially lit mid-transit, i.e. a visible leaking diagonal.
+		// With two markers — one pinned at the old position, one at the
+		// target — both problem legs collapse to zero distance (a stationary
+		// point fading in place), leaving only a marker-to-marker leg that
+		// covers the full distance but with Z pinned at -1 throughout.
 		const blkPts = totalBlankLen > 0
-			? Math.max(1, Math.round(bDist / totalBlankLen * blankPoints))
-			: Math.max(1, Math.floor(blankPoints / traversal.length));
+			? Math.max(2, Math.round(bDist / totalBlankLen * blankPoints))
+			: Math.max(2, Math.floor(blankPoints / traversal.length));
 
 		// ── Blank travel ─────────────────────────────────────────────────────────
 		const targetX = ptAt(0)[0];
