@@ -1,5 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import { createScannerAxis } from './scannerModel';
+import { createScannerAxis, type ScannerParams } from './scannerModel';
+
+/**
+ * Steady-state sine gain: RMS(output)/RMS(input) over a settled tail window,
+ * on a fresh axis. 20 cycles of transient guard band comfortably clears this
+ * module's settling time even at the lowest bandwidth used below (bandwidth
+ * 100Hz => tau ~= 2.25ms => 5tau ~= 11ms; 20 cycles at 800Hz is 25ms).
+ */
+function measureGain(params: ScannerParams, sampleRate: number, freq: number): number {
+	const totalSamples = Math.round((200 * sampleRate) / freq);
+	const skip          = Math.round((20 * sampleRate) / freq);
+	const input          = new Float32Array(totalSamples);
+	for (let i = 0; i < totalSamples; i++) {
+		input[i] = Math.sin((2 * Math.PI * freq * i) / sampleRate);
+	}
+
+	const out = createScannerAxis(sampleRate, params).process(input);
+
+	let sumInSq = 0, sumOutSq = 0, n = 0;
+	for (let i = skip; i < totalSamples; i++) {
+		sumInSq += input[i] * input[i];
+		sumOutSq += out[i] * out[i];
+		n++;
+	}
+	return Math.sqrt(sumOutSq / n) / Math.sqrt(sumInSq / n);
+}
 
 describe('createScannerAxis', () => {
 	it('settles to the commanded value for a held constant input (unity DC gain)', () => {
@@ -180,5 +205,37 @@ describe('createScannerAxis', () => {
 			// settles with only a few percent overshoot, comfortably inside this.
 			expect(Math.abs(v)).toBeLessThanOrEqual(10);
 		}
+	});
+
+	it('attenuates by exactly 3dB (gain 1/√2) at the configured bandwidth', () => {
+		// Damping 1/√2 is the Butterworth (maximally flat) case, chosen
+		// deliberately: it's the one damping value where "-3dB at bandwidth"
+		// holds with no resonant peak shifting the crossing point. Confirmed
+		// by hand this holds to machine precision in float64; 4 decimal
+		// places here clears Float32Array's own precision floor at this
+		// magnitude comfortably.
+		const gain = measureGain(
+			{ bandwidth: 1000, damping: 1 / Math.SQRT2, slewLimit: 1e9 },
+			48000,
+			1000,
+		);
+		expect(gain).toBeCloseTo(1 / Math.SQRT2, 4);
+	});
+
+	it('rolls off at ~12dB/octave, measured away from Nyquist frequency warping', () => {
+		// A low bandwidth relative to sampleRate keeps both test frequencies far
+		// from Nyquist. Measured by hand: near Nyquist the bilinear transform's
+		// frequency warping steepens the *apparent* slope well past -12dB/oct
+		// (e.g. ~-19dB/oct at 16kHz on a 48kHz-rate/1kHz-bandwidth axis) — a
+		// known, documented limitation of this discretisation, not something
+		// this test should paper over by picking frequencies that hide it.
+		const params: ScannerParams = { bandwidth: 100, damping: 1 / Math.SQRT2, slewLimit: 1e9 };
+		const sampleRate = 48000;
+
+		const gainLow  = measureGain(params, sampleRate, 800);  // 8x bandwidth
+		const gainHigh = measureGain(params, sampleRate, 1600); // 16x bandwidth, one octave up
+
+		const slopeDb = 20 * Math.log10(gainHigh) - 20 * Math.log10(gainLow);
+		expect(slopeDb).toBeCloseTo(-12, 0); // within 0.5dB; measured -12.09dB by hand
 	});
 });

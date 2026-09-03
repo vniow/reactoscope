@@ -284,6 +284,12 @@ Recorded so they are deliberate rather than discovered:
   pixels are not the physics.
 - Scanner parameters are only meaningful alongside a known sample rate. Changing the audio context
   rate (44.1 ↔ 48 kHz) changes the coefficients. That is correct behaviour, not a bug.
+- Rolloff steepens as bandwidth approaches Nyquist — a bilinear-transform artifact, not the
+  Scanner Model's actual (2nd-order, −12dB/octave) response. Measured directly against
+  `scannerModel.ts`: at bandwidth 1000Hz/sampleRate 48kHz the slope is a clean −12dB/octave in the
+  low kHz range but reaches ~−19dB/octave by 16kHz, purely from frequency warping. Only matters at
+  bandwidths that are a large fraction of the audio sample rate — implausible for a real scanner,
+  but worth knowing if a UI ever lets bandwidth run that high.
 - Fidelity is bounded by tap contiguity. The AudioWorklet upgrade path in ADR-0010 is the fix if
   seam artifacts ever prove visible.
 - No modulator response model. Deliberate: it would add three IIRs and hide the colour-fringing
