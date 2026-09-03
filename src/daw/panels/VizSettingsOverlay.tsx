@@ -7,6 +7,8 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { EffectsControl }        from '../../components/scope/GainControl';
 import { PhosphorControl }       from '../../components/scope/PhosphorControl';
 import { VisualizationControls } from '../../components/scope/VisualizationControls';
+import { GalvoControl }          from '../../components/scope/GalvoControl';
+import { useBeamEmulator }       from '../../contexts/BeamEmulatorContext';
 import { useDawStore, isMasterMultichannel } from '../../store/daw';
 import { NODE_COLORS } from '../nodes/shared/nodeColors';
 import { METAL_BG }    from '../nodes/shared/metalBackground';
@@ -32,6 +34,7 @@ export function VizSettingsOverlay({ onOpenChange }: { onOpenChange?: (open: boo
 	const setOpenTracked = (v: boolean) => { setOpen(v); onOpenChange?.(v); };
 
 	const isMultichannel = useDawStore(s => isMasterMultichannel(s.edges));
+	const { device } = useBeamEmulator();
 
 	return (
 		<>
@@ -64,15 +67,21 @@ export function VizSettingsOverlay({ onOpenChange }: { onOpenChange?: (open: boo
 			>
 				<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
-					{!isMultichannel && (
+					<Sect label='display'>
+						<VisualizationControls />
+					</Sect>
+
+					{device === 'crt' && !isMultichannel && (
 						<Sect label='phosphor'>
 							<PhosphorControl />
 						</Sect>
 					)}
 
-					<Sect label='display'>
-						<VisualizationControls />
-					</Sect>
+					{device === 'galvo' && (
+						<Sect label='galvo laser'>
+							<GalvoControl />
+						</Sect>
+					)}
 
 					<Sect label='effects'>
 						<EffectsControl />
