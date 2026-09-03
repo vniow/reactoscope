@@ -156,4 +156,29 @@ describe('createScannerAxis', () => {
 			expect(isolatedOut[n]).toBeCloseTo(referenceOut[n], 6);
 		}
 	});
+
+	it('stays finite and bounded when bandwidth is requested far above the Nyquist-safe range', () => {
+		const sampleRate = 48000;
+		// 40000Hz at a 48kHz sample rate is a value a careless UI slider could
+		// easily produce — well past fs/4 (12000, the spec's stated bound) and
+		// past fs/2 (Nyquist) entirely. Confirmed by hand (not asserted here)
+		// that the *unclamped* RBJ coefficients at this bandwidth/damping give a
+		// pole magnitude of ~2.02 — outside the unit circle, i.e. genuinely
+		// unstable, not just numerically sloppy.
+		const axis = createScannerAxis(sampleRate, {
+			bandwidth: 40000,
+			damping:   0.7,
+			slewLimit: 1e9,
+		});
+
+		const out = axis.process(new Float32Array(2000).fill(1));
+
+		for (const v of out) {
+			expect(Number.isFinite(v)).toBe(true);
+			// Generous on purpose — this proves "didn't diverge," not "matches a
+			// specific response shape." A correctly clamped filter at this damping
+			// settles with only a few percent overshoot, comfortably inside this.
+			expect(Math.abs(v)).toBeLessThanOrEqual(10);
+		}
+	});
 });

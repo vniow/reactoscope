@@ -26,7 +26,15 @@ export interface ScannerAxis {
 }
 
 export function createScannerAxis(sampleRate: number, params: ScannerParams): ScannerAxis {
-	const { bandwidth, damping } = params;
+	const { damping } = params;
+
+	// Clamp the bandwidth actually used for the coefficients, not just document
+	// the bound: past fs/4, the RBJ formulas below can produce poles outside
+	// the unit circle — a genuinely unstable filter, not merely an inaccurate
+	// one (confirmed: 40kHz at 48kHz/damping 0.7 gives a pole magnitude of
+	// ~2.02). A scanner with bandwidth anywhere near half the audio rate is
+	// unphysical anyway, so silently capping here is correct, not a compromise.
+	const bandwidth = Math.min(params.bandwidth, sampleRate / 4);
 
 	// RBJ cookbook biquad lowpass, normalised by a0 so the recurrence below
 	// doesn't need to divide per sample.
