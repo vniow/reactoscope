@@ -143,7 +143,7 @@ export { setAnalyserSize, setSpeakersMuted } from './master';
 export { getWaveformNSamples, setWaveformCaptureSize, getWaveformCaptureWorkletStats } from './capture';
 
 export { readWaveformTap } from './waveformTap';
-export type { TapCursor } from './waveformTap';
+export type { TapCursor, TapFrame, TapContinuity } from './waveformTap';
 
 export {
 	getSceneInputPhase, startSceneInput, stopSceneInput, getSceneRunning,
