@@ -170,7 +170,12 @@ export function GalvoSceneR3F() {
 			upsamplerRef.current.apply(rBuf, smoothedR.current);
 			upsamplerRef.current.apply(gBuf, smoothedG.current);
 			upsamplerRef.current.apply(bBuf, smoothedB.current);
-			upsamplerRef.current.apply(zBuf, smoothedZ.current);
+			// Z is a hard blanked/visible gate, not a continuous quantity — sinc
+			// interpolation smears a sharp transition into a ramp, leaking
+			// brightness across blank-travel jumps. applyMin (same fix as
+			// aa103b1's for the CRT renderer's alpha channel) uses only the two
+			// raw samples bracketing each output position instead.
+			upsamplerRef.current.applyMin(zBuf, smoothedZ.current);
 			nPoints = upsamplerRef.current.outputLength;
 			xBuf = smoothedX.current;
 			yBuf = smoothedY.current;
@@ -194,7 +199,18 @@ export function GalvoSceneR3F() {
 			const cr = (multi ? 0.5 + 0.5 * rOut[i] : 0.5) * gainR;
 			const cg = (multi ? 0.5 + 0.5 * gOut[i] : 0.5) * gainG;
 			const cb = (multi ? 0.5 + 0.5 * bOut[i] : 0.5) * gainB;
-			const zNorm = Math.min(1, Math.max(0, (zOut[i] - blankFloor) / floorSpan));
+			// Segment i spans sample[i] -> sample[i+1] but is drawn as one
+			// uniformly-coloured quad (vsLine.glsl) — colouring from sample[i]
+			// alone means a visible->blank transition segment renders at
+			// sample[i]'s full brightness across its whole geometric length
+			// (same leak as aa103b1's CRT-renderer fix). Taking the min of both
+			// endpoints' raw Z before shaping makes the whole segment blank if
+			// either end is; the floor/gamma mapping below is monotonic, so
+			// shaping the min is equivalent to (and cheaper than) shaping both
+			// endpoints and taking the min of the results.
+			const j = i + 1 < nPoints ? i + 1 : i;
+			const zRaw = Math.min(zOut[i], zOut[j]);
+			const zNorm = Math.min(1, Math.max(0, (zRaw - blankFloor) / floorSpan));
 			const ca = Math.pow(zNorm, zGamma);
 			const base = i * 4 * 4; // 4 verts × 4 floats
 			for (let v = 0; v < 4; v++) {
