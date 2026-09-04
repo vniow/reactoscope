@@ -36,6 +36,30 @@ export interface GalvoContextType {
 	 * left, not from a reset default.
 	 */
 	effectiveScannerY: ScannerParams;
+	/**
+	 * Forces the beam blank whenever the Scanner Model's actual output
+	 * position differs from the commanded position by more than this (in the
+	 * same normalised units as X/Y). Real laser systems blank via TTL during
+	 * fast repositioning moves for the same reason this exists: without it, Z
+	 * unblanks exactly when the *commanded* position reaches a blank-travel
+	 * target, while the lagged, slew-limited *actual* position is still
+	 * mid-transit — rendering a bright streak while the beam is still visibly
+	 * moving. Small enough to leave ordinary corner-rounding lag (a much
+	 * smaller, intentional artifact — see GalvoSceneR3F's header comment)
+	 * unaffected.
+	 */
+	trackingBlankThreshold: number; setTrackingBlankThreshold: (v: number) => void;
+	/**
+	 * Softens the tracking-blank gate from a hard cutoff into a smoothstep
+	 * ramp. At 0, the gate is a step function — alpha jumps from fully blank
+	 * to whatever Z says the instant tracking error crosses back under
+	 * `trackingBlankThreshold`, which is itself a small but real artifact (a
+	 * "pop-in" right at the threshold boundary, since crossing the threshold
+	 * only means the servo is close enough, not settled). At 1, the ramp
+	 * spans the full range from 0 tracking error up to the threshold, fading
+	 * the beam in gradually as the servo actually settles instead.
+	 */
+	trackingBlankSoftness: number; setTrackingBlankSoftness: (v: number) => void;
 
 	spotSize:   number; setSpotSize:   (v: number) => void;
 	power:      number; setPower:      (v: number) => void;
@@ -59,6 +83,10 @@ export function GalvoProvider({ children }: { children: ReactNode }) {
 
 	const [scannerX, setScannerX] = useLocalStorage<ScannerParams>('galvo.scannerX', DEFAULT_SCANNER);
 	const [scannerY, setScannerY] = useLocalStorage<ScannerParams>('galvo.scannerY', DEFAULT_SCANNER);
+	const [trackingBlankThreshold, setTrackingBlankThreshold] =
+		useLocalStorage('galvo.trackingBlankThreshold', 0.05);
+	const [trackingBlankSoftness, setTrackingBlankSoftness] =
+		useLocalStorage('galvo.trackingBlankSoftness', 0.5);
 
 	const [spotSize,   setSpotSize]   = useLocalStorage('galvo.spotSize',   0.012);
 	const [power,      setPower]      = useLocalStorage('galvo.power',      1);
@@ -79,6 +107,8 @@ export function GalvoProvider({ children }: { children: ReactNode }) {
 		() => ({
 			enabled, setEnabled, linkAxes, setLinkAxes,
 			scannerX, setScannerX, scannerY, setScannerY, effectiveScannerY,
+			trackingBlankThreshold, setTrackingBlankThreshold,
+			trackingBlankSoftness, setTrackingBlankSoftness,
 			spotSize, setSpotSize, power, setPower,
 			gainR, setGainR, gainG, setGainG, gainB, setGainB,
 			blankFloor, setBlankFloor, zGamma, setZGamma,
@@ -92,6 +122,7 @@ export function GalvoProvider({ children }: { children: ReactNode }) {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[
 			enabled, linkAxes, scannerX, scannerY, effectiveScannerY,
+			trackingBlankThreshold, trackingBlankSoftness,
 			spotSize, power, gainR, gainG, gainB, blankFloor, zGamma,
 			exposureTime, glowStrength, hazeStrength, whitePoint,
 		],

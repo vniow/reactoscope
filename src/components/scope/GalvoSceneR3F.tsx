@@ -12,6 +12,7 @@ import { isMasterMultichannel } from '../../store/daw';
 import { useDawStore } from '../../store/daw';
 import {
 	FADE_AMOUNT,
+	MAX_POINTS,
 	useRenderTargets,
 	useFadePass,
 	useLineMesh,
@@ -45,14 +46,45 @@ import {
 //    recency weighting, not a physical persistence control) reuses the same
 //    FADE_AMOUNT constant the CRT view uses, since nothing in the Galvo
 //    parameter tables names a replacement for it.
+//
+// Tracking-error blanking (`trackingBlankThreshold`): Z is deliberately
+// unlagged (see the chain comment on the `useFrame` body below), which means
+// it unblanks the instant the *commanded* position reaches a blank-travel
+// target — but the Scanner Model's *actual* output is still slew-limited,
+// mid-transit, for many samples after that. Confirmed by direct
+// instrumentation, not theory: raw tap data showed Z correctly dropping to
+// -1 exactly at a blank-travel jump and unblanking only at a
+// zero-distance sample — the bug was one layer downstream, in the gap
+// between when Z says "bright" and when the lagged beam is actually there.
+// Real laser rigs solve the identical problem with TTL blanking during fast
+// repositioning; this is that same fix, gated on |commanded - actual|
+// exceeding a threshold small enough to leave ordinary corner-rounding lag
+// (a much smaller, intentional artifact) alone.
+//
+// `trackingBlankSoftness` softens that gate from a hard cutoff into a
+// smoothstep ramp — a hard cutoff has its own small residual artifact (a
+// "pop-in" the instant tracking error crosses back under the threshold,
+// since crossing the threshold means "close enough," not "settled").
 
 const white = whiteTexture();
+
+/**
+ * Smoothstep gate: 1 (fully open) at distance=innerRadius, 0 (fully closed)
+ * at distance=threshold, ramping between. innerRadius===threshold (softness
+ * 0) reproduces a hard cutoff exactly, without dividing by zero.
+ */
+function trackingGateFactor(distance: number, threshold: number, innerRadius: number): number {
+	if (threshold <= innerRadius) return distance <= threshold ? 1 : 0;
+	const t = Math.min(1, Math.max(0, (threshold - distance) / (threshold - innerRadius)));
+	return t * t * (3 - 2 * t);
+}
 
 export function GalvoSceneR3F() {
 	const { swapXY, invertXY, intensity } = useAxis();
 	const { lanczosEnabled, lanczosSteps, nSamples } = useEffects();
 	const {
 		enabled, scannerX, effectiveScannerY,
+		trackingBlankThreshold, trackingBlankSoftness,
 		spotSize, power, gainR, gainG, gainB, blankFloor, zGamma,
 		exposureTime, glowStrength, hazeStrength, whitePoint,
 	} = useGalvo();
@@ -89,9 +121,16 @@ export function GalvoSceneR3F() {
 	const { upsamplerRef, smoothedX, smoothedY,
 	        smoothedR, smoothedG, smoothedB, smoothedZ,
 	        nPointsRef }                                  = useLanczos(lanczosSteps, nSamples);
+	// Reconstructions of the *commanded* (pre-Scanner-Model) position, at the
+	// same upsampled resolution as smoothedX/Y — needed to compute tracking
+	// error against the actual (lagged) position below. Not part of
+	// useLanczos's own return since that hook is shared with the CRT view,
+	// which has no such concept.
+	const smoothedCmdX = useRef(new Float32Array(MAX_POINTS));
+	const smoothedCmdY = useRef(new Float32Array(MAX_POINTS));
 
 	useEffect(() => { invalidate(); }, [
-		intensity, invertXY, swapXY, enabled,
+		intensity, invertXY, swapXY, enabled, trackingBlankThreshold, trackingBlankSoftness,
 		spotSize, power, gainR, gainG, gainB, blankFloor, zGamma,
 		exposureTime, glowStrength, hazeStrength, whitePoint,
 		invalidate,
@@ -135,8 +174,8 @@ export function GalvoSceneR3F() {
 		const waveform = readWaveformTap(tapCursorRef.current);
 		if (waveform === null) { inv(); return; }
 
-		let xBuf = swapXY ? waveform.y : waveform.x;
-		let yBuf = swapXY ? waveform.x : waveform.y;
+		const xCommanded = swapXY ? waveform.y : waveform.x;
+		const yCommanded = swapXY ? waveform.x : waveform.y;
 		const rBuf = waveform.r;
 		const gBuf = waveform.g;
 		const bBuf = waveform.b;
@@ -151,22 +190,29 @@ export function GalvoSceneR3F() {
 		// warm-start above, which preserves the *previous* physical position
 		// instead, because nothing was actually lost in that case.
 		if (waveform.continuity !== 'contiguous') {
-			scannerXAxis.reset(xBuf[0]);
-			scannerYAxis.reset(yBuf[0]);
+			scannerXAxis.reset(xCommanded[0]);
+			scannerYAxis.reset(yCommanded[0]);
 			resetCountRef.current++;
 		}
 
+		// xActual/yActual: the Scanner Model's simulated real mirror position.
+		// Deliberately kept distinct from xCommanded/yCommanded (never
+		// overwritten in place) — the tracking-error gate below needs both.
+		let xActual = xCommanded;
+		let yActual = yCommanded;
 		if (enabled) {
-			xBuf = scannerXAxis.process(xBuf);
-			yBuf = scannerYAxis.process(yBuf);
+			xActual = scannerXAxis.process(xCommanded);
+			yActual = scannerYAxis.process(yCommanded);
 		}
-		lastPosXRef.current = xBuf[xBuf.length - 1];
-		lastPosYRef.current = yBuf[yBuf.length - 1];
+		lastPosXRef.current = xActual[xActual.length - 1];
+		lastPosYRef.current = yActual[yActual.length - 1];
 
 		let nPoints = nSamples;
+		let xOut = xActual, yOut = yActual;
+		let cmdXOut = xCommanded, cmdYOut = yCommanded;
 		if (lanczosEnabled) {
-			upsamplerRef.current.apply(xBuf, smoothedX.current);
-			upsamplerRef.current.apply(yBuf, smoothedY.current);
+			upsamplerRef.current.apply(xActual, smoothedX.current);
+			upsamplerRef.current.apply(yActual, smoothedY.current);
 			upsamplerRef.current.apply(rBuf, smoothedR.current);
 			upsamplerRef.current.apply(gBuf, smoothedG.current);
 			upsamplerRef.current.apply(bBuf, smoothedB.current);
@@ -176,9 +222,16 @@ export function GalvoSceneR3F() {
 			// aa103b1's for the CRT renderer's alpha channel) uses only the two
 			// raw samples bracketing each output position instead.
 			upsamplerRef.current.applyMin(zBuf, smoothedZ.current);
+			// Same reconstruction as the actual position, applied to the
+			// commanded one — needed for a like-for-like tracking-error
+			// comparison at the same (upsampled) resolution below.
+			upsamplerRef.current.apply(xCommanded, smoothedCmdX.current);
+			upsamplerRef.current.apply(yCommanded, smoothedCmdY.current);
 			nPoints = upsamplerRef.current.outputLength;
-			xBuf = smoothedX.current;
-			yBuf = smoothedY.current;
+			xOut = smoothedX.current;
+			yOut = smoothedY.current;
+			cmdXOut = smoothedCmdX.current;
+			cmdYOut = smoothedCmdY.current;
 		}
 		const rOut = lanczosEnabled ? smoothedR.current : rBuf;
 		const gOut = lanczosEnabled ? smoothedG.current : gBuf;
@@ -191,10 +244,11 @@ export function GalvoSceneR3F() {
 		const dtSeconds = nSamples / getSampleRate();
 		const fadeAlpha = 1 - Math.exp(-dtSeconds / (exposureTime / 1000));
 
-		updateGeometryArrays(nPoints, aIdxArray, startArray, endArray, xBuf, yBuf);
+		updateGeometryArrays(nPoints, aIdxArray, startArray, endArray, xOut, yOut);
 
 		const multi = isMultichannelRef.current;
 		const floorSpan = Math.max(1e-6, 1 - blankFloor);
+		const trackingInnerRadius = trackingBlankThreshold * (1 - trackingBlankSoftness);
 		for (let i = 0; i < nPoints; i++) {
 			const cr = (multi ? 0.5 + 0.5 * rOut[i] : 0.5) * gainR;
 			const cg = (multi ? 0.5 + 0.5 * gOut[i] : 0.5) * gainG;
@@ -211,7 +265,21 @@ export function GalvoSceneR3F() {
 			const j = i + 1 < nPoints ? i + 1 : i;
 			const zRaw = Math.min(zOut[i], zOut[j]);
 			const zNorm = Math.min(1, Math.max(0, (zRaw - blankFloor) / floorSpan));
-			const ca = Math.pow(zNorm, zGamma);
+			let ca = Math.pow(zNorm, zGamma);
+
+			// Tracking-error gate: Z can legitimately say "bright" while the
+			// Scanner Model's actual position is still slew-limited, mid-transit
+			// toward the commanded target (see the header comment above) — force
+			// blank (or fade, per trackingBlankSoftness) in that case regardless
+			// of what Z says. Checked at both segment endpoints, taking whichever
+			// is more closed — same "either end forces the whole segment blank"
+			// principle as the Z-min logic just above, generalised to a
+			// continuous factor instead of a boolean.
+			const trackErrI = Math.hypot(xOut[i] - cmdXOut[i], yOut[i] - cmdYOut[i]);
+			const trackErrJ = Math.hypot(xOut[j] - cmdXOut[j], yOut[j] - cmdYOut[j]);
+			const gateI = trackingGateFactor(trackErrI, trackingBlankThreshold, trackingInnerRadius);
+			const gateJ = trackingGateFactor(trackErrJ, trackingBlankThreshold, trackingInnerRadius);
+			ca *= Math.min(gateI, gateJ);
 			const base = i * 4 * 4; // 4 verts × 4 floats
 			for (let v = 0; v < 4; v++) {
 				const off = base + v * 4;

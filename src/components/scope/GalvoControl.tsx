@@ -55,6 +55,8 @@ export function GalvoControl() {
 	const {
 		enabled, setEnabled, linkAxes, setLinkAxes,
 		scannerX, setScannerX, scannerY, setScannerY,
+		trackingBlankThreshold, setTrackingBlankThreshold,
+		trackingBlankSoftness, setTrackingBlankSoftness,
 		spotSize, setSpotSize, power, setPower,
 		gainR, setGainR, gainG, setGainG, gainB, setGainB,
 		blankFloor, setBlankFloor, zGamma, setZGamma,
@@ -94,6 +96,17 @@ export function GalvoControl() {
 				<SliderRow label={linkAxes ? 'slew Y (linked)' : 'slew Y'} value={yDisplay.slewLimit}
 					min={10} max={100000} step={10} disabled={linkAxes}
 					onChange={(v) => setScannerY({ ...scannerY, slewLimit: v })} formatValue={(v) => `${Math.round(v)}/s`} />
+
+				{/* Forces blank while the Scanner Model hasn't caught up to the
+				    commanded position yet — see GalvoContext's own doc comment.
+				    Full-width pair: neither is a per-axis quantity like the rows
+				    above, and softness only means something alongside threshold. */}
+				<Box sx={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 2, rowGap: 1 }}>
+					<SliderRow label='tracking blank' value={trackingBlankThreshold} min={0} max={0.5} step={0.005}
+						onChange={setTrackingBlankThreshold} formatValue={(v) => v.toFixed(3)} />
+					<SliderRow label='blank softness' value={trackingBlankSoftness} min={0} max={1} step={0.05}
+						onChange={setTrackingBlankSoftness} />
+				</Box>
 			</Box>
 
 			<Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 2, rowGap: 1 }}>
