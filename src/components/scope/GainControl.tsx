@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
 import Typography from '@mui/material/Typography';
 import { useAxis, useEffects } from '../../contexts/WoahscopeContext';
+import { useBeamEmulator } from '../../contexts/BeamEmulatorContext';
 import { NODE_COLORS } from '../../daw/nodes/shared/nodeColors';
 import { hwSliderSx } from '../../daw/nodes/shared/hwStyles';
 
@@ -53,6 +54,7 @@ function SliderRow({
 
 export function EffectsControl() {
 	const { intensity, setIntensity } = useAxis();
+	const { device } = useBeamEmulator();
 	const {
 		persistence, setPersistence,
 		glowStrength, setGlowStrength,
@@ -65,9 +67,18 @@ export function EffectsControl() {
 	return (
 		<Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 2 }}>
 			<SliderRow label='intensity'   value={intensity}       min={-2} max={4} step={0.1}  onChange={setIntensity} />
-			<SliderRow label='persistence' value={persistence}     min={0}  max={4} step={0.1}  onChange={setPersistence} />
-			<SliderRow label='glow'        value={glowStrength}    min={0}  max={4} step={0.05} onChange={setGlowStrength} />
-			<SliderRow label='scatter'     value={scatterStrength} min={0}  max={2} step={0.05} onChange={setScatterStrength} />
+			{device === 'crt' && (
+				<>
+					{/* persistence/glow/scatter are CRT phosphor concepts (see
+					    CONTEXT.md, docs/galvo-laser-emulator.md's "Exposure is not
+					    persistence"). GalvoControl has its own glow/haze sliders
+					    driving different code — showing both here would be two
+					    "glow" sliders controlling different things under one label. */}
+					<SliderRow label='persistence' value={persistence}     min={0} max={4} step={0.1}  onChange={setPersistence} />
+					<SliderRow label='glow'        value={glowStrength}    min={0} max={4} step={0.05} onChange={setGlowStrength} />
+					<SliderRow label='scatter'     value={scatterStrength} min={0} max={2} step={0.05} onChange={setScatterStrength} />
+				</>
+			)}
 			{lanczosEnabled && (
 				<SliderRow
 					label='smooth steps'

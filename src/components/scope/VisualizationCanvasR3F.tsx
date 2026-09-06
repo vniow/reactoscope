@@ -3,6 +3,8 @@ import Typography from '@mui/material/Typography';
 import { Canvas } from '@react-three/fiber';
 import { ERROR_MESSAGES } from '../../config';
 import { WoscopeSceneR3F } from './WoahcopeSceneR3F';
+import { GalvoSceneR3F } from './GalvoSceneR3F';
+import { useBeamEmulator } from '../../contexts/BeamEmulatorContext';
 
 function detectUnsupported(): string | null {
 	const canvas = document.createElement('canvas');
@@ -18,6 +20,7 @@ const _unsupportedMessage = detectUnsupported();
 
 export function VisualizationCanvasR3F() {
 	const unsupportedMessage = _unsupportedMessage;
+	const { device } = useBeamEmulator();
 
 	if (unsupportedMessage) {
 		return (
@@ -42,7 +45,7 @@ export function VisualizationCanvasR3F() {
 	return (
 		<Box
 			role='img'
-			aria-label='Audio oscilloscope visualization'
+			aria-label={device === 'galvo' ? 'Galvo laser beam visualization' : 'Audio oscilloscope visualization'}
 			sx={{
 				width: '100%',
 				height: '100%',
@@ -72,7 +75,7 @@ export function VisualizationCanvasR3F() {
 					if (w.__reactoscope) w.__reactoscope.scopeRenderer = state.gl;
 				}}
 			>
-				<WoscopeSceneR3F />
+				{device === 'galvo' ? <GalvoSceneR3F /> : <WoscopeSceneR3F />}
 			</Canvas>
 		</Box>
 	);

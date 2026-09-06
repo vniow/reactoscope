@@ -84,7 +84,7 @@ export function WoscopeSceneR3F() {
 		hueColourRef.current = getColourFromHue(hue);
 	}, [hue]);
 
-	const tapCursorRef   = useRef<TapCursor>({ last: 0 });
+	const tapCursorRef   = useRef<TapCursor>({ last: 0, lastNSamples: -1 });
 	const prevNPointsRef = useRef(-1);
 
 	useFrame(({ gl, camera: cam, invalidate: inv }) => {

@@ -36,7 +36,7 @@ export function MiniScope({ width, height }: MiniScopeProps) {
 
 		let rafId: number;
 		let last = 0;
-		const tapCursor: TapCursor = { last: 0 };
+		const tapCursor: TapCursor = { last: 0, lastNSamples: -1 };
 
 		function loop(now: number) {
 			rafId = requestAnimationFrame(loop);

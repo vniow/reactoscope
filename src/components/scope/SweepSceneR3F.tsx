@@ -74,7 +74,7 @@ export function SweepSceneR3F({ activeChannels, scanFrequency, sceneInputChannel
 
 	// Sample rate is stable for the session — read once on mount
 	const sampleRateRef = useRef(getSampleRate());
-	const tapCursorRef  = useRef<TapCursor>({ last: 0 });
+	const tapCursorRef  = useRef<TapCursor>({ last: 0, lastNSamples: -1 });
 
 	// Refs keep frame-loop closures current without requiring re-subscription
 	const gainPowRef      = useRef(1.0);
