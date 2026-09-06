@@ -1,8 +1,8 @@
-# Architecture comparison: reactoscope vs. vectorsynthesis vs. xyscope.js vs. LaserBoy vs. laser-dac-rs vs. PlayzerX
+# Architecture comparison: reactoscope vs. vectorsynthesis vs. xyscope.js vs. LaserBoy vs. laser-dac-rs vs. PlayzerX vs. Oscilloclock
 
 Reference-library comparison for reactoscope's audio→visual pipeline (`src/scene/pathBuilder.ts`,
 `src/audio/sceneInput.ts`, `public/sceneInputProcessor.worklet.js`, `src/woahscope/`,
-`src/shaders/{vsLine,fsLine}.glsl`) against five established projects in the same space:
+`src/shaders/{vsLine,fsLine}.glsl`) against six established projects in the same space:
 
 - **[vectorsynthesis](https://github.com/macumbista/vectorsynthesis)** (Derek Holzer / Macumbista) — a
   Pure Data patch library for driving real oscilloscopes, Vectrex consoles, and ILDA laser
@@ -40,26 +40,51 @@ Reference-library comparison for reactoscope's audio→visual pipeline (`src/sce
   `playzerx-master/`. This is the only project in the comparison whose "implementation" is a real,
   shipping hardware interface rather than software standing in for one — worth reading closely for
   what it *doesn't* bother doing, as much as what it does.
+- **Oscilloclock** (Aaron Stokes / oscilloclock.com) — a real, shipped consumer product: a clock
+  that draws its face directly on a **CRT oscilloscope tube in XY mode**, driven by a resource-starved
+  **PIC18F2680 8-bit microcontroller** with no OS and no FPU. Vendored locally under
+  `oscilloscope-clock/`; see `oscilloscope-clock/CLAUDE.md` for its own architecture notes. Unlike
+  every other project here, there is **no mechanical beam-steering mechanism anywhere in this
+  design** — CRT electron-beam deflection is inertialess, so none of LaserBoy's/laser-dac-rs's/
+  PlayzerX's corner-safety machinery has any reason to exist. What it fights instead is DAC settling
+  time, analog crosstalk, and phosphor burn-in — a different, and in this comparison unique, set of
+  physical constraints. A companion Windows tool, **FigureCreator** (also vendored, also Aaron
+  Stokes), is the offline authoring tool that turns hand-drawn vector figures into the assembly
+  source the firmware compiles in — see the dedicated section below for the full detail.
 
-All six converge on the same physical model (X/Y position a beam, a third+ signal
+All seven converge on the same physical model (X/Y position a beam, a third+ signal
 brightens/colors it, an audio interface or DAC is the DAC), but they diverge sharply in **where
 geometry comes from**, **when it's computed**, and — new with laser-dac-rs and PlayzerX — **who's
-responsible for getting it onto hardware safely once it's computed**. That's the throughline below.
+responsible for getting it onto hardware safely once it's computed**. Oscilloclock adds a fourth
+axis none of the other six vary on at all: **whether the target device has any mechanical inertia to
+protect against in the first place.** That's the throughline below.
 
 ## Point generation
 
-| | reactoscope | vectorsynthesis | xyscope.js | LaserBoy |
-|---|---|---|---|---|
-| Source of points | Live traversal of a THREE.js scene graph, every frame (`collectSegments`, `pathBuilder.ts:63`) | Pre-baked per-shape wavetables (`01.tables/*.txt`), authored **offline** by `lines_vertices.py` / `wkt_parse.py` from 3D model exports or WKT geometry, then read at audio-rate by table-lookup oscillators | Raw samples pulled live from a `ScriptProcessorNode` (`XXY_doScriptProcessor`), i.e. whatever audio is already playing | Hand-authored in a keyboard-driven vector editor, or imported (DXF, vector fonts, parametric "Liquid Math" oscillator generators, `.wav`→vector reimport) — one `LaserBoy_frame` (`vector<vertex>` + ILDA metadata) at a time |
-| When computed | Every R3F frame, off-main-thread in a Worker (`pathWorker.ts`) | Once, ahead of time, by a human running a Python script | Continuously, but xyscope never *generates* geometry — it only *displays* an existing audio signal | Once, during an editing session; a human invokes point-optimization effects from a menu as explicit destructive edits, not automatically on every frame |
-| Resampling | Fixed-resolution resample to `nPoints`, arc-length parameterised (`buildCoordBuffer`) | None needed — table is scanned directly by a phasor; density is whatever the table author baked in | Lanczos kernel resampling (`XXY_Filter`, `a=8, steps=6`) between raw samples and rendered vertices — same *purpose* as reactoscope's `useLanczos` upsampler in `woahscope/sceneHooks.ts`, independently converged | None for `.ild` export — writes exactly the authored points (`LaserBoy_frame::save_as_ild`, `LaserBoy_frame.cpp:150`). For direct-to-soundcard `.wav` export, `LaserBoy_frame::optimize()` (`LaserBoy_frame.cpp:328`) *inserts* points — angle-proportional corner dwell plus max-slew-rate-limited interpolation — producing a longer, variable-length stream rather than resampling to a fixed count |
+| | reactoscope | vectorsynthesis | xyscope.js | LaserBoy | Oscilloclock |
+|---|---|---|---|---|---|
+| Source of points | Live traversal of a THREE.js scene graph, every frame (`collectSegments`, `pathBuilder.ts:63`) | Pre-baked per-shape wavetables (`01.tables/*.txt`), authored **offline** by `lines_vertices.py` / `wkt_parse.py` from 3D model exports or WKT geometry, then read at audio-rate by table-lookup oscillators | Raw samples pulled live from a `ScriptProcessorNode` (`XXY_doScriptProcessor`), i.e. whatever audio is already playing | Hand-authored in a keyboard-driven vector editor, or imported (DXF, vector fonts, parametric "Liquid Math" oscillator generators, `.wav`→vector reimport) — one `LaserBoy_frame` (`vector<vertex>` + ILDA metadata) at a time | Fixed byte tables assembled into PIC Flash — hand-typed inline in `drawlist.asm`, or authored visually in FigureCreator and exported as assembly source (`oscilloscope-clock/CLAUDE.md`) |
+| When computed | Every R3F frame, off-main-thread in a Worker (`pathWorker.ts`) | Once, ahead of time, by a human running a Python script | Continuously, but xyscope never *generates* geometry — it only *displays* an existing audio signal | Once, during an editing session; a human invokes point-optimization effects from a menu as explicit destructive edits, not automatically on every frame | Once, at firmware-build time — geometry is baked into the binary itself, not loaded or generated at runtime at all |
+| Resampling | Fixed-resolution resample to `nPoints`, arc-length parameterised (`buildCoordBuffer`) | None needed — table is scanned directly by a phasor; density is whatever the table author baked in | Lanczos kernel resampling (`XXY_Filter`, `a=8, steps=6`) between raw samples and rendered vertices — same *purpose* as reactoscope's `useLanczos` upsampler in `woahscope/sceneHooks.ts`, independently converged | None for `.ild` export — writes exactly the authored points (`LaserBoy_frame::save_as_ild`, `LaserBoy_frame.cpp:150`). For direct-to-soundcard `.wav` export, `LaserBoy_frame::optimize()` (`LaserBoy_frame.cpp:328`) *inserts* points — angle-proportional corner dwell plus max-slew-rate-limited interpolation — producing a longer, variable-length stream rather than resampling to a fixed count | None, and not applicable in the usual sense — there's no "point count" at all, only a segment count (see below) |
 
-reactoscope is the only one of the four that derives points from a **live, editable 3D scene**
+reactoscope is the only one of the five that derives points from a **live, editable 3D scene**
 rather than a fixed table, an already-existing signal, or a hand-edited frame. vectorsynthesis gets
 3D scenes too, but they're static assets baked once outside the runtime — there's no PD-side
 equivalent of `collectSegments` walking a scene graph in real time. LaserBoy is further still from
 "live": it's a frame-at-a-time offline editor, closer in spirit to vectorsynthesis's authoring step
-than to anything real-time. This is the biggest single architectural fork in the group.
+than to anything real-time. Oscilloclock is further still than LaserBoy: not merely authored ahead of
+time but **compiled into the firmware binary itself** — there's no load step, no file format, no
+runtime import at all. This is the biggest single architectural fork in the group.
+
+**Oscilloclock's "points" aren't points.** Every other project in this comparison ultimately reduces
+geometry to a stream of discrete X/Y(/color) samples. Oscilloclock's unit of geometry is a 6-byte
+**segment** — `XCenter, YCenter, XSize, YSize, Shape, Arcs` — naming one of exactly three analog
+primitives (`pos`/`neg`: a ±45° line, `cir`: a circle or arc) that a MAX509A quad DAC and dedicated
+sin/cos-multiplying analog circuitry trace as a continuous curve, with an 8-bit octant mask
+selecting which eighth-wedges of a circle are actually blanked. There is no arbitrary-angle line
+primitive and no notion of point density for a curve — a circle's smoothness is a property of the
+analog multiplying DAC and the CRT beam, not a sample count a resampler could tune. This makes
+Oscilloclock the only project here where "resolution" isn't a number you can point to at all.
 
 laser-dac-rs doesn't belong in this table at all, and that's itself the finding: it generates no
 points whatsoever. Its `Frame`/`Stream` APIs take `LaserPoint`s the caller already produced (from a
@@ -105,6 +130,17 @@ It's solving "let a human see the vector art while editing it," not "simulate wh
 actually looks like," so it isn't a real point of comparison for reactoscope's or xyscope.js's
 shader work — worth naming only so its absence from the erf/Gaussian discussion above reads as
 confirmed-checked rather than overlooked.
+
+Oscilloclock isn't a fourth point of comparison here either, but for the opposite reason from
+vectorsynthesis: it has no line-rendering *software* stage because the line is drawn by real analog
+circuitry, not because the concern lives outside the codebase. A MAX509A DAC feeds a hardware
+sin/cos multiplier that traces a genuinely continuous curve — the "anti-aliasing" reactoscope and
+xyscope.js compute per-pixel in a fragment shader is, here, just what an analog signal looks like on
+a phosphor screen, free. The corresponding design question it raises for reactoscope's shader work is
+the mirror image of vectorsynthesis's: not "should rendering live outside the app" but "what does the
+erf/Gaussian falloff math above approximate, physically, when the target is a real beam rather than a
+rasterized quad" — Oscilloclock is a working example of the thing being approximated, not another
+approximation to diff against.
 
 ## Multichannel support
 
@@ -152,6 +188,14 @@ confirmed-checked rather than overlooked.
   per axis, `docs/PlayzerX USB Serial Protocol.rst:215`), coarser than every other project's
   `f32`/16-bit-equivalent position handling. There is no runtime path from a monochrome unit to
   RGB output or vice versa — you bought the channel count you have.
+- **Oscilloclock**: monochrome, full stop — a CRT tube in XY mode has X, Y, and beam intensity
+  (via dwell time, see Alpha/Z/blanking below) and nothing else; there is no color channel in the
+  hardware to route regardless of software design. It's the only project in this comparison for
+  which "multichannel" isn't a scaled-down or scaled-up case of the same idea — the physical display
+  device simply has no color input to discard or drive. Position resolution is a single **8-bit**
+  value per axis (every coordinate in a segment table is range-checked to 0–255,
+  `oscilloscope-clock/CLAUDE.md`'s FigureCreator section) — coarser even than PlayzerX's 12-bit MEMS
+  quantization, the previous floor in this comparison.
 
 ## Path generation
 
@@ -188,13 +232,25 @@ This is where reactoscope's design is most distinct from every other reference h
   before `orderSegments` sees it (`pathBuilder.ts:141`), so a continuous polyline's own adjacency
   is discarded and has to be rediscovered by nearest-neighbour each frame — possibly intentional
   (worth confirming why before changing), but it is a real point of difference in default posture.
+- **Oscilloclock**: order is authored, like vectorsynthesis, but at the coarsest possible grain —
+  the entire draw list for a clock face is a fixed sequence of `segment`/character/sprite entries
+  walked top-to-bottom by `DoList` every Tick (`oscilloscope-clock/CLAUDE.md`). There is no
+  reordering concept, no nearest-neighbour anything, and critically **no reason for one**: since CRT
+  beam deflection is instantaneous, the travel between two segments costs nothing to traverse
+  regardless of how far apart they are or in what order they're visited. This is the sharpest
+  possible illustration of why reactoscope's and LaserBoy's ordering problem exists at all — it's
+  entirely a consequence of driving mechanical or slew-rate-limited hardware; remove that constraint
+  (as Oscilloclock's CRT does) and the problem doesn't just become easy, it stops existing.
 
-reactoscope's per-frame TSP-style reordering is still the only one of the six solving this problem
+reactoscope's per-frame TSP-style reordering is still the only one of the seven solving this problem
 *live* against arbitrary, changing geometry — vectorsynthesis's and xyscope.js's geometry is either
 static or already a single existing signal, and LaserBoy solves the same shape of problem but as an
 offline, human-triggered edit on a fixed authored frame. LaserBoy's contribution here isn't "order
 matters" (reactoscope already knew that) — it's a concrete, working answer to *what the ordering
 cost function should actually measure* when the destination is real beam-steering hardware.
+Oscilloclock's contribution is the negative case: confirmation that the whole ordering problem is a
+tax paid specifically for driving inertial hardware, not an intrinsic cost of "drawing more than one
+shape with a single beam."
 
 **laser-dac-rs doesn't order segments at all** — ordering is entirely the caller's job, same
 division of labor as its non-involvement in point generation. But it *does* own what happens at the
@@ -230,7 +286,7 @@ actually add over doing nothing.
 ## Shape distinction
 
 None of the other five carry a persistent "shape ID" all the way to the beam signal — but the
-*reason* differs:
+*reason* differs. **Oscilloclock breaks this pattern outright — see below, after the other six.**
 
 - **reactoscope**: shapes exist as `THREE.Object3D` instances up through `collectSegments`
   (materials/vertex colors differ per object), but `orderSegments` flattens everything into one
@@ -260,12 +316,31 @@ None of the other five carry a persistent "shape ID" all the way to the beam sig
   arrays passed to `SendDataXY`/`SendDataXYM`/`SendDataXYRGB`. Not even the frame-level boundary
   laser-dac-rs preserves exists here.
 
-Worth naming as a pattern: **all six systems agree that "shape" is a build-time/scene-time or
-edit-time concept that does not survive translation to a beam-position signal.** That's not a
-gap in reactoscope specifically — it appears to be close to a physical constraint of driving a
-single-beam device from a single audio-rate signal. If reactoscope ever wants shape identity to
-survive (e.g. for per-shape effects, or a "hide this shape" toggle at render time rather than scene
-time), that's a real architectural extension over all six, not a catch-up.
+Six systems in, this looked like it might be a real physical constraint of driving a single-beam
+device from a single signal — worth naming as a pattern precisely because **Oscilloclock breaks it**:
+
+- **Oscilloclock**: shape identity survives all the way to the draw call, not just to some
+  intermediate authoring stage. `DispStr` (`draw.asm:214`) walks a zero-terminated string
+  character-by-character, and for each character byte it computes `(char - 0x20) × 2`
+  (`draw.asm:233-234,251,259-260`) as an offset into a 16-bit pointer table named `Font`
+  (`draw.asm:250-264`), reads that character's segment-list address via `tblrd`
+  (`draw.asm:265-269`), and only then calls `GetSeg`/`DoSeg` to actually draw it
+  (`draw.asm:278-280`). The character code — the shape's identity — is a live input to the very
+  last lookup before anything reaches the DAC; there is no upstream stage that flattens "this is
+  the letter 'A'" into an undifferentiated point pool the way `orderSegments`, `buildWaves()`, or
+  ILDA export do everywhere else in this comparison. This isn't a deliberate design choice so much
+  as a side effect of the firmware fundamentally being a font/glyph renderer rather than a scene
+  flattener — but it's a real, working counterexample to the pattern the other six converge on, and
+  worth knowing before treating "shape identity never survives to the signal" as a hard constraint.
+  If reactoscope ever wants shape identity to survive (e.g. for per-shape effects, or a "hide this
+  shape" toggle at render time rather than scene time), Oscilloclock's indexed-lookup-by-identity
+  shape is a concrete existing model for what that seam can look like — a smaller architectural leap
+  than inventing one from scratch, though it trades away the "arbitrary live scene" generality
+  reactoscope's `collectSegments` has and Oscilloclock's fixed font table doesn't need.
+
+That's not a gap in reactoscope specifically — losing shape identity is still what every
+*point-list-based* project here does, including reactoscope. If reactoscope ever wants shape
+identity to survive, that's a real architectural extension over the other six, not a catch-up.
 
 ## Alpha / Z / blanking channel
 
@@ -343,6 +418,24 @@ is kept for context on how it got there.
   section above); the one hardware-safety feature PlayzerX does ship — the onboard low-pass filter
   mitigating MEMS mirror ringing — operates on the drive signal generically, with no awareness of
   blanking or corners specifically.
+- **Oscilloclock**: has a `Blank` GPIO bit (`defs.inc:45`) that, on the surface, sounds like the
+  same idea as every entry above — but it's solving a completely different physical problem, and the
+  naming convergence is worth flagging the same way LaserBoy's `CHANNEL_Z` collision was above.
+  `Blank` is asserted for the entire window while the MAX509A's four DAC registers and the
+  octant/shape GPIO bits are being loaded, with the reason spelled out inline twice: "nops required
+  here to ensure blanking/arc and DAC changes complete — Otherwise, ringing/glitches may be visible"
+  (`draw.asm:507-520,578-586`). There is no travel to hide — CRT beam deflection is inertialess — so
+  this `Blank` signal exists purely to hide **SPI-DAC settling time and crosstalk between the four
+  channels**, an analog-electronics concern, never a corner-safety or beam-travel one. It's the
+  clearest illustration in this whole comparison that "blanking" is not one concept with one cause:
+  every other project's blanking hides *something moving* (a galvo settling, a beam travelling
+  between shapes); Oscilloclock's hides *something switching* (a DAC register latching a new value)
+  while the beam itself doesn't move at all during the blanked window. Brightness, meanwhile, is
+  handled by an entirely separate mechanism with no counterpart anywhere else here: `SegTime`
+  (`draw.asm:368-371,466-482`) holds each segment visible for a duration proportional to its
+  approximate length (doubled for circles), so a long line or big circle isn't dimmer than a short
+  one — a phosphor-persistence concern, not an intensity value carried in the point data the way
+  reactoscope's continuous `z` or laser-dac-rs's `intensity` field are.
 
 This is the sharpest point of comparison for reactoscope's stated goal (driving "an analog XY
 vector display, including a laser"). Previously this section concluded vectorsynthesis was the only
@@ -352,6 +445,10 @@ they disagree with each other on the details** (angle-aware in-frame dwell vs. f
 dwell with a physically-modeled ease curve — see the Path generation section above for the full
 contrast). Between the two, ADR-0008's research question is now doubly answered: there isn't just
 one known technique to integrate, there are (at least) two, and they trade off differently.
+Oscilloclock doesn't add a third technique to that list — its target has no mechanical settle time
+to protect against, so ADR-0008's question is inapplicable to it by construction, not
+solved-and-forgotten. Its actual contribution here is the naming lesson above: a signal called
+"blanking" is only informative once you know *what it's hiding*.
 reactoscope's single continuous `z` channel (ADR-0009) still conflates "this is inter-shape travel,
 hide it" with corner-safety concerns, but going continuous means if/when either project's
 dwell-insertion idea is adopted, it composes into the existing analog `z` value (and the existing
@@ -366,7 +463,11 @@ None of reactoscope, vectorsynthesis, xyscope.js, or LaserBoy model this layer a
 new territory laser-dac-rs brings to the comparison, not a variant of something the other four
 already do differently. PlayzerX has the raw material of this layer (a real device FIFO, see its own
 section below) but none of the scheduling/safety logic built on top of it — worth treating as the
-floor this layer starts from, not a sixth example of it.
+floor this layer starts from, not a sixth example of it. Oscilloclock doesn't belong in this section
+at all, for a cleaner reason than either: it has no delivery layer because there's no separate
+hardware to deliver *to* — the firmware described here **is** the hardware driver, running on the
+same chip that owns the DAC bus, with no reconnect/liveness concept because there's nothing to
+disconnect from short of the device itself losing power (see its own dedicated section below).
 
 - **Backend timing model (`OutputModel`, `src/device.rs:320`)**: three real hardware pacing
   strategies, unified behind one scheduler loop — `UsbFrameSwap` (limited-depth double-buffered DACs
@@ -380,22 +481,26 @@ floor this layer starts from, not a sixth example of it.
 - **Color delay / scanner sync compensation** (`with_color_delay_points`/`with_color_delay`,
   `README.md:332-360`): galvo mirrors need time to physically settle before the laser should fire, so
   R/G/B/intensity channels are shifted a configurable number of points *later* than X/Y — typically
-  50-200µs. This is a real, physical-latency-driven concept **none of the other five projects model
+  50-200µs. This is a real, physical-latency-driven concept **none of the other six projects model
   at all** — not even PlayzerX, whose closest analogue (the onboard low-pass filter mitigating MEMS
-  ringing) treats the whole drive signal generically rather than shifting color relative to position.
-  Worth flagging for reactoscope specifically because if it ever drives a real DAC where the color
-  modulator and the galvo have measurably different response latency, this is the shape the fix
-  takes: an intentional per-channel sample delay, not a bug to chase.
+  ringing) treats the whole drive signal generically rather than shifting color relative to position;
+  Oscilloclock has no color channel to delay relative to anything in the first place. Worth flagging
+  for reactoscope specifically because if it ever drives a real DAC where the color modulator and the
+  galvo have measurably different response latency, this is the shape the fix takes: an intentional
+  per-channel sample delay, not a bug to chase.
 - **Startup blanking** (`with_startup_blank`, default 1ms): forces the first points after arming to
   blank, so mirrors reach their initial position before the beam is live — preventing a "flash on
   start" artifact. Conceptually close to LaserBoy's `intro` segment (`LaserBoy_frame::optimize()`,
   the dwell computed from `point_of_entry` to a frame's first vertex), independently arrived at.
 - **Reconnect and liveness** (`ReconnectConfig`, `FrameSessionMetrics`): automatic reconnection with
   backoff/retry callbacks, plus a read-only liveness handle (`connected()`, `last_loop_activity()`,
-  `last_write_success()`) for downstream watchdogs. None of the other five projects handle hardware
+  `last_write_success()`) for downstream watchdogs. None of the other six projects handle hardware
   disconnection as a first-class case — PlayzerX has `IsDeviceConnected()`/`DisconnectDevice()` for
-  manual lifecycle management but no automatic reconnect-with-backoff logic, and reactoscope's audio
-  graph has nothing analogous today because Web Audio doesn't model "the DAC fell off the network."
+  manual lifecycle management but no automatic reconnect-with-backoff logic, reactoscope's audio
+  graph has nothing analogous today because Web Audio doesn't model "the DAC fell off the network,"
+  and Oscilloclock has no concept of disconnection at all — the firmware and the DAC are permanently
+  wired together on the same board, so there is nothing to reconnect to short of the device itself
+  losing power.
 - **The `oscilloscope` backend is the single most direct existing-code answer to reactoscope's own
   namesake problem**: drive a real oscilloscope's XY input from audio
   (`src/protocols/oscilloscope/backend.rs`). It independently arrived at two anti-glitch behaviors
@@ -508,6 +613,119 @@ polled in real time.
   comparison, all of which are either header/source-only or pull current package-manager
   dependencies.
 
+## Oscilloclock: driving a bare CRT tube from an 8-bit MCU, no galvo, no point list, no OS
+
+Every other project in this comparison targets, emulates, or delivers to hardware with a
+**mechanical beam-steering mechanism** — a galvo pair or a MEMS mirror — and a host system with an
+OS, dynamic memory, and (mostly) floating point. Oscilloclock has neither. It drives a **CRT
+electron beam directly with analog voltages**, from a **PIC18F2680** 8-bit microcontroller with no
+OS, no FPU, and roughly 3.3 KB of RAM total. It's worth its own section for the same reason PlayzerX
+got one above: it's not a variant of anything else here, it's a different point in the design space
+entirely. Full detail lives in `oscilloscope-clock/CLAUDE.md`; this section pulls out what's most
+relevant to reactoscope's own roadmap.
+
+### The hardware, and why "corner safety" doesn't apply
+
+Signal generation is not point-by-point vector output at all — it's an **analog circle/arc
+generator**. A quad-channel MAX509A SPI DAC is loaded with four values per primitive (X position, Y
+position, X size, Y size, `defs.inc:75-80`), and dedicated analog circuitry downstream multiplies the
+size DACs by a hardware sin/cos to trace either a full circle or, by feeding the same sign to both
+axes, a straight ±45° line (`main.asm:22-31`). **The entire vector alphabet is three shape codes** —
+`pos`, `neg`, `cir` (`defs.inc:69-72`) — there is no arbitrary-angle line primitive anywhere in this
+system. Arcs are carved from a full circle by an 8-bit octant mask written straight to GPIO
+(`draw.asm:559-563`): a set bit lights that eighth-wedge, a clear bit blanks it — dedicated analog
+blanking hardware, not a computed line segment.
+
+Because electrostatic deflection has no mass and no settle time, none of LaserBoy's dwell math,
+laser-dac-rs's `TransitionPlan`/quintic-ease, or PlayzerX's ringing mitigation have any reason to
+exist here — see the Path generation and Alpha/Z/blanking sections above for the specifics. What
+Oscilloclock fights instead is an **electrical** problem (DAC settling time and channel crosstalk)
+and a **phosphor** problem (screen burn-in), neither of which has a counterpart on mechanically
+steered hardware:
+
+- **Burn-in mitigation is load-bearing, not cosmetic.** Once an hour, an `XSaver`/`YSaver` offset
+  pair advances through a 31-position table and is added into every segment's X/Y before it reaches
+  the DAC (`time.asm:110-129`, applied in `draw.asm:391,408`). The table length is deliberately prime
+  (`time.asm:585-589`) so the yearly cycle never aliases against the 12-hour clock face — spreading
+  phosphor wear over the tube evenly. No other project in this comparison ages a phosphor screen, so
+  none of them need this at all.
+- **The refresh rate is phase-locked to AC mains, and is a real, derivable number**: Timer0 free-runs
+  at 300 Hz; the jiffy ISR divides that down to exactly **50 or 60 Ticks/second** depending on
+  locale (`time.asm:73-139,457`; `mod.asm:162-186`), and the main loop redraws the entire display
+  from scratch once per Tick. The stated reason (`main.asm:33-37`) is deliberate: lock the refresh to
+  mains frequency so any 50/60 Hz hum coupling into the analog deflection circuitry beats at DC
+  (invisible) instead of as a slow, visible wobble against an unrelated refresh rate. No other
+  project here ties its frame rate to anything external to itself — reactoscope's `scanFrequency`
+  slider (see kpps section below) is a free-floating UI parameter by comparison.
+
+### Authoring: FigureCreator, and a formatter abstraction that outlives its first target
+
+Geometry is a static, hand-authored (or tool-generated) byte table assembled directly into Flash at
+build time — nothing is computed from a live scene at runtime, the same "offline authoring → static
+table → runtime scan" shape as vectorsynthesis's Python-baked wavetables, but one level more literal:
+the "table" is a `DB` byte array in PIC assembly, not a file loaded at runtime. **FigureCreator**
+(`code_figurecreator-tags-v1.1.1/`, C#/WPF, same author) is the offline tool that produces those
+tables, and it's a more interesting design than "a vector editor that exports assembly": its segment
+model is a **bit-exact simulation of the firmware's own analog hardware**, not an approximation.
+`Segments/Circle.cs` builds an 8-arc `PathGeometry` (one `ArcSegment` per octant, `Circle.cs:47-73`)
+and its `Blanking` setter toggles the exact same octant bits the firmware writes to GPIO
+(`Circle.cs:141-157`); `ForwardLine`/`BackwardLine` are literally *subclasses of `Circle`* that
+collapse the arc radius to zero (`ForwardLine.cs:46`) — the tool's own class hierarchy encodes the
+same fact the firmware's `Shape` byte encodes, that `pos`/`neg` are a special case of `cir`, not a
+separate rendering path.
+
+Multiple wire formats share one formatter interface (`ICodeFormatter`) — structurally the same idea
+as laser-dac-rs's multi-backend `OutputModel`, but on the authoring/codegen side rather than runtime
+delivery. `DrawListFormatter`'s `ParseCode` (`DrawListFormatter.cs:78-157`) can round-trip
+already-hand-written assembly back into the visual editor, meaning at least some of the literal art
+typed directly into `drawlist.asm` predates the tool but can still be pulled into it — a "the format
+came first, the tool caught up to it" detail, the reverse of the usual authoring-tool relationship.
+And the same tool targets **at least one other, unrelated hardware project**:
+`CodeFormatters/Sgitheach/SgitheachFormatter.cs` emits C (`element_t c00[] PROGMEM = {...}`) for an
+AVR/Arduino-class target, reusing the same `pos`/`neg`/`cir` + octant-blanking model but with the
+octant bits in a different order (`TransformBlanking`, `SgitheachFormatter.cs:229-236`) — evidence
+the two firmwares are genuinely independent targets sharing a vocabulary, not forks of each other.
+It's a small, real example of an authoring tool's backend abstraction paying for itself across
+projects, the same posture as vectorsynthesis's PD patches being reusable across real oscilloscopes,
+Vectrex consoles, and ILDA laser projectors — achieved here through a formatter interface instead of
+PD's hardware-agnostic analog signal.
+
+### What's structurally unique here vs. everything else in this comparison
+
+- **The only project with no beam-steering mechanism to protect at all** — every "safety" mechanism
+  here (DAC-settle blanking, brightness dwell, hourly screensaver offset) solves an analog-electronics
+  or phosphor-physics problem, never a mechanical-settle-time one.
+- **Geometry is analog circles and ±45° lines, not point lists** — nothing else in this comparison
+  represents shape this way. A circle's "resolution" is a property of the analog multiplying DAC and
+  the CRT beam, not a sample count.
+- **A real embedded resource budget**: ~3.3 KB RAM, ≤64 KB Flash, no OS, no dynamic allocation, a
+  hardware watchdog — an order of magnitude tighter than PlayzerX's "thin SDK" framing, where only
+  the *target device* is resource-limited and the SDK itself runs on a full host OS. Here the entire
+  controller is resource-limited.
+- **Absolute time-of-day sync exists nowhere else in this comparison.** GPS `$GPRMC` parsing
+  (`gps.asm:130-219`, Garmin-proprietary `$PGRMO`/`$PGRMC1` configuration sentences,
+  `gps.asm:256-278`) drives local time; every other project's signal is synthesized from
+  geometry/audio with no wall-clock concept and no external-sensor input at all.
+- **A hand-rolled sprite/physics engine exists purely for decoration**: up to 10 concurrent sprites
+  with 16-bit position/velocity/acceleration integrated every Tick (`sprite.asm`, Euler stepping),
+  supporting fade, zoom, explode, and stop behaviors — active only in October (Halloween) and
+  December (Christmas), the other ten months are no-op stubs (`seasonal.asm:74-90`). No other project
+  here has anything beyond a single eased transition (laser-dac-rs's `quintic_ease_in_out`); nothing
+  else integrates a persistent, stateful physics simulation for decorative motion.
+- **A documented, inspectable firmware port across two different 8-bit architectures exists in-tree**
+  — the vendored `Reference - Cathode Corner SC200 board/` ancestor (68HC08, David Forbes, 2008) that
+  Oscilloclock's PIC18F firmware (Aaron Stokes, 2013) was ported from. Comparing the two `draw`
+  routines shows an almost line-for-line faithful port (same magic numbers, same cosine table, same
+  algorithm shape) even though the DAC chip itself changed (AD7304 → MAX509A) — a real case study in
+  what stays fixed (the board-level analog architecture) versus what's free to change (the specific
+  IC) when porting hardware firmware. No other project in this comparison has a documented
+  ancestor/port relationship vendored alongside it.
+- **No float, no software-emulated trig beyond a lookup table** — an 8×8→16 signed multiply macro on
+  the PIC18F's hardware `MULWF` and a 240-entry fixed-point cosine table (`maths.asm`) are the only
+  nontrivial math primitives in the whole firmware. Every other project in this comparison at least
+  has the *option* of floating point (`f32` in laser-dac-rs, `f64` in reactoscope's JavaScript);
+  here it was never on the table.
+
 ## Points-per-second (kpps) budgeting
 
 kpps is the one genuinely physical constraint in this whole comparison — a galvo mirror can only
@@ -591,6 +809,17 @@ treats that ceiling — or doesn't.
   would catch, because the cause is physical (a high-Q spring-mass system), not a signal-processing
   gap.
 
+- **Oscilloclock**: no kpps concept exists, and — uniquely in this comparison — **none is needed**.
+  There's no point stream to rate-limit at all; the closest analogue is a **segment-count-and-draw-
+  time** budget bounded by how much fits inside one Tick. Each segment's `SegTime` (draw duration,
+  `draw.asm:368-371,466-482`) plus the fixed per-segment DAC-loading overhead (`DoSegTimeUs`,
+  `draw.asm:46`) sums across the whole draw list, and that sum has to fit inside 1/50s or 1/60s
+  (`time.asm:73-139,457`) or the display would visibly slow down or flicker — a hard ceiling, but one
+  measured in segments-and-microseconds-per-Tick, not points-per-second, because the underlying
+  primitives (circles, ±45° lines) aren't points to begin with. This is the only project in the
+  comparison where the refresh-rate ceiling comes from an external, physically fixed reference (AC
+  mains) rather than from a device spec, a config field, or an unconstrained UI slider.
+
 reactoscope currently has the least kpps-awareness of the group despite being the only genuinely
 live, real-time system in it — even vectorsynthesis and LaserBoy make their kpps explicit, if only
 because it's just their sample rate. If real laser output ever becomes a goal, laser-dac-rs's
@@ -616,7 +845,12 @@ dependency required yet, but it plants the concept before hardware forces the is
   reasons unrelated to the actual persistence control. Fixed in `WoscopeSceneR3F.tsx` — `fadeAlpha`
   now scales by `nPoints / N_SAMPLES`, mirroring xyscope's normalisation. vectorsynthesis has no
   persistence simulation at all — that's the physical phosphor or laser scanner's job, not the
-  patch's.
+  patch's. Oscilloclock is the one project here where phosphor persistence isn't simulated because
+  it's the literal physical medium being driven — and its firmware carries a real mitigation for
+  phosphor's actual failure mode (burn-in) that a simulated persistence pipeline has no reason to
+  ever need: the hourly `XSaver`/`YSaver` position offset, cycling through a deliberately prime
+  31-position table so the yearly cycle never aliases against the 12-hour clock face
+  (`time.asm:110-129,585-589`).
 - **Color source**: reactoscope reads real per-vertex RGB from `geometry.attributes.color`
   (`pathBuilder.ts:96`), falling back to material color. Both reference libraries derive color from
   a global parameter instead — xyscope.js from a single `hue` slider (`getColourFromHue`),
@@ -629,7 +863,10 @@ dependency required yet, but it plants the concept before hardware forces the is
   a `Gain`. Patching an LFO (or any node) into Master Output's R/G/B/Z directly — instead of, or
   alongside, Scene Input's own R/G/B/Z output — already produces continuous phase-driven color
   cycling independent of geometry, with no new node type required. No action needed here; noting it
-  so it's findable rather than re-derived later.
+  so it's findable rather than re-derived later. Oscilloclock has no color source at all to compare —
+  a CRT tube in XY mode has X, Y, and beam intensity via dwell time, nothing else; this isn't a
+  simpler version of the other projects' color pipelines, it's the absence of the entire category the
+  question is about.
 - **Render/synth coupling**: reactoscope generates the coord buffer and renders it in the same
   app, one frame apart. vectorsynthesis assumes the opposite by design — PD produces the analog
   signal and hands it to whatever external hardware or emulator draws it; xyscope.js is the mirror
@@ -644,6 +881,12 @@ dependency required yet, but it plants the concept before hardware forces the is
   between can look like. PlayzerX occupies the same third position as laser-dac-rs — pure
   delivery, no generation, no rendering — but without any of the scheduling/safety logic layered on
   top; it's the delivery position stripped down to just the wire and a buffer-depth counter.
+  Oscilloclock collapses the distinction entirely rather than choosing a position on it: geometry
+  isn't generated at runtime and there's no separate rendering stage either — the firmware is a
+  fixed table walked straight into DAC writes. "Render/synth coupling" as a design axis presumes a
+  runtime boundary between the two concerns that exists in every other project here; Oscilloclock is
+  the one case where that boundary was resolved once, at compile time, and nothing about it is a
+  runtime concern at all.
 - **Live vs. offline authoring loop**: vectorsynthesis's WKT/3D-model import
   (`wkt_parse.py`, `lines_vertices.py`) is a one-time, human-in-the-loop, offline conversion step
   producing static tables — there is no live-editing equivalent of reactoscope's node-graph DAW.
@@ -660,7 +903,14 @@ dependency required yet, but it plants the concept before hardware forces the is
   pattern in different words, arrived at independently for a different reason (real-time
   procedural/audio-reactive content, per its Streaming API docs) rather than copied from it.
   PlayzerX has no authoring loop at all, live or offline — it's a hardware SDK, not an app;
-  "authoring" happens entirely in whatever calls it.
+  "authoring" happens entirely in whatever calls it. Oscilloclock is offline in the same sense as
+  vectorsynthesis and LaserBoy — geometry is authored once, ahead of time, outside the runtime — but
+  taken to its logical extreme: not loaded from a file at runtime at all, but compiled directly into
+  the firmware binary. Its authoring tool, FigureCreator, is closer in spirit to vectorsynthesis's
+  Python scripts than to LaserBoy's live keyboard editor (there's no "session," just a WYSIWYG
+  editor that emits assembly source a human then builds), but goes further than either reference
+  project by simulating the *exact* target hardware primitive (the firmware's own octant-blanking
+  circle) rather than an abstract vector shape — see the dedicated Oscilloclock section above.
 - **Optimization as a pipeline stage vs. a menu command**: reactoscope's `orderSegments` /
   `buildCoordBuffer` run unconditionally, every frame, as fixed stages of the render loop — there's
   no "unoptimized" mode. LaserBoy's equivalent routines (`reduce_lit_vectors`, `reorder_segments`,
@@ -675,4 +925,7 @@ dependency required yet, but it plants the concept before hardware forces the is
   transition blanking runs unconditionally on every seam (a caller can only swap in a *different*
   transition function via `with_transition_fn`, not skip composition entirely short of supplying an
   empty one), because every `Frame` it accepts is, by construction, headed for real hardware.
+  Oscilloclock has no optimization stage of any kind, conditional or otherwise — geometry is drawn
+  exactly as authored, every Tick, because there was never a live/unoptimized state for it to have
+  been in: static ROM tables don't get "optimized" at runtime, they're simply drawn.
 </content>

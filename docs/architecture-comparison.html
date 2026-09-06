@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Architecture Comparison — reactoscope vs. vectorsynthesis vs. xyscope.js vs. LaserBoy vs. laser-dac-rs vs. PlayzerX</title>
+<title>Architecture Comparison — reactoscope vs. vectorsynthesis vs. xyscope.js vs. LaserBoy vs. laser-dac-rs vs. PlayzerX vs. Oscilloclock</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   :root {
@@ -26,6 +26,8 @@
     --dac-bg: #e4f7ef;
     --pzx: #b8860b;
     --pzx-bg: #fbf1da;
+    --osc: #1791b0;
+    --osc-bg: #e3f4f8;
 
     --callout-bg: #fff8e6;
     --callout-border: #e8c25a;
@@ -54,6 +56,8 @@
       --dac-bg: #123a2c;
       --pzx: #e0b84a;
       --pzx-bg: #3a3013;
+      --osc: #5ecbe4;
+      --osc-bg: #103740;
 
       --callout-bg: #332c14;
       --callout-border: #a5842f;
@@ -123,12 +127,14 @@
   .chip.lb { background: var(--lb-bg); color: var(--lb); }
   .chip.dac { background: var(--dac-bg); color: var(--dac); }
   .chip.pzx { background: var(--pzx-bg); color: var(--pzx); }
+  .chip.osc { background: var(--osc-bg); color: var(--osc); }
   .chip .dot.reacto { background: var(--reacto); }
   .chip .dot.vs { background: var(--vs); }
   .chip .dot.xy { background: var(--xy); }
   .chip .dot.lb { background: var(--lb); }
   .chip .dot.dac { background: var(--dac); }
   .chip .dot.pzx { background: var(--pzx); }
+  .chip .dot.osc { background: var(--osc); }
 
   .tldr-grid {
     display: grid;
@@ -186,6 +192,7 @@
   .pipeline .step.lb { border-color: var(--lb); }
   .pipeline .step.dac { border-color: var(--dac); }
   .pipeline .step.pzx { border-color: var(--pzx); }
+  .pipeline .step.osc { border-color: var(--osc); }
   .pipeline .step.ext {
     background: transparent;
     border-style: dashed;
@@ -207,6 +214,7 @@
   .proj-label.lb .dot { background: var(--lb); } .proj-label.lb { color: var(--lb); }
   .proj-label.dac .dot { background: var(--dac); } .proj-label.dac { color: var(--dac); }
   .proj-label.pzx .dot { background: var(--pzx); } .proj-label.pzx { color: var(--pzx); }
+  .proj-label.osc .dot { background: var(--osc); } .proj-label.osc { color: var(--osc); }
 
   table {
     width: 100%;
@@ -229,6 +237,7 @@
   th.lb, td.col-lb { border-top: 2px solid var(--lb); }
   th.dac, td.col-dac { border-top: 2px solid var(--dac); }
   th.pzx, td.col-pzx { border-top: 2px solid var(--pzx); }
+  th.osc, td.col-osc { border-top: 2px solid var(--osc); }
 
   .callout {
     background: var(--callout-bg);
@@ -314,7 +323,7 @@
 <main>
 
   <h1>Architecture comparison</h1>
-  <p class="lede">reactoscope vs. vectorsynthesis vs. xyscope.js vs. LaserBoy vs. laser-dac-rs vs. PlayzerX — how six systems turn geometry into a beam-position signal (and, for two of them, get it onto real hardware), and where they disagree.</p>
+  <p class="lede">reactoscope vs. vectorsynthesis vs. xyscope.js vs. LaserBoy vs. laser-dac-rs vs. PlayzerX vs. Oscilloclock — how seven systems turn geometry into a beam-position signal (and, for three of them, get it onto real hardware), and where they disagree.</p>
 
   <div class="legend">
     <span class="chip reacto"><span class="dot reacto"></span>reactoscope</span>
@@ -323,6 +332,7 @@
     <span class="chip lb"><span class="dot lb"></span>LaserBoy</span>
     <span class="chip dac"><span class="dot dac"></span>laser-dac-rs</span>
     <span class="chip pzx"><span class="dot pzx"></span>PlayzerX</span>
+    <span class="chip osc"><span class="dot osc"></span>Oscilloclock</span>
   </div>
 
   <div class="tldr-grid">
@@ -349,6 +359,10 @@
     <div class="tldr-card">
       <div class="num">Finding 6</div>
       <p>PlayzerX is the only project driving a real, physical laser — a single resonant MEMS mirror, not dual galvos — and it has zero corner-safety logic of its own.</p>
+    </div>
+    <div class="tldr-card">
+      <div class="num">Finding 7</div>
+      <p>Oscilloclock drives a real CRT tube with no galvo at all — deflection is inertialess, so the entire corner-safety problem this comparison is built around simply doesn't exist for it.</p>
     </div>
   </div>
 
@@ -446,27 +460,48 @@
     <div class="step ext"><span class="t">Single 2-axis MEMS mirror</span></div>
   </div></div>
 
+  <div class="proj-label osc"><span class="dot"></span>Oscilloclock</div>
+  <p style="margin:0 0 0.3rem 0; font-size:0.85rem;">No point list at all — a fixed table of analog circle/line primitives compiled into firmware, drawn straight into a DAC every Tick.</p>
+  <div class="pipeline-wrap"><div class="pipeline">
+    <div class="step osc"><span class="t">FigureCreator (offline)</span><span class="d">WYSIWYG editor → assembly source</span></div>
+    <div class="arrow">→</div>
+    <div class="step osc"><span class="t">Segment tables in Flash</span><span class="d">compiled into the firmware binary</span></div>
+    <div class="arrow">→</div>
+    <div class="step osc"><span class="t">DoList (every Tick)</span><span class="d">mains-locked 50/60 Hz, walked top-to-bottom</span></div>
+    <div class="arrow">→</div>
+    <div class="step osc"><span class="t">MAX509A quad DAC + sin/cos mult.</span><span class="d">draws circles/±45° lines directly</span></div>
+    <div class="arrow">→</div>
+    <div class="step ext"><span class="t">CRT tube, XY mode</span></div>
+  </div></div>
+
   <h2>Point generation, line rendering, multichannel</h2>
 
   <div class="table-wrap"><table>
-    <tr><th class="reacto">reactoscope</th><th class="vs">vectorsynthesis</th><th class="xy">xyscope.js</th><th class="lb">LaserBoy</th></tr>
+    <tr><th class="reacto">reactoscope</th><th class="vs">vectorsynthesis</th><th class="xy">xyscope.js</th><th class="lb">LaserBoy</th><th class="osc">Oscilloclock</th></tr>
     <tr>
       <td class="col-reacto">Live scene traversal every frame (<code>collectSegments</code>)</td>
       <td class="col-vs">Pre-baked wavetables, authored offline</td>
       <td class="col-xy">Raw samples from whatever audio is already playing</td>
       <td class="col-lb">Hand-authored / imported, one frame at a time</td>
+      <td class="col-osc">Fixed byte tables compiled straight into firmware Flash — hand-typed or FigureCreator-generated</td>
     </tr>
     <tr>
       <td class="col-reacto">Fixed-resolution arc-length resample to <code>nPoints</code></td>
       <td class="col-vs">None — table density is whatever the author baked in</td>
       <td class="col-xy">Lanczos kernel resample (same purpose as reactoscope's <code>useLanczos</code>)</td>
       <td class="col-lb">None for <code>.ild</code>; variable-length dwell+interpolation insertion for <code>.wav</code></td>
+      <td class="col-osc">Not applicable — no point count exists at all, only a segment count (see below)</td>
     </tr>
   </table></div>
 
   <div class="callout">
     <div class="label">Where's laser-dac-rs?</div>
     Not in this table — it generates <strong>zero</strong> points. Its Frame/Stream API takes <code>LaserPoint</code>s the caller already produced and is purely about pacing and delivering them. It's the layer reactoscope doesn't have yet: something downstream of <code>buildCoordBuffer</code> owning hardware timing, reconnect, and safety once points already exist. See the dedicated section below.
+  </div>
+
+  <div class="callout">
+    <div class="label">Oscilloclock's "points" aren't points</div>
+    Every other project here ultimately reduces geometry to a stream of discrete X/Y(/color) samples. Oscilloclock's unit of geometry is a 6-byte <strong>segment</strong> naming one of exactly three analog primitives — <code>pos</code>/<code>neg</code> (a ±45° line) or <code>cir</code> (a circle or arc) — that a MAX509A DAC and a hardware sin/cos multiplier trace as a genuinely continuous curve. There's no arbitrary-angle line and no point-density knob for a curve: a circle's smoothness is a property of the analog electronics and the CRT beam, not a sample count.
   </div>
 
   <h3>Line generation</h3>
@@ -476,11 +511,12 @@
     <div class="card"><h4 style="color:var(--xy)">xyscope.js</h4><p>Same erf shader math as reactoscope, independently converged — <code>shader_gaussianFragment</code>.</p></div>
     <div class="card"><h4 style="color:var(--lb)">LaserBoy</h4><p>CPU-rasterized bitmap blitted via FLTK <code>fl_draw_image</code> — an editor preview, not a beam simulation.</p></div>
     <div class="card"><h4 style="color:var(--dac)">laser-dac-rs</h4><p>No rendering at all — real hardware (or the <code>idn-simulator</code> tool) is whatever draws the line.</p></div>
+    <div class="card"><h4 style="color:var(--osc)">Oscilloclock</h4><p>No software line-rendering stage — real analog circuitry traces the curve. The "anti-aliasing" others compute per-pixel is, here, just what an analog signal looks like on phosphor.</p></div>
   </div>
 
   <h3>Multichannel support</h3>
   <div class="table-wrap"><table>
-    <tr><th class="reacto">reactoscope</th><th class="vs">vectorsynthesis</th><th class="xy">xyscope.js</th><th class="lb">LaserBoy</th><th class="dac">laser-dac-rs</th><th class="pzx">PlayzerX</th></tr>
+    <tr><th class="reacto">reactoscope</th><th class="vs">vectorsynthesis</th><th class="xy">xyscope.js</th><th class="lb">LaserBoy</th><th class="dac">laser-dac-rs</th><th class="pzx">PlayzerX</th><th class="osc">Oscilloclock</th></tr>
     <tr>
       <td class="col-reacto">Fixed 6-channel bus: X,Y,R,G,B,Z</td>
       <td class="col-vs">Whatever the interface exposes; ILDA convention typical; plus shape-multiplexing onto one beam</td>
@@ -488,6 +524,7 @@
       <td class="col-lb">Hard-coded 6-channel ILDA convention: X,Y,Z,R,G,B (<code>LASERBOY_CHANNEL_*</code> = 0..5)</td>
       <td class="col-dac"><code>LaserPoint</code> is 6 fields (x,y,r,g,b,intensity) but wire channel count is <strong>per-backend</strong>: 6ch for <code>avb</code>, only 2 (X/Y, no color) for <code>oscilloscope</code></td>
       <td class="col-pzx">A <strong>hardware SKU</strong>, not config: mono units speak XYM (3ch), RGB units speak XYRGB (5ch) — no runtime path between them. 12-bit position (4096 steps), coarser than everyone else</td>
+      <td class="col-osc">Monochrome, full stop — X, Y, and beam intensity via dwell time, nothing else. No color input exists in the hardware to route. 8-bit position per axis, coarser even than PlayzerX</td>
     </tr>
   </table></div>
 
@@ -497,7 +534,7 @@
   </div>
 
   <h2>Path generation — the real divergence</h2>
-  <p>reactoscope and LaserBoy are the only two of the five that solve an ordering problem at all — both use a greedy nearest-candidate walk with optional reversal. laser-dac-rs doesn't order anything (that's the caller's job) but it does own what happens <em>at the seam</em> once ordering is done — a third, distinct answer to travel-safety.</p>
+  <p>reactoscope and LaserBoy are the only two of the six that solve an ordering problem at all — both use a greedy nearest-candidate walk with optional reversal. laser-dac-rs doesn't order anything (that's the caller's job) but it does own what happens <em>at the seam</em> once ordering is done — a third, distinct answer to travel-safety.</p>
 
   <div class="cardgrid">
     <div class="card">
@@ -508,11 +545,15 @@
       <h4 style="color:var(--lb)">LaserBoy — settle-time cost</h4>
       <p><code>points_away</code> = dwell points for the incoming turn angle + interpolation steps for the blank jump + dwell points for the outgoing turn angle. Two candidates equidistant in pixels can cost very differently once the turn is priced in.</p>
     </div>
+    <div class="card">
+      <h4 style="color:var(--osc)">Oscilloclock — no cost function, no problem</h4>
+      <p>Order is authored, not solved — a fixed draw list walked top-to-bottom every Tick. There's no reordering concept because CRT deflection is instantaneous: travel between two segments costs nothing regardless of distance or order. The negative case that proves the other two rows exist specifically because of mechanical/slew-rate-limited hardware.</p>
+    </div>
   </div>
 
   <div class="callout">
     <div class="label">Why this matters</div>
-    A smooth continuation and a sharp reversal, at equal distance, look identical to reactoscope's current cost function. LaserBoy's metric tells them apart — because on real hardware they aren't remotely equivalent in cost. LaserBoy also merges shared-endpoint segments <em>before</em> ordering (<code>conglomerate_lit_segments</code>), reducing segment count rather than just ordering what's there — reactoscope's <code>collectSegments</code> does the opposite by default, fracturing every polyline into 2-vertex pairs before ordering even starts.
+    A smooth continuation and a sharp reversal, at equal distance, look identical to reactoscope's current cost function. LaserBoy's metric tells them apart — because on real hardware they aren't remotely equivalent in cost. LaserBoy also merges shared-endpoint segments <em>before</em> ordering (<code>conglomerate_lit_segments</code>), reducing segment count rather than just ordering what's there — reactoscope's <code>collectSegments</code> does the opposite by default, fracturing every polyline into 2-vertex pairs before ordering even starts. Oscilloclock's absence of any of this isn't a gap — remove mechanical inertia from the target hardware entirely, as its CRT does, and the whole ordering problem doesn't get easier, it stops existing.
   </div>
 
   <h3>Two working answers to travel-safety, compared</h3>
@@ -558,7 +599,7 @@
   </div>
 
   <h2>Shape distinction</h2>
-  <p>All six systems agree on one thing: "shape" is a build-time or edit-time concept that does not survive translation to a beam-position signal.</p>
+  <p>Six systems agree on one thing: "shape" is a build-time or edit-time concept that does not survive translation to a beam-position signal. Oscilloclock is the exception — see the callout below.</p>
   <div class="cardgrid">
     <div class="card"><h4 style="color:var(--reacto)">reactoscope</h4><p>Shapes are <code>THREE.Object3D</code> instances — but <code>orderSegments</code> flattens everything into one undifferentiated pool.</p></div>
     <div class="card"><h4 style="color:var(--vs)">vectorsynthesis</h4><p>Named wavetable per shape, lost the instant the phasor sweeps past its window.</p></div>
@@ -566,6 +607,11 @@
     <div class="card"><h4 style="color:var(--lb)">LaserBoy</h4><p>"Lit segments" are individually addressable (<code>explode_segments</code>) — but identity is gone the moment a frame is exported.</p></div>
     <div class="card"><h4 style="color:var(--dac)">laser-dac-rs</h4><p>Never sees shapes, only a flat point vector per <code>Frame</code> — but frame <em>identity</em> does survive to the seam: <code>TransitionPlan</code> knows which two frames are adjacent.</p></div>
     <div class="card"><h4 style="color:var(--pzx)">PlayzerX</h4><p>No concept of shape <em>or</em> frame — only flat X/Y/color arrays passed to <code>SendData*</code>. Not even laser-dac-rs's frame-boundary survives here.</p></div>
+  </div>
+
+  <div class="callout">
+    <div class="label">Oscilloclock breaks the pattern</div>
+    <p><code>DispStr</code> (<code>draw.asm:214</code>) walks a string character-by-character and computes <code>(char − 0x20) × 2</code> as an offset into a 16-bit pointer table named <code>Font</code>, reading that character's segment-list address via <code>tblrd</code> before drawing it. The character code — the shape's identity — is a live input to the very last lookup before anything reaches the DAC. There's no upstream stage that flattens "this is the letter 'A'" into an undifferentiated point pool the way every other project's pipeline does. Not a deliberate design choice so much as a side effect of the firmware being a font renderer rather than a scene flattener — but a real, working counterexample worth knowing before treating "shape identity never survives" as a hard constraint.</p>
   </div>
 
   <h2>Corner-safety: the gap ADR-0008 flagged, now doubly closed</h2>
@@ -605,8 +651,13 @@
     <p>A grep for "order," "sort," "nearest," "blank," "dwell," "transition," or "interpolat" across PlayzerX's entire implementation returns <strong>zero matches</strong>. Of the two projects in this comparison that talk to real beam-steering hardware, laser-dac-rs chose to own seam-level safety; PlayzerX chose to own none of it. That's the clearest illustration anywhere in this comparison of how much LaserBoy's and laser-dac-rs's cost functions actually add over doing nothing at all.</p>
   </div>
 
+  <div class="callout">
+    <div class="label">Oscilloclock: the question doesn't apply, not "solved and forgotten"</div>
+    <p>Oscilloclock's <code>Blank</code> GPIO bit sounds like it belongs in this section, but it's solving an entirely different physical problem: it hides SPI-DAC settling time and crosstalk while four DAC registers latch new values, not beam travel — there's no travel to hide, since CRT deflection is inertialess. ADR-0008's corner/galvo-overshoot question is inapplicable to Oscilloclock by construction, because it has no mechanical actuator to protect. The real lesson is a naming one: a signal called "blanking" only tells you something once you know what it's hiding — see the dedicated section below.</p>
+  </div>
+
   <h2>Hardware delivery layer (laser-dac-rs only)</h2>
-  <p>None of reactoscope, vectorsynthesis, xyscope.js, or LaserBoy model this layer at all — genuinely new territory, not a variant of something the other four already do differently. PlayzerX has the raw material (a real device FIFO — see its own section below) but none of the scheduling/safety logic on top; treat it as the floor this layer starts from, not a second full example of it.
+  <p>None of reactoscope, vectorsynthesis, xyscope.js, or LaserBoy model this layer at all — genuinely new territory, not a variant of something the other four already do differently. PlayzerX has the raw material (a real device FIFO — see its own section below) but none of the scheduling/safety logic on top; treat it as the floor this layer starts from, not a second full example of it. Oscilloclock doesn't belong here at all, for a cleaner reason than either: it has no delivery layer because there's no separate hardware to deliver <em>to</em> — the firmware <strong>is</strong> the hardware driver, running on the same chip that owns the DAC bus.
 
   <div class="cardgrid">
     <div class="card">
@@ -615,7 +666,7 @@
     </div>
     <div class="card">
       <h4>Color delay</h4>
-      <p>Galvo mirrors settle slower than color modulators respond, so R/G/B/intensity are deliberately delayed 50–200µs relative to X/Y. A physical-latency concept none of the other five projects model at all — not even PlayzerX, whose onboard filter treats the whole drive signal generically.</p>
+      <p>Galvo mirrors settle slower than color modulators respond, so R/G/B/intensity are deliberately delayed 50–200µs relative to X/Y. A physical-latency concept none of the other six projects model at all — not even PlayzerX, whose onboard filter treats the whole drive signal generically; Oscilloclock has no color channel to delay in the first place.</p>
     </div>
     <div class="card">
       <h4>Startup blanking</h4>
@@ -687,6 +738,44 @@
     <div class="card"><h4>Heavy, dated dependency footprint</h4><p>Prebuilt Windows <code>.lib</code>/<code>.dll</code> artifacts; the underlying device layer bundles OpenCV <strong>2.4.13</strong> binaries (c. 2013) — the heaviest, oldest dependency chain in this comparison.</p></div>
   </div>
 
+  <h2>Oscilloclock: a bare CRT tube, an 8-bit MCU, no galvo, no point list, no OS</h2>
+  <p>Every other project here targets, emulates, or delivers to hardware with a <strong>mechanical beam-steering mechanism</strong> — a galvo pair or a MEMS mirror — and a host system with an OS, dynamic memory, and (mostly) floating point. Oscilloclock has neither: it drives a <strong>CRT electron beam directly with analog voltages</strong>, from a <strong>PIC18F2680</strong> 8-bit microcontroller with no OS, no FPU, and ~3.3 KB of RAM total. Full detail lives in <code>oscilloscope-clock/CLAUDE.md</code>; this section pulls out what matters most for reactoscope's own roadmap.</p>
+
+  <div class="cardgrid">
+    <div class="card">
+      <h4 style="color:var(--osc)">Analog circle/arc generator, not a point renderer</h4>
+      <p>A quad-channel MAX509A SPI DAC loaded with X/Y position + X/Y size per primitive, plus a hardware sin/cos multiplier, traces a full circle or (same sign on both axes) a straight ±45° line. Arcs are carved out with an 8-bit octant mask written straight to GPIO — dedicated analog blanking hardware, not computed geometry.</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--osc)">Refresh rate locked to AC mains</h4>
+      <p>Timer0 free-runs at 300 Hz; the jiffy ISR divides that to exactly 50 or 60 Ticks/second by locale, and the whole display redraws from scratch every Tick — deliberately, so 50/60 Hz hum coupling into the deflection circuitry beats at DC instead of as a visible wobble.</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--osc)">FigureCreator: a bit-exact hardware simulation, not an approximation</h4>
+      <p>The authoring tool's <code>Circle</code> class builds the same 8-arc octant-blanking geometry the firmware writes to GPIO; <code>ForwardLine</code>/<code>BackwardLine</code> are literal subclasses of <code>Circle</code> with the radius collapsed to zero — the class hierarchy encodes the same fact the firmware's <code>Shape</code> byte does. The same formatter abstraction also targets an unrelated AVR project, "Sgitheach."</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--osc)">Phosphor burn-in mitigation, not decoration</h4>
+      <p>Once an hour, a screensaver offset advances through a deliberately <strong>prime</strong> 31-position table added into every segment's X/Y — so the yearly cycle never aliases against the 12-hour clock face. A real CRT failure mode with no counterpart on any other display technology in this comparison.</p>
+    </div>
+  </div>
+
+  <div class="gap-box">
+    <div class="label">Why corner-safety doesn't apply here</div>
+    <p>Electrostatic beam deflection has no mass and no settle time, so none of LaserBoy's dwell math, laser-dac-rs's <code>TransitionPlan</code>/quintic-ease, or PlayzerX's ringing mitigation have any reason to exist. What Oscilloclock fights instead is electrical (DAC settling time, channel crosstalk) and physical-but-different (phosphor burn-in) — see the corner-safety and blanking sections above for exactly how those show up.</p>
+  </div>
+
+  <h3>What's structurally unique here</h3>
+  <div class="cardgrid">
+    <div class="card"><h4>No beam-steering mechanism to protect</h4><p>Every "safety" mechanism here solves an analog-electronics or phosphor-physics problem, never a mechanical-settle-time one.</p></div>
+    <div class="card"><h4>Geometry is analog curves, not point lists</h4><p>A circle's "resolution" is a property of the DAC and the CRT beam, not a sample count — nothing else in this comparison represents shape this way.</p></div>
+    <div class="card"><h4>A real embedded resource budget</h4><p>~3.3 KB RAM, ≤64 KB Flash, no OS, no dynamic allocation, a hardware watchdog — the entire controller is resource-limited, not just the target device (PlayzerX's framing).</p></div>
+    <div class="card"><h4>Absolute time-of-day sync</h4><p>GPS <code>$GPRMC</code> parsing drives local time — the only project here with any external-sensor input or wall-clock concept at all.</p></div>
+    <div class="card"><h4>A hand-rolled sprite/physics engine</h4><p>Up to 10 concurrent sprites with integrated position/velocity/acceleration (fade, zoom, explode, stop) — active only in October and December. No other project here integrates a persistent, stateful physics simulation.</p></div>
+    <div class="card"><h4>A documented cross-architecture firmware port</h4><p>Ported from a 2008 Motorola 68HC08 codebase (the vendored SC200 reference) — an almost line-for-line faithful translation, even as the DAC chip itself changed. No other project here has a documented ancestor vendored alongside it.</p></div>
+    <div class="card"><h4>No float, ever</h4><p>An 8×8→16 hardware multiply and a 240-entry fixed-point cosine table are the only nontrivial math primitives in the firmware — floating point was never on the table, unlike every other project here.</p></div>
+  </div>
+
   <h2>Points-per-second (kpps) budgeting</h2>
   <p>The one genuinely physical constraint in this whole comparison: a galvo mirror can only redirect the beam so many times a second. Real laser projectors run roughly 20–40 kpps typically, 60–100 kpps at the high end. Here's how each project treats that ceiling — or doesn't.</p>
 
@@ -721,6 +810,7 @@
     <div class="card"><h4 style="color:var(--vs)">vectorsynthesis</h4><p>Audio sample rate <em>is</em> the point rate directly — no separate resample stage. <code>vs-decimate.pd</code> thins density manually; nothing computes the decimation a real DAC's kpps ceiling would require.</p></div>
     <div class="card"><h4 style="color:var(--xy)">xyscope.js</h4><p>Not applicable — never targets galvo hardware, so mechanical kpps isn't a constraint it needs to model.</p></div>
     <div class="card"><h4 style="color:var(--lb)">LaserBoy</h4><p><code>sample_rate</code> is a first-class, rig-calibrated constant driving every dwell formula. <code>still_frame_duration</code> converts a kpps budget into an explicit repeat-count computation — but a too-complex frame just silently takes longer to draw once.</p></div>
+    <div class="card"><h4 style="color:var(--osc)">Oscilloclock</h4><p>No kpps concept, and uniquely, <strong>none is needed</strong> — there's no point stream to rate-limit. The closest analogue is a segment-count-and-draw-time budget that has to fit inside one 1/50s or 1/60s Tick, the only project here whose refresh ceiling comes from a physically fixed external reference (AC mains) rather than a spec, config field, or UI slider.</p></div>
   </div>
 
   <h3>laser-dac-rs: kpps as a hardware-reported fact, not a user setting</h3>
@@ -753,17 +843,17 @@
 
   <h2>Other differences worth knowing</h2>
   <div class="cardgrid">
-    <div class="card"><h4>Persistence/phosphor</h4><p>reactoscope and xyscope.js share the same accumulate→fade→blur-bloom pipeline. vectorsynthesis and laser-dac-rs have none — that's the physical phosphor/hardware's job. LaserBoy's preview has none either (a raster snapshot, not a simulation).</p></div>
-    <div class="card"><h4>Color source</h4><p>reactoscope reads real per-vertex RGB from geometry. Both PD/JS references derive color from a single global parameter instead (hue slider / rotating phase function).</p></div>
-    <div class="card"><h4>Render/synth coupling</h4><p>reactoscope owns both ends (generate + render). vectorsynthesis and xyscope.js each assume the opposite. laser-dac-rs and PlayzerX both add a third position: pure delivery middleware, owning neither — PlayzerX is that position stripped to just the wire and a buffer-depth counter.</p></div>
-    <div class="card"><h4>Live vs. offline authoring</h4><p>reactoscope's live DAW has no counterpart in vectorsynthesis, xyscope.js, or LaserBoy. laser-dac-rs's Frame API — "zero-copy latest-wins" submission — is structurally the closest match to reactoscope's own live-replace pattern, arrived at independently. PlayzerX has no authoring loop at all, live or offline — it's a hardware SDK, not an app.</p></div>
-    <div class="card"><h4>Optimization: pipeline stage vs. menu command</h4><p>reactoscope's ordering/resampling run unconditionally every frame. laser-dac-rs's transition blanking is equally unconditional, for the same reason: every frame it accepts is headed for real hardware. LaserBoy's equivalents are opt-in menu commands, except its own hardware-facing <code>.wav</code> path. PlayzerX has no optimization stage of any kind, ever.</p></div>
+    <div class="card"><h4>Persistence/phosphor</h4><p>reactoscope and xyscope.js share the same accumulate→fade→blur-bloom pipeline. vectorsynthesis and laser-dac-rs have none — that's the physical phosphor/hardware's job. LaserBoy's preview has none either (a raster snapshot, not a simulation). Oscilloclock is the one project where persistence is the literal physical medium being driven, and it carries a real mitigation for phosphor's actual failure mode: an hourly, prime-length screensaver offset against burn-in.</p></div>
+    <div class="card"><h4>Color source</h4><p>reactoscope reads real per-vertex RGB from geometry. Both PD/JS references derive color from a single global parameter instead (hue slider / rotating phase function). Oscilloclock has no color source to compare at all — a CRT tube in XY mode has X, Y, and dwell-time intensity, nothing else.</p></div>
+    <div class="card"><h4>Render/synth coupling</h4><p>reactoscope owns both ends (generate + render). vectorsynthesis and xyscope.js each assume the opposite. laser-dac-rs and PlayzerX both add a third position: pure delivery middleware, owning neither — PlayzerX is that position stripped to just the wire and a buffer-depth counter. Oscilloclock collapses the distinction rather than choosing a position on it: a fixed table walked straight into DAC writes, with the generate/render boundary resolved once, at compile time.</p></div>
+    <div class="card"><h4>Live vs. offline authoring</h4><p>reactoscope's live DAW has no counterpart in vectorsynthesis, xyscope.js, or LaserBoy. laser-dac-rs's Frame API — "zero-copy latest-wins" submission — is structurally the closest match to reactoscope's own live-replace pattern, arrived at independently. PlayzerX has no authoring loop at all, live or offline — it's a hardware SDK, not an app. Oscilloclock is offline taken to its logical extreme: not loaded from a file at runtime, but compiled directly into the firmware binary — its FigureCreator tool simulates the exact target hardware primitive rather than an abstract vector shape.</p></div>
+    <div class="card"><h4>Optimization: pipeline stage vs. menu command</h4><p>reactoscope's ordering/resampling run unconditionally every frame. laser-dac-rs's transition blanking is equally unconditional, for the same reason: every frame it accepts is headed for real hardware. LaserBoy's equivalents are opt-in menu commands, except its own hardware-facing <code>.wav</code> path. PlayzerX has no optimization stage of any kind, ever. Neither does Oscilloclock — static ROM tables don't get "optimized" at runtime, they're simply drawn.</p></div>
   </div>
 
 </main>
 
 <footer>
-  Generated from <code>docs/architecture-comparison.md</code> for visual reference — the Markdown file remains the source of truth; update that first, then regenerate this page. Source citations for every claim above (file:line references into <code>src/</code>, <code>LaserBoy/src/</code>, <code>laser-dac-rs-main/src/</code>, and <code>playzerx-master/</code>) live in the Markdown version.
+  Generated from <code>docs/architecture-comparison.md</code> for visual reference — the Markdown file remains the source of truth; update that first, then regenerate this page. Source citations for every claim above (file:line references into <code>src/</code>, <code>LaserBoy/src/</code>, <code>laser-dac-rs-main/src/</code>, <code>playzerx-master/</code>, and <code>oscilloscope-clock/</code>) live in the Markdown version.
 </footer>
 
 </body>
