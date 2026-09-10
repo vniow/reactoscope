@@ -6,6 +6,7 @@ import { useDawStore, SCENE_INPUT_ID } from '../store/daw';
 import { collectSegments } from './pathBuilder';
 import type { Segment } from './pathBuilder';
 import type { SceneInputNodeData } from '../store/dawTypes';
+import { setLastSegmentCount } from './sceneComplexity';
 
 // PROTOTYPE (foldover investigation): a coordinate buffer with more points than
 // the scan rate can render in one cycle forces the worklet to skip table
@@ -82,17 +83,19 @@ export function useSceneToAudio(): void {
 		);
 
 		worker.onmessage = (event: MessageEvent) => {
-			const { type, data, nPoints, endPos } = event.data as {
+			const { type, data, nPoints, endPos, nSeg } = event.data as {
 				type:    string;
 				data:    ArrayBuffer;
 				nPoints: number;
 				endPos:  { x: number; y: number };
+				nSeg:    number;
 			};
 
 			if (type !== 'path') return;
 
 			prevEndPos.current = endPos;
 			workerBusy.current = false;
+			setLastSegmentCount(nSeg);
 
 			// Forward coord buffer to worklet — transferable, zero-copy on this hop too.
 			const node = getSceneInputWorkletNode();
@@ -105,6 +108,7 @@ export function useSceneToAudio(): void {
 		return () => {
 			worker.terminate();
 			workerRef.current = null;
+			setLastSegmentCount(null);
 		};
 	// Worker is created once; buffer-size sync is handled by the effect below.
 	}, []);
