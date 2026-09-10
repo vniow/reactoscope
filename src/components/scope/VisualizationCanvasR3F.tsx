@@ -55,7 +55,6 @@ export function VisualizationCanvasR3F() {
 				position: 'relative',
 			}}
 		>
-			<KppsReadout />
 			<Canvas
 				orthographic
 				camera={{
@@ -80,6 +79,7 @@ export function VisualizationCanvasR3F() {
 			>
 				{device === 'galvo' ? <GalvoSceneR3F /> : <WoscopeSceneR3F />}
 			</Canvas>
+			<KppsReadout />
 		</Box>
 	);
 }

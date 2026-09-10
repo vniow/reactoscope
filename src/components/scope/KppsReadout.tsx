@@ -53,7 +53,7 @@ export function KppsReadout() {
 			ref={spanRef}
 			component='span'
 			sx={{
-				position: 'absolute', top: 8, right: 8, fontSize: 9,
+				position: 'absolute', top: 8, right: 8, zIndex: 50, fontSize: 9,
 				color: 'text.disabled', fontFamily: 'monospace', letterSpacing: 0.4,
 				pointerEvents: 'none',
 			}}
