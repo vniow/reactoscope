@@ -208,10 +208,14 @@ The diagnostic output is as much the point as the picture.
 
 | Readout | Computation | Purpose |
 |---|---|---|
-| **Requested point rate** | `coordBufferSize × scanFrequency / 1000` kpps | Reactoscope has no kpps concept at all today; these are two sliders that do not know about each other, spanning ~26 to ~786,000 points/sec. Flag past a configurable ceiling (default 60 kpps) |
+| **kpps** | Measured throughput of the Waveform Tap — samples actually delivered ÷ wall-clock time elapsed, one sample = one point (`src/audio/tapThroughput.ts`) | The Master Output stream's real point rate. Generic to any source (not Scene-Input-specific) and to either Beam Emulator, so it lives in the shared scope chrome (`VisualizationCanvasR3F`/`KppsReadout.tsx`), not here. Converges on the sample rate under normal playback; genuinely dips on a real stutter — see ADR-0010 sub-decision 9's amendment for why this superseded the original `coordBufferSize × scanFrequency` formula and its over-request ceiling flag |
 | **Tracking error** | RMS and peak of \|commanded − actual\|, per axis | How far the mirror is from where it was told to be. The single most direct "is this scannable" number |
 | **Slew-limited fraction** | % of samples where the clamp was active | Distinguishes "rounding corners" from "physically cannot keep up" |
 | **Discontinuity resets** | count since last clear | Tells you when the view is showing a seam rather than physics |
+
+Tracking error, slew-limited fraction, and discontinuity resets are Galvo-Laser-specific and remain
+unimplemented — `GalvoSceneR3F.tsx` computes tracking error and a `resetCountRef` internally
+already, but neither is wired to any UI yet.
 
 All readouts are **display-only**. No clamping, no correction, no automatic rate limiting — that is
 ADR-0008 territory and stays deferred.

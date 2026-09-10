@@ -146,6 +146,18 @@ with nothing flagging a physically impossible combination. Galvo Laser surfaces 
 and flags it past a realistic ceiling. It **changes nothing**: no clamping, no correction, no
 automatic point-rate limiting. Those are ADR-0008's territory and stay deferred.
 
+**Amendment (kpps readout, as shipped):** the formula above was Scene-Input-specific and could
+never be true generally — Master Output can be driven by anything, not just a Scene Input scanning
+a coord buffer. The shipped readout instead measures the Waveform Tap's actual delivered throughput
+(one audio sample = one point, the ILDA/real-DAC convention) and lives in the shared scope chrome
+(`VisualizationCanvasR3F`), not inside Galvo Laser specifically — it describes the stream, not the
+Scanner Model. It converges on the sample rate under normal playback but genuinely dips on a real
+stutter, which a static `coordBufferSize × scanFrequency` figure could never show. The
+over-realistic-ceiling flag described above was dropped: a measured, stream-derived rate can never
+exceed the sample rate, so it can no longer represent "requested more than physically possible" —
+that diagnostic, if still wanted, belongs on Scene Input's own controls, not this readout. See
+`src/audio/tapThroughput.ts` and `docs/galvo-laser-emulator.md`'s Readouts section.
+
 ## Honesty boundary
 
 The Scanner Model is **directionally correct, not calibrated.** Until a real scanner's step response

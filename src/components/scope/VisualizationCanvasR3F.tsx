@@ -4,6 +4,7 @@ import { Canvas } from '@react-three/fiber';
 import { ERROR_MESSAGES } from '../../config';
 import { WoscopeSceneR3F } from './WoahcopeSceneR3F';
 import { GalvoSceneR3F } from './GalvoSceneR3F';
+import { KppsReadout } from './KppsReadout';
 import { useBeamEmulator } from '../../contexts/BeamEmulatorContext';
 
 function detectUnsupported(): string | null {
@@ -51,8 +52,10 @@ export function VisualizationCanvasR3F() {
 				height: '100%',
 				bgcolor: '#000',
 				overflow: 'hidden',
+				position: 'relative',
 			}}
 		>
+			<KppsReadout />
 			<Canvas
 				orthographic
 				camera={{
