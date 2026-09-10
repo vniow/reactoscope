@@ -10,7 +10,10 @@ const color = NODE_COLORS.scene;
 
 export function VisualizationControls() {
 	const { swapXY, setSwapXY, invertXY, setInvertXY } = useAxis();
-	const { crtEnabled, setCrtEnabled, lanczosEnabled, setLanczosEnabled } = useEffects();
+	const {
+		crtEnabled, setCrtEnabled, lanczosEnabled, setLanczosEnabled,
+		showSegmentCount, setShowSegmentCount,
+	} = useEffects();
 	const { device, setDevice } = useBeamEmulator();
 	const isGalvo = device === 'galvo';
 
@@ -36,6 +39,7 @@ export function VisualizationControls() {
 					<ToggleButton value='crtEnabled'     selected={crtEnabled}     onChange={() => setCrtEnabled(!crtEnabled)}         size='small'>mask</ToggleButton>
 				)}
 				<ToggleButton value='lanczosEnabled' selected={lanczosEnabled} onChange={() => setLanczosEnabled(!lanczosEnabled)} size='small'>smooth</ToggleButton>
+				<ToggleButton value='showSegmentCount' selected={showSegmentCount} onChange={() => setShowSegmentCount(!showSegmentCount)} size='small'>segs</ToggleButton>
 			</ToggleButtonGroup>
 		</Box>
 	);

@@ -43,6 +43,8 @@ export interface EffectsContextType {
 	setNSamples: (value: number) => void;
 	coordBufferSize: number;
 	setCoordBufferSize: (value: number) => void;
+	showSegmentCount: boolean;
+	setShowSegmentCount: (value: boolean) => void;
 }
 
 export type VizContextType = PlaybackContextType & AxisContextType & EffectsContextType;
@@ -71,6 +73,7 @@ export function WoscopeProvider({ children }: VizProviderProps) {
 	const [lanczosSteps,    setLanczosSteps]    = useLocalStorage('woscope.lanczosSteps',    6);
 	const [nSamples,        setNSamples]        = useLocalStorage('woscope.nSamples',        2048);
 	const [coordBufferSize, setCoordBufferSize] = useLocalStorage('woscope.coordBufferSize', 1024);
+	const [showSegmentCount, setShowSegmentCount] = useLocalStorage('woscope.showSegmentCount', true);
 
 	const playbackValue = useMemo<PlaybackContextType>(
 		() => ({ isPlaying, setIsPlaying }),
@@ -98,10 +101,11 @@ export function WoscopeProvider({ children }: VizProviderProps) {
 			lanczosSteps, setLanczosSteps,
 			nSamples, setNSamples,
 			coordBufferSize, setCoordBufferSize,
+			showSegmentCount, setShowSegmentCount,
 		}),
 		// Setter functions are stable — only state values in deps.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[crtEnabled, persistence, glowStrength, scatterStrength, lanczosEnabled, lanczosSteps, nSamples, coordBufferSize],
+		[crtEnabled, persistence, glowStrength, scatterStrength, lanczosEnabled, lanczosSteps, nSamples, coordBufferSize, showSegmentCount],
 	);
 
 	return (
