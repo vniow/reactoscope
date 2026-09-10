@@ -208,10 +208,14 @@ The diagnostic output is as much the point as the picture.
 
 | Readout | Computation | Purpose |
 |---|---|---|
-| **Requested point rate** | `coordBufferSize × scanFrequency / 1000` kpps | Reactoscope has no kpps concept at all today; these are two sliders that do not know about each other, spanning ~26 to ~786,000 points/sec. Flag past a configurable ceiling (default 60 kpps) |
+| **Scene segment count** | Raw line-segment count from `collectSegments`, before `orderSegments`/`buildCoordBuffer` resample it (`scene/pathBuilder.ts`'s `nSeg`, surfaced via `scene/sceneComplexity.ts`) | How much detail the *authored scene* is asking for — a circle vs. a cube outline. Deliberately **not** a point-rate figure: `buildCoordBuffer` always emits exactly `coordBufferSize` points regardless of scene complexity, redistributing that fixed budget across whatever geometry exists, so no point count can ever reflect "how complex is this shape." This is the number that does. Lives in the shared scope chrome (`VisualizationCanvasR3F`/`SegmentCountReadout.tsx`), not here, since a reader there shouldn't need to know which source produced it — but it is Scene-Input-specific by nature (only meaningful while Scene Input is the thing actually running) and reads "—" otherwise |
 | **Tracking error** | RMS and peak of \|commanded − actual\|, per axis | How far the mirror is from where it was told to be. The single most direct "is this scannable" number |
 | **Slew-limited fraction** | % of samples where the clamp was active | Distinguishes "rounding corners" from "physically cannot keep up" |
 | **Discontinuity resets** | count since last clear | Tells you when the view is showing a seam rather than physics |
+
+Tracking error, slew-limited fraction, and discontinuity resets are Galvo-Laser-specific and remain
+unimplemented — `GalvoSceneR3F.tsx` computes tracking error and a `resetCountRef` internally
+already, but neither is wired to any UI yet.
 
 All readouts are **display-only**. No clamping, no correction, no automatic rate limiting — that is
 ADR-0008 territory and stays deferred.

@@ -138,13 +138,33 @@ the emulator's purpose: it exists to answer "what does this scanner do to my sha
 sweeping parameters freely, and a preset named for a kpps rating invites precisely the
 calibrated-accuracy over-trust this ADR disclaims below.
 
-### 9. A kpps readout, display-only
+### 9. A scene-complexity readout, display-only
 
-Reactoscope has no kpps concept anywhere — the effective point rate is `coordBufferSize ×
-scanFrequency`, two sliders that do not know about each other, spanning ~26 to ~786,000 points/sec
-with nothing flagging a physically impossible combination. Galvo Laser surfaces that product live
-and flags it past a realistic ceiling. It **changes nothing**: no clamping, no correction, no
-automatic point-rate limiting. Those are ADR-0008's territory and stay deferred.
+Reactoscope has no way to see how much detail a scene is asking a fixed point budget to carry.
+`buildCoordBuffer` always emits exactly `coordBufferSize` points — a circle and a cube outline get
+the identical count, just redistributed across however much geometry exists — so no point-rate
+figure, however computed, can ever reflect "how complex is this shape." What varies with complexity
+instead is the *raw* segment count `collectSegments` produces before that resampling: a few long
+strokes for a circle, twelve edges for a cube wireframe. Galvo Laser surfaces that number live. It
+**changes nothing**: no clamping, no correction, no automatic simplification. Those remain
+ADR-0008's territory and stay deferred.
+
+Two earlier framings were tried and abandoned before landing here, for the historical record:
+
+- **`coordBufferSize × scanFrequency` as a "requested point rate," flagged past a ceiling.**
+  Rejected because it's Scene-Input-specific by construction and, per the point above, is constant
+  with respect to scene complexity regardless — it could never answer the question this readout
+  exists for.
+- **Measured Waveform Tap throughput (samples delivered ÷ wall-clock time), device-neutral,
+  living in the shared scope chrome.** A genuine live diagnostic — it dips on a real stutter — but
+  it measures the *stream*, not the *scene*, and so still couldn't distinguish a simple shape from
+  a complex one at the same settings.
+
+The shipped readout (`scene/sceneComplexity.ts`, `SegmentCountReadout.tsx`) lives in the shared
+scope chrome for the same reason the throughput attempt did — a reader there shouldn't need to
+know which source is playing — but is honestly Scene-Input-specific: it only updates while Scene
+Input is the thing actually running, and reads "—" otherwise. See `docs/galvo-laser-emulator.md`'s
+Readouts section.
 
 ## Honesty boundary
 
