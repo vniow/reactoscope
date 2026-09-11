@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { getSceneRunning, getSceneInputWorkletNode, getSampleRate } from '../audio/engine';
 import { useEffects } from '../contexts/WoahscopeContext';
+import { useGalvo } from '../contexts/GalvoContext';
 import { useDawStore, SCENE_INPUT_ID } from '../store/daw';
 import { collectSegments } from './pathBuilder';
 import type { Segment } from './pathBuilder';
@@ -58,6 +59,9 @@ export function useSceneToAudio(): void {
 	const workerRef   = useRef<Worker | null>(null);
 	const workerBusy  = useRef(false);
 	const { coordBufferSize } = useEffects();
+	const {
+		cornerSafetyEnabled, radiansPerPoint, distancePerPoint, blankDelayPoints, blankFloor, kppsCeiling,
+	} = useGalvo();
 	const scanFrequency = useDawStore((s) => {
 		const node = s.nodes.find((n) => n.id === SCENE_INPUT_ID);
 		return (node?.data as SceneInputNodeData | undefined)?.scanFrequency ?? DEFAULT_SCAN_FREQ;
@@ -118,6 +122,23 @@ export function useSceneToAudio(): void {
 		const effectiveSize = Math.max(MIN_COORD_BUFFER_SIZE, Math.min(coordBufferSize, Math.floor(period)));
 		workerRef.current.postMessage({ type: 'setCoordBufferSize', size: effectiveSize });
 	}, [coordBufferSize, scanFrequency]);
+
+	// Corner-safety (ADR-0011): the buffer may grow past coordBufferSize when
+	// dwell needs more room, capped by whichever is smaller — the practical
+	// kpps ceiling, or the audio-rate anti-foldover limit the effect above
+	// already computes for the fixed-size path.
+	useEffect(() => {
+		if (!workerRef.current) return;
+		const antiFoldoverMax = Math.floor(getSampleRate() / scanFrequency);
+		const kppsMax         = Math.floor(kppsCeiling / scanFrequency);
+		const maxPoints       = Math.max(MIN_COORD_BUFFER_SIZE, Math.min(antiFoldoverMax, kppsMax));
+		workerRef.current.postMessage({
+			type: 'setCornerSafety',
+			enabled: cornerSafetyEnabled,
+			config: { radiansPerPoint, distancePerPoint, blankDelayPoints, blankFloor },
+			maxPoints,
+		});
+	}, [cornerSafetyEnabled, radiansPerPoint, distancePerPoint, blankDelayPoints, blankFloor, kppsCeiling, scanFrequency]);
 
 	useFrame(() => {
 		if (!workerRef.current) return;

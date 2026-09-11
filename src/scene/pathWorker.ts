@@ -24,6 +24,7 @@
  */
 
 import { orderSegments, buildCoordBuffer } from './pathBuilder';
+import { buildGraphCoordBuffer, type GraphPathConfig } from './graphPath';
 import type { Segment } from './pathBuilder';
 
 const FLOATS_PER_VERTEX  = 6;   // x, y, intensity, r, g, b
@@ -33,14 +34,27 @@ const FLOATS_PER_SEGMENT = FLOATS_PER_VERTEX * VERTICES_PER_SEG;
 // Coord buffer resolution — adjustable at runtime via 'setCoordBufferSize' message.
 let _coordBufferSize = 1024;
 
+// Corner-safety (ADR-0011): off by default, matching the fixed-size behaviour
+// above exactly until toggled on. See docs/galvo-corner-safety.md.
+let _cornerSafety: { enabled: boolean; config: GraphPathConfig; maxPoints: number } = {
+	enabled: false,
+	config: { distancePerPoint: 5, radiansPerPoint: 0.6, blankDelayPoints: 10, blankFloor: -0.9 },
+	maxPoints: 4096,
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (self as any).onmessage = (event: MessageEvent) => {
 	const msg = event.data as
 		| { type: 'geometry'; segmentData: ArrayBuffer; prevEnd: { x: number; y: number } }
-		| { type: 'setCoordBufferSize'; size: number };
+		| { type: 'setCoordBufferSize'; size: number }
+		| { type: 'setCornerSafety'; enabled: boolean; config: GraphPathConfig; maxPoints: number };
 
 	if (msg.type === 'setCoordBufferSize') {
 		_coordBufferSize = msg.size;
+		return;
+	}
+	if (msg.type === 'setCornerSafety') {
+		_cornerSafety = { enabled: msg.enabled, config: msg.config, maxPoints: msg.maxPoints };
 		return;
 	}
 	if (msg.type !== 'geometry') return;
@@ -64,9 +78,10 @@ let _coordBufferSize = 1024;
 		});
 	}
 
-	const t0   = performance.now();
-	const path = orderSegments(segments, prevEnd);
-	const result = buildCoordBuffer(path, _coordBufferSize, prevEnd);
+	const t0 = performance.now();
+	const result = _cornerSafety.enabled
+		? buildGraphCoordBuffer(segments, prevEnd, _cornerSafety.config, _coordBufferSize, _cornerSafety.maxPoints)
+		: { ...buildCoordBuffer(orderSegments(segments, prevEnd), _coordBufferSize, prevEnd), minPointsNeeded: 0, overflowed: false };
 	const computeMs = performance.now() - t0;
 
 	// Transfer coord buffer — zero-copy on this hop
@@ -79,6 +94,8 @@ let _coordBufferSize = 1024;
 			endPos:    result.endPos,
 			computeMs,
 			nSeg,
+			minPointsNeeded: result.minPointsNeeded,
+			overflowed:      result.overflowed,
 		},
 		[result.data.buffer],
 	);

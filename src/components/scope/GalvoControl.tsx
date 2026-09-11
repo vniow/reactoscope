@@ -62,6 +62,11 @@ export function GalvoControl() {
 		blankFloor, setBlankFloor, zGamma, setZGamma,
 		exposureTime, setExposureTime,
 		glowStrength, setGlowStrength, hazeStrength, setHazeStrength, whitePoint, setWhitePoint,
+		cornerSafetyEnabled, setCornerSafetyEnabled,
+		radiansPerPoint, setRadiansPerPoint,
+		distancePerPoint, setDistancePerPoint,
+		blankDelayPoints, setBlankDelayPoints,
+		kppsCeiling, setKppsCeiling,
 	} = useGalvo();
 
 	// While linked, Y's own stored params are never displayed (the sliders show
@@ -124,6 +129,28 @@ export function GalvoControl() {
 				<SliderRow label='glow'      value={glowStrength} min={0} max={1}   step={0.02} onChange={setGlowStrength} />
 				<SliderRow label='haze'      value={hazeStrength} min={0} max={1}   step={0.02} onChange={setHazeStrength} />
 				<SliderRow label='white pt'  value={whitePoint}   min={0} max={1}   step={0.02} onChange={setWhitePoint} />
+			</Box>
+
+			{/* Corner-safety path generation (ADR-0011) — off by default; see
+			    docs/galvo-corner-safety.md. Deliberately a separate toggle from
+			    the Scanner Model's `enabled` above: that one drives what the
+			    emulator renders, this drives what the shared coordinate buffer
+			    actually is. */}
+			<ToggleButtonGroup sx={hwToggleSx(color)}>
+				<ToggleButton value='cornerSafety' selected={cornerSafetyEnabled}
+					onChange={() => setCornerSafetyEnabled(!cornerSafetyEnabled)} size='small'>
+					corner safety
+				</ToggleButton>
+			</ToggleButtonGroup>
+			<Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 2, rowGap: 1 }}>
+				<SliderRow label='corner delay' value={radiansPerPoint} min={0.1} max={3.2} step={0.05}
+					disabled={!cornerSafetyEnabled} onChange={setRadiansPerPoint} formatValue={(v) => `${v.toFixed(2)}rad/pt`} />
+				<SliderRow label='blank delay' value={blankDelayPoints} min={0} max={64} step={1}
+					disabled={!cornerSafetyEnabled} onChange={setBlankDelayPoints} formatValue={(v) => `${Math.round(v)}pt`} />
+				<SliderRow label='point density' value={distancePerPoint} min={0.5} max={40} step={0.5}
+					disabled={!cornerSafetyEnabled} onChange={setDistancePerPoint} />
+				<SliderRow label='kpps ceiling' value={kppsCeiling} min={5000} max={200000} step={1000}
+					disabled={!cornerSafetyEnabled} onChange={setKppsCeiling} formatValue={(v) => `${Math.round(v / 1000)}k`} />
 			</Box>
 		</Box>
 	);

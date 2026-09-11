@@ -2,10 +2,17 @@
 status: accepted
 ---
 
-> **Update**: still deferred, but the "no way to evaluate a technique" half of the blocker is being
-> addressed — ADR-0010 specifies a Galvo Laser Beam Emulator whose Scanner Model simulates the
+> **Update**: no longer deferred — ADR-0011 builds it, behind a toggle. The "no reference
+> implementation" ground is what fell: `docs/architecture-comparison.md` found two working
+> techniques (LaserBoy, laser-dac-rs), and a third, lasy's Eulerian-circuit draw-order optimisation,
+> read directly from source. The "no hardware in hand" ground still holds, which is why ADR-0011
+> lands as a toggle rather than a replacement. Everything below is kept for the reasoning trail, not
+> because the decision still stands as written.
+>
+> **Earlier update**, kept for context: the "no way to evaluate a technique" half of the blocker was
+> addressed first — ADR-0010 specifies a Galvo Laser Beam Emulator whose Scanner Model simulates the
 > mechanical response both candidate techniques are compensating for. That emulator is the
-> measuring instrument for this decision; it does not make it. Note also that the "widening the
+> measuring instrument for this decision; it did not make it. Note also that the "widening the
 > `blank` field" option floated below was overtaken by ADR-0009, which removed the flag entirely.
 
 # Galvo corner-safety blanking is deferred, not solved by the existing blank flag

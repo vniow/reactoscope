@@ -73,6 +73,32 @@ export interface GalvoContextType {
 	glowStrength: number; setGlowStrength: (v: number) => void;
 	hazeStrength: number; setHazeStrength: (v: number) => void;
 	whitePoint:   number; setWhitePoint:   (v: number) => void;
+
+	/**
+	 * Corner-safety path generation (ADR-0011, docs/galvo-corner-safety.md):
+	 * replaces orderSegments/buildCoordBuffer's fixed-size greedy walk with a
+	 * variable-length, Eulerian-circuit-ordered, corner/blank-dwell-aware
+	 * buffer. Off by default — un-toggling it reproduces today's exact
+	 * behaviour, since it changes a load-bearing buffer-size contract every
+	 * consumer depends on and hasn't been stress-tested against real scenes
+	 * yet (ADR-0011, decision 3).
+	 */
+	cornerSafetyEnabled: boolean; setCornerSafetyEnabled: (v: boolean) => void;
+	/** Points added at a lit corner per radian of turn (lasy: radians_per_point). */
+	radiansPerPoint: number; setRadiansPerPoint: (v: number) => void;
+	/** Density floor for a lit edge, in points per unit NDC distance (lasy: distance_per_point). */
+	distancePerPoint: number; setDistancePerPoint: (v: number) => void;
+	/** Extra points held at the end of every blank transition (lasy: blank_delay_points). */
+	blankDelayPoints: number; setBlankDelayPoints: (v: number) => void;
+	/**
+	 * The practical ceiling on points/sec a frame's buffer may grow to before
+	 * lit-edge fidelity gets scaled down (real projectors run ~20-40kpps
+	 * typically, ~60-100kpps at the high end — see
+	 * docs/architecture-comparison.md's kpps section). The audio-rate
+	 * anti-foldover ceiling (sampleRate / scanFrequency) always applies too,
+	 * whichever is smaller.
+	 */
+	kppsCeiling: number; setKppsCeiling: (v: number) => void;
 }
 
 const GalvoCtx = createContext<GalvoContextType | undefined>(undefined);
@@ -101,6 +127,12 @@ export function GalvoProvider({ children }: { children: ReactNode }) {
 	const [hazeStrength, setHazeStrength] = useLocalStorage('galvo.hazeStrength', 0.1);
 	const [whitePoint,   setWhitePoint]   = useLocalStorage('galvo.whitePoint',   0);
 
+	const [cornerSafetyEnabled, setCornerSafetyEnabled] = useLocalStorage('galvo.cornerSafetyEnabled', false);
+	const [radiansPerPoint,     setRadiansPerPoint]     = useLocalStorage('galvo.radiansPerPoint',     0.6);
+	const [distancePerPoint,    setDistancePerPoint]    = useLocalStorage('galvo.distancePerPoint',    5);
+	const [blankDelayPoints,    setBlankDelayPoints]    = useLocalStorage('galvo.blankDelayPoints',    10);
+	const [kppsCeiling,         setKppsCeiling]         = useLocalStorage('galvo.kppsCeiling',         60000);
+
 	const effectiveScannerY = linkAxes ? scannerX : scannerY;
 
 	const value = useMemo<GalvoContextType>(
@@ -115,6 +147,11 @@ export function GalvoProvider({ children }: { children: ReactNode }) {
 			exposureTime, setExposureTime,
 			glowStrength, setGlowStrength, hazeStrength, setHazeStrength,
 			whitePoint, setWhitePoint,
+			cornerSafetyEnabled, setCornerSafetyEnabled,
+			radiansPerPoint, setRadiansPerPoint,
+			distancePerPoint, setDistancePerPoint,
+			blankDelayPoints, setBlankDelayPoints,
+			kppsCeiling, setKppsCeiling,
 		}),
 		// Setter functions from useLocalStorage are stable (useCallback-wrapped)
 		// and never change — only the state values need to be in deps, same
@@ -125,6 +162,7 @@ export function GalvoProvider({ children }: { children: ReactNode }) {
 			trackingBlankThreshold, trackingBlankSoftness,
 			spotSize, power, gainR, gainG, gainB, blankFloor, zGamma,
 			exposureTime, glowStrength, hazeStrength, whitePoint,
+			cornerSafetyEnabled, radiansPerPoint, distancePerPoint, blankDelayPoints, kppsCeiling,
 		],
 	);
 
