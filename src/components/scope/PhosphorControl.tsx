@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react';
 import Box from '@mui/material/Box';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useAxis } from '../../contexts/WoahscopeContext';
 import { getColourFromHue, hueToHex, hexToHue } from '../../woahscope/utils';
@@ -16,9 +17,11 @@ export function PhosphorControl() {
 
 	return (
 		<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-			<Typography variant='caption' color='text.disabled' sx={{ fontSize: 9 }}>
-				colour
-			</Typography>
+			<Tooltip title='Phosphor colour the CRT beam draws in.' placement='top' arrow>
+				<Typography variant='caption' color='text.disabled' sx={{ fontSize: 9, cursor: 'help' }}>
+					colour
+				</Typography>
+			</Tooltip>
 
 			<Box
 				component='button'
