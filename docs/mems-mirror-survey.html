@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MEMS Mirror Survey — reactoscope research notes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #f7f7f9;
+    --panel: #ffffff;
+    --border: #e2e2e8;
+    --text: #1b1c22;
+    --text-dim: #55565f;
+    --code-bg: #eef0f4;
+    --code-text: #b3306b;
+
+    --galvo: #b5720a;
+    --galvo-bg: #fdf0df;
+    --mems: #0f8a7a;
+    --mems-bg: #e2f5f1;
+
+    --callout-bg: #fff8e6;
+    --callout-border: #e8c25a;
+    --gap-bg: #fdeceb;
+    --gap-border: #e0736a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14151a;
+      --panel: #1c1e26;
+      --border: #2c2e38;
+      --text: #eceef4;
+      --text-dim: #a3a6b4;
+      --code-bg: #262834;
+      --code-text: #ff8fb8;
+
+      --galvo: #e0a34e;
+      --galvo-bg: #3a2c18;
+      --mems: #3fd0bd;
+      --mems-bg: #123a34;
+
+      --callout-bg: #332c14;
+      --callout-border: #a5842f;
+      --gap-bg: #3a1f1e;
+      --gap-border: #a34e46;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.55;
+    margin: 0;
+    padding: 0 0 5rem 0;
+  }
+  main { max-width: 1020px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+  h1 { font-size: 1.6rem; margin: 0 0 0.4rem 0; letter-spacing: -0.01em; text-wrap: balance; }
+  h2 {
+    font-size: 1.25rem;
+    margin: 3rem 0 0.9rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 { font-size: 1rem; margin: 1.4rem 0 0.5rem 0; }
+  p { color: var(--text-dim); }
+  p.lede { color: var(--text); font-size: 1.02rem; }
+  code {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    font-size: 0.88em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  a { color: var(--mems); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.2rem 0 0.5rem 0; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.82rem;
+    font-weight: 600; border: 1px solid var(--border);
+  }
+  .chip .dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; display: inline-block; }
+  .chip.galvo { background: var(--galvo-bg); color: var(--galvo); }
+  .chip.mems { background: var(--mems-bg); color: var(--mems); }
+  .chip .dot.galvo { background: var(--galvo); }
+  .chip .dot.mems { background: var(--mems); }
+
+  .tldr-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.9rem; margin-top: 1.4rem;
+  }
+  .tldr-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem 1rem; }
+  .tldr-card .num {
+    font-size: 0.72rem; font-weight: 700; color: var(--text-dim);
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .tldr-card p { margin: 0.35rem 0 0 0; font-size: 0.88rem; color: var(--text); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 0.6rem 0 1.2rem 0; }
+  .table-wrap { overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 0.6rem 0.7rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-dim); }
+  td { background: var(--panel); }
+  th.galvo, td.col-galvo { border-top: 2px solid var(--galvo); }
+  th.mems, td.col-mems { border-top: 2px solid var(--mems); }
+
+  .callout {
+    background: var(--callout-bg); border: 1px solid var(--callout-border);
+    border-radius: 10px; padding: 0.9rem 1.1rem; margin: 1rem 0; font-size: 0.9rem;
+  }
+  .callout .label { font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+
+  .gap-box {
+    background: var(--gap-bg); border: 1px solid var(--gap-border);
+    border-radius: 10px; padding: 1rem 1.1rem; margin: 1rem 0;
+  }
+  .gap-box .label {
+    font-weight: 700; font-size: 0.78rem; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--gap-border); margin-bottom: 0.35rem;
+  }
+  .gap-box p { color: var(--text); font-size: 0.9rem; margin: 0.3rem 0; }
+
+  .cardgrid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 0.9rem; margin: 0.8rem 0 1.2rem 0;
+  }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem 1rem; }
+  .card h4 { margin: 0 0 0.4rem 0; font-size: 0.9rem; }
+  .card p { margin: 0; font-size: 0.84rem; }
+
+  .ease-wrap { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; margin: 0.8rem 0 1.2rem 0; }
+  .ease-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem 1rem; flex: 1; min-width: 260px; }
+  .ease-card h4 { margin: 0 0 0.5rem 0; font-size: 0.86rem; }
+  .ease-card svg { width: 100%; height: auto; display: block; }
+  .ease-card p.cap { margin: 0.5rem 0 0 0; font-size: 0.78rem; }
+
+  footer {
+    max-width: 1020px; margin: 3rem auto 0 auto; padding: 1.2rem 1.5rem;
+    border-top: 1px solid var(--border); color: var(--text-dim); font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <h1>MEMS mirror survey</h1>
+  <p class="lede">Twelve Mirrorcle-adjacent repositories dropped into <code>mems/</code> — vendor control code, firmware, and research projects — read against one question: what would a <strong>MEMS Laser</strong> Scanner Model need that the built <a href="galvo-laser-emulator.md">Galvo Laser</a> Scanner Model doesn't already give it?</p>
+
+  <div class="legend">
+    <span class="chip galvo"><span class="dot galvo"></span>Galvo Scanner Model (built)</span>
+    <span class="chip mems"><span class="dot mems"></span>MEMS mirror (this survey)</span>
+  </div>
+
+  <div class="tldr-grid">
+    <div class="tldr-card">
+      <div class="num">Finding 1</div>
+      <p>Mirrorcle's own driver docs group mirrors into three drive regimes — <strong>quasistatic, resonant-quasistatic, and resonant</strong> — and only the quasistatic case tracks an arbitrary commanded trajectory the way a galvo does.</p>
+    </div>
+    <div class="tldr-card">
+      <div class="num">Finding 2</div>
+      <p>The vendor's own docs call the mirror "a high-Q spring-mass system" — confirming <code>CONTEXT.md</code>'s framing verbatim. <code>ζ → 0</code>, the case the Galvo Scanner Model flags as unphysical, is the MEMS mirror's normal resonant operating point.</p>
+    </div>
+    <div class="tldr-card">
+      <div class="num">Finding 3</div>
+      <p>Driving a resonant mirror above its natural frequency can physically damage it. The one repo built around this problem is a <strong>notch filter</strong>, not a smarter controller — safety here means removing a frequency band, not sensing and backing off.</p>
+    </div>
+    <div class="tldr-card">
+      <div class="num">Finding 4</div>
+      <p>Real closed-loop position control barely exists across these twelve repos. The two firmware projects attempting it are unfinished; the most complete tracking algorithm (FoveaCam) has only run in simulation.</p>
+    </div>
+    <div class="tldr-card">
+      <div class="num">Finding 5</div>
+      <p>At least one real instrument here (BiScan) pairs a MEMS mirror on the fast axis with a <strong>galvo</strong> on the slow axis. A MEMS Laser emulator may need to coexist with the Galvo one, not replace it.</p>
+    </div>
+  </div>
+
+  <h2>Galvo vs. MEMS, side by side</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Aspect</th><th class="galvo">Galvo Scanner Model (built)</th><th class="mems">MEMS mirror (per this survey)</th></tr>
+    <tr><td>Native command</td><td class="col-galvo">Arbitrary X/Y trajectory, sample by sample</td><td class="col-mems">A fixed-frequency sinusoid (amplitude + phase) in resonant mode; arbitrary tracking only in quasistatic mode</td></tr>
+    <tr><td>Response form</td><td class="col-galvo">Per-axis 2nd-order damped biquad + slew clamp</td><td class="col-mems">Resonant: near-undamped response locked to one drive frequency. Quasistatic: closer to the galvo's own damped-servo form</td></tr>
+    <tr><td>Ideal damping</td><td class="col-galvo"><code>ζ</code> tuned to avoid ringing; <code>ζ → 0</code> is flagged as unphysical</td><td class="col-mems"><code>ζ → 0</code> <em>is</em> the intended resonant operating point</td></tr>
+    <tr><td>Speed vs. range</td><td class="col-galvo">Bandwidth and slew are software parameters, tunable at runtime</td><td class="col-mems">Fixed by the mirror's mechanics — fast+small aperture or slow+large, not adjustable in software</td></tr>
+    <tr><td>Failure mode</td><td class="col-galvo">Overshoot on long blank jumps — the reason the slew clamp exists</td><td class="col-mems">Driving above resonance can physically damage the mirror</td></tr>
+    <tr><td>Blanking sync</td><td class="col-galvo">Z channel free-runs against arbitrary commanded X/Y</td><td class="col-mems">Structured-light designs time blanking off the mirror's own sync pulse, not off a commanded position</td></tr>
+    <tr><td>Position feedback</td><td class="col-galvo">None — reactoscope's model is an open-loop simulation of the servo</td><td class="col-mems">Also mostly open-loop in this survey; the closed-loop attempts found are unfinished</td></tr>
+  </table>
+  </div>
+
+  <div class="ease-wrap">
+    <div class="ease-card">
+      <h4>Galvo: commanded step, damped response</h4>
+      <svg viewBox="0 0 300 120" preserveAspectRatio="none">
+        <line x1="0" y1="20" x2="300" y2="20" stroke="var(--border)" stroke-width="1"/>
+        <line x1="0" y1="100" x2="300" y2="100" stroke="var(--border)" stroke-width="1"/>
+        <path d="M0,80 L60,80 L60,20 L300,20" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-dasharray="4 3"/>
+        <path d="M0,80 L60,80 C 90,80 95,10 130,20 C 150,25 155,15 170,20 C 185,24 188,18 200,20 L300,20" fill="none" stroke="var(--galvo)" stroke-width="2.5"/>
+      </svg>
+      <p class="cap">Dashed = commanded position (arbitrary trajectory). Solid = actual — one step, one settle.</p>
+    </div>
+    <div class="ease-card">
+      <h4>MEMS (resonant): sinusoidal drive, fixed frequency</h4>
+      <svg viewBox="0 0 300 120" preserveAspectRatio="none">
+        <line x1="0" y1="60" x2="300" y2="60" stroke="var(--border)" stroke-width="1"/>
+        <path d="M0,60 C 25,10 50,10 75,60 C 100,110 125,110 150,60 C 175,10 200,10 225,60 C 250,110 275,110 300,60" fill="none" stroke="var(--mems)" stroke-width="2.5"/>
+      </svg>
+      <p class="cap">No "commanded vs. actual" gap to render — the drive frequency <em>is</em> the trajectory. Position is a phase, not a target.</p>
+    </div>
+  </div>
+
+  <h2>Hardware capabilities</h2>
+  <div class="cardgrid">
+    <div class="card">
+      <h4>Drive electronics</h4>
+      <p>Differential high-voltage electrostatic drive: <code>XIN</code>/<code>YIN</code> each split across two DAC channels as <code>Vbias ± Vdiff/2</code>. Low output current, onboard DC/DC boost converter. Four embedded Bessel low-pass filters — cutoff set by an external clock (<code>FCLK</code>), independently per axis, per the mirror's own datasheet recommendation.</p>
+    </div>
+    <div class="card">
+      <h4>Interfaces</h4>
+      <p>Analog Input driver variant: three voltages (X, Y, intensity) for a DAQ card, FPGA, or bench supply. USB driver variant (PlayzerX): binary serial protocol, a 125,000-sample FIFO (83,333 for RGB), sample rate 200–50,000 S/s, default 22,000.</p>
+    </div>
+    <div class="card">
+      <h4>Mirror modes</h4>
+      <p>Vendor taxonomy: <strong>quasistatic</strong>, <strong>resonant-quasistatic</strong>, <strong>resonant</strong>. Only the quasistatic case behaves like a positioner tracking an arbitrary target; the other two are defined by their relationship to one natural frequency.</p>
+    </div>
+    <div class="card">
+      <h4>Calibration</h4>
+      <p>Every mirror ships with a per-unit static-response report: voltage → mechanical angle, and it's nonlinear. CAnDLE in this set is exactly that measurement redone with a camera and a laser spot instead of the vendor's bench rig.</p>
+    </div>
+  </div>
+
+  <h2>Limitations</h2>
+  <div class="gap-box">
+    <div class="label">Resonance is a hazard, not just a constraint</div>
+    <p>Operating a resonant mirror above its natural frequency risks damaging it. The dedicated response to this in the survey is a notch filter on the driver input (<code>Filter-For-Mirrorcle-MEMS-Drivers</code>), citing a two-photon imaging paper's split of scanner behavior into a safe region below the oscillator frequency and a hazardous one above it. The safety envelope here is enforced by removing a frequency band from the signal — there's no sense-and-back-off controller anywhere in this set.</p>
+  </div>
+  <div class="gap-box">
+    <div class="label">Closed-loop control is aspirational, not proven</div>
+    <p><code>MEMS_mirror_close-loop_firmware</code>'s own commit log calls its phase-difference calculation unverified against its MATLAB reference. Everything else that moves a real mirror in this survey — the lens-control functions, <code>LD_MemsMirror</code>, the Gesture Recognition thesis — sends open-loop voltage commands to a mirror characterized in advance. FoveaCam's differentiable tracking algorithm is the most complete closed-loop idea here, but it has only run against a simulated mirror, never real hardware, in this repo.</p>
+  </div>
+
+  <div class="callout">
+    <div class="label">Repo quality varies a lot</div>
+    <p>Several of these are one-off research or thesis archives, not maintained libraries: the STM32 structured-light repo explicitly disclaims being a general-purpose MEMS control library, and the Gesture Recognition thesis notes its hardware "is no longer accessible." <code>playzerx</code> is the one actively maintained, CI-tested project in the set — it's Mirrorcle's own current product SDK.</p>
+  </div>
+
+  <h2>What this means for a MEMS Scanner Model</h2>
+  <p>The Galvo Scanner Model's damped-biquad-plus-slew form assumes the thing it's modeling is trying to track wherever you point it. A resonant MEMS mirror isn't doing that — it's a near-undamped oscillator you excite at one frequency, and "position" falls out as the phase of that oscillation. A faithful MEMS Laser emulator likely needs two sub-forms behind the same seam rather than one: a <strong>quasistatic</strong> mode that can reuse the existing damped-servo shape almost as-is, and a <strong>resonant</strong> mode whose state is amplitude/frequency/phase, not a filtered copy of a commanded X/Y signal — plus a hard exclusion band around the mirror's natural frequency, since here that's a safety limit, not a tuning choice. Blanking may also need to key off the resonant sweep's own phase (as the structured-light firmware does) rather than free-run against X/Y the way the CRT and Galvo emulators do.</p>
+
+  <h2>Appendix: repositories surveyed</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Repo</th><th>What it is</th><th>Control style</th></tr>
+    <tr><td>Mirrorcle-MEMS-Lens-Control-functions</td><td>Python control functions + vendor driver PDF</td><td>Differential DAC voltage, Lissajous / region-scan generators, Kalman-filter tracking demo</td></tr>
+    <tr><td>stm32-mems-mirror-structured-light-controller</td><td>STM32H743 structured-light projector firmware</td><td>Doesn't drive the mirror — times laser/DAC output off the mirror's own sync pulse (timer input capture)</td></tr>
+    <tr><td>MEMS_mirror_close-loop_firmware</td><td>STM32H750 closed-loop attempt</td><td>Phase-difference calculation, marked unverified in its own log</td></tr>
+    <tr><td>MEMS_mirror_control_firmware</td><td>STM32H750 open-loop firmware</td><td>Rotary-encoder-tuned drive frequency</td></tr>
+    <tr><td>Filter-For-Mirrorcle-MEMS-Drivers</td><td>Notch-filter hardware (KiCad design)</td><td>Blocks the mirror's damaging above-resonance band</td></tr>
+    <tr><td>LD_MemsMirror</td><td>Arduino + PicoAmp example</td><td>Minimal open-loop demo code</td></tr>
+    <tr><td>BiScan</td><td>Bidirectional-scan correction GUI</td><td>Post-hoc image correction for a MEMS(fast)+galvo(slow) microscope</td></tr>
+    <tr><td>CAnDLE</td><td>Laser-spot centroid tracker</td><td>Measures the voltage→angle transfer function; a calibration tool, not runtime control</td></tr>
+    <tr><td>foveaCam</td><td>Foveating-camera simulation (published paper)</td><td>Differentiable closed-loop tracking algorithm, simulation only</td></tr>
+    <tr><td>playzerx</td><td>Mirrorcle's own product SDK/firmware</td><td>USB/analog vector-graphics interface, FIFO sample buffer; actively maintained</td></tr>
+    <tr><td>MEMS-Gesture-Recognition</td><td>Master's thesis demo</td><td>MATLAB MTIDevice SDK control, Python vision, TCP link</td></tr>
+    <tr><td>3D-Lidar-TX-FPGA</td><td>Xilinx ISE SPI/DAC transmitter</td><td>Bare SPI-to-DAC Verilog module, no control loop</td></tr>
+  </table>
+  </div>
+
+  <footer>
+    Compiled from the READMEs, firmware source, and vendor docs under <code>mems/</code> (gitignored, not part of this repo's tracked source) against <code>CONTEXT.md</code> and <code>docs/galvo-laser-emulator.md</code>. The vendor driver PDF's text layer resisted extraction beyond its cover and a handful of prose sections; numbers quoted from it (buffer sizes, sample rates, mirror-mode taxonomy, filter behavior) come from cleanly recovered passages, not OCR guesses.
+  </footer>
+
+</main>
+</body>
+</html>
