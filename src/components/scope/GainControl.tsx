@@ -1,56 +1,12 @@
 import Box from '@mui/material/Box';
-import Slider from '@mui/material/Slider';
-import Typography from '@mui/material/Typography';
 import { useAxis, useEffects } from '../../contexts/WoahscopeContext';
 import { useBeamEmulator } from '../../contexts/BeamEmulatorContext';
-import { NODE_COLORS } from '../../daw/nodes/shared/nodeColors';
-import { hwSliderSx } from '../../daw/nodes/shared/hwStyles';
+import { SliderRow } from './SliderRow';
 
-const color = NODE_COLORS.scene;
-
-function SliderRow({
-	label,
-	value,
-	min,
-	max,
-	step,
-	onChange,
-	formatValue,
-}: {
-	label: string;
-	value: number;
-	min: number;
-	max: number;
-	step: number;
-	onChange: (v: number) => void;
-	formatValue?: (v: number) => string;
-}) {
-	const displayValue = formatValue
-		? formatValue(value)
-		: `${value > 0 ? '+' : ''}${value.toFixed(1)}`;
-	return (
-		<Box>
-			<Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25 }}>
-				<Typography variant='caption' color='text.disabled' sx={{ fontSize: 9, letterSpacing: 0.5 }}>
-					{label}
-				</Typography>
-				<Typography variant='caption' color='text.disabled' sx={{ fontSize: 9 }}>
-					{displayValue}
-				</Typography>
-			</Box>
-			<Slider
-				aria-label={label}
-				min={min}
-				max={max}
-				step={step}
-				value={value}
-				onChange={(_e, v) => onChange(v as number)}
-				size='small'
-				sx={hwSliderSx(color)}
-			/>
-		</Box>
-	);
-}
+const signedFormat = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)}`;
+const roundedFormat = (v: number) => String(Math.round(v));
+const pow2Format = (v: number) => String(1 << v);
+const pow2Parse = (s: string) => Math.round(Math.log2(Math.max(1, parseFloat(s))));
 
 export function EffectsControl() {
 	const { intensity, setIntensity } = useAxis();
@@ -65,8 +21,9 @@ export function EffectsControl() {
 	} = useEffects();
 
 	return (
-		<Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 2 }}>
-			<SliderRow label='intensity'   value={intensity}       min={-2} max={4} step={0.1}  onChange={setIntensity} />
+		<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+			<SliderRow label='intensity' tooltip='Overall beam brightness multiplier.'
+				value={intensity} min={-2} max={4} step={0.1} onChange={setIntensity} formatValue={signedFormat} />
 			{device === 'crt' && (
 				<>
 					{/* persistence/glow/scatter are CRT phosphor concepts (see
@@ -74,40 +31,24 @@ export function EffectsControl() {
 					    persistence"). GalvoControl has its own glow/haze sliders
 					    driving different code — showing both here would be two
 					    "glow" sliders controlling different things under one label. */}
-					<SliderRow label='persistence' value={persistence}     min={0} max={4} step={0.1}  onChange={setPersistence} />
-					<SliderRow label='glow'        value={glowStrength}    min={0} max={4} step={0.05} onChange={setGlowStrength} />
-					<SliderRow label='scatter'     value={scatterStrength} min={0} max={2} step={0.05} onChange={setScatterStrength} />
+					<SliderRow label='persistence' tooltip='How long the CRT phosphor keeps glowing after the beam passes (phosphor decay, distinct from eye/camera integration).'
+						value={persistence} min={0} max={4} step={0.1} onChange={setPersistence} formatValue={signedFormat} />
+					<SliderRow label='glow' tooltip='Bloom strength around bright beam segments.'
+						value={glowStrength} min={0} max={4} step={0.05} onChange={setGlowStrength} formatValue={signedFormat} />
+					<SliderRow label='scatter' tooltip='Atmospheric-scatter haze around the beam.'
+						value={scatterStrength} min={0} max={2} step={0.05} onChange={setScatterStrength} formatValue={signedFormat} />
 				</>
 			)}
 			{lanczosEnabled && (
-				<SliderRow
-					label='smooth steps'
-					value={lanczosSteps}
-					min={1}
-					max={8}
-					step={1}
-					onChange={setLanczosSteps}
-					formatValue={(v) => String(Math.round(v))}
-				/>
+				<SliderRow label='smooth steps' tooltip='Number of Lanczos taps used to smooth the beam path. Higher looks smoother but costs more to render.'
+					value={lanczosSteps} min={1} max={8} step={1} onChange={setLanczosSteps} formatValue={roundedFormat} />
 			)}
-			<SliderRow
-				label='samples'
-				value={Math.log2(nSamples)}
-				min={8}
-				max={11}
-				step={1}
-				onChange={(v) => setNSamples(1 << v)}
-				formatValue={(v) => String(1 << v)}
-			/>
-			<SliderRow
-				label='coord buf'
-				value={Math.log2(coordBufferSize)}
-				min={8}
-				max={12}
-				step={1}
-				onChange={(v) => setCoordBufferSize(1 << v)}
-				formatValue={(v) => String(1 << v)}
-			/>
+			<SliderRow label='samples' tooltip='Points sampled per frame from the audio waveform. Higher gives finer detail at a higher rendering cost.'
+				value={Math.log2(nSamples)} min={8} max={11} step={1}
+				onChange={(v) => setNSamples(1 << v)} formatValue={pow2Format} parseValue={pow2Parse} />
+			<SliderRow label='coord buf' tooltip='Size of the coordinate buffer used to scan scene geometry into the beam path. Larger supports more complex scenes at a higher rendering cost.'
+				value={Math.log2(coordBufferSize)} min={8} max={12} step={1}
+				onChange={(v) => setCoordBufferSize(1 << v)} formatValue={pow2Format} parseValue={pow2Parse} />
 		</Box>
 	);
 }

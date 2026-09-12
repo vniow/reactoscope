@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Popover from '@mui/material/Popover';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { EffectsControl }        from '../../components/scope/GainControl';
@@ -16,13 +17,15 @@ import { hwIconBtn, hwIconBtnLit } from '../nodes/shared/hwStyles';
 
 const color = NODE_COLORS.scene;
 
-function Sect({ label, children }: { label: string; children: React.ReactNode }) {
+function Sect({ label, tooltip, children }: { label: string; tooltip: string; children: React.ReactNode }) {
 	return (
 		<Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-			<Typography variant='caption' color='text.disabled'
-				sx={{ fontSize: 9, letterSpacing: 0.8, textTransform: 'uppercase' }}>
-				{label}
-			</Typography>
+			<Tooltip title={tooltip} placement='top' arrow>
+				<Typography variant='caption' color='text.disabled'
+					sx={{ fontSize: 9, letterSpacing: 0.8, textTransform: 'uppercase', cursor: 'help', width: 'fit-content' }}>
+					{label}
+				</Typography>
+			</Tooltip>
 			{children}
 		</Box>
 	);
@@ -59,7 +62,9 @@ export function VizSettingsOverlay({ onOpenChange }: { onOpenChange?: (open: boo
 							border:          `1px solid ${color}40`,
 							boxShadow:       `0 4px 16px rgba(0,0,0,0.7), 0 0 0 1px ${color}18`,
 							borderRadius:    1,
-							width:           260,
+							width:           300,
+							maxHeight:       '80vh',
+							overflowY:       'auto',
 							p:               1.5,
 						},
 					},
@@ -67,23 +72,23 @@ export function VizSettingsOverlay({ onOpenChange }: { onOpenChange?: (open: boo
 			>
 				<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
-					<Sect label='display'>
+					<Sect label='display' tooltip='Beam emulator device and geometry options — CRT vs. Galvo Laser, axis swap/invert, and antialiasing.'>
 						<VisualizationControls />
 					</Sect>
 
 					{device === 'crt' && !isMultichannel && (
-						<Sect label='phosphor'>
+						<Sect label='phosphor' tooltip='CRT phosphor colour — the hue the beam draws in.'>
 							<PhosphorControl />
 						</Sect>
 					)}
 
 					{device === 'galvo' && (
-						<Sect label='galvo laser'>
+						<Sect label='galvo laser' tooltip='Scanner Model controls — simulates how a real galvanometer mirror lags behind the commanded beam position.'>
 							<GalvoControl />
 						</Sect>
 					)}
 
-					<Sect label='effects'>
+					<Sect label='effects' tooltip='Beam intensity and rendering-quality controls shared across devices.'>
 						<EffectsControl />
 					</Sect>
 
