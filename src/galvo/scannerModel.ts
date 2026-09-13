@@ -1,7 +1,15 @@
 // Pure-math Scanner Model — see docs/galvo-laser-emulator.md for the design
 // spec and docs/adr/0010-galvo-laser-beam-emulator.md for why it exists.
 // Deliberately framework-free: no React, no THREE, so it can be tested and
-// reasoned about in isolation from the renderer that will eventually drive it.
+// reasoned about in isolation from the renderer that drives it.
+
+import { rbjLowpass } from '../dsp/biquad';
+import type { ScannerAxis } from '../dsp/scannerAxis';
+
+// ScannerAxis moved to src/dsp/ when the MEMS Quasistatic Model became a second
+// implementation of it (ADR-0012, sub-decision 6). Re-exported here so existing
+// imports from this module keep working.
+export type { ScannerAxis };
 
 export interface ScannerParams {
 	/** Natural frequency f0, in Hz. */
@@ -12,43 +20,20 @@ export interface ScannerParams {
 	slewLimit: number;
 }
 
-export interface ScannerAxis {
-	/** Runs the filter over a buffer, carrying state from the previous call. */
-	process(input: Float32Array): Float32Array;
-	/**
-	 * Warm-starts all internal history to `value`, as if the axis had been
-	 * sitting at rest there. Call this whenever the caller detects a
-	 * discontinuity in its input (see ADR-0010, sub-decision 3) — never
-	 * zero the state instead, or a gap fabricates a full-scale slew from
-	 * the origin that never actually happened.
-	 */
-	reset(value: number): void;
-}
-
 export function createScannerAxis(sampleRate: number, params: ScannerParams): ScannerAxis {
-	const { damping } = params;
-
 	// Clamp the bandwidth actually used for the coefficients, not just document
-	// the bound: past fs/4, the RBJ formulas below can produce poles outside
-	// the unit circle — a genuinely unstable filter, not merely an inaccurate
-	// one (confirmed: 40kHz at 48kHz/damping 0.7 gives a pole magnitude of
-	// ~2.02). A scanner with bandwidth anywhere near half the audio rate is
-	// unphysical anyway, so silently capping here is correct, not a compromise.
+	// the bound: past fs/4, the RBJ formulas can produce poles outside the unit
+	// circle — a genuinely unstable filter, not merely an inaccurate one
+	// (confirmed: 40kHz at 48kHz/damping 0.7 gives a pole magnitude of ~2.02).
+	// A scanner with bandwidth anywhere near half the audio rate is unphysical
+	// anyway, so silently capping here is correct, not a compromise.
 	const bandwidth = Math.min(params.bandwidth, sampleRate / 4);
 
-	// RBJ cookbook biquad lowpass, normalised by a0 so the recurrence below
-	// doesn't need to divide per sample.
-	const omega0 = (2 * Math.PI * bandwidth) / sampleRate;
-	const Q      = 1 / (2 * damping);
-	const alpha  = Math.sin(omega0) / (2 * Q);
-	const cosW0  = Math.cos(omega0);
-
-	const a0 = 1 + alpha;
-	const b0 = (1 - cosW0) / 2 / a0;
-	const b1 = (1 - cosW0)     / a0;
-	const b2 = (1 - cosW0) / 2 / a0;
-	const a1 = (-2 * cosW0)    / a0;
-	const a2 = (1 - alpha)     / a0;
+	// Coefficients come from src/dsp/biquad.ts, shared with the MEMS model's
+	// resonator stage. This axis keeps its own recurrence rather than using
+	// createBiquadSection because the slew clamp has to sit *inside* the loop,
+	// between the filter output and the state write-back.
+	const { b0, b1, b2, a1, a2 } = rbjLowpass(sampleRate, bandwidth, params.damping);
 
 	const deltaMax = params.slewLimit / sampleRate;
 

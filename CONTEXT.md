@@ -42,9 +42,9 @@ _Avoid_: audio data getter
 **Beam Emulator**:
 A renderer that simulates a physical display device driven by the Master
 Output, drawing where that device's beam actually goes. Three are named: CRT
-(built), Galvo Laser (specified, see `docs/galvo-laser-emulator.md`), MEMS
-Laser (deferred). The Sweep view is deliberately not one — it plots channels
-against time rather than emulating a device.
+(built), Galvo Laser (built, see `docs/galvo-laser-emulator.md`), MEMS Laser
+(built, see `docs/mems-laser-emulator.md`). The Sweep view is deliberately not
+one — it plots channels against time rather than emulating a device.
 _Avoid_: renderer, visualizer, scope (all three now ambiguous)
 
 **CRT**:
@@ -59,15 +59,26 @@ renders *simulated actual* beam position, not the command — the difference
 between the two views is the whole product.
 
 **MEMS Laser**:
-The Beam Emulator for a MEMS-mirror laser projector. Named but not built: a
-MEMS mirror is a high-Q resonant structure rather than a damped servo, so it is
-a different Scanner Model behind the same seam, scoped separately.
+The Beam Emulator for a MEMS-mirror laser projector, in its quasistatic drive
+regime. Unlike the Galvo Laser it is not a servo chasing a target: the signal is
+band-limited by a deliberate electronic filter *before* reaching the mirror, and
+the mirror's own high-Q response is what that filter exists to suppress. Its
+Scanner Model implementation is the Quasistatic Model.
+
+**Quasistatic Model**:
+The MEMS Laser's Scanner Model: an amplitude clamp, a Bessel low-pass, and an
+optional high-Q resonator, per axis. Named for the drive regime rather than the
+device, so a resonant-mode implementation can be added as a sibling rather than
+forcing a rename — the same reason Scanner Model is named generically.
+_Avoid_: MEMS model, mems filter
 
 **Scanner Model**:
-The simulation of a beam-steering mechanism's physical response — for a galvo,
-a per-axis second-order servo plus a slew-rate clamp, turning commanded X/Y
-into actual X/Y. Named for the industry term for the mirror assembly, so a MEMS
-response is a second implementation rather than a rename.
+The simulation of a beam-steering mechanism's physical response, turning
+commanded X/Y into actual X/Y. Named for the industry term for the mirror
+assembly, so each device's response is an implementation rather than a rename.
+Two exist: the galvo's per-axis second-order servo plus slew-rate clamp, and the
+MEMS Quasistatic Model. Both satisfy the same `ScannerAxis` interface, which is
+the seam the shared laser renderer plugs into.
 _Avoid_: galvo model, mirror sim
 
 ### Graph

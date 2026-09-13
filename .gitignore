@@ -47,4 +47,6 @@ Laserboy/
 laser-dac-rs-main
 playzerx-master/
 oscilloscope-clock/
-mems/
+# Root-anchored: an unanchored "mems/" also matches src/mems/, which is our own
+# MEMS Laser Scanner Model source, not the reference material being ignored here.
+/mems/
