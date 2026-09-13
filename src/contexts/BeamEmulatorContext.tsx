@@ -2,8 +2,8 @@ import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 // ─── Beam Emulator selection ───────────────────────────────────────────────
-// Which device the scope panel is currently rendering: CRT or Galvo Laser
-// (see CONTEXT.md, ADR-0010). This is its own small context rather than a
+// Which device the scope panel is currently rendering: CRT, Galvo Laser or
+// MEMS Laser (see CONTEXT.md, ADR-0010, ADR-0012). This is its own small context rather than a
 // field on WoahscopeContext, for two reasons: it isn't CRT-specific the way
 // everything in that context currently is (renaming/reshaping that context
 // is a deferred follow-up, not part of this work — ADR-0010's non-goals),
@@ -15,7 +15,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 // separately-mounted call sites — which is exactly why WoahscopeContext
 // exists as a Context in the first place, and why this does too.
 
-export type BeamEmulatorDevice = 'crt' | 'galvo';
+export type BeamEmulatorDevice = 'crt' | 'galvo' | 'mems';
 
 interface BeamEmulatorContextType {
 	device: BeamEmulatorDevice;

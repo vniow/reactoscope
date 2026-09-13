@@ -13,7 +13,10 @@ export function VisualizationControls() {
 	const { swapXY, setSwapXY, invertXY, setInvertXY } = useAxis();
 	const { crtEnabled, setCrtEnabled, lanczosEnabled, setLanczosEnabled } = useEffects();
 	const { device, setDevice } = useBeamEmulator();
-	const isGalvo = device === 'galvo';
+	// The mask toggle belongs to CRT mode specifically, so it is gated on being
+	// CRT rather than on not being galvo — with a third device that distinction
+	// stops being the same question.
+	const isCrt = device === 'crt';
 
 	return (
 		<Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
@@ -29,6 +32,9 @@ export function VisualizationControls() {
 				<Tooltip title='Galvanometer-mirror laser projector — draws the beam where the simulated mirror actually ends up, including lag and overshoot.' placement='top' arrow>
 					<ToggleButton value='galvo' size='small'>Galvo Laser</ToggleButton>
 				</Tooltip>
+				<Tooltip title='MEMS-mirror laser projector, quasistatic drive — the signal is band-limited by a Bessel filter before it reaches the mirror, so the figure softens without overshooting until the cutoff nears the mirror’s resonance.' placement='top' arrow>
+					<ToggleButton value='mems'  size='small'>MEMS Laser</ToggleButton>
+				</Tooltip>
 			</ToggleButtonGroup>
 
 			<ToggleButtonGroup sx={{ ...hwToggleSx(color), flexWrap: 'wrap' }}>
@@ -38,7 +44,7 @@ export function VisualizationControls() {
 				<Tooltip title='Invert both X and Y deflection.' placement='top' arrow>
 					<ToggleButton value='invertXY' selected={invertXY} onChange={() => setInvertXY(!invertXY)} size='small'>invert</ToggleButton>
 				</Tooltip>
-				{!isGalvo && (
+				{isCrt && (
 					// Labelled "mask", not "CRT" — the device selector above already
 					// owns that word; this toggles only the noise/shadow-mask texture
 					// within CRT mode, a different, narrower thing.

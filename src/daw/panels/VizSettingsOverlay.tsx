@@ -9,6 +9,7 @@ import { EffectsControl }        from '../../components/scope/GainControl';
 import { PhosphorControl }       from '../../components/scope/PhosphorControl';
 import { VisualizationControls } from '../../components/scope/VisualizationControls';
 import { GalvoControl }          from '../../components/scope/GalvoControl';
+import { MemsControl }           from '../../components/scope/MemsControl';
 import { useBeamEmulator }       from '../../contexts/BeamEmulatorContext';
 import { useDawStore, isMasterMultichannel } from '../../store/daw';
 import { NODE_COLORS } from '../nodes/shared/nodeColors';
@@ -72,7 +73,7 @@ export function VizSettingsOverlay({ onOpenChange }: { onOpenChange?: (open: boo
 			>
 				<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
-					<Sect label='display' tooltip='Beam emulator device and geometry options — CRT vs. Galvo Laser, axis swap/invert, and antialiasing.'>
+					<Sect label='display' tooltip='Beam emulator device and geometry options — CRT, Galvo Laser or MEMS Laser, axis swap/invert, and antialiasing.'>
 						<VisualizationControls />
 					</Sect>
 
@@ -85,6 +86,12 @@ export function VizSettingsOverlay({ onOpenChange }: { onOpenChange?: (open: boo
 					{device === 'galvo' && (
 						<Sect label='galvo laser' tooltip='Scanner Model controls — simulates how a real galvanometer mirror lags behind the commanded beam position.'>
 							<GalvoControl />
+						</Sect>
+					)}
+
+					{device === 'mems' && (
+						<Sect label='mems laser' tooltip='Quasistatic Model controls — simulates the Bessel-filtered drive path of a MEMS mirror, and the mirror resonance that filter exists to suppress.'>
+							<MemsControl />
 						</Sect>
 					)}
 
