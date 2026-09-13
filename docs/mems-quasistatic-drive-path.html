@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quasistatic MEMS Drive Path</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #f7f7f9;
+    --panel: #ffffff;
+    --border: #e2e2e8;
+    --text: #1b1c22;
+    --text-dim: #55565f;
+    --code-bg: #eef0f4;
+    --code-text: #b3306b;
+
+    --galvo: #b5720a;
+    --galvo-bg: #fdf0df;
+    --mems: #0f8a7a;
+    --mems-bg: #e2f5f1;
+    --react: #2f6fed;
+    --react-bg: #eaf1ff;
+
+    --callout-bg: #fff8e6;
+    --callout-border: #e8c25a;
+    --gap-bg: #fdeceb;
+    --gap-border: #e0736a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14151a;
+      --panel: #1c1e26;
+      --border: #2c2e38;
+      --text: #eceef4;
+      --text-dim: #a3a6b4;
+      --code-bg: #262834;
+      --code-text: #ff8fb8;
+
+      --galvo: #e0a34e;
+      --galvo-bg: #3a2c18;
+      --mems: #3fd0bd;
+      --mems-bg: #123a34;
+      --react: #6fa0ff;
+      --react-bg: #1c2740;
+
+      --callout-bg: #332c14;
+      --callout-border: #a5842f;
+      --gap-bg: #3a1f1e;
+      --gap-border: #a34e46;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.55;
+    margin: 0;
+    padding: 0 0 5rem 0;
+  }
+  main { max-width: 1020px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+  h1 { font-size: 1.6rem; margin: 0 0 0.4rem 0; letter-spacing: -0.01em; text-wrap: balance; }
+  h2 {
+    font-size: 1.25rem;
+    margin: 3rem 0 0.9rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 { font-size: 1rem; margin: 1.4rem 0 0.5rem 0; }
+  p { color: var(--text-dim); }
+  p.lede { color: var(--text); font-size: 1.02rem; }
+  code {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    font-size: 0.88em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--text);
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  a { color: var(--mems); }
+
+  .tldr-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.9rem; margin-top: 1.4rem;
+  }
+  .tldr-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem 1rem; }
+  .tldr-card .num {
+    font-size: 0.72rem; font-weight: 700; color: var(--text-dim);
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .tldr-card p { margin: 0.35rem 0 0 0; font-size: 0.88rem; color: var(--text); }
+
+  /* stage chain */
+  .chain { display: flex; flex-direction: column; gap: 0.5rem; margin: 1.2rem 0; }
+  .stage {
+    background: var(--panel); border: 1px solid var(--border);
+    border-left: 3px solid var(--mems);
+    border-radius: 8px; padding: 0.75rem 1rem;
+    display: grid; grid-template-columns: 2.2rem 1fr; gap: 0.8rem; align-items: start;
+  }
+  .stage.react { border-left-color: var(--react); }
+  .stage .idx {
+    font-size: 0.75rem; font-weight: 700; color: var(--text-dim);
+    font-variant-numeric: tabular-nums; padding-top: 0.15rem;
+  }
+  .stage .t { font-weight: 700; font-size: 0.9rem; }
+  .stage .d { color: var(--text-dim); font-size: 0.84rem; margin-top: 0.2rem; }
+  .stage .sig {
+    display: inline-block; margin-top: 0.4rem; font-size: 0.78rem;
+    background: var(--mems-bg); color: var(--mems);
+    padding: 0.15rem 0.5rem; border-radius: 5px; font-weight: 600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .stage.react .sig { background: var(--react-bg); color: var(--react); }
+  .chain .down { text-align: center; color: var(--text-dim); font-size: 1rem; line-height: 1; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 0.6rem 0 1.2rem 0; }
+  .table-wrap { overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 0.6rem 0.7rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-dim); }
+  td { background: var(--panel); }
+  td.num { font-variant-numeric: tabular-nums; }
+  th.galvo, td.col-galvo { border-top: 2px solid var(--galvo); }
+  th.mems, td.col-mems { border-top: 2px solid var(--mems); }
+
+  .callout {
+    background: var(--callout-bg); border: 1px solid var(--callout-border);
+    border-radius: 10px; padding: 0.9rem 1.1rem; margin: 1rem 0; font-size: 0.9rem;
+  }
+  .callout .label { font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+  .callout p { color: var(--text); margin: 0.3rem 0; }
+
+  .gap-box {
+    background: var(--gap-bg); border: 1px solid var(--gap-border);
+    border-radius: 10px; padding: 1rem 1.1rem; margin: 1rem 0;
+  }
+  .gap-box .label {
+    font-weight: 700; font-size: 0.78rem; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--gap-border); margin-bottom: 0.35rem;
+  }
+  .gap-box p { color: var(--text); font-size: 0.9rem; margin: 0.3rem 0; }
+
+  .figure {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem 1.1rem; margin: 1.2rem 0;
+  }
+  .figure h4 { margin: 0 0 0.7rem 0; font-size: 0.88rem; }
+  .figure svg { width: 100%; height: auto; display: block; }
+  .figure p.cap { margin: 0.7rem 0 0 0; font-size: 0.8rem; }
+  .fig-scroll { overflow-x: auto; }
+
+  footer {
+    max-width: 1020px; margin: 3rem auto 0 auto; padding: 1.2rem 1.5rem;
+    border-top: 1px solid var(--border); color: var(--text-dim); font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <h1>The quasistatic MEMS drive path</h1>
+  <p class="lede">Quasistatic is the one MEMS mode that accepts an arbitrary analog X/Y signal — the kind reactoscope's Master Output already is. This traces that path stage by stage through the libraries in <code>mems/</code>, with the real numbers each one uses, and asks what a quasistatic MEMS Scanner Model would actually have to compute. Companion to <a href="mems-mirror-survey.html">the MEMS mirror survey</a>.</p>
+
+  <div class="tldr-grid">
+    <div class="tldr-card">
+      <div class="num">Finding 1</div>
+      <p>The units already match. Mirrorcle's analog input is <strong>bipolar, zero-centred, ±10 V with origin at 0 V</strong>, and every control library in this set normalizes to <code>[-1, +1]</code> first — the same convention as reactoscope's X/Y.</p>
+    </div>
+    <div class="tldr-card">
+      <div class="num">Finding 2</div>
+      <p>The bandwidth does not. The driver's own spec is <strong>50–25,000 Hz</strong>, but the in-path anti-resonance filter is set per mirror to <strong>220–500 Hz</strong> in practice — roughly 1–2% of the audio band.</p>
+    </div>
+    <div class="tldr-card">
+      <div class="num">Finding 3</div>
+      <p>A mandatory <strong>5th-order Bessel low-pass</strong> (MAX7413) sits between input and mirror, tuned by an external clock at exactly <strong>60× the cutoff</strong>. Stop the clock and the output stops following the input entirely.</p>
+    </div>
+    <div class="tldr-card">
+      <div class="num">Finding 4</div>
+      <p>That filter <em>is</em> the slew limit. A galvo model needs a separate slew clamp because a linear filter makes long jumps free; here the band limit already bounds the rate of change, so the MEMS model needs an <strong>amplitude</strong> clamp instead.</p>
+    </div>
+  </div>
+
+  <h2>The chain, end to end</h2>
+  <p>From a normalized coordinate to a mirror angle, as the Analog Input driver actually wires it. Every number below is taken from code or docs in <code>mems/</code>, not assumed.</p>
+
+  <div class="chain">
+    <div class="stage react">
+      <div class="idx">0</div>
+      <div>
+        <div class="t">Normalized command</div>
+        <div class="d">Where reactoscope's Master Output already lives. <code>GUI_Main.py</code> validates exactly this range, and <code>Coordi_to_Diff()</code> is a bare scalar multiply: <code>X_Voltage = normalized_X * Vdiff</code>.</div>
+        <div class="sig">X, Y ∈ [-1, +1]</div>
+      </div>
+    </div>
+    <div class="down">↓</div>
+    <div class="stage">
+      <div class="idx">1</div>
+      <div>
+        <div class="t">Scale to command voltage</div>
+        <div class="d">Analog Input driver: <code>XIN</code>/<code>YIN</code> take −10 V to +10 V, with <strong>0 V as the mirror's origin</strong> — no tip, no tilt. Full scale corresponds to the driver's Vdifference range. Digital Input driver: the host computes Vdifference itself and drives all four DAC channels.</div>
+        <div class="sig">XIN, YIN = ±10 V</div>
+      </div>
+    </div>
+    <div class="down">↓</div>
+    <div class="stage">
+      <div class="idx">2</div>
+      <div>
+        <div class="t">5th-order Bessel low-pass — the anti-resonance stage</div>
+        <div class="d">Part is a <strong>MAX7413</strong>, a clock-tuned switched-capacitor filter. Cutoff = FCLK ÷ 60, set per the mirror's own datasheet. Separate clocks for X and Y, normally tied together. Bessel is chosen for flat group delay — the waveform is delayed uniformly rather than reshaped, which is what vector content needs. Docs are explicit that if the clock is absent or stopped, <em>output voltages do not update or follow the input at all.</em></div>
+        <div class="sig">cutoff 220–500 Hz observed</div>
+      </div>
+    </div>
+    <div class="down">↓</div>
+    <div class="stage">
+      <div class="idx">3</div>
+      <div>
+        <div class="t">Bias-Differential Quad-channel (BDQ) high-voltage stage</div>
+        <div class="d">Four high-voltage channels, all resting at Vbias — that resting state is the mirror's origin. Each axis is a push-pull pair about that bias. Vendor's worked example: X+ at 110 V and X− at 50 V is "Vdifference of 60 V at Vbias of 80 V". Mirror rotation is <em>approximately proportional</em> to Vdifference.</div>
+        <div class="sig">X+ = Vbias + Vdiff/2 &nbsp;·&nbsp; X− = Vbias − Vdiff/2</div>
+      </div>
+    </div>
+    <div class="down">↓</div>
+    <div class="stage">
+      <div class="idx">4</div>
+      <div>
+        <div class="t">The mirror</div>
+        <div class="d">A high-Q spring-mass structure. Angle-versus-Vdifference is characterized per individual unit in a shipped "Static Response" report, which marks a safe Vdifference range — the docs warn plainly that exceeding it may damage the mirror.</div>
+        <div class="sig">mechanical angle</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Why the drive is differential</h2>
+  <p>BDQ looks like extra complexity until you notice what it buys. An electrostatic actuator pulls with a force that goes as the <em>square</em> of the applied voltage — it can only ever attract, so a single-ended drive gives you one direction and a badly nonlinear one. Mounting two opposing actuators and driving them in push-pull about a common bias gives a signed deflection, and to first order the square-law terms of the two sides cancel, leaving the "approximately proportional" response the vendor documentation claims.</p>
+  <p>For reactoscope the useful part is that <strong>none of this is reactoscope's problem</strong> on the Analog Input driver. The BDQ circuit is inside the driver and its bias is not adjustable; the host hands over one bipolar, zero-centred voltage per axis and the driver synthesizes the differential high-voltage pair. It is the same division of labour as a balanced audio output — you present one signal, the receiving end deals in hot and cold.</p>
+
+  <div class="callout">
+    <div class="label">Where that isn't true</div>
+    <p>On the <em>Digital</em> Input driver the host owns BDQ entirely, writing all four DAC channels over SPI, and the docs flag this as recommended only for users who already understand the methodology — the host becomes responsible for Vbias and Vdifference limits, and therefore for not destroying the mirror.</p>
+  </div>
+
+  <h2>The bandwidth problem</h2>
+  <p>This is the finding that decides what a MEMS emulator can honestly claim. The driver is specified at 50–25,000 Hz, which sounds like an audio device. But that figure is the ceiling with the filters bypassed; in normal operation the filter is set far lower, because its whole job is to keep drive content well below the mirror's mechanical resonance.</p>
+
+  <div class="figure">
+    <h4>Where a quasistatic MEMS mirror sits against the audio band</h4>
+    <div class="fig-scroll">
+    <svg viewBox="0 0 880 210" role="img" aria-label="Logarithmic frequency chart comparing the audio band to quasistatic MEMS drive bandwidth">
+      <!-- audio band -->
+      <rect x="100" y="40" width="600" height="26" rx="4" fill="var(--react-bg)" stroke="var(--react)" stroke-width="1.5"/>
+      <text x="110" y="58" font-size="13" font-weight="600" fill="var(--react)">reactoscope Master Output — audio band, 20 Hz to 20 kHz</text>
+
+      <!-- mems band -->
+      <rect x="40" y="86" width="340" height="26" rx="4" fill="var(--mems-bg)" stroke="var(--mems)" stroke-width="1.5"/>
+      <rect x="40" y="86" width="268" height="26" rx="4" fill="var(--mems)" opacity="0.22"/>
+      <text x="50" y="104" font-size="13" font-weight="600" fill="var(--mems)">quasistatic MEMS — DC to 220–500 Hz</text>
+
+      <!-- driver ceiling marker -->
+      <line x1="720" y1="34" x2="720" y2="130" stroke="var(--text-dim)" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <text x="714" y="30" font-size="11.5" fill="var(--text-dim)" text-anchor="end">driver ceiling, LPF bypassed — 25 kHz</text>
+
+      <!-- axis -->
+      <line x1="40" y1="150" x2="860" y2="150" stroke="var(--border)" stroke-width="1.5"/>
+      <g font-size="11.5" fill="var(--text-dim)" text-anchor="middle">
+        <line x1="40" y1="150" x2="40" y2="156" stroke="var(--border)" stroke-width="1.5"/>
+        <text x="40" y="172">10 Hz</text>
+        <line x1="240" y1="150" x2="240" y2="156" stroke="var(--border)" stroke-width="1.5"/>
+        <text x="240" y="172">100 Hz</text>
+        <line x1="440" y1="150" x2="440" y2="156" stroke="var(--border)" stroke-width="1.5"/>
+        <text x="440" y="172">1 kHz</text>
+        <line x1="640" y1="150" x2="640" y2="156" stroke="var(--border)" stroke-width="1.5"/>
+        <text x="640" y="172">10 kHz</text>
+        <line x1="840" y1="150" x2="840" y2="156" stroke="var(--border)" stroke-width="1.5"/>
+        <text x="840" y="172">100 kHz</text>
+      </g>
+      <text x="440" y="196" font-size="11.5" fill="var(--text-dim)" text-anchor="middle">logarithmic frequency</text>
+    </svg>
+    </div>
+    <p class="cap">The darker segment of the MEMS bar ends at 220 Hz — the cutoff actually hardcoded in <code>LD_MemsMirror</code>. The lighter segment extends to the 500 Hz the vendor guide uses in its worked example.</p>
+  </div>
+
+  <p>Put in terms that matter for drawing: a channel band-limited to 500 Hz cannot reproduce more than roughly 500 distinct direction changes per second. At 30 frames per second that is on the order of a dozen or so meaningful corners per frame; at 220 Hz, fewer still. A galvo laser projector is quoted in tens of thousands of points per second. The gap is not a tuning difference, it is a difference in what kind of image the device can draw at all — and it explains why essentially every repo in this survey that puts something on screen draws Lissajous figures or moves point-to-point slowly, rather than attempting vector artwork.</p>
+
+  <div class="callout">
+    <div class="label">The one device here shaped like reactoscope's output</div>
+    <p>PlayzerX — Mirrorcle's own product — takes normalized <code>[-1, +1]</code> X/Y plus an 8-bit intensity value at up to 50,000 samples/second over USB. That is the shape of reactoscope's Master Output almost exactly, intensity channel included. Its documentation also states the failure mode directly: the mirror "is a high-Q spring-mass system, so large, rapid excursions can lead to ringing", mitigated but not eliminated by a low-pass filter on the controller. Few points at a high sample rate is the combination it warns about. <strong>That ringing is precisely the behaviour a MEMS Scanner Model exists to show.</strong></p>
+  </div>
+
+  <h2>What each library actually configures</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Source</th><th>Vbias</th><th>Vdiff limit</th><th>LPF cutoff</th><th>How limits are enforced</th></tr>
+    <tr>
+      <td><code>LD_MemsMirror</code><br>Arduino + PicoAmp</td>
+      <td class="num">80 V</td>
+      <td class="num">159 V</td>
+      <td class="num">220 Hz<br><span style="font-size:0.9em;color:var(--text-dim)">FCLK 13.2 kHz</span></td>
+      <td>Hard clamp on the signed DAC offset before the write, symmetric in both directions</td>
+    </tr>
+    <tr>
+      <td><code>MEMS_Control_Function.py</code><br>Raspberry Pi + SPI</td>
+      <td class="num">90 V</td>
+      <td class="num">55 V</td>
+      <td class="num">—<br><span style="font-size:0.9em;color:var(--text-dim)">GPIO square wave</span></td>
+      <td>Range <em>check</em>, not a clamp — out-of-range commands are rejected and the mirror is sent back to bias</td>
+    </tr>
+    <tr>
+      <td><code>GUI_Main.py</code><br>operator front-end</td>
+      <td class="num">90 V</td>
+      <td class="num">55 V</td>
+      <td>—</td>
+      <td>Input validation: coordinates in <code>[-1, 1]</code>, Vdiff below 55 V, both rejected with a dialog</td>
+    </tr>
+    <tr>
+      <td>Vendor guide worked example</td>
+      <td class="num">80 V</td>
+      <td>per datasheet</td>
+      <td class="num">500 Hz<br><span style="font-size:0.9em;color:var(--text-dim)">FCLK 30 kHz</span></td>
+      <td>Per-unit Static Response chart with a marked safe Vdifference band</td>
+    </tr>
+  </table>
+  </div>
+
+  <h3>Two implementation details worth stealing — and one bug</h3>
+  <p>The Arduino driver writes DAC channels A, B and C with a write-only command and only the fourth with <em>write-and-update-all</em>, so all four high-voltage outputs step simultaneously. The Python driver uses write-and-update-immediately on every channel, so X+ moves before X− does; for a brief moment the pair is not balanced about the bias. At 220 Hz of filtering that transient is inaudible to the mirror, but it is the kind of detail that stops being free if anyone raises the cutoff.</p>
+  <p>The second is a genuine defect. Both over-range branches in <code>MEMS_Control_Function.py</code> call the recovery function with no arguments:</p>
+  <pre><code>def Reset_AllBias(Voltage):      # requires a voltage
+    ...
+
+def Rotation_Control_X(Xbias, Xdiff, XdiffMax):
+    if -XdiffMax &lt;= Xdiff &lt;= XdiffMax:
+        ...
+    else:
+        print("Vdiff loaded Wrong")
+        Reset_AllBias()          # TypeError — the safety path never runs</code></pre>
+  <p>The guard correctly detects an out-of-range command, then raises <code>TypeError</code> instead of recentring the mirror. The protective branch is the one branch that was never exercised.</p>
+
+  <h2>What this implies for a MEMS Scanner Model</h2>
+  <p>The Galvo Scanner Model's shape — a second-order low-pass that <em>is</em> the mechanical response, followed by a slew clamp — does not transfer. In the quasistatic MEMS path the dominant filter is an electronic one placed deliberately in front of the mechanics, and its entire purpose is to make the mechanical response <em>not</em> show up. The mechanics only reappear when you push the cutoff toward resonance, which is exactly when the hardware is at risk.</p>
+
+  <div class="table-wrap">
+  <table>
+    <tr><th>Stage</th><th class="galvo">Galvo Scanner Model (built)</th><th class="mems">Quasistatic MEMS (proposed)</th></tr>
+    <tr>
+      <td>Limiting</td>
+      <td class="col-galvo">Slew clamp <em>after</em> the filter, fed back into filter state — models a torque/velocity limit</td>
+      <td class="col-mems">Amplitude clamp <em>before</em> the filter — models a safe-angle voltage limit, which is where both libraries put it</td>
+    </tr>
+    <tr>
+      <td>Linear part</td>
+      <td class="col-galvo">2nd-order biquad; parameters are bandwidth and damping</td>
+      <td class="col-mems">5th-order Bessel; the parameter is a cutoff, and it is a real dial on real hardware (FCLK ÷ 60)</td>
+    </tr>
+    <tr>
+      <td>Phase behaviour</td>
+      <td class="col-galvo">Resonant — overshoot and ringing are the point</td>
+      <td class="col-mems">Linear phase by design — uniform delay, minimal overshoot, shape preserved</td>
+    </tr>
+    <tr>
+      <td>Mechanical resonance</td>
+      <td class="col-galvo">Is the model</td>
+      <td class="col-mems">A second, optional high-Q stage that stays nearly silent until the cutoff is raised toward it</td>
+    </tr>
+    <tr>
+      <td>Why a rate limit exists</td>
+      <td class="col-galvo">Added explicitly, because a linear filter would price a long blank jump as free</td>
+      <td class="col-mems">Falls out of the band limit — a 500 Hz-limited signal already has bounded slew</td>
+    </tr>
+  </table>
+  </div>
+
+  <p>Sketched as a pipeline, the quasistatic model is <code>clamp → Bessel lowpass → (optional resonator)</code>, against the galvo's <code>biquad → slew clamp</code>. Both sit behind the same Scanner Model seam and both turn commanded X/Y into actual X/Y, which is what makes them siblings rather than rewrites. The interesting product question is that the MEMS cutoff is a user-facing control with a physical meaning: raising it makes the drawing sharper <em>and</em> moves the device toward the regime its own vendor warns about. That tradeoff is visible, tunable, and genuinely the thing the emulator would be for.</p>
+
+  <div class="gap-box">
+    <div class="label">If this ever leaves simulation</div>
+    <p>Three things in the docs are stated as hard preconditions, not advice. The filter clock must be running before anything else or outputs simply do not track. The bring-up sequence has the mirror connected <em>last</em>, after the four output voltages have been verified on a scope — and verified to have "smooth transitions, no steps/impulses/sharp edges". And the analog inputs want ±10 V, which is well above what a sound card produces, so a line output cannot be wired straight to a driver even though the signal convention matches.</p>
+  </div>
+
+  <footer>
+    Traced from <code>Mirrorcle_MEMS_Drivers_5.x_-_User_Guide.pdf</code>, <code>MEMS_Control_Function.py</code>, <code>GUI_Main.py</code>, <code>ArduinoMems_2/src/mems_spi.cpp</code>, <code>ArduinoMems_2/src/main.cpp</code> and the PlayzerX programming guide, all under the gitignored <code>mems/</code> directory. Voltages, cutoffs and the 60:1 clock ratio are quoted from those sources directly; the square-law explanation of why BDQ is differential is the standard account of electrostatic actuation, offered as the reason the vendor's "approximately proportional" claim holds, and is not itself stated in the guide. The PDF's text layer extracted unevenly — figures and the Static Response charts were not recoverable, so no per-mirror angle or resonance figures are quoted here.
+  </footer>
+
+</main>
+</body>
+</html>
