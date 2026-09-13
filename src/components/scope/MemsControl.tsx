@@ -7,6 +7,7 @@ import type { BesselOrder } from '../../dsp/bessel';
 import { NODE_COLORS } from '../../daw/nodes/shared/nodeColors';
 import { hwToggleSx } from '../../daw/nodes/shared/hwStyles';
 import { SliderRow } from './SliderRow';
+import { LaserReadoutRow } from './LaserReadoutRow';
 
 const color = NODE_COLORS.scene;
 
@@ -115,6 +116,8 @@ export function MemsControl() {
 					</span>
 				</Tooltip>
 			</Box>
+
+			<LaserReadoutRow />
 
 			<SliderRow label='tracking blank' tooltip='Tracking-error threshold below which the beam is forced blank while the mirror is still catching up to the commanded position.'
 				value={trackingBlankThreshold} min={0} max={0.5} step={0.005}

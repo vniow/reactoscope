@@ -5,6 +5,7 @@ import { useAxis, useEffects } from '../../contexts/WoahscopeContext';
 import { updateGeometryArrays } from '../../woahscope/utils';
 import { whiteTexture } from '../../woahscope/materials';
 import type { ScannerAxis } from '../../dsp/scannerAxis';
+import { writeLaserReadout } from './laserReadout';
 import { readWaveformTap, getSampleRate } from '../../audio/engine';
 import type { TapCursor } from '../../audio/engine';
 import { isMasterMultichannel } from '../../store/daw';
@@ -291,6 +292,11 @@ export function LaserSceneR3F({ makeAxisX, makeAxisY, scannerEnabled, optics }: 
 		const multi = isMultichannelRef.current;
 		const floorSpan = Math.max(1e-6, 1 - blankFloor);
 		const trackingInnerRadius = trackingBlankThreshold * (1 - trackingBlankSoftness);
+		// Tracking-error telemetry accumulates inside the colour loop below,
+		// which already computes the per-point error for the blanking gate —
+		// so the readout costs an add and a compare, not a second pass.
+		let trackErrSumSq = 0;
+		let trackErrPeak  = 0;
 		for (let i = 0; i < nPoints; i++) {
 			const cr = (multi ? 0.5 + 0.5 * rOut[i] : 0.5) * gainR;
 			const cg = (multi ? 0.5 + 0.5 * gOut[i] : 0.5) * gainG;
@@ -322,6 +328,8 @@ export function LaserSceneR3F({ makeAxisX, makeAxisY, scannerEnabled, optics }: 
 			const gateI = trackingGateFactor(trackErrI, trackingBlankThreshold, trackingInnerRadius);
 			const gateJ = trackingGateFactor(trackErrJ, trackingBlankThreshold, trackingInnerRadius);
 			ca *= Math.min(gateI, gateJ);
+			trackErrSumSq += trackErrI * trackErrI;
+			if (trackErrI > trackErrPeak) trackErrPeak = trackErrI;
 			const base = i * 4 * 4; // 4 verts × 4 floats
 			for (let v = 0; v < 4; v++) {
 				const off = base + v * 4;
@@ -331,6 +339,23 @@ export function LaserSceneR3F({ makeAxisX, makeAxisY, scannerEnabled, optics }: 
 				aColorArray[off + 3] = ca;
 			}
 		}
+
+		// Clamp counts come from the raw (pre-Lanczos) buffers the model actually
+		// saw, so the denominator is nSamples rather than nPoints. Devices with
+		// no position limit don't implement clampedCount and report null.
+		const clampedX = scannerXAxis.clampedCount?.();
+		const clampedY = scannerYAxis.clampedCount?.();
+		const clampedFraction =
+			clampedX === undefined || clampedY === undefined || !scannerEnabled
+				? null
+				: (clampedX + clampedY) / (2 * nSamples);
+
+		writeLaserReadout({
+			trackingRms:  nPoints > 0 ? Math.sqrt(trackErrSumSq / nPoints) : 0,
+			trackingPeak: trackErrPeak,
+			clampedFraction,
+			resetCount:   resetCountRef.current,
+		});
 
 		(geometry.getAttribute('aStart') as THREE.BufferAttribute).needsUpdate = true;
 		(geometry.getAttribute('aEnd')   as THREE.BufferAttribute).needsUpdate = true;

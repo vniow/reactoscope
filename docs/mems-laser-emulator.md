@@ -4,7 +4,7 @@ Implementation spec for the MEMS Laser Beam Emulator and its Quasistatic Model. 
 their rationale live in `docs/adr/0012-mems-laser-beam-emulator.md`; this document is the how.
 Vocabulary is defined in `CONTEXT.md`.
 
-Nothing here is built yet. This is the spec to build against.
+Built. Where this document and the code disagree, the code is right and this is a bug.
 
 ## What it is
 
@@ -222,6 +222,8 @@ src/components/scope/
   LaserSceneR3F.tsx        the shared renderer, extracted from GalvoSceneR3F
   MemsSceneR3F.tsx         thin wrapper
   MemsControl.tsx          sibling to GalvoControl
+  laserReadout.ts          per-frame telemetry singleton + polling hook
+  LaserReadoutRow.tsx      the readout strip, shared by both laser panels
 ```
 
 Modified:

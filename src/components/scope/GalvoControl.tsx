@@ -6,6 +6,7 @@ import { useGalvo } from '../../contexts/GalvoContext';
 import { NODE_COLORS } from '../../daw/nodes/shared/nodeColors';
 import { hwToggleSx } from '../../daw/nodes/shared/hwStyles';
 import { SliderRow } from './SliderRow';
+import { LaserReadoutRow } from './LaserReadoutRow';
 
 const color = NODE_COLORS.scene;
 
@@ -65,6 +66,12 @@ export function GalvoControl() {
 			<SliderRow label={linkAxes ? 'slew Y (linked)' : 'slew Y'} tooltip='Maximum Y-axis mirror velocity. Limits how fast the beam can move regardless of the servo response — this is what makes long jumps take visible time to travel.'
 				value={yDisplay.slewLimit} min={10} max={100000} step={10} disabled={linkAxes}
 				onChange={(v) => setScannerY({ ...scannerY, slewLimit: v })} formatValue={perSecFormat} />
+
+			{/* Live tracking error and reset count. docs/galvo-laser-emulator.md
+			    calls surfacing resets "part of the feature, not polish"; the
+			    counter had been incremented but never read until the readout
+			    channel arrived with MEMS Laser. */}
+			<LaserReadoutRow />
 
 			{/* Forces blank while the Scanner Model hasn't caught up to the
 			    commanded position yet — see GalvoContext's own doc comment. */}

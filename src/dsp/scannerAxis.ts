@@ -15,4 +15,11 @@ export interface ScannerAxis {
 	 * the origin that never actually happened.
 	 */
 	reset(value: number): void;
+	/**
+	 * How many samples the most recent `process()` call clamped against a
+	 * position limit. Optional: only models with an amplitude ceiling implement
+	 * it, so the galvo (whose limit is on rate, not position) omits it and the
+	 * readout reports nothing rather than zero.
+	 */
+	clampedCount?(): number;
 }
