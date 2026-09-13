@@ -2,11 +2,20 @@
 // docs/mems-laser-emulator.md for the design spec and
 // docs/adr/0012-mems-laser-beam-emulator.md for why it has this shape.
 // Framework-free, like src/galvo/scannerModel.ts, for the same reason: this is
-// the piece whose bugs are invisible by inspection, so it has to be testable.
+// the piece whose bugs are invisible by inspection.
 //
-// The chain models the quasistatic drive path of a Mirrorcle-style MEMS driver:
+// Modelled on the PlayzerX repository (mems/playzerx-master), Mirrorcle's own
+// product SDK, in its quasistatic mode:
 //
-//   command ─► amplitude clamp ─► Bessel lowpass ─► high-Q mirror (optional)
+//   command
+//     ─► amplitude clamp          MTIDeviceLimits VdifferenceMax
+//     ─► zero-order hold          PlayzerX SetSampleRate — the Controller reads
+//                                 its buffer at a fixed samples/sec, so a
+//                                 commanded position only updates that often
+//     ─► software filter          MTIDataGenerator SetupSoftwareFilter(type,
+//                                 order, cutoffFreq, sampleFreq), optionally
+//                                 zero-phase per FilterData(zeroPhase = true)
+//     ─► high-Q mirror            the physical device, always causal
 //
 // Note what is *not* here: a slew-rate clamp. The Galvo Scanner Model needs one
 // because a linear filter is scale-invariant and would price a full-scale jump
@@ -14,20 +23,37 @@
 // constraint on the same quantity would only let two parameters contradict each
 // other (ADR-0012, sub-decision 4).
 
-import { besselLowpassSections, type BesselOrder } from '../dsp/bessel';
+import { lowpassSections, type FilterFamily } from '../dsp/filterDesign';
 import { createBiquadSection, rbjLowpass, type BiquadSection } from '../dsp/biquad';
 import type { ScannerAxis } from '../dsp/scannerAxis';
 
+/** PlayzerX-Demo rejects anything outside this and falls back to 5000. */
+export const MIN_DEVICE_SPS = 500;
+export const MAX_DEVICE_SPS = 60000;
+
 export interface QuasistaticParams {
 	/**
-	 * Bessel corner frequency, in Hz. On real hardware this is set by a clock at
-	 * 60x the cutoff — Mirrorcle's worked example is 500Hz (FCLK 30kHz) and
-	 * LD_MemsMirror hardcodes 220Hz.
+	 * The Controller's own output rate in samples/sec — PlayzerX's
+	 * `SetSampleRate`. Distinct from reactoscope's audio rate: the device
+	 * consumes its buffer at this rate, so commanded position steps rather than
+	 * moving continuously. The demo treats anything outside 500..60000 as
+	 * invalid; the API documents 200..50000 with a 22000 default.
 	 */
+	deviceSampleRate: number;
+	/** Software filter family — MTIDataGenerator's FilterType (Bessel is 1, Butterworth 2). */
+	filterType: FilterFamily;
+	/** Filter order. Free in SetupSoftwareFilter; clamped to 1..8 here. */
+	filterOrder: number;
+	/** Software filter -3dB cutoff, in Hz. */
 	cutoff: number;
-	/** 5th-order is the MAX7413 in the standard driver; 2nd-order is the documented alternative. */
-	filterOrder: BesselOrder;
-	/** Normalised deflection ceiling. X/Y run [-1,+1], so 1.0 is no limit. */
+	/**
+	 * Forward-backward filtering, the default in `FilterData(..., zeroPhase)`.
+	 * Removes group delay entirely at the cost of doubling the effective order
+	 * (so the corner sits at -6dB rather than -3dB) and of being non-causal,
+	 * which is only meaningful because the content is prepared as a whole buffer.
+	 */
+	zeroPhase: boolean;
+	/** Normalised deflection ceiling — the MTIDeviceLimits VdifferenceMax analog. */
 	angleLimit: number;
 	/** Whether to model the mirror's own mechanical response at all. */
 	resonanceEnabled: boolean;
@@ -38,42 +64,72 @@ export interface QuasistaticParams {
 }
 
 export interface QuasistaticAxis extends ScannerAxis {
-	/**
-	 * How many samples the most recent `process()` call clamped to ±angleLimit.
-	 * Feeds the clamped-fraction readout; the renderer treats the axis as a
-	 * plain ScannerAxis and ignores this.
-	 */
 	clampedCount(): number;
+}
+
+function makeFilterStages(
+	sampleRate: number,
+	params: QuasistaticParams,
+): BiquadSection[] {
+	return lowpassSections(
+		sampleRate,
+		Math.min(params.cutoff, sampleRate / 4),
+		params.filterType,
+		params.filterOrder,
+	).map(createBiquadSection);
 }
 
 export function createQuasistaticAxis(
 	sampleRate: number,
 	params: QuasistaticParams,
 ): QuasistaticAxis {
-	// Same bound and same reasoning as the Galvo Scanner Model's bandwidth cap.
-	// besselLowpassSections caps each individual section too, since its section
-	// frequencies sit above the cutoff.
-	const cutoff = Math.min(params.cutoff, sampleRate / 4);
+	const filter = makeFilterStages(sampleRate, params);
 
-	const stages: BiquadSection[] = besselLowpassSections(
-		sampleRate,
-		cutoff,
-		params.filterOrder,
-	).map(createBiquadSection);
+	// Second, independent copy of the same filter for the reverse pass. Only
+	// built when zero-phase is on, and reset every frame — a backward pass that
+	// carried state between frames would be running time backwards across a
+	// seam.
+	const reverseFilter = params.zeroPhase ? makeFilterStages(sampleRate, params) : null;
 
-	// The mirror itself: the same RBJ second-order lowpass the galvo uses, at a
-	// damping ratio far below anything physical for a servo. That is the whole
-	// difference between the two devices expressed as one number.
-	if (params.resonanceEnabled) {
-		const q     = Math.max(params.resonanceQ, 0.5);
-		const freq  = Math.min(params.resonanceFreq, sampleRate / 4);
-		const zeta  = 1 / (2 * q);
-		stages.push(createBiquadSection(rbjLowpass(sampleRate, freq, zeta)));
-	}
+	// The mirror. Deliberately outside the zero-phase pass: a physical structure
+	// cannot respond before it is driven, whatever the content pipeline did.
+	const mirror: BiquadSection | null = params.resonanceEnabled
+		? createBiquadSection(rbjLowpass(
+			sampleRate,
+			Math.min(params.resonanceFreq, sampleRate / 4),
+			1 / (2 * Math.max(params.resonanceQ, 0.5)),
+		))
+		: null;
 
 	const limit = Math.abs(params.angleLimit);
 
-	let clamped = 0;
+	// Device samples advanced per audio sample. At or above the audio rate the
+	// hold is a no-op, which is the honest behaviour — the device is then
+	// updating at least as often as we have data for it.
+	const sps      = Math.min(Math.max(params.deviceSampleRate, MIN_DEVICE_SPS), MAX_DEVICE_SPS);
+	const holdStep = sps / sampleRate;
+
+	let holdPhase = 1;
+	let held      = 0;
+	let clamped   = 0;
+
+	function runForward(buf: Float32Array): void {
+		for (let n = 0; n < buf.length; n++) {
+			let v = buf[n];
+			for (let s = 0; s < filter.length; s++) v = filter[s].process(v);
+			buf[n] = v;
+		}
+	}
+
+	function runReverse(buf: Float32Array): void {
+		const stages = reverseFilter!;
+		for (const s of stages) s.reset(buf[buf.length - 1]);
+		for (let n = buf.length - 1; n >= 0; n--) {
+			let v = buf[n];
+			for (let s = 0; s < stages.length; s++) v = stages[s].process(v);
+			buf[n] = v;
+		}
+	}
 
 	return {
 		process(input: Float32Array): Float32Array {
@@ -81,17 +137,28 @@ export function createQuasistaticAxis(
 			clamped = 0;
 
 			for (let n = 0; n < input.length; n++) {
-				// The clamp sits on the *command*, ahead of the filter, because on
-				// real hardware the limit is on drive voltage — it models a driver
-				// that refuses to ask for an unsafe angle, not a mirror physically
-				// prevented from reaching one (ADR-0012, sub-decision 4).
+				// The clamp sits on the *command*, ahead of everything else,
+				// because on real hardware the limit is on drive voltage — it
+				// models a Controller that refuses to ask for an unsafe angle, not
+				// a mirror physically prevented from reaching one.
 				let v = input[n];
 				if (v > limit)       { v = limit;  clamped++; }
 				else if (v < -limit) { v = -limit; clamped++; }
 
-				for (let s = 0; s < stages.length; s++) v = stages[s].process(v);
+				// Zero-order hold at the device's own output rate.
+				holdPhase += holdStep;
+				if (holdPhase >= 1) {
+					holdPhase -= Math.floor(holdPhase);
+					held = v;
+				}
+				out[n] = held;
+			}
 
-				out[n] = v;
+			runForward(out);
+			if (reverseFilter !== null) runReverse(out);
+
+			if (mirror !== null) {
+				for (let n = 0; n < out.length; n++) out[n] = mirror.process(out[n]);
 			}
 			return out;
 		},
@@ -101,7 +168,11 @@ export function createQuasistaticAxis(
 			// section has unity DC gain, so a cascade settled at `value` has all
 			// of its histories equal to it.
 			const settled = Math.min(Math.max(value, -limit), limit);
-			for (const s of stages) s.reset(settled);
+			for (const s of filter) s.reset(settled);
+			if (reverseFilter !== null) for (const s of reverseFilter) s.reset(settled);
+			mirror?.reset(settled);
+			held = settled;
+			holdPhase = 1;
 		},
 
 		clampedCount(): number {

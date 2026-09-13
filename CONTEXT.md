@@ -60,16 +60,19 @@ between the two views is the whole product.
 
 **MEMS Laser**:
 The Beam Emulator for a MEMS-mirror laser projector, in its quasistatic drive
-regime. Unlike the Galvo Laser it is not a servo chasing a target: the signal is
-band-limited by a deliberate electronic filter *before* reaching the mirror, and
-the mirror's own high-Q response is what that filter exists to suppress. Its
-Scanner Model implementation is the Quasistatic Model.
+regime. Modelled on PlayzerX, Mirrorcle's own module and SDK. Unlike the Galvo
+Laser it is not a servo chasing a target: the signal is deliberately band-limited
+*before* reaching the mirror, and the mirror's own high-Q response is what that
+filtering exists to suppress. Its Scanner Model implementation is the Quasistatic
+Model.
 
 **Quasistatic Model**:
-The MEMS Laser's Scanner Model: an amplitude clamp, a Bessel low-pass, and an
-optional high-Q resonator, per axis. Named for the drive regime rather than the
-device, so a resonant-mode implementation can be added as a sibling rather than
-forcing a rename — the same reason Scanner Model is named generically.
+The MEMS Laser's Scanner Model: an amplitude clamp, a zero-order hold at the
+Controller's output rate, a selectable software low-pass (Bessel or Butterworth,
+free order, optionally zero-phase), and an optional high-Q mirror stage. Named
+for the drive regime rather than the device, so a resonant-mode implementation
+can be added as a sibling rather than forcing a rename — the same reason Scanner
+Model is named generically.
 _Avoid_: MEMS model, mems filter
 
 **Scanner Model**:

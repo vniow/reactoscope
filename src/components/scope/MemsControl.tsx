@@ -3,7 +3,8 @@ import Tooltip from '@mui/material/Tooltip';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { useMems } from '../../contexts/MemsContext';
-import type { BesselOrder } from '../../dsp/bessel';
+import type { FilterFamily } from '../../dsp/filterDesign';
+import { MIN_DEVICE_SPS, MAX_DEVICE_SPS } from '../../mems/quasistaticModel';
 import { NODE_COLORS } from '../../daw/nodes/shared/nodeColors';
 import { hwToggleSx } from '../../daw/nodes/shared/hwStyles';
 import { SliderRow } from './SliderRow';
@@ -12,7 +13,9 @@ import { LaserReadoutRow } from './LaserReadoutRow';
 const color = NODE_COLORS.scene;
 
 const hzFormat = (v: number) => `${Math.round(v)}Hz`;
+const spsFormat = (v: number) => `${Math.round(v)}/s`;
 const msFormat = (v: number) => `${Math.round(v)}ms`;
+const intFormat = (v: number) => String(Math.round(v));
 const decimals2 = (v: number) => v.toFixed(2);
 const decimals3 = (v: number) => v.toFixed(3);
 
@@ -20,7 +23,7 @@ export function MemsControl() {
 	const {
 		enabled, setEnabled, linkAxes, setLinkAxes,
 		quasistaticX, setQuasistaticX, quasistaticY, setQuasistaticY,
-		setFilterOrder, setResonanceEnabled,
+		setDeviceSampleRate, setFilterType, setFilterOrder, setZeroPhase, setResonanceEnabled,
 		trackingBlankThreshold, setTrackingBlankThreshold,
 		trackingBlankSoftness, setTrackingBlankSoftness,
 		spotSize, setSpotSize, power, setPower,
@@ -36,9 +39,12 @@ export function MemsControl() {
 	const yDisplay = linkAxes ? quasistaticX : quasistaticY;
 
 	// The margin between the filter corner and the mirror's resonance is the
-	// safety relationship this whole device is built around, so it is surfaced
-	// right next to the controls that set it rather than buried in a readout.
+	// safety relationship this device is built around, so it sits next to the
+	// controls that set it rather than in a readout somewhere else.
 	const margin = quasistaticX.resonanceFreq / Math.max(1, quasistaticX.cutoff);
+	// SetupSoftwareFilter takes cutoffFreq alongside sampleFreq; their ratio is
+	// the number that actually determines the filter's shape in the device.
+	const normalisedCutoff = quasistaticX.cutoff / Math.max(1, quasistaticX.deviceSampleRate);
 
 	return (
 		<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -57,32 +63,49 @@ export function MemsControl() {
 						size='small'
 					>resonance</ToggleButton>
 				</Tooltip>
+				<Tooltip title="Forward-backward filtering, the default in PlayzerX's FilterData. Removes group delay entirely, so the figure is band-limited without being displaced — at the cost of applying the response twice, which puts the corner at -6dB instead of -3dB. Turn it off to see the causal, streaming case." placement='top' arrow>
+					<ToggleButton
+						value='zeroPhase'
+						selected={quasistaticX.zeroPhase}
+						onChange={() => setZeroPhase(!quasistaticX.zeroPhase)}
+						size='small'
+					>zero-phase</ToggleButton>
+				</Tooltip>
 			</ToggleButtonGroup>
 
-			{/* One filter per driver board on real hardware, so this is set once
-			    for both axes rather than per-axis. */}
+			{/* MTIDataGenerator's FilterType enum begins Bessel, Butterworth.
+			    One filter is configured across both channels, so this is set
+			    once rather than per-axis. */}
 			<ToggleButtonGroup
 				sx={{ ...hwToggleSx(color), flexWrap: 'wrap' }}
 				exclusive
-				value={quasistaticX.filterOrder}
-				onChange={(_e, v: BesselOrder | null) => v && setFilterOrder(v)}
+				value={quasistaticX.filterType}
+				onChange={(_e, v: FilterFamily | null) => v && setFilterType(v)}
 			>
-				<Tooltip title='2nd-order Bessel — the continuous-time filter Mirrorcle offers as an alternative to the standard driver.' placement='top' arrow>
-					<ToggleButton value={2} size='small'>2-pole</ToggleButton>
+				<Tooltip title='Bessel — flat group delay, so the figure is delayed uniformly rather than reshaped. Corners soften instead of overshooting.' placement='top' arrow>
+					<ToggleButton value='bessel' size='small'>bessel</ToggleButton>
 				</Tooltip>
-				<Tooltip title='5th-order Bessel — the MAX7413 in the standard Mirrorcle driver.' placement='top' arrow>
-					<ToggleButton value={5} size='small'>5-pole</ToggleButton>
+				<Tooltip title='Butterworth — flatter amplitude response, but group delay varies sharply across the passband, so corners overshoot and ring much like a galvo servo.' placement='top' arrow>
+					<ToggleButton value='butterworth' size='small'>butterworth</ToggleButton>
 				</Tooltip>
 			</ToggleButtonGroup>
 
-			<SliderRow label='cutoff X' tooltip='Bessel corner frequency for the X axis. On real hardware this is set by a filter clock at 60x the cutoff — Mirrorcle’s worked example is 500Hz. Lower means a softer, more heavily band-limited figure.'
+			<SliderRow label='filter order' tooltip='Order of the software filter. Higher is a steeper rolloff (about 6dB/octave per order). Zero-phase doubles the effective order on top of this.'
+				value={quasistaticX.filterOrder} min={1} max={8} step={1}
+				onChange={setFilterOrder} formatValue={intFormat} />
+
+			<SliderRow label='device rate' tooltip="The Controller's own output rate — PlayzerX's SetSampleRate. Its buffer is read at this many samples per second, so a commanded position only updates that often however fast the host streams. The demo treats anything outside 500–60000 as invalid."
+				value={quasistaticX.deviceSampleRate} min={MIN_DEVICE_SPS} max={MAX_DEVICE_SPS} step={100}
+				onChange={setDeviceSampleRate} formatValue={spsFormat} />
+
+			<SliderRow label='cutoff X' tooltip='Software filter -3dB corner for the X axis. Lower means a more heavily band-limited figure.'
 				value={quasistaticX.cutoff} min={20} max={5000} step={10}
 				onChange={(v) => setQuasistaticX({ ...quasistaticX, cutoff: v })} formatValue={hzFormat} />
-			<SliderRow label={linkAxes ? 'cutoff Y (linked)' : 'cutoff Y'} tooltip='Bessel corner frequency for the Y axis.'
+			<SliderRow label={linkAxes ? 'cutoff Y (linked)' : 'cutoff Y'} tooltip="Software filter corner for the Y axis. RQWaveform takes a separate yBandwidth for exactly this reason — the slow axis need not be filtered like the fast one."
 				value={yDisplay.cutoff} min={20} max={5000} step={10} disabled={linkAxes}
 				onChange={(v) => setQuasistaticY({ ...quasistaticY, cutoff: v })} formatValue={hzFormat} />
 
-			<SliderRow label='angle limit X' tooltip='Safe deflection ceiling for the X axis, as a fraction of full scale. Models the drive-voltage limit a real mirror must not exceed — it clamps the command, so a resonant mirror can still swing past it.'
+			<SliderRow label='angle limit X' tooltip='Safe deflection ceiling for the X axis, as a fraction of full scale — the VdifferenceMax analog. It clamps the command, so a resonant mirror can still swing past it.'
 				value={quasistaticX.angleLimit} min={0.1} max={1} step={0.01}
 				onChange={(v) => setQuasistaticX({ ...quasistaticX, angleLimit: v })} formatValue={decimals2} />
 			<SliderRow label={linkAxes ? 'angle limit Y (linked)' : 'angle limit Y'} tooltip='Safe deflection ceiling for the Y axis, as a fraction of full scale.'
@@ -104,11 +127,10 @@ export function MemsControl() {
 				onChange={(v) => setQuasistaticY({ ...quasistaticY, resonanceQ: v })} />
 
 			{/* Display-only, per ADR-0012 sub-decision 9 — nothing here clamps or
-			    corrects. The FCLK figure is the clock a real PicoAmp would need
-			    for the current cutoff, at the hardware's fixed 60:1 ratio. */}
+			    corrects. */}
 			<Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, opacity: 0.75, px: 0.25 }}>
-				<Tooltip title='Filter clock a real Mirrorcle driver would need for this cutoff (FCLK = cutoff x 60).' placement='top' arrow>
-					<span>FCLK {Math.round(quasistaticX.cutoff * 60)}Hz</span>
+				<Tooltip title='Cutoff as a fraction of the device output rate — the cutoffFreq/sampleFreq ratio SetupSoftwareFilter is configured with, and what actually fixes the filter’s shape in the device.' placement='top' arrow>
+					<span>fc/sps {normalisedCutoff.toFixed(3)}</span>
 				</Tooltip>
 				<Tooltip title='How far the mirror’s resonance sits above the filter cutoff. Below about 4x, the filter is no longer keeping drive energy away from the resonance.' placement='top' arrow>
 					<span style={{ color: margin < 4 ? '#e0736a' : undefined }}>

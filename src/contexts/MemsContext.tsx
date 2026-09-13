@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useCallback, type ReactNode } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import type { BesselOrder } from '../dsp/bessel';
+import type { FilterFamily } from '../dsp/filterDesign';
 import type { QuasistaticParams } from '../mems/quasistaticModel';
 
 // ─── MEMS Laser settings ────────────────────────────────────────────────────
@@ -26,8 +26,11 @@ import type { QuasistaticParams } from '../mems/quasistaticModel';
 // through Context would re-render every consumer at frame rate.
 
 const DEFAULT_QUASISTATIC: QuasistaticParams = {
-	cutoff:           500,
+	deviceSampleRate: 20000,   // PlayzerX-Demo's default for streamed content
+	filterType:       'bessel',
 	filterOrder:      5,
+	cutoff:           500,
+	zeroPhase:        true,    // FilterData's own default
 	angleLimit:       1,
 	resonanceEnabled: true,
 	resonanceFreq:    3000,
@@ -52,14 +55,19 @@ export interface MemsContextType {
 	 * per board, so an order that differs between X and Y has no hardware
 	 * meaning — the control surfaces it once and writes it through.
 	 */
-	setFilterOrder: (order: BesselOrder) => void;
 	/**
-	 * Turns the mirror's mechanical stage on or off for both axes. Whether the
-	 * mirror resonates at all is a property of the device, not of one axis, so
-	 * this is surfaced once — the resonant *frequency* stays per-axis, since two
-	 * mirrors need not be identical.
+	 * Settings that belong to the Controller rather than to one axis, so each
+	 * writes through to both. `SetupSoftwareFilter` configures one filter across
+	 * both channels and the device has a single output rate; whether the mirror
+	 * resonates at all is likewise a property of the device. Cutoff, angle limit
+	 * and the resonance frequency/Q stay per-axis — `RQWaveform` takes a separate
+	 * `yBandwidth`, and two mirrors need not be identical.
 	 */
-	setResonanceEnabled: (on: boolean) => void;
+	setDeviceSampleRate: (v: number) => void;
+	setFilterType:       (v: FilterFamily) => void;
+	setFilterOrder:      (v: number) => void;
+	setZeroPhase:        (v: boolean) => void;
+	setResonanceEnabled: (v: boolean) => void;
 
 	/** See GalvoContext — identical meaning; the lag here is band-limiting rather than slew. */
 	trackingBlankThreshold: number; setTrackingBlankThreshold: (v: number) => void;
@@ -110,21 +118,26 @@ export function MemsProvider({ children }: { children: ReactNode }) {
 
 	const effectiveQuasistaticY = linkAxes ? quasistaticX : quasistaticY;
 
-	const setFilterOrder = useCallback((order: BesselOrder) => {
-		setQuasistaticX({ ...quasistaticX, filterOrder: order });
-		setQuasistaticY({ ...quasistaticY, filterOrder: order });
+	const setBoth = useCallback(<K extends keyof QuasistaticParams>(
+		key: K,
+		value: QuasistaticParams[K],
+	) => {
+		setQuasistaticX({ ...quasistaticX, [key]: value });
+		setQuasistaticY({ ...quasistaticY, [key]: value });
 	}, [quasistaticX, quasistaticY, setQuasistaticX, setQuasistaticY]);
 
-	const setResonanceEnabled = useCallback((on: boolean) => {
-		setQuasistaticX({ ...quasistaticX, resonanceEnabled: on });
-		setQuasistaticY({ ...quasistaticY, resonanceEnabled: on });
-	}, [quasistaticX, quasistaticY, setQuasistaticX, setQuasistaticY]);
+	const setDeviceSampleRate = useCallback((v: number) => setBoth('deviceSampleRate', v), [setBoth]);
+	const setFilterType       = useCallback((v: FilterFamily) => setBoth('filterType', v), [setBoth]);
+	const setFilterOrder      = useCallback((v: number) => setBoth('filterOrder', v), [setBoth]);
+	const setZeroPhase        = useCallback((v: boolean) => setBoth('zeroPhase', v), [setBoth]);
+	const setResonanceEnabled = useCallback((v: boolean) => setBoth('resonanceEnabled', v), [setBoth]);
 
 	const value = useMemo<MemsContextType>(
 		() => ({
 			enabled, setEnabled, linkAxes, setLinkAxes,
 			quasistaticX, setQuasistaticX, quasistaticY, setQuasistaticY,
-			effectiveQuasistaticY, setFilterOrder, setResonanceEnabled,
+			effectiveQuasistaticY,
+			setDeviceSampleRate, setFilterType, setFilterOrder, setZeroPhase, setResonanceEnabled,
 			trackingBlankThreshold, setTrackingBlankThreshold,
 			trackingBlankSoftness, setTrackingBlankSoftness,
 			spotSize, setSpotSize, power, setPower,
@@ -140,7 +153,7 @@ export function MemsProvider({ children }: { children: ReactNode }) {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[
 			enabled, linkAxes, quasistaticX, quasistaticY, effectiveQuasistaticY,
-			setFilterOrder, setResonanceEnabled,
+			setDeviceSampleRate, setFilterType, setFilterOrder, setZeroPhase, setResonanceEnabled,
 			trackingBlankThreshold, trackingBlankSoftness,
 			spotSize, power, gainR, gainG, gainB, blankFloor, zGamma,
 			exposureTime, glowStrength, hazeStrength, whitePoint,
