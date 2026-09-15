@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Tooltip from '@mui/material/Tooltip';
 import ToggleButton from '@mui/material/ToggleButton';
@@ -5,6 +6,8 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { useMems } from '../../contexts/MemsContext';
 import type { FilterFamily } from '../../dsp/filterDesign';
 import { MIN_DEVICE_SPS, MAX_DEVICE_SPS } from '../../mems/quasistaticModel';
+import { analyseQuasistatic } from '../../mems/quasistaticAnalysis';
+import { getSampleRate } from '../../audio/engine';
 import { NODE_COLORS } from '../../daw/nodes/shared/nodeColors';
 import { hwToggleSx } from '../../daw/nodes/shared/hwStyles';
 import { SliderRow } from './SliderRow';
@@ -24,6 +27,7 @@ export function MemsControl() {
 		enabled, setEnabled, linkAxes, setLinkAxes,
 		quasistaticX, setQuasistaticX, quasistaticY, setQuasistaticY,
 		setDeviceSampleRate, setFilterType, setFilterOrder, setZeroPhase, setResonanceEnabled,
+		setQuantiseEnabled, setPositionBits, setShaperEnabled,
 		trackingBlankThreshold, setTrackingBlankThreshold,
 		trackingBlankSoftness, setTrackingBlankSoftness,
 		spotSize, setSpotSize, power, setPower,
@@ -42,17 +46,16 @@ export function MemsControl() {
 	// safety relationship this device is built around, so it sits next to the
 	// controls that set it rather than in a readout somewhere else.
 	const margin = quasistaticX.resonanceFreq / Math.max(1, quasistaticX.cutoff);
-	// SetupSoftwareFilter takes cutoffFreq alongside sampleFreq; their ratio is
-	// the number that actually determines the filter's shape in the device.
-	const normalisedCutoff = quasistaticX.cutoff / Math.max(1, quasistaticX.deviceSampleRate);
-
-	// How many fully-settled point-to-point moves the current cutoff buys, which
-	// is the actionable form of "how fast can this go". Anchored on the single
-	// vendor data point — ~500us settling at a 2200Hz lowpass, from Mirrorcle's
-	// Advanced MEMS Control guide — and scaled as 1/cutoff. Derived, not
-	// specified: see docs/mems-device-limits.html.
-	const settleSeconds = (500e-6 * 2200) / Math.max(1, quasistaticX.cutoff);
-	const settledMoves  = 1 / settleSeconds;
+	// Measured from the model, not derived from its parameters. Every
+	// quantitative error in this emulator's history came from a number that was
+	// asserted rather than measured — most recently a moves/sec readout that was
+	// 13x optimistic because it was computed from the filter corner instead of
+	// from the step response. Running the actual axis costs a few hundred
+	// thousand multiply-adds on a slider change and cannot drift.
+	const measured = useMemo(
+		() => analyseQuasistatic(getSampleRate(), quasistaticX),
+		[quasistaticX],
+	);
 
 	return (
 		<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -78,6 +81,22 @@ export function MemsControl() {
 						onChange={() => setZeroPhase(!quasistaticX.zeroPhase)}
 						size='small'
 					>zero-phase</ToggleButton>
+				</Tooltip>
+				<Tooltip title='Quantise the command to the device’s position grid. X/Y reach the Controller as 12-bit integers, and the device’s repeatability sits just under one step, so the grid does not wash out in noise. It is also what makes "settled" well-defined.' placement='top' arrow>
+					<ToggleButton
+						value='quantise'
+						selected={quasistaticX.quantiseEnabled}
+						onChange={() => setQuantiseEnabled(!quasistaticX.quantiseEnabled)}
+						size='small'
+					>12-bit</ToggleButton>
+				</Tooltip>
+				<Tooltip title='Zero-vibration input shaping — the open-loop technique Mirrorcle documents as beating a plain lowpass by more than 12x. It splits each command into two impulses whose mirror responses cancel, so the filter can then be relaxed. Off by default: stock content is not shaped.' placement='top' arrow>
+					<ToggleButton
+						value='shaper'
+						selected={quasistaticX.shaperEnabled}
+						onChange={() => setShaperEnabled(!quasistaticX.shaperEnabled)}
+						size='small'
+					>shaper</ToggleButton>
 				</Tooltip>
 			</ToggleButtonGroup>
 
@@ -127,6 +146,23 @@ export function MemsControl() {
 				value={yDisplay.resonanceFreq} min={200} max={20000} step={50} disabled={linkAxes}
 				onChange={(v) => setQuasistaticY({ ...quasistaticY, resonanceFreq: v })} formatValue={hzFormat} />
 
+			{quasistaticX.shaperEnabled && (
+				// The detune is the instructive control, not the speed. A shaper
+				// matched to the mirror is ~4x better at the 1 LSB criterion; 5%
+				// of mismatch gives back most of that, and 20% is worse than not
+				// shaping at all. That sensitivity is why closed-loop control is
+				// sold alongside this technique.
+				<SliderRow label='shaper tuned to' tooltip='The resonance the shaper is built for, which need not be the one the mirror actually has. Drag it away from "resonance X" and watch the settling readout collapse — open-loop compensation only pays if you know the mirror to within a couple of percent.'
+					value={quasistaticX.shaperFreq} min={200} max={20000} step={50}
+					onChange={(v) => setQuasistaticX({ ...quasistaticX, shaperFreq: v })} formatValue={hzFormat} />
+			)}
+
+			{quasistaticX.quantiseEnabled && (
+				<SliderRow label='position bits' tooltip='Depth of the position grid. The device is 12-bit (4096 steps per axis, about 0.0166° each over its ~34° field). Other values are for seeing what the grid costs you.'
+					value={quasistaticX.positionBits} min={6} max={16} step={1}
+					onChange={setPositionBits} formatValue={intFormat} />
+			)}
+
 			<SliderRow label='res Q X' tooltip='Sharpness of the X mirror’s resonance. A MEMS mirror is a high-Q spring-mass structure, so this is far higher than anything physical for a galvo servo.'
 				value={quasistaticX.resonanceQ} min={1} max={500} step={1}
 				onChange={(v) => setQuasistaticX({ ...quasistaticX, resonanceQ: v })} />
@@ -134,17 +170,29 @@ export function MemsControl() {
 				value={yDisplay.resonanceQ} min={1} max={500} step={1} disabled={linkAxes}
 				onChange={(v) => setQuasistaticY({ ...quasistaticY, resonanceQ: v })} />
 
-			{/* Display-only, per ADR-0012 sub-decision 9 — nothing here clamps or
-			    corrects. */}
-			<Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, opacity: 0.75, px: 0.25 }}>
-				<Tooltip title='Cutoff as a fraction of the device output rate — the cutoffFreq/sampleFreq ratio SetupSoftwareFilter is configured with, and what actually fixes the filter’s shape in the device.' placement='top' arrow>
-					<span>fc/sps {normalisedCutoff.toFixed(3)}</span>
+			{/* Measured from the model on every parameter change. Display-only per
+			    ADR-0012 sub-decision 9 — nothing here clamps or corrects. */}
+			<Box sx={{
+				display: 'flex', flexWrap: 'wrap', gap: 1.25,
+				fontSize: 10, opacity: 0.85, px: 0.25,
+				fontVariantNumeric: 'tabular-nums',
+			}}>
+				<Tooltip title='Measured -3dB point of the whole chain, filter and mirror together. This is what PlayzerX’s "dc to ~2200Hz" specification refers to — not the filter’s own corner, which sits lower because the resonance peak carries the system response up.' placement='top' arrow>
+					<span>bw {Math.round(measured.systemBandwidthHz)}Hz</span>
 				</Tooltip>
-				<Tooltip title='Roughly how many fully-settled point-to-point moves per second this cutoff allows. Derived by scaling Mirrorcle’s measured ~500µs settling at a 2200Hz lowpass — an estimate, not a specification.' placement='top' arrow>
-					<span>~{Math.round(settledMoves)} settled/s</span>
+				<Tooltip title='Measured time for a full-scale step to stay within one position step of its target. One LSB is the only settling criterion with physical meaning on a 12-bit device. Compare GoToDevicePosition’s 5ms default.' placement='top' arrow>
+					<span>settle {(measured.settleSeconds * 1e3).toFixed(1)}ms</span>
 				</Tooltip>
-				<Tooltip title='How far the mirror’s resonance sits above the filter cutoff. Below about 4x, the filter is no longer keeping drive energy away from the resonance.' placement='top' arrow>
-					<span style={{ color: margin < 4 ? '#e0736a' : undefined }}>
+				<Tooltip title='Fully-settled point-to-point moves per second — the reciprocal of settling time, and the actionable form of "how fast can this go".' placement='top' arrow>
+					<span>~{Math.round(measured.movesPerSecond)} moves/s</span>
+				</Tooltip>
+				<Tooltip title='Measured peak excursion past the target on a step.' placement='top' arrow>
+					<span style={{ color: measured.overshoot > 0.1 ? '#e0736a' : undefined }}>
+						over {(measured.overshoot * 100).toFixed(1)}%
+					</span>
+				</Tooltip>
+				<Tooltip title='How far the mirror’s resonance sits above the filter cutoff. Mirrorcle’s design rule is f_res / 2.5; this model wants nearer 3, and settling degrades sharply below that.' placement='top' arrow>
+					<span style={{ color: margin < 2.5 ? '#e0736a' : undefined }}>
 						margin {margin.toFixed(1)}x
 					</span>
 				</Tooltip>

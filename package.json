@@ -9,6 +9,7 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"lint": "eslint src --max-warnings 0",
+		"typecheck": "tsc --noEmit",
 		"test": "vitest run"
 	},
 	"devDependencies": {

@@ -31,9 +31,21 @@ const DEFAULT_QUASISTATIC: QuasistaticParams = {
 	deviceSampleRate: 22000,   // "SetSampleRate ... default is 22000 samples/s"
 	filterType:       'bessel',
 	filterOrder:      5,
-	cutoff:           2200,    // "Bandwidth: dc to ~2200Hz on both axes"
+	// NOT 2200. PlayzerX's "dc to ~2200Hz" is the *system* bandwidth, and a
+	// Q=25 resonance peak carries the system -3dB point well above the filter's
+	// own corner: 1800Hz here measures as ~2200Hz at the output. Setting the
+	// corner to 2200 gives a 2977Hz system and quadruples settling time.
+	cutoff:           1800,
 	zeroPhase:        true,    // FilterData's own default
 	angleLimit:       1,
+	// X/Y cross the USB wire as 0..4095. Also what makes "settled" well-defined:
+	// settling finer than one step is meaningless on a 12-bit device.
+	quantiseEnabled:  true,
+	positionBits:     12,
+	// Off by default: stock PlayzerX content is not input-shaped. Turning it on
+	// is opting into the technique, not correcting a defect.
+	shaperEnabled:    false,
+	shaperFreq:       5500,
 	// The vendor's rule is that the filter cutoff sits at f_res / 2.5, so a
 	// 2200Hz bandwidth implies a mirror resonating near 5500Hz. Q = 25 is the
 	// measured value for a 1mm Mirrorcle mirror (A7M10.2) in the Advanced MEMS
@@ -74,6 +86,9 @@ export interface MemsContextType {
 	setFilterOrder:      (v: number) => void;
 	setZeroPhase:        (v: boolean) => void;
 	setResonanceEnabled: (v: boolean) => void;
+	setQuantiseEnabled:  (v: boolean) => void;
+	setPositionBits:     (v: number) => void;
+	setShaperEnabled:    (v: boolean) => void;
 
 	/** See GalvoContext — identical meaning; the lag here is band-limiting rather than slew. */
 	trackingBlankThreshold: number; setTrackingBlankThreshold: (v: number) => void;
@@ -137,6 +152,9 @@ export function MemsProvider({ children }: { children: ReactNode }) {
 	const setFilterOrder      = useCallback((v: number) => setBoth('filterOrder', v), [setBoth]);
 	const setZeroPhase        = useCallback((v: boolean) => setBoth('zeroPhase', v), [setBoth]);
 	const setResonanceEnabled = useCallback((v: boolean) => setBoth('resonanceEnabled', v), [setBoth]);
+	const setQuantiseEnabled  = useCallback((v: boolean) => setBoth('quantiseEnabled', v), [setBoth]);
+	const setPositionBits     = useCallback((v: number) => setBoth('positionBits', v), [setBoth]);
+	const setShaperEnabled    = useCallback((v: boolean) => setBoth('shaperEnabled', v), [setBoth]);
 
 	const value = useMemo<MemsContextType>(
 		() => ({
@@ -144,6 +162,7 @@ export function MemsProvider({ children }: { children: ReactNode }) {
 			quasistaticX, setQuasistaticX, quasistaticY, setQuasistaticY,
 			effectiveQuasistaticY,
 			setDeviceSampleRate, setFilterType, setFilterOrder, setZeroPhase, setResonanceEnabled,
+			setQuantiseEnabled, setPositionBits, setShaperEnabled,
 			trackingBlankThreshold, setTrackingBlankThreshold,
 			trackingBlankSoftness, setTrackingBlankSoftness,
 			spotSize, setSpotSize, power, setPower,
@@ -160,6 +179,7 @@ export function MemsProvider({ children }: { children: ReactNode }) {
 		[
 			enabled, linkAxes, quasistaticX, quasistaticY, effectiveQuasistaticY,
 			setDeviceSampleRate, setFilterType, setFilterOrder, setZeroPhase, setResonanceEnabled,
+			setQuantiseEnabled, setPositionBits, setShaperEnabled,
 			trackingBlankThreshold, trackingBlankSoftness,
 			spotSize, power, gainR, gainG, gainB, blankFloor, zGamma,
 			exposureTime, glowStrength, hazeStrength, whitePoint,

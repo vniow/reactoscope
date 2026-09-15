@@ -188,7 +188,11 @@ rather than observed.
 | `filterType` | bessel \| butterworth | — | bessel | device | `FilterType` enum begins Bessel = 1, Butterworth = 2 |
 | `filterOrder` | — | 1 – 8 | 5 | device | Free in `SetupSoftwareFilter`. Zero-phase doubles the effective order |
 | `zeroPhase` | bool | — | true | device | `FilterData`'s own default |
-| `cutoff` | Hz | 20 – 8000 | 2200 | per axis | PlayzerX is specified at "dc to ~2200 Hz on both axes". The range runs past the default resonance so the failure mode is reachable |
+| `cutoff` | Hz | 20 – 8000 | **1800** | per axis | **Not 2200.** PlayzerX's "dc to ~2200 Hz" is the *system* bandwidth; the resonance peak carries a 1800 Hz corner up to ~2191 Hz at the output. See ADR-0012 §Calibration |
+| `quantiseEnabled` | bool | — | true | device | X/Y cross the wire as 12-bit integers |
+| `positionBits` | — | 6 – 16 | 12 | device | 4096 steps/axis, 0.0166° each over the ~34° field |
+| `shaperEnabled` | bool | — | false | device | Zero-vibration input shaping. Off by default: stock content is not shaped |
+| `shaperFreq` | Hz | 200 – 20000 | 5500 | per axis | The resonance the shaper is *built for*, deliberately separable from the one the mirror *has* |
 | `angleLimit` | normalised | 0.1 – 1.0 | 1.0 | per axis | Safe deflection ceiling. X/Y are normalised to [−1,+1], so 1.0 is no limit |
 | `resonanceEnabled` | bool | — | true | device | Off proves the Bessel path is overshoot-free |
 | `resonanceFreq` | Hz | 200 – 20000 | 5500 | per axis | Implied by the vendor's own f_res ÷ 2.5 rule from a 2200 Hz bandwidth |
@@ -214,8 +218,10 @@ Display-only. Never clamp, correct, or rate-limit.
 | Readout | Computation | Purpose |
 |---|---|---|
 | **Resonance margin** | `resonanceFreq / cutoff`, flagged below ~4 | The hardware-hazard number, and the one thing this view knows that no other does |
-| **Normalised cutoff** | `cutoff / deviceSampleRate` | The `cutoffFreq`/`sampleFreq` ratio `SetupSoftwareFilter` is configured with — what actually fixes the filter's shape in the device |
-| **Settled moves/sec** | `cutoff / (500µs × 2200)` | The actionable form of "how fast can this go". Anchored on Mirrorcle's measured ~500µs settling at a 2200 Hz lowpass and scaled as 1/cutoff — an estimate, not a specification |
+| **System bandwidth** | *measured* — bisected −3 dB of the whole chain | What PlayzerX's "dc to ~2200 Hz" actually refers to. Surfacing it makes the corner-versus-system confusion that caused ADR-0012's calibration error structurally impossible to repeat |
+| **Settling** | *measured* — step response to within 1 LSB | The only criterion with physical meaning on a quantised device. Compare `GoToDevicePosition`'s 5 ms default |
+| **Settled moves/sec** | *measured* — 1 ÷ settling | The actionable form of "how fast can this go" |
+| **Overshoot** | *measured* — peak excursion past target | Rises sharply as the resonance margin closes |
 | **Clamped fraction** | % of samples at `±angleLimit` | The analog of the galvo's slew-limited fraction |
 | **Tracking error** | RMS and peak of \|commanded − actual\|, per axis | Expect it to be *large* here — band-limiting is not a defect |
 | **Discontinuity resets** | count since last clear | Tells you the view is showing a seam rather than physics |
@@ -305,7 +311,23 @@ Same pattern and importer as the galvo spec uses (`src/scene/sources/`, SVG).
 
 Recorded so they are deliberate rather than discovered:
 
-- Voltage-to-angle is linear. Real mirrors ship a per-unit characterisation because it is not.
+- **One filter stage, not two.** A real MTI controller has a *hardware* filter (`HardwareFilterBw`,
+  settable, "recommended by MEMS datasheet") and an optional *software* content filter
+  (`SetupSoftwareFilter`). The model collapses them into one. The consequence is worth knowing: on a
+  real PlayzerX the hardware filter is fixed and not exposed by its API, so you could not drive the
+  mirror into resonance through content alone — the emulator lets you, which is truthful about a
+  full MTI controller and permissive about PlayzerX specifically.
+- **Voltage-to-angle is linear, and the device does not correct it either.** Real mirrors ship a
+  per-unit Static Response characterisation precisely because the relationship is not linear, and
+  the `MTIParam` list contains no linearisation or calibration entry — the Controller maps normalised
+  `[-1,+1]` to Vdifference directly. So this is an uncorrected real-hardware effect the model omits,
+  not one the device handles. It is omitted because inventing a curve would fabricate exactly the
+  per-unit data the honesty boundary forbids.
+- **The device's reconstruction is assumed to be a zero-order hold.** `MTIParam` includes an
+  undocumented `InterpolationType` with no enum and no comment, and PlayzerX's API does not expose
+  it, so whether the Controller holds or interpolates between buffer samples is unresolved. A hold
+  is the conservative assumption; if it interpolates, the model overstates stepping at low device
+  rates.
 - The BDQ high-voltage stage is not modelled — PlayzerX takes normalised `[-1, +1]` and generates
   drive internally.
 - Zero-phase filtering runs per tap frame, not over a closed content buffer, so frame boundaries are

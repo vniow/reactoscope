@@ -18,6 +18,12 @@ function filterOnly(cutoff: number, filterOrder: number, filterType: FilterFamil
 		cutoff,
 		zeroPhase:        false,
 		angleLimit:       1,
+		// Quantisation and shaping off by default here so the filter is the only
+		// thing under test; both have their own cases below.
+		quantiseEnabled:  false,
+		positionBits:     12,
+		shaperEnabled:    false,
+		shaperFreq:       3000,
 		resonanceEnabled: false,
 		resonanceFreq:    3000,
 		resonanceQ:       100,
@@ -255,6 +261,10 @@ describe('createQuasistaticAxis', () => {
 				cutoff:           sampleRate / 4,
 				zeroPhase:        true,
 				angleLimit:       1,
+				quantiseEnabled:  true,
+				positionBits:     12,
+				shaperEnabled:    true,
+				shaperFreq:       sampleRate / 4,
 				resonanceEnabled: true,
 				resonanceFreq:    sampleRate / 4,
 				resonanceQ:       500,

@@ -318,30 +318,78 @@
     <p>That is the one place in all of this material where the vendor names destruction rather than degradation, and it is worth carrying into any simulator as the thing the resonance-margin readout exists to warn about. The mechanism is the same one the PlayzerX programming guide describes: the mirror is a high-Q spring-mass system, and a fast enough step excites it at resonance.</p>
   </div>
 
-  <h2>What this means for the reactoscope simulator</h2>
+  <h2>Settling depends entirely on the criterion</h2>
 
-  <p>Three of the emulator's current defaults were taken from the Mirrorcle PicoAmp driver guide's worked example rather than from PlayzerX, and the numbers above show them to be wrong for this device by a wide margin.</p>
+  <p>The single most important thing to understand before quoting any speed figure for this device: <strong>settling time varies twelvefold depending on what counts as settled</strong>, and Mirrorcle's published numbers do not all use the same criterion. Measured from reactoscope's model at its calibrated defaults:</p>
 
   <div class="table-wrap">
   <table>
-    <tr><th>Parameter</th><th>Was</th><th>Should be</th><th>Why</th></tr>
-    <tr><td><code>cutoff</code></td><td class="num">500 Hz</td><td class="num">2200 Hz</td><td>PlayzerX's stated bandwidth is dc to ~2200 Hz. 500 Hz was the PicoAmp guide's example for a different, slower mirror — a 4.4× underestimate of what this device can do</td></tr>
-    <tr><td><code>resonanceFreq</code></td><td class="num">3000 Hz</td><td class="num">5500 Hz</td><td>Applying the vendor's own f<sub>res</sub> ÷ 2.5 rule backwards from a 2200 Hz cutoff</td></tr>
-    <tr><td><code>resonanceQ</code></td><td class="num">100</td><td class="num">25</td><td>The measured Q for a real 1 mm Mirrorcle mirror. 100 was a plausible guess, and it is four times too sharp</td></tr>
+    <tr><th>Settled to within</th><th>Time</th><th>Moves/sec</th><th>Source</th></tr>
+    <tr><td>5% of full scale</td><td class="num">333 µs</td><td class="num">3000</td><td><span class="tag derived">derived</span></td></tr>
+    <tr><td>2% of full scale</td><td class="num">542 µs</td><td class="num">1846</td><td><span class="tag derived">derived</span> <span class="src">this is what "~500 µs" means</span></td></tr>
+    <tr><td>1%</td><td class="num">1729 µs</td><td class="num">578</td><td><span class="tag derived">derived</span></td></tr>
+    <tr><td><strong>1 LSB (0.049%)</strong></td><td class="num"><strong>6458 µs</strong></td><td class="num"><strong>155</strong></td><td><span class="tag derived">derived</span> <span class="src">the device's own resolution</span></td></tr>
   </table>
   </div>
 
-  <p>Two limits are not modelled at all and are worth adding:</p>
-
-  <ul>
-    <li><strong>12-bit position quantisation.</strong> 4096 steps per axis is a hard floor on positional precision, and the device's repeatability sits at about one step — so it does not wash out in noise. Currently the model treats position as continuous.</li>
-    <li><strong>The settling-time budget as a readout.</strong> The useful question when pushing the device is "how many fully-settled point-to-point moves per second does this cutoff buy me" — roughly 2000/s at 2200 Hz, 200/s at the unfiltered 10 ms. That is a more actionable number than the cutoff in Hz.</li>
-  </ul>
+  <p>A Q=25 resonance has an envelope time constant of 1447 µs, so crawling the last decade — from 1% down to one position step — costs 4.4 ms on its own. That is why the two figures diverge so violently.</p>
 
   <div class="callout">
-    <div class="label">A direction the emulator does not currently go</div>
-    <p>Everything reactoscope models is the <em>lowpass</em> approach to avoiding resonance. Mirrorcle's guide documents two strictly better open-loop techniques — Posicast input shaping at ~62 µs and an inverse system filter at ~50 µs, the latter "more than 12x faster than the device's step time if driven with a lowpass filter at a cutoff frequency of 2200 Hz." Both work by shaping the command so the mirror's own resonance cancels rather than by removing the energy that would excite it.</p>
-    <p>That is a genuinely different family of Scanner Model, not a parameter change, and it is where the headroom is if the question is how fast this device can be pushed. Closed-loop adds up to ~4× again on top.</p>
+    <div class="label">One parameter set satisfies every published number</div>
+    <p>Filter corner <strong>1800 Hz</strong>, mirror <strong>5500 Hz at Q 25</strong>:</p>
+    <p>system bandwidth <strong>2191 Hz</strong> against a spec of ~2200 · filtered settling <strong>542 µs</strong> to 2% against ~500 µs · unfiltered settling <strong>11.9 ms</strong> to 1 LSB against ~10 ms · settling to 1 LSB <strong>6.5 ms</strong> against <code>GoToDevicePosition</code>'s 5 ms default.</p>
+    <p>That last agreement is the satisfying one. The API's 5 ms default step time is not arbitrary caution — it is approximately how long this mirror needs to reach its own resolution.</p>
+  </div>
+
+  <div class="gap-box">
+    <div class="label">The trap: system bandwidth is not the filter corner</div>
+    <p>PlayzerX's "dc to ~2200 Hz" is measured at the <em>output</em>. A high-Q resonance peaks the response and drags the system −3 dB point well above whatever the filter's own corner is. Setting a filter corner to 2200 Hz builds a device with a <strong>2977 Hz</strong> system bandwidth that rings for <strong>four times as long</strong>.</p>
+    <p>This cost an entire debugging session, during which the evidence pointed convincingly at the mirror's Q being wrong. It was one default carrying the wrong units.</p>
+  </div>
+
+  <h2>Input shaping: the real headroom, and its price</h2>
+
+  <p>Everything above concerns the lowpass approach. A zero-vibration shaper — two impulses whose mirror responses cancel — does substantially better, and Mirrorcle's inverse-filter variant better still. Measured here against the 1 LSB criterion:</p>
+
+  <div class="table-wrap">
+  <table>
+    <tr><th>Technique</th><th>2%</th><th>1 LSB</th><th>moves/s</th></tr>
+    <tr><td>lowpass only</td><td class="num">500 µs</td><td class="num">6083 µs</td><td class="num">164</td></tr>
+    <tr><td>ZV shaper alone</td><td class="num">83 µs</td><td class="num">2604 µs</td><td class="num">384</td></tr>
+    <tr><td><strong>ZV shaper + relaxed lowpass</strong></td><td class="num">208 µs</td><td class="num"><strong>1521 µs</strong></td><td class="num"><strong>658</strong></td></tr>
+    <tr><td>ZV shaper mistuned by 5%</td><td class="num">1979 µs</td><td class="num">7688 µs</td><td class="num">130</td></tr>
+  </table>
+  </div>
+
+  <p><strong>Four times the moves per second — but only if you know the mirror's resonance to within a couple of percent.</strong> Mistune by 5% and most of the gain is gone; by 20% and it is worse than not shaping at all. That sensitivity is the entire commercial argument for closed-loop control, which Mirrorcle sells alongside and rates at a further ~4×.</p>
+
+  <div class="callout">
+    <div class="label">An implementation constraint specific to audio-rate hosts</div>
+    <p>The shaper's second impulse lands half a damped period after the first — for a 5500 Hz mirror at 48 kHz, <strong>4.36 samples</strong>. Round that to 4 and the cancellation fails badly enough that settling is <em>worse than no shaper</em>, because the residual must then decay through the mirror's own 1.4 ms envelope. Linear interpolation of the fractional delay fails the same way. Cubic Lagrange or an allpass is not a refinement here; it is the mechanism.</p>
+  </div>
+
+  <h2>What this means for the reactoscope simulator</h2>
+
+  <p>All of the following have now been applied. They are recorded here because the reasoning matters more than the values.</p>
+
+  <div class="table-wrap">
+  <table>
+    <tr><th>Change</th><th>From</th><th>To</th><th>Why</th></tr>
+    <tr><td><code>cutoff</code></td><td class="num">2200 Hz</td><td class="num">1800 Hz</td><td>2200 is the <em>system</em> bandwidth, not the filter corner. 1800 measures as 2191 Hz at the output and settles 4× faster</td></tr>
+    <tr><td><code>resonanceQ</code></td><td class="num">100</td><td class="num">25</td><td>Measured Q for a 1 mm Mirrorcle mirror, and independently corroborated by the ~10 ms unfiltered figure</td></tr>
+    <tr><td><code>resonanceFreq</code></td><td class="num">3000 Hz</td><td class="num">5500 Hz</td><td>The f<sub>res</sub> ÷ 2.5 design rule run backwards from the published bandwidth</td></tr>
+    <tr><td><code>deviceSampleRate</code></td><td class="num">20000</td><td class="num">22000</td><td><code>SetSampleRate</code>'s documented default</td></tr>
+    <tr><td>position quantisation</td><td>not modelled</td><td class="num">12-bit</td><td>A real floor at ~one step of repeatability, and what makes "settled" well-defined</td></tr>
+    <tr><td>input shaping</td><td>not modelled</td><td>ZV + detune</td><td>4× the settled moves/sec, and the detune control shows why that is fragile</td></tr>
+    <tr><td>readouts</td><td>derived from parameters</td><td>measured from the model</td><td>The derived moves/sec figure was 13× optimistic. Measured values cannot drift</td></tr>
+  </table>
+  </div>
+
+  <div class="callout">
+    <div class="label">Still not modelled, deliberately</div>
+    <p><strong>The hardware/software filter split.</strong> A full MTI controller has a settable <code>HardwareFilterBw</code> plus an optional software content filter; the model collapses them. On a real PlayzerX the hardware filter is fixed and unexposed, so you could not drive the mirror into resonance through content alone — the emulator lets you, which is right for an MTI controller and permissive for PlayzerX.</p>
+    <p><strong>Voltage-to-angle nonlinearity.</strong> The <code>MTIParam</code> list has no linearisation entry, so the Controller does <em>not</em> correct it — this is an uncorrected real effect the model omits, not one the device handles. Omitted because inventing a response curve would fabricate exactly the per-unit characterisation data that should never be guessed.</p>
+    <p><strong>Whether the Controller interpolates.</strong> <code>MTIParam</code> includes an undocumented <code>InterpolationType</code> with no enum and no comment. A zero-order hold is the conservative assumption; if the device interpolates, the model overstates stepping at low sample rates.</p>
   </div>
 
   <h2>Source index</h2>
