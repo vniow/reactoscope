@@ -248,7 +248,7 @@
   </div>
 
   <h2>What this means for a MEMS Scanner Model</h2>
-  <p><strong>Deep dive:</strong> <a href="mems-quasistatic-drive-path.html">The quasistatic MEMS drive path</a> traces the analog signal chain stage by stage — how a normalized <code>[-1, +1]</code> coordinate becomes a mirror angle, and what that implies for modelling it.</p>
+  <p><strong>Deep dives:</strong> <a href="mems-device-limits.html">PlayzerX device limits</a> collects the numbers that bound the device — sample rate, bandwidth, settling time, point-to-point step time and position resolution — each tagged with its source. <a href="mems-quasistatic-drive-path.html">The quasistatic MEMS drive path</a> traces the analog signal chain of the <em>PicoAmp</em> driver stage by stage; useful background, but a different product from the one the emulator models.</p>
 
   <p>The Galvo Scanner Model's damped-biquad-plus-slew form assumes the thing it's modeling is trying to track wherever you point it. A resonant MEMS mirror isn't doing that — it's a near-undamped oscillator you excite at one frequency, and "position" falls out as the phase of that oscillation. A faithful MEMS Laser emulator likely needs two sub-forms behind the same seam rather than one: a <strong>quasistatic</strong> mode that can reuse the existing damped-servo shape almost as-is, and a <strong>resonant</strong> mode whose state is amplitude/frequency/phase, not a filtered copy of a commanded X/Y signal — plus a hard exclusion band around the mirror's natural frequency, since here that's a safety limit, not a tuning choice. Blanking may also need to key off the resonant sweep's own phase (as the structured-light firmware does) rather than free-run against X/Y the way the CRT and Galvo emulators do.</p>
 

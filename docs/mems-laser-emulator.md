@@ -173,22 +173,26 @@ because a slider moved).
 
 ## Parameters
 
-Every parameter is directly adjustable (ADR-0012, sub-decision 8). Defaults are plausible orders of
-magnitude, **not calibrated values.**
+Every parameter is directly adjustable (ADR-0012, sub-decision 8).
+
+Defaults are **taken from PlayzerX's published specifications** where one exists — see
+`docs/mems-device-limits.html`, which sources every figure. They are still not calibrated against a
+measured mirror, and the resonance pair in particular is inferred from the vendor's design rule
+rather than observed.
 
 ### Quasistatic Model
 
 | Parameter | Unit | Range | Default | Scope | Notes |
 |---|---|---|---|---|---|
-| `deviceSampleRate` | S/s | 500 – 60000 | 20000 | device | `SetSampleRate`. The demo's default for streamed content; the API documents 200–50000 with a 22000 default |
+| `deviceSampleRate` | S/s | 500 – 60000 | 22000 | device | `SetSampleRate`'s documented default. The protocol accepts 50–50000, the API documents 200–50000, the demo enforces 500–60000 |
 | `filterType` | bessel \| butterworth | — | bessel | device | `FilterType` enum begins Bessel = 1, Butterworth = 2 |
 | `filterOrder` | — | 1 – 8 | 5 | device | Free in `SetupSoftwareFilter`. Zero-phase doubles the effective order |
 | `zeroPhase` | bool | — | true | device | `FilterData`'s own default |
-| `cutoff` | Hz | 20 – 5000 | 500 | per axis | Software filter −3dB corner |
+| `cutoff` | Hz | 20 – 8000 | 2200 | per axis | PlayzerX is specified at "dc to ~2200 Hz on both axes". The range runs past the default resonance so the failure mode is reachable |
 | `angleLimit` | normalised | 0.1 – 1.0 | 1.0 | per axis | Safe deflection ceiling. X/Y are normalised to [−1,+1], so 1.0 is no limit |
 | `resonanceEnabled` | bool | — | true | device | Off proves the Bessel path is overshoot-free |
-| `resonanceFreq` | Hz | 200 – 20000 | 3000 | per axis | The mirror's mechanical resonance |
-| `resonanceQ` | — | 1 – 500 | 100 | per axis | High-Q spring-mass. `ζ = 1/(2Q)` |
+| `resonanceFreq` | Hz | 200 – 20000 | 5500 | per axis | Implied by the vendor's own f_res ÷ 2.5 rule from a 2200 Hz bandwidth |
+| `resonanceQ` | — | 1 – 500 | 25 | per axis | Measured Q for a 1 mm Mirrorcle mirror (A7M10.2). `ζ = 1/(2Q)` |
 | `enabled` | bool | — | true | device | Bypass renders the commanded path |
 | `linkAxes` | bool | — | true | device | Y mirrors X's parameters |
 
@@ -211,6 +215,7 @@ Display-only. Never clamp, correct, or rate-limit.
 |---|---|---|
 | **Resonance margin** | `resonanceFreq / cutoff`, flagged below ~4 | The hardware-hazard number, and the one thing this view knows that no other does |
 | **Normalised cutoff** | `cutoff / deviceSampleRate` | The `cutoffFreq`/`sampleFreq` ratio `SetupSoftwareFilter` is configured with — what actually fixes the filter's shape in the device |
+| **Settled moves/sec** | `cutoff / (500µs × 2200)` | The actionable form of "how fast can this go". Anchored on Mirrorcle's measured ~500µs settling at a 2200 Hz lowpass and scaled as 1/cutoff — an estimate, not a specification |
 | **Clamped fraction** | % of samples at `±angleLimit` | The analog of the galvo's slew-limited fraction |
 | **Tracking error** | RMS and peak of \|commanded − actual\|, per axis | Expect it to be *large* here — band-limiting is not a defect |
 | **Discontinuity resets** | count since last clear | Tells you the view is showing a seam rather than physics |
@@ -320,6 +325,9 @@ Recorded so they are deliberate rather than discovered:
 
 ## Related
 
+- `docs/mems-device-limits.html` — every PlayzerX limit with its source: sample rate, bandwidth,
+  settling time, point-to-point step time, position resolution, and the vendor's damage warning.
+  Start here when asking how far the device can be pushed
 - `docs/adr/0012-mems-laser-beam-emulator.md` — the decision record, including why this model was
   re-grounded on PlayzerX rather than the PicoAmp driver guide
 - `docs/galvo-laser-emulator.md` — the sibling spec, whose structure this mirrors

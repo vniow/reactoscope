@@ -46,6 +46,14 @@ export function MemsControl() {
 	// the number that actually determines the filter's shape in the device.
 	const normalisedCutoff = quasistaticX.cutoff / Math.max(1, quasistaticX.deviceSampleRate);
 
+	// How many fully-settled point-to-point moves the current cutoff buys, which
+	// is the actionable form of "how fast can this go". Anchored on the single
+	// vendor data point — ~500us settling at a 2200Hz lowpass, from Mirrorcle's
+	// Advanced MEMS Control guide — and scaled as 1/cutoff. Derived, not
+	// specified: see docs/mems-device-limits.html.
+	const settleSeconds = (500e-6 * 2200) / Math.max(1, quasistaticX.cutoff);
+	const settledMoves  = 1 / settleSeconds;
+
 	return (
 		<Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
 			<ToggleButtonGroup sx={{ ...hwToggleSx(color), flexWrap: 'wrap' }}>
@@ -99,10 +107,10 @@ export function MemsControl() {
 				onChange={setDeviceSampleRate} formatValue={spsFormat} />
 
 			<SliderRow label='cutoff X' tooltip='Software filter -3dB corner for the X axis. Lower means a more heavily band-limited figure.'
-				value={quasistaticX.cutoff} min={20} max={5000} step={10}
+				value={quasistaticX.cutoff} min={20} max={8000} step={10}
 				onChange={(v) => setQuasistaticX({ ...quasistaticX, cutoff: v })} formatValue={hzFormat} />
 			<SliderRow label={linkAxes ? 'cutoff Y (linked)' : 'cutoff Y'} tooltip="Software filter corner for the Y axis. RQWaveform takes a separate yBandwidth for exactly this reason — the slow axis need not be filtered like the fast one."
-				value={yDisplay.cutoff} min={20} max={5000} step={10} disabled={linkAxes}
+				value={yDisplay.cutoff} min={20} max={8000} step={10} disabled={linkAxes}
 				onChange={(v) => setQuasistaticY({ ...quasistaticY, cutoff: v })} formatValue={hzFormat} />
 
 			<SliderRow label='angle limit X' tooltip='Safe deflection ceiling for the X axis, as a fraction of full scale — the VdifferenceMax analog. It clamps the command, so a resonant mirror can still swing past it.'
@@ -131,6 +139,9 @@ export function MemsControl() {
 			<Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, opacity: 0.75, px: 0.25 }}>
 				<Tooltip title='Cutoff as a fraction of the device output rate — the cutoffFreq/sampleFreq ratio SetupSoftwareFilter is configured with, and what actually fixes the filter’s shape in the device.' placement='top' arrow>
 					<span>fc/sps {normalisedCutoff.toFixed(3)}</span>
+				</Tooltip>
+				<Tooltip title='Roughly how many fully-settled point-to-point moves per second this cutoff allows. Derived by scaling Mirrorcle’s measured ~500µs settling at a 2200Hz lowpass — an estimate, not a specification.' placement='top' arrow>
+					<span>~{Math.round(settledMoves)} settled/s</span>
 				</Tooltip>
 				<Tooltip title='How far the mirror’s resonance sits above the filter cutoff. Below about 4x, the filter is no longer keeping drive energy away from the resonance.' placement='top' arrow>
 					<span style={{ color: margin < 4 ? '#e0736a' : undefined }}>

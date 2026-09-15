@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PlayzerX Device Limits</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #f7f7f9;
+    --panel: #ffffff;
+    --border: #e2e2e8;
+    --text: #1b1c22;
+    --text-dim: #55565f;
+    --code-bg: #eef0f4;
+    --code-text: #b3306b;
+
+    --mems: #0f8a7a;
+    --mems-bg: #e2f5f1;
+    --galvo: #b5720a;
+    --react: #2f6fed;
+    --react-bg: #eaf1ff;
+
+    --callout-bg: #fff8e6;
+    --callout-border: #e8c25a;
+    --gap-bg: #fdeceb;
+    --gap-border: #e0736a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14151a;
+      --panel: #1c1e26;
+      --border: #2c2e38;
+      --text: #eceef4;
+      --text-dim: #a3a6b4;
+      --code-bg: #262834;
+      --code-text: #ff8fb8;
+
+      --mems: #3fd0bd;
+      --mems-bg: #123a34;
+      --galvo: #e0a34e;
+      --react: #6fa0ff;
+      --react-bg: #1c2740;
+
+      --callout-bg: #332c14;
+      --callout-border: #a5842f;
+      --gap-bg: #3a1f1e;
+      --gap-border: #a34e46;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.55;
+    margin: 0;
+    padding: 0 0 5rem 0;
+  }
+  main { max-width: 1020px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+  h1 { font-size: 1.6rem; margin: 0 0 0.4rem 0; letter-spacing: -0.01em; text-wrap: balance; }
+  h2 {
+    font-size: 1.25rem;
+    margin: 3rem 0 0.9rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 { font-size: 1rem; margin: 1.4rem 0 0.5rem 0; }
+  p { color: var(--text-dim); }
+  p.lede { color: var(--text); font-size: 1.02rem; }
+  code {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    font-size: 0.88em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  a { color: var(--mems); }
+
+  .hero-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.9rem; margin: 1.5rem 0 0.5rem 0;
+  }
+  .hero {
+    background: var(--panel); border: 1px solid var(--border);
+    border-top: 2px solid var(--mems);
+    border-radius: 10px; padding: 0.85rem 1rem;
+  }
+  .hero .v {
+    font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums; color: var(--mems);
+  }
+  .hero .k {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-dim); font-weight: 700; margin-bottom: 0.15rem;
+  }
+  .hero .n { font-size: 0.78rem; color: var(--text-dim); margin-top: 0.3rem; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 0.6rem 0 1.2rem 0; }
+  .table-wrap { overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 0.55rem 0.7rem; text-align: left; vertical-align: top; }
+  th { background: var(--panel); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-dim); }
+  td { background: var(--panel); }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .src {
+    font-size: 0.72rem; color: var(--text-dim);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .tag {
+    display: inline-block; font-size: 0.66rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 0.1rem 0.4rem; border-radius: 4px; white-space: nowrap;
+  }
+  .tag.repo   { background: var(--mems-bg);  color: var(--mems); }
+  .tag.web    { background: var(--react-bg); color: var(--react); }
+  .tag.derived{ background: var(--code-bg);  color: var(--text-dim); }
+
+  .callout {
+    background: var(--callout-bg); border: 1px solid var(--callout-border);
+    border-radius: 10px; padding: 0.9rem 1.1rem; margin: 1rem 0; font-size: 0.9rem;
+  }
+  .callout .label { font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+  .callout p { color: var(--text); margin: 0.3rem 0; }
+
+  .gap-box {
+    background: var(--gap-bg); border: 1px solid var(--gap-border);
+    border-radius: 10px; padding: 1rem 1.1rem; margin: 1rem 0;
+  }
+  .gap-box .label {
+    font-weight: 700; font-size: 0.78rem; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--gap-border); margin-bottom: 0.35rem;
+  }
+  .gap-box p { color: var(--text); font-size: 0.9rem; margin: 0.3rem 0; }
+
+  blockquote {
+    margin: 0.8rem 0; padding: 0.6rem 0 0.6rem 1rem;
+    border-left: 3px solid var(--mems); color: var(--text);
+    font-size: 0.89rem;
+  }
+  blockquote .attr { display: block; margin-top: 0.4rem; font-size: 0.75rem; color: var(--text-dim); }
+
+  .figure {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem 1.1rem; margin: 1.2rem 0;
+  }
+  .figure h4 { margin: 0 0 0.7rem 0; font-size: 0.88rem; }
+  .figure svg { width: 100%; height: auto; display: block; }
+  .figure p.cap { margin: 0.7rem 0 0 0; font-size: 0.8rem; color: var(--text-dim); }
+  .fig-scroll { overflow-x: auto; }
+
+  footer {
+    max-width: 1020px; margin: 3rem auto 0 auto; padding: 1.2rem 1.5rem;
+    border-top: 1px solid var(--border); color: var(--text-dim); font-size: 0.8rem;
+  }
+  footer a { color: var(--mems); }
+</style>
+</head>
+<body>
+<main>
+
+  <h1>PlayzerX device limits</h1>
+  <p class="lede">What actually bounds a Mirrorcle PlayzerX in point-to-point and quasistatic operation — sample rate, speed, resolution, and the point past which the vendor says you can destroy the mirror. Every figure below is tagged with where it came from. Companion to <a href="mems-laser-emulator.md">the MEMS Laser design spec</a> and <a href="mems-mirror-survey.html">the twelve-library survey</a>.</p>
+
+  <div class="hero-grid">
+    <div class="hero">
+      <div class="k">Bandwidth</div>
+      <div class="v">~2200 Hz</div>
+      <div class="n">dc to ~2200 Hz, both axes</div>
+    </div>
+    <div class="hero">
+      <div class="k">Settling</div>
+      <div class="v">~500 µs</div>
+      <div class="n">filtered at 2200 Hz; ~10 ms unfiltered</div>
+    </div>
+    <div class="hero">
+      <div class="k">Sample rate</div>
+      <div class="v">22 kS/s</div>
+      <div class="n">default; 50–50,000 permitted</div>
+    </div>
+    <div class="hero">
+      <div class="k">Position</div>
+      <div class="v">12-bit</div>
+      <div class="n">4096 steps/axis over ~34°</div>
+    </div>
+  </div>
+
+  <p><span class="tag repo">repo</span> comes from <code>mems/playzerx-master</code>. <span class="tag web">web</span> from mirrorcletech.com or the PlayzerX docs site. <span class="tag derived">derived</span> is arithmetic on the other two, not a vendor figure.</p>
+
+  <h2>Sample rate and buffer</h2>
+
+  <p>The Controller holds a circular FIFO and reads it at a fixed rate; the host writes into it over USB. Those are two different rates, and the limits are quoted differently in five places — worth knowing before you pick a number.</p>
+
+  <div class="table-wrap">
+  <table>
+    <tr><th>Quantity</th><th>Value</th><th>Source</th></tr>
+    <tr><td>Read rate default</td><td class="num">22,000 S/s</td><td><span class="tag web">web</span> <span class="src">User Guide, "SetSampleRate … default is 22000 samples/s"</span></td></tr>
+    <tr><td>Read rate, protocol range</td><td class="num">50 – 50,000 S/s</td><td><span class="tag web">web</span> <span class="src">USB Serial Protocol, "Value Ranges and Specifications"</span></td></tr>
+    <tr><td>Read rate, API range</td><td class="num">200 – 50,000 S/s</td><td><span class="tag repo">repo</span> <span class="src">include/PlayzerX.h:238</span></td></tr>
+    <tr><td>Read rate, demo's accepted range</td><td class="num">500 – 60,000 S/s</td><td><span class="tag repo">repo</span> <span class="src">demo_source/PlayzerX-Demo.cpp — rejects outside, falls back to 5000</span></td></tr>
+    <tr><td>Raster generator defaults</td><td class="num">1,000 – 100,000 S/s</td><td><span class="tag repo">repo</span> <span class="src">MTIDataGenerator.h — LinearRasterPattern spsMin/spsMax</span></td></tr>
+    <tr><td>RQ waveform ceiling</td><td class="num">90,000 S/s</td><td><span class="tag repo">repo</span> <span class="src">MTIDataGenerator.h — "an enforced limit for sample rate (sps) of 90,000"</span></td></tr>
+    <tr><td>Host write rate over USB</td><td class="num">≈ 50,000 S/s</td><td><span class="tag web">web</span> <span class="src">User Guide — "can be up to roughly 50000 samples/s"</span></td></tr>
+    <tr><td>Buffer, monochrome</td><td class="num">125,000 samples</td><td><span class="tag web">web</span> <span class="src">USB Serial Protocol</span></td></tr>
+    <tr><td>Buffer, RGB</td><td class="num">83,333 samples</td><td><span class="tag web">web</span> <span class="src">USB Serial Protocol</span></td></tr>
+    <tr><td>Buffer duration at default rate</td><td class="num">≈ 5.7 s</td><td><span class="tag derived">derived</span> <span class="src">125,000 ÷ 22,000</span></td></tr>
+    <tr><td>Buffer duration at max rate</td><td class="num">≈ 2.5 s</td><td><span class="tag derived">derived</span> <span class="src">125,000 ÷ 50,000</span></td></tr>
+  </table>
+  </div>
+
+  <p>The spread is not contradiction so much as layering: 50–50,000 is what the protocol will accept, 200–50,000 is what the C++ API documents, and the tighter ranges belong to particular generators that have their own reasons. For a simulator, <strong>50–50,000 is the honest outer bound and 22,000 is the number the device actually boots with.</strong></p>
+
+  <h2>Position resolution and optics</h2>
+
+  <div class="table-wrap">
+  <table>
+    <tr><th>Quantity</th><th>Value</th><th>Source</th></tr>
+    <tr><td>Optical scan angle (field of regard)</td><td class="num">≈ 34° × 34°</td><td><span class="tag web">web</span> <span class="src">User Guide, Monochrome PlayzerX specs</span></td></tr>
+    <tr><td>Position resolution</td><td class="num">~12 bits, 4096 steps/axis</td><td><span class="tag web">web</span> <span class="src">User Guide — "Optical Scan Angle Resolution"</span></td></tr>
+    <tr><td>Wire format</td><td class="num">0 – 4095, 2048 = origin</td><td><span class="tag web">web</span> <span class="src">USB Serial Protocol — maps to −1…+1</span></td></tr>
+    <tr><td>Angle per position step</td><td class="num">≈ 0.0083°</td><td><span class="tag derived">derived</span> <span class="src">34° ÷ 4096</span></td></tr>
+    <tr><td>Repeatability</td><td class="num">&lt; 0.01° per axis</td><td><span class="tag web">web</span> <span class="src">User Guide</span></td></tr>
+    <tr><td>Beam divergence half-angle</td><td class="num">&lt; 2.25 mrad</td><td><span class="tag web">web</span> <span class="src">User Guide</span></td></tr>
+    <tr><td>Laser power</td><td class="num">~10 mW (8–12 mW CW)</td><td><span class="tag web">web</span> <span class="src">User Guide. Class 3B</span></td></tr>
+    <tr><td>Intensity resolution</td><td class="num">8 bits, 256 levels</td><td><span class="tag web">web</span> <span class="src">User Guide; matches M/R/G/B 0–255</span></td></tr>
+  </table>
+  </div>
+
+  <div class="callout">
+    <div class="label">Repeatability sits at about one position step</div>
+    <p>&lt;0.01° repeatability against a 0.0083° quantum means the device repeats to roughly one LSB. The 12-bit grid is therefore a real floor, not a number that disappears under mechanical noise — a simulator that models position as continuous is being optimistic by about one part in 4096 of full scale.</p>
+  </div>
+
+  <h2>Speed: bandwidth, settling, and point-to-point</h2>
+
+  <p>This is the section that answers "how far can I push it." The headline is that <strong>PlayzerX is specified at dc to ~2200 Hz on both axes</strong>, and that figure is not a mirror property — it is the bandwidth the hardware filter is deliberately set to.</p>
+
+  <blockquote>
+    Bandwidth: dc to ~2200 Hz on both axes
+    <span class="attr">Mirrorcle Playzer X-Series User Guide, Monochrome PlayzerX specifications</span>
+  </blockquote>
+
+  <p>Mirrorcle's Advanced MEMS Mirror Control guide gives the reasoning and the settling numbers behind that choice, worked through an A7M10.2 1 mm mirror:</p>
+
+  <div class="table-wrap">
+  <table>
+    <tr><th>Quantity</th><th>Value</th><th>Source</th></tr>
+    <tr><td>Example device resonant frequency</td><td class="num">4500 Hz</td><td><span class="tag web">web</span> <span class="src">Advanced MEMS Control, A7M10.2</span></td></tr>
+    <tr><td>Example device Q factor</td><td class="num">25</td><td><span class="tag web">web</span> <span class="src">Advanced MEMS Control</span></td></tr>
+    <tr><td>Linear DC response</td><td class="num">0.0313 deg/V</td><td><span class="tag web">web</span> <span class="src">Advanced MEMS Control</span></td></tr>
+    <tr><td>Recommended filter cutoff</td><td class="num">f<sub>res</sub> ÷ 2.5</td><td><span class="tag web">web</span> <span class="src">Advanced MEMS Control — 1800 Hz for a 4500 Hz device</span></td></tr>
+    <tr><td>Settling, unfiltered</td><td class="num">≈ 10 ms</td><td><span class="tag web">web</span> <span class="src">Advanced MEMS Control</span></td></tr>
+    <tr><td>Settling, 2200 Hz lowpass</td><td class="num">≈ 500 µs</td><td><span class="tag web">web</span> <span class="src">Advanced MEMS Control</span></td></tr>
+    <tr><td>Step time, Posicast input shaping</td><td class="num">≈ 62 µs</td><td><span class="tag web">web</span> <span class="src">Advanced MEMS Control</span></td></tr>
+    <tr><td>Step time, inverse system filter</td><td class="num">≈ 50 µs</td><td><span class="tag web">web</span> <span class="src">"more than 12x faster" than the 2200 Hz lowpass</span></td></tr>
+    <tr><td>Closed-loop bandwidth gain</td><td class="num">up to ~4×</td><td><span class="tag web">web</span> <span class="src">Advanced MEMS Control, over open-loop</span></td></tr>
+    <tr><td>Implied PlayzerX mirror resonance</td><td class="num">≈ 5500 Hz</td><td><span class="tag derived">derived</span> <span class="src">2200 Hz × 2.5, applying the vendor's own rule</span></td></tr>
+    <tr><td>Fully-settled point-to-point moves</td><td class="num">≈ 2000 /s</td><td><span class="tag derived">derived</span> <span class="src">1 ÷ 500 µs</span></td></tr>
+  </table>
+  </div>
+
+  <div class="figure">
+    <h4>Step time against technique, log scale</h4>
+    <div class="fig-scroll">
+    <svg viewBox="0 0 880 200" role="img" aria-label="Logarithmic comparison of MEMS step times by control technique">
+      <line x1="60" y1="150" x2="860" y2="150" stroke="var(--border)" stroke-width="1.5"/>
+      <g font-size="11.5" fill="var(--text-dim)" text-anchor="middle">
+        <line x1="60"  y1="150" x2="60"  y2="156" stroke="var(--border)" stroke-width="1.5"/><text x="60"  y="172">10 µs</text>
+        <line x1="260" y1="150" x2="260" y2="156" stroke="var(--border)" stroke-width="1.5"/><text x="260" y="172">100 µs</text>
+        <line x1="460" y1="150" x2="460" y2="156" stroke="var(--border)" stroke-width="1.5"/><text x="460" y="172">1 ms</text>
+        <line x1="660" y1="150" x2="660" y2="156" stroke="var(--border)" stroke-width="1.5"/><text x="660" y="172">10 ms</text>
+        <line x1="860" y1="150" x2="860" y2="156" stroke="var(--border)" stroke-width="1.5"/><text x="860" y="172">100 ms</text>
+      </g>
+
+      <!-- inverse filter 50us -> x = 60 + (log10(50)-1)*200 = 200 -->
+      <rect x="60" y="30" width="140" height="18" rx="3" fill="var(--mems)" opacity="0.85"/>
+      <text x="208" y="44" font-size="12" fill="var(--text)">50 µs — inverse system filter</text>
+      <!-- posicast 62us -> 60 + (1.792-1)*200 = 218 -->
+      <rect x="60" y="54" width="158" height="18" rx="3" fill="var(--mems)" opacity="0.65"/>
+      <text x="226" y="68" font-size="12" fill="var(--text)">62 µs — Posicast input shaping</text>
+      <!-- 500us -> 60 + (2.699-1)*200 = 400 -->
+      <rect x="60" y="78" width="340" height="18" rx="3" fill="var(--react)" opacity="0.7"/>
+      <text x="408" y="92" font-size="12" fill="var(--text)">500 µs — 2200 Hz lowpass (what PlayzerX ships)</text>
+      <!-- 10ms -> 660 -->
+      <rect x="60" y="102" width="600" height="18" rx="3" fill="var(--gap-border)" opacity="0.7"/>
+      <text x="668" y="116" font-size="12" fill="var(--text)">10 ms — unfiltered</text>
+    </svg>
+    </div>
+    <p class="cap">All four drive the same mirror. The difference is entirely in how the command is shaped before it gets there — which is why the filter, not the mirror, is the thing a simulator most needs to model.</p>
+  </div>
+
+  <h3>Point-to-point, as the API frames it</h3>
+
+  <p><code>MTIDevice::GoToDevicePosition(x, y, m, mSec = 5)</code> is the explicit point-to-point call. Its documentation is the clearest statement of the tradeoff anywhere in the material:</p>
+
+  <blockquote>
+    Note that the actual step time of the device from stopped position to new position is ultimately a function of both the stated (mSec) parameter and the bandwidth setting of the hardware filters … if the requested step time is too short for a given MEMS mirror design, and HardwareBandwidthBw is too high, the device may take a longer time to settle into new position while overshooting and ringing about the position.
+    <span class="attr">mems/playzerx-master/mtidevice/include/MTIDevice.h</span>
+  </blockquote>
+
+  <div class="table-wrap">
+  <table>
+    <tr><th>Quantity</th><th>Value</th><th>Source</th></tr>
+    <tr><td><code>GoToDevicePosition</code> step time default</td><td class="num">5 ms</td><td><span class="tag repo">repo</span> <span class="src">MTIDevice.h</span></td></tr>
+    <tr><td><code>GoToDevicePosition</code> step time range</td><td class="num">1 – 5000 ms</td><td><span class="tag repo">repo</span> <span class="src">MTIDevice.h; 0 is a special case</span></td></tr>
+    <tr><td>Communication/processing overhead per call</td><td class="num">≈ 100 – 200 ms</td><td><span class="tag repo">repo</span> <span class="src">MTIDevice.h — "the step happens after approx."</span></td></tr>
+    <tr><td><code>PointToPointPattern</code> minimum step</td><td class="num">usually 6 samples</td><td><span class="tag repo">repo</span> <span class="src">MTIDataGenerator.h, when stepTime is 0 or too small</span></td></tr>
+    <tr><td>That minimum, in time, at 22 kS/s</td><td class="num">≈ 273 µs</td><td><span class="tag derived">derived</span> <span class="src">6 ÷ 22,000 — shorter than the 500 µs settle</span></td></tr>
+    <tr><td>Raster acceleration allowance</td><td class="num">dRatio 0.05 – 0.15</td><td><span class="tag repo">repo</span> <span class="src">"larger value needed for very fast waveforms compared to available bandwidth"</span></td></tr>
+  </table>
+  </div>
+
+  <p>Two things stand out. The default step time of <strong>5 ms is ten times the filtered settling time</strong> — the API is conservative by an order of magnitude, which tells you how seriously the vendor treats ringing. And <code>PointToPointPattern</code>'s floor of six samples is, at the default rate, <em>shorter</em> than the mirror can settle in: the generator will happily construct a pattern the mirror cannot actually follow, leaving it to the filter to prevent damage.</p>
+
+  <div class="gap-box">
+    <div class="label">The damage boundary is explicit, not implied</div>
+    <p>Passing <code>mSec = 0</code> to <code>GoToDevicePosition</code> steps the mirror as fast as the hardware filter permits. The header says plainly that this <em>"can potentially damage or destroy the device if hardware filter bandwidth is not set to recommended or reasonably low limit."</em></p>
+    <p>That is the one place in all of this material where the vendor names destruction rather than degradation, and it is worth carrying into any simulator as the thing the resonance-margin readout exists to warn about. The mechanism is the same one the PlayzerX programming guide describes: the mirror is a high-Q spring-mass system, and a fast enough step excites it at resonance.</p>
+  </div>
+
+  <h2>What this means for the reactoscope simulator</h2>
+
+  <p>Three of the emulator's current defaults were taken from the Mirrorcle PicoAmp driver guide's worked example rather than from PlayzerX, and the numbers above show them to be wrong for this device by a wide margin.</p>
+
+  <div class="table-wrap">
+  <table>
+    <tr><th>Parameter</th><th>Was</th><th>Should be</th><th>Why</th></tr>
+    <tr><td><code>cutoff</code></td><td class="num">500 Hz</td><td class="num">2200 Hz</td><td>PlayzerX's stated bandwidth is dc to ~2200 Hz. 500 Hz was the PicoAmp guide's example for a different, slower mirror — a 4.4× underestimate of what this device can do</td></tr>
+    <tr><td><code>resonanceFreq</code></td><td class="num">3000 Hz</td><td class="num">5500 Hz</td><td>Applying the vendor's own f<sub>res</sub> ÷ 2.5 rule backwards from a 2200 Hz cutoff</td></tr>
+    <tr><td><code>resonanceQ</code></td><td class="num">100</td><td class="num">25</td><td>The measured Q for a real 1 mm Mirrorcle mirror. 100 was a plausible guess, and it is four times too sharp</td></tr>
+  </table>
+  </div>
+
+  <p>Two limits are not modelled at all and are worth adding:</p>
+
+  <ul>
+    <li><strong>12-bit position quantisation.</strong> 4096 steps per axis is a hard floor on positional precision, and the device's repeatability sits at about one step — so it does not wash out in noise. Currently the model treats position as continuous.</li>
+    <li><strong>The settling-time budget as a readout.</strong> The useful question when pushing the device is "how many fully-settled point-to-point moves per second does this cutoff buy me" — roughly 2000/s at 2200 Hz, 200/s at the unfiltered 10 ms. That is a more actionable number than the cutoff in Hz.</li>
+  </ul>
+
+  <div class="callout">
+    <div class="label">A direction the emulator does not currently go</div>
+    <p>Everything reactoscope models is the <em>lowpass</em> approach to avoiding resonance. Mirrorcle's guide documents two strictly better open-loop techniques — Posicast input shaping at ~62 µs and an inverse system filter at ~50 µs, the latter "more than 12x faster than the device's step time if driven with a lowpass filter at a cutoff frequency of 2200 Hz." Both work by shaping the command so the mirror's own resonance cancels rather than by removing the energy that would excite it.</p>
+    <p>That is a genuinely different family of Scanner Model, not a parameter change, and it is where the headroom is if the question is how fast this device can be pushed. Closed-loop adds up to ~4× again on top.</p>
+  </div>
+
+  <h2>Source index</h2>
+
+  <div class="table-wrap">
+  <table>
+    <tr><th>Source</th><th>What it is good for</th></tr>
+    <tr><td><code>mems/playzerx-master/mtidevice/include/MTIDevice.h</code></td><td>Point-to-point API, step time semantics, the damage warning</td></tr>
+    <tr><td><code>mems/playzerx-master/mtidevice/include/MTIDataGenerator.h</code></td><td>Pattern generators, sample-rate bounds, the software filter API, RQ waveform</td></tr>
+    <tr><td><code>mems/playzerx-master/mtidevice/include/MTIDefinitions.h</code></td><td><code>FilterType</code> enum, <code>MTIDeviceLimits</code>, tracking parameters</td></tr>
+    <tr><td><code>mems/playzerx-master/include/PlayzerX.h</code></td><td>The USB API surface and its documented sample-rate range</td></tr>
+    <tr><td><code>mems/playzerx-master/demo_source/PlayzerX-Demo.cpp</code></td><td>Real usage, enforced ranges, <code>compensateFilterDelay</code></td></tr>
+    <tr><td><a href="https://mirrorcletech.com/documentation/Guides/Advanced%20MEMS%20Control.html">Advanced MEMS Mirror Control</a></td><td>Settling times, the f<sub>res</sub> ÷ 2.5 rule, input shaping, closed loop</td></tr>
+    <tr><td><a href="https://mirrorcletech.github.io/playzerx/PlayzerX%20USB%20Serial%20Protocol.html">PlayzerX USB Serial Protocol</a></td><td>Wire format, value ranges, buffer sizes</td></tr>
+    <tr><td><a href="https://mirrorcletech.com/pdf/PX/Mirrorcle_Playzer_X-Series_-_User_Guide.pdf">Playzer X-Series User Guide (PDF)</a></td><td>The headline specification block: bandwidth, angle, resolution, power</td></tr>
+    <tr><td><a href="https://mirrorcletech.com/documentation/Guides/Device%20Datasheets.html">Device Datasheets</a></td><td>Per-device resonance, aperture and angle, if a specific mirror is ever chosen</td></tr>
+  </table>
+  </div>
+
+  <footer>
+    Compiled from the PlayzerX repository under the gitignored <code>mems/</code> directory and from Mirrorcle's public documentation, September 2026. Figures tagged <span class="tag derived">derived</span> are arithmetic on vendor numbers and carry whatever error those do. The User Guide PDF's text layer was extracted mechanically; the specification block quoted here came through cleanly, but figures and characterisation charts did not, so no per-device angle or resonance numbers are quoted from it.
+  </footer>
+
+</main>
+</body>
+</html>

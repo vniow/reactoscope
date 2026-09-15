@@ -25,16 +25,22 @@ import type { QuasistaticParams } from '../mems/quasistaticModel';
 // deliberately does NOT live here: it changes every frame, and pushing that
 // through Context would re-render every consumer at frame rate.
 
+// Sourced from PlayzerX's published specifications rather than guessed — see
+// docs/mems-device-limits.html for each figure and where it came from.
 const DEFAULT_QUASISTATIC: QuasistaticParams = {
-	deviceSampleRate: 20000,   // PlayzerX-Demo's default for streamed content
+	deviceSampleRate: 22000,   // "SetSampleRate ... default is 22000 samples/s"
 	filterType:       'bessel',
 	filterOrder:      5,
-	cutoff:           500,
+	cutoff:           2200,    // "Bandwidth: dc to ~2200Hz on both axes"
 	zeroPhase:        true,    // FilterData's own default
 	angleLimit:       1,
+	// The vendor's rule is that the filter cutoff sits at f_res / 2.5, so a
+	// 2200Hz bandwidth implies a mirror resonating near 5500Hz. Q = 25 is the
+	// measured value for a 1mm Mirrorcle mirror (A7M10.2) in the Advanced MEMS
+	// Control guide.
 	resonanceEnabled: true,
-	resonanceFreq:    3000,
-	resonanceQ:       100,
+	resonanceFreq:    5500,
+	resonanceQ:       25,
 };
 
 export interface MemsContextType {
